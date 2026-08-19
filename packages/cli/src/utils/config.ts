@@ -1,116 +1,190 @@
-import * as dotenv from 'dotenv'
-import fs from 'fs-extra'
-import os from 'node:os'
-import path from 'node:path'
+import {
+  normaliseProjectConfig,
+  validateProjectConfig,
+  type ProjectConfig,
+  type ResolvedProjectConfig,
+} from "@capucho/core";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
-export interface CapuchoConfig {
-  [key: string]: unknown
-  active?: boolean
-  apiKey?: string
-  appId?: string
-  appName?: string
-  apps?: Array<{
-    app_id: string
-    icon_url?: string
-    id: string
-    name: string
-    organization_id: string
-    role: string
-  }>
-  authenticatedAt?: string
-  BUILD_NUMBER?: string
-  channel?: string
-  defaultAppId?: string
-  defaultEnvironment?: string
-  endpoint?: string
-  environment?: string
-  environments?: Record<string, {appId: string; channel: string}>
-  flavor?: string
-  gitTagVersion?: boolean
-  note?: string
-  organization?: {name: string}
-  organizations?: Array<{
-    id: string
-    name: string
-    role: string
-    slug: string
-  }>
-  required?: boolean
-  skipAsset?: boolean
-  skipBuild?: boolean
-  user?: {email: string; id?: string; role?: string}
-  version?: string
-  VERSION_CODE?: string
-  VITE_APP_ID?: string
-  VITE_UPDATE_API_URL?: string
-  yes?: boolean
+/**
+ * Configuration and credential storage.
+ *
+ * Two files, with distinct jobs:
+ *
+ *   ~/.capucho/config.json        credentials and preferences. Never committed.
+ *   <app>/.capucho/project.json   which app this directory publishes.
+ *                                 Committed - it is not a secret.
+ *
+ * The old `ConfigManager` merged both into one flat object and then read
+ * `apiKey` out of the result, which meant a project.json could override the
+ * credentials of whoever ran the deploy. Keeping them separate removes that,
+ * and removes the 40-field `CapuchoConfig` interface that had accumulated every
+ * key any command had ever wanted.
+ */
+
+const DIR = ".capucho";
+const GLOBAL_FILE = "config.json";
+const PROJECT_FILE = "project.json";
+
+export interface GlobalConfig {
+  endpoint?: string;
+  apiKey?: string;
+  user?: { id: string; email: string };
+  authenticatedAt?: string;
+  defaultChannel?: string;
 }
 
-const CONFIG_DIR_NAME = '.capucho'
-const CONFIG_FILE_NAME = 'config.json'
+/** Credentials resolved for this invocation, and where they came from. */
+export interface Credentials {
+  endpoint: string;
+  apiKey: string;
+  source: "environment" | "config";
+}
 
-export class ConfigManager {
-  private projectRoot: string
+export function globalConfigPath(): string {
+  return path.join(os.homedir(), DIR, GLOBAL_FILE);
+}
 
-  constructor(projectRoot: string = process.cwd()) {
-    this.projectRoot = projectRoot
+export function projectConfigPath(appDir: string): string {
+  return path.join(appDir, DIR, PROJECT_FILE);
+}
+
+function readJson<T>(file: string): T | null {
+  if (!fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8")) as T;
+  } catch {
+    throw new Error(`${file} is not valid JSON. Fix or delete it.`);
   }
+}
 
-  // Get global config path (~/.capucho/config.json)
-  public getGlobalConfigPath(): string {
-    return path.join(os.homedir(), CONFIG_DIR_NAME, CONFIG_FILE_NAME)
+function writeJson(file: string, value: unknown): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+export function readGlobalConfig(): GlobalConfig {
+  return readJson<GlobalConfig>(globalConfigPath()) ?? {};
+}
+
+export function writeGlobalConfig(config: GlobalConfig): void {
+  const file = globalConfigPath();
+  writeJson(file, config);
+
+  // The file holds an API key. Restrict it where the platform supports it;
+  // Windows ACLs are not modelled by chmod, so failure is not fatal.
+  try {
+    fs.chmodSync(file, 0o600);
+  } catch {
+    /* best effort */
   }
+}
 
-  // Get project-specific config path (.capucho/project.json)
-  // We rename this to project.json for clarity
-  public getProjectConfigPath(): string {
-    return path.join(this.projectRoot, CONFIG_DIR_NAME, 'project.json')
+export function updateGlobalConfig(patch: Partial<GlobalConfig>): GlobalConfig {
+  const next = { ...readGlobalConfig(), ...patch };
+  for (const key of Object.keys(next) as Array<keyof GlobalConfig>) {
+    if (next[key] === undefined) delete next[key];
   }
+  writeGlobalConfig(next);
+  return next;
+}
 
-  // Load configuration with precedence:
-  // 1. Flags (passed as arg)
-  // 2. Project Config (.capucho/project.json)
-  // 3. Global Config (~/.capucho/config.json)
-  public async loadConfig(flags: Partial<CapuchoConfig> = {}): Promise<CapuchoConfig> {
-    const globalConfig = await this.readJsonFile(this.getGlobalConfigPath())
-    const projectConfig = await this.readJsonFile(this.getProjectConfigPath())
-    const environmentConfig: Partial<CapuchoConfig> = {
-      ...(process.env.CAPUCHO_API_KEY ? {apiKey: process.env.CAPUCHO_API_KEY} : {}),
-      ...(process.env.CAPUCHO_ENDPOINT ? {endpoint: process.env.CAPUCHO_ENDPOINT} : {}),
-    }
+/**
+ * Resolves credentials.
+ *
+ * Environment variables win, and are never written to disk. That is what makes
+ * a CI run safe: `CAPUCHO_API_KEY` lives in the job for its lifetime and leaves
+ * nothing behind on the runner.
+ */
+export function resolveCredentials(): Credentials | null {
+  const envEndpoint = process.env.CAPUCHO_ENDPOINT;
+  const envKey = process.env.CAPUCHO_API_KEY;
 
+  if (envEndpoint && envKey) {
     return {
-      ...globalConfig,
-      ...projectConfig,
-      ...environmentConfig,
-      ...flags,
-    }
+      endpoint: envEndpoint.replace(/\/+$/, ""),
+      apiKey: envKey,
+      source: "environment",
+    };
   }
 
-  public async setGlobalConfig(key: string, value: unknown): Promise<void> {
-    const configPath = this.getGlobalConfigPath()
-    const config = await this.readJsonFile(configPath)
-    config[key] = value
-    await fs.outputJson(configPath, config, {spaces: 2})
+  const config = readGlobalConfig();
+  if (config.endpoint && config.apiKey) {
+    return {
+      endpoint: config.endpoint.replace(/\/+$/, ""),
+      apiKey: config.apiKey,
+      source: "config",
+    };
   }
 
-  public async setProjectConfig(key: string, value: unknown): Promise<void> {
-    const configPath = this.getProjectConfigPath()
-    const config = await this.readJsonFile(configPath)
-    config[key] = value
-    await fs.outputJson(configPath, config, {spaces: 2})
+  return null;
+}
+
+export function readProjectConfig(appDir: string): ProjectConfig | null {
+  return readJson<ProjectConfig>(projectConfigPath(appDir));
+}
+
+export function writeProjectConfig(appDir: string, config: ProjectConfig): void {
+  writeJson(projectConfigPath(appDir), config);
+}
+
+/**
+ * Loads and validates the project config, resolving every default.
+ *
+ * Throws with the list of problems rather than returning null, so callers do
+ * not each reinvent the error message.
+ */
+export function requireProjectConfig(appDir: string): ResolvedProjectConfig {
+  const raw = readProjectConfig(appDir);
+  const problems = validateProjectConfig(raw);
+
+  if (problems.length > 0) {
+    const location = path.relative(process.cwd(), projectConfigPath(appDir));
+    throw new Error(
+      `${location} is not usable:\n  - ${problems.join("\n  - ")}\n\n` +
+        `Run "capucho init" in this directory to create it.`,
+    );
   }
 
-  // Read a JSON file safely
-  private async readJsonFile(filePath: string): Promise<CapuchoConfig> {
-    if (await fs.pathExists(filePath)) {
-      try {
-        return await fs.readJson(filePath)
-      } catch {
-        console.warn(`Warning: Failed to parse config file at ${filePath}`)
-      }
-    }
+  return normaliseProjectConfig(raw as ProjectConfig);
+}
 
-    return {}
+/** Reads the application's semantic version from its package.json. */
+export function readAppVersion(appDir: string): string {
+  const file = path.join(appDir, "package.json");
+  const pkg = readJson<{ version?: string }>(file);
+
+  if (!pkg?.version) {
+    throw new Error(`${file} has no "version" field, so there is nothing to publish.`);
   }
+
+  return pkg.version;
+}
+
+/**
+ * Writes a new version to the application's package.json.
+ *
+ * This replaces `npm version <type> --no-git-tag-version`. In a workspace npm
+ * resolves the nearest package.json from the *process* working directory, so
+ * running it from a monorepo root bumped the root package rather than the app.
+ * Writing the file directly also leaves the rest of it byte-identical, instead
+ * of npm reformatting the whole file.
+ */
+export function writeAppVersion(appDir: string, version: string): void {
+  const file = path.join(appDir, "package.json");
+  const contents = fs.readFileSync(file, "utf8");
+
+  // Replace only the top-level "version" value, preserving formatting.
+  const updated = contents.replace(
+    /^(\s*"version"\s*:\s*")[^"]*(")/m,
+    `$1${version}$2`,
+  );
+
+  if (updated === contents) {
+    throw new Error(`Could not update the version field in ${file}`);
+  }
+
+  fs.writeFileSync(file, updated);
 }

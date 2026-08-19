@@ -1,256 +1,312 @@
-import {Command, Flags} from '@oclif/core'
-import chalk from 'chalk'
-import {select, input} from '@inquirer/prompts'
-import path from 'node:path'
-import fs from 'fs-extra'
-import ora from 'ora'
-
-import {AuthService} from '../services/auth.service.js'
-import {CloudService} from '../services/cloud.service.js'
-import AuthLogin from './auth/login.js'
-import {ProjectConfig} from '../types/cloud.js'
+import { confirm, input, select } from "@inquirer/prompts";
+import {
+  ENVIRONMENTS,
+  PROJECT_CONFIG_VERSION,
+  canCreateApps,
+  defaultFlavour,
+  isValidBundleId,
+  type CloudApp,
+  type Environment,
+  type FlavourConfig,
+  type ProjectConfig,
+} from "@capucho/core";
+import { Command, Flags } from "@oclif/core";
+import chalk from "chalk";
+import fs from "node:fs";
+import path from "node:path";
+import ora from "ora";
+import { CloudClient } from "../services/cloud.js";
+import {
+  projectConfigPath,
+  readProjectConfig,
+  resolveCredentials,
+  writeProjectConfig,
+} from "../utils/config.js";
+import AuthLogin from "./auth/login.js";
 
 export default class Init extends Command {
-  static description = 'Initialize Capucho in this project'
+  static override description =
+    "Link this directory to a Capucho app and write .capucho/project.json";
 
-  static flags = {
+  static override examples = [
+    "<%= config.bin %> init",
+    "<%= config.bin %> init --link",
+  ];
+
+  static override flags = {
     link: Flags.boolean({
-      char: 'l',
+      char: "l",
       default: false,
-      description: 'Link to existing app instead of creating new one',
+      description: "Link an existing app instead of creating one",
     }),
-  }
+    force: Flags.boolean({
+      char: "f",
+      default: false,
+      description: "Overwrite an existing project.json",
+    }),
+  };
 
   async run(): Promise<void> {
-    const {flags} = await this.parse(Init)
-    const root = process.cwd()
-    const authService = new AuthService(root)
-    const cloudService = new CloudService(root)
+    const { flags } = await this.parse(Init);
+    const appDir = process.cwd();
 
-    // Header
-    this.log('')
-    this.log(chalk.cyan('╔═══════════════════════════════════════════╗'))
-    this.log(chalk.cyan('║') + chalk.bold('       Initialize Capucho Project          ') + chalk.cyan('║'))
-    this.log(chalk.cyan('╚═══════════════════════════════════════════╝'))
-    this.log('')
+    this.log("");
+    this.log(chalk.bold("  Initialise Capucho"));
+    this.log(chalk.dim(`  ${appDir}`));
+    this.log("");
 
-    // 1. Check if already initialized
-    const configPath = path.join(root, '.capucho', 'project.json')
-    if (await fs.pathExists(configPath)) {
-      const existing = (await fs.readJson(configPath)) as ProjectConfig
-
-      this.log(chalk.yellow('  ⚠️  Project already initialized!'))
-      this.log(chalk.gray(`     App: ${existing.appName} (${existing.cloudAppId})`))
-      this.log('')
-
+    const existing = readProjectConfig(appDir);
+    if (existing && !flags.force) {
+      this.log(
+        chalk.yellow("  Already initialised: ") +
+          `${existing.appName} (${existing.appId})`,
+      );
       const action = await select({
-        message: 'What would you like to do?',
+        message: "What now?",
         choices: [
-          {name: 'Keep current configuration', value: 'keep'},
-          {name: 'Re-initialize (unlink and start over)', value: 'reinit'},
-          {name: 'Exit', value: 'exit'},
+          { name: "Keep it", value: "keep" },
+          { name: "Re-link to a different app", value: "relink" },
         ],
-      })
-
-      if (action === 'exit') return
-      if (action === 'keep') {
-        this.log(chalk.green('  ✓ Using existing configuration\n'))
-        return
-      }
+      });
+      if (action === "keep") return;
     }
 
-    // 2. Check authentication or trigger login
-    const {valid, user: loggedInUser} = await authService.verifyCredentials()
+    // --- credentials ---------------------------------------------------------
 
-    if (!valid) {
-      this.log(chalk.yellow("  👋  Welcome to Capucho! Let's get you signed in."))
-      this.log(chalk.gray('      We need an API key to link this project to your account.\n'))
-
+    let credentials = resolveCredentials();
+    if (!credentials) {
+      this.log(chalk.dim("  No credentials found yet.\n"));
       try {
-        await AuthLogin.performLogin(root)
-      } catch {
-        this.error(chalk.red('Authentication failed. Please try again.'))
+        await AuthLogin.performLogin();
+      } catch (error) {
+        this.error(error instanceof Error ? error.message : String(error));
       }
+      credentials = resolveCredentials();
     }
 
-    // Re-verify after potential login
-    const {user} = await authService.verifyCredentials()
+    if (!credentials) {
+      this.error("Still not authenticated, so this directory cannot be linked.");
+    }
 
-    this.log(chalk.gray(`  Logged in as: ${user?.email}`))
-    this.log('')
+    const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
+    const profile = await cloud.whoami();
+    if (!profile) {
+      this.error(`The credentials for ${credentials.endpoint} were rejected.`);
+    }
 
-    // 3. New app or link existing?
-    let projectConfig: ProjectConfig
+    // --- pick or create the app ---------------------------------------------
 
-    if (flags.link) {
-      projectConfig = await this.linkExistingApp(cloudService)
+    const mode = flags.link
+      ? "existing"
+      : await select({
+          message: "Link this directory to",
+          choices: [
+            { name: "An app that already exists", value: "existing" },
+            { name: "A new app", value: "new" },
+          ],
+        });
+
+    const app =
+      mode === "existing"
+        ? await this.linkExisting(cloud)
+        : await this.createNew(cloud);
+
+    // --- flavours ------------------------------------------------------------
+
+    const flavours = this.detectFlavours(appDir);
+    const detected = Object.keys(flavours) as Environment[];
+
+    if (detected.length > 0) {
+      this.log("");
+      this.log(chalk.dim(`  Detected flavours: ${detected.join(", ")}`));
     } else {
-      const choice = await select({
-        message: 'How would you like to start?',
-        choices: [
-          {name: '🆕  Create new app in cloud', value: 'new'},
-          {name: '🔗  Link to existing app', value: 'existing'},
-        ],
-      })
-
-      if (choice === 'existing') {
-        projectConfig = await this.linkExistingApp(cloudService)
-      } else {
-        projectConfig = await this.createNewApp(cloudService)
-      }
+      this.log("");
+      this.log(
+        chalk.yellow(
+          "  No build/<env>/.env.<env> files found. The conventional layout will be\n" +
+            "  written anyway - create the files, or edit project.json to point elsewhere.",
+        ),
+      );
     }
 
-    // 4. Save project config
-    await fs.ensureDir(path.dirname(configPath))
-    await fs.outputJson(configPath, projectConfig, {spaces: 2})
+    const config: ProjectConfig = {
+      version: PROJECT_CONFIG_VERSION,
+      appId: app.app_id,
+      cloudAppId: app.id,
+      appName: app.name,
+      createdAt: new Date().toISOString(),
+      webDir: this.detectWebDir(appDir),
+      androidDir: "android",
+      iosDir: "ios",
+      versionCodeFile: "version-code.json",
+      // Written out explicitly, even where it matches the default: this file is
+      // the contract with the CLI, and an explicit contract is easier to change
+      // than an implied one.
+      flavours: Object.fromEntries(
+        ENVIRONMENTS.map((environment) => [
+          environment,
+          flavours[environment] ?? defaultFlavour(environment),
+        ]),
+      ),
+    };
 
-    // 5. Success!
-    this.log('')
-    this.log(chalk.green('╔═══════════════════════════════════════════╗'))
-    this.log(chalk.green('║') + chalk.bold('        Initialization Complete! 🎉        ') + chalk.green('║'))
-    this.log(chalk.green('╚═══════════════════════════════════════════╝'))
-    this.log('')
-    this.log(chalk.cyan(`  App:        ${projectConfig.appName}`))
-    this.log(chalk.cyan(`  Bundle ID:  ${projectConfig.appId}`))
-    this.log(chalk.cyan(`  Cloud ID:   ${projectConfig.cloudAppId}`))
-    this.log(chalk.gray(`  Config:     .capucho/project.json`))
-    this.log('')
-    this.log(chalk.green('✓ Ready to deploy!'))
-    this.log(chalk.gray('  Run: ') + chalk.cyan('capucho deploy ota'))
-    this.log('')
+    writeProjectConfig(appDir, config);
 
-    // 6. Fetch and show available channels/flavors
-    await this.showProjectInfo(cloudService, projectConfig.cloudAppId)
+    // --- report --------------------------------------------------------------
+
+    this.log("");
+    this.log(chalk.green("  Linked."));
+    this.log(chalk.dim(`  ${path.relative(appDir, projectConfigPath(appDir))}`));
+    this.log("");
+    this.log(`  app        ${chalk.cyan(app.name)}`);
+    this.log(`  bundle id  ${chalk.cyan(app.app_id)}`);
+    this.log(`  cloud id   ${chalk.dim(app.id)}`);
+    this.log("");
+
+    const channels = await cloud.channels(app.id).catch(() => []);
+    const deployable = channels.filter((channel) => channel.environment);
+
+    if (deployable.length > 0) {
+      this.log(chalk.bold("  channels"));
+      for (const channel of deployable) {
+        this.log(`    ${channel.name} ${chalk.dim(`(${channel.environment})`)}`);
+      }
+      this.log("");
+      this.log(
+        chalk.dim("  Deploy with: ") +
+          chalk.cyan(`capucho deploy ota --channel ${deployable[0]!.name}`),
+      );
+    } else {
+      this.log(
+        chalk.yellow("  This app has no channel with an environment set yet."),
+      );
+      this.log(
+        chalk.dim(
+          "  Create one in the dashboard - the environment is what tells the CLI\n" +
+            "  which flavour to build.",
+        ),
+      );
+    }
+    this.log("");
   }
 
-  private async createNewApp(cloudService: CloudService): Promise<ProjectConfig> {
-    this.log(chalk.cyan('\n📝 Create New App\n'))
+  /** Detects which flavours the project actually has files for. */
+  private detectFlavours(appDir: string): Partial<Record<Environment, FlavourConfig>> {
+    const found: Partial<Record<Environment, FlavourConfig>> = {};
 
-    const orgSpinner = ora('Fetching your organizations...').start()
-    let orgs = []
-    try {
-      orgs = await cloudService.getOrganizations()
-      orgSpinner.stop()
-    } catch (error) {
-      orgSpinner.fail('Failed to fetch organizations')
-      throw error
+    for (const environment of ENVIRONMENTS) {
+      const candidate = defaultFlavour(environment);
+      if (fs.existsSync(path.join(appDir, candidate.envFile))) {
+        found[environment] = candidate;
+      }
     }
 
-    // Filter organizations where the user has permission to create apps
-    const adminOrgs = orgs.filter((org) => ['owner', 'admin'].includes(org.role))
+    return found;
+  }
 
-    if (adminOrgs.length === 0) {
-      this.log(chalk.yellow("  ⚠️  You don't have permission to create apps in any organization."))
-      this.log(chalk.gray('     Please contact your organization owner.\n'))
-      process.exit(0)
+  /** Reads `webDir` out of capacitor.config.* so the CLI zips the right folder. */
+  private detectWebDir(appDir: string): string {
+    for (const name of [
+      "capacitor.config.ts",
+      "capacitor.config.js",
+      "capacitor.config.json",
+    ]) {
+      const file = path.join(appDir, name);
+      if (!fs.existsSync(file)) continue;
+
+      const match = /webDir\s*[:=]\s*["']([^"']+)["']/.exec(
+        fs.readFileSync(file, "utf8"),
+      );
+      if (match?.[1]) return match[1];
     }
 
-    let selectedOrgId = adminOrgs[0].id
+    return "dist";
+  }
 
-    if (adminOrgs.length > 1) {
-      selectedOrgId = await select({
-        message: 'Select Organization:',
-        choices: adminOrgs.map((org) => ({
-          name: `${org.name} (${org.role})`,
-          value: org.id,
-        })),
-      })
-    } else {
-      this.log(chalk.gray(`  Organization: ${adminOrgs[0].name} (${adminOrgs[0].role})`))
+  private async linkExisting(cloud: CloudClient): Promise<CloudApp> {
+    const spinner = ora({ text: "Fetching apps", stream: process.stderr }).start();
+    const apps = await cloud.apps();
+    spinner.stop();
+
+    if (apps.length === 0) {
+      this.error(
+        "This account has no apps yet. Re-run and choose to create one, or " +
+          "create it in the dashboard.",
+      );
     }
 
-    const appName = await input({
-      message: 'App Name (user-friendly):',
+    return select({
+      message: "App",
+      choices: apps.map((app) => ({
+        name: `${app.name} ${chalk.dim(app.app_id)}`,
+        value: app,
+      })),
+    });
+  }
+
+  private async createNew(cloud: CloudClient): Promise<CloudApp> {
+    const spinner = ora({
+      text: "Fetching organizations",
+      stream: process.stderr,
+    }).start();
+    const organizations = await cloud.organizations();
+    spinner.stop();
+
+    const allowed = organizations.filter(canCreateApps);
+
+    if (allowed.length === 0) {
+      this.error(
+        organizations.length === 0
+          ? "This account belongs to no organization yet."
+          : "This account is a member, not an owner or admin, of every organization " +
+              "it belongs to, so it cannot create an app. Ask an owner.",
+      );
+    }
+
+    const organizationId =
+      allowed.length === 1
+        ? allowed[0]!.id
+        : await select({
+            message: "Organization",
+            choices: allowed.map((org) => ({
+              name: `${org.name} ${chalk.dim(`(${org.role})`)}`,
+              value: org.id,
+            })),
+          });
+
+    const name = await input({
+      message: "App name",
       default: path.basename(process.cwd()),
-      validate: (value) => value.length > 0 || 'App name required',
-    })
+      validate: (value) => value.trim().length > 0 || "Required",
+    });
 
     const appId = await input({
-      message: 'Bundle Identifier (e.g., com.company.app):',
-      validate: (value) => /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/.test(value) || 'Invalid bundle ID format',
-    })
+      message: "Production bundle identifier",
+      validate: (value) =>
+        isValidBundleId(value.trim()) ||
+        "Expected something like com.company.app - lower case, at least two segments",
+    });
 
-    const spinner = ora('Creating app in cloud...').start()
+    // Creating an app is the one irreversible thing this command does.
+    const proceed = await confirm({
+      message: `Create "${name}" (${appId})?`,
+      default: true,
+    });
+    if (!proceed) this.error("Cancelled.");
 
+    const creating = ora({ text: "Creating app", stream: process.stderr }).start();
     try {
-      const cloudApp = await cloudService.createApp({
-        name: appName,
-        app_id: appId, // Use app_id as expected by backend
-        platform: 'android',
-        organization_id: selectedOrgId,
-      })
-
-      spinner.succeed('App created successfully!')
-
-      return {
-        appId,
-        cloudAppId: cloudApp.id,
-        appName: appName,
-        createdAt: new Date().toISOString(),
-      }
-    } catch (error: unknown) {
-      spinner.fail('Failed to create app')
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.error(chalk.red(`\n  Error: ${errorMessage}`))
-    }
-  }
-
-  private async linkExistingApp(cloudService: CloudService): Promise<ProjectConfig> {
-    this.log(chalk.cyan('\n🔗 Link to Existing App\n'))
-
-    const spinner = ora('Fetching your apps...').start()
-
-    try {
-      const apps = await cloudService.getApps()
-      spinner.stop()
-
-      if (apps.length === 0) {
-        this.log(chalk.yellow('  ⚠️  No apps found in your account.'))
-        this.log(chalk.gray('     Create one in the dashboard or via CLI.\n'))
-        process.exit(0)
-      }
-
-      const selectedApp = await select({
-        message: 'Select app to link:',
-        choices: apps.map((app) => ({
-          name: `${app.name} (${app.app_id})`,
-          value: app,
-        })),
-      })
-
-      return {
-        appId: selectedApp.app_id,
-        cloudAppId: selectedApp.id,
-        appName: selectedApp.name,
-        createdAt: new Date().toISOString(),
-      }
-    } catch (error: unknown) {
-      spinner.fail('Failed to fetch apps')
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.error(chalk.red(`\n  Error: ${errorMessage}`))
-    }
-  }
-
-  private async showProjectInfo(cloudService: CloudService, cloudAppId: string): Promise<void> {
-    const spinner = ora('Fetching channels...').start()
-    try {
-      const channels = await cloudService.getChannels(cloudAppId)
-      spinner.stop()
-
-      if (channels.length > 0) {
-        this.log(chalk.bold('  Channels:'))
-        for (const channel of channels) {
-          this.log(`    • ${channel.name} ${chalk.gray(channel.public ? '(public)' : '(private)')}`)
-        }
-        this.log('')
-      }
-
-      if (channels.length === 0) {
-        this.log(chalk.gray('  No channels configured yet.'))
-        this.log(chalk.gray('  Configure them in the dashboard.\n'))
-      }
-    } catch {
-      spinner.stop()
+      const app = await cloud.createApp({
+        name: name.trim(),
+        app_id: appId.trim(),
+        platform: "android",
+        organization_id: organizationId,
+      });
+      creating.succeed(`Created ${app.name}`);
+      return app;
+    } catch (error) {
+      creating.fail("Could not create the app");
+      this.error(error instanceof Error ? error.message : String(error));
     }
   }
 }

@@ -1,40 +1,51 @@
-import {Command, Flags} from '@oclif/core'
-import chalk from 'chalk'
+import { Args, Command } from "@oclif/core";
+import chalk from "chalk";
+import { updateGlobalConfig, type GlobalConfig } from "../../utils/config.js";
 
-import {ConfigManager} from '../../utils/config.js'
+/**
+ * Only the keys that are genuinely a user preference.
+ *
+ * The old command accepted any key and wrote it to either file, which is how
+ * `apiKey` ended up settable in a committed `project.json`. Credentials go
+ * through `auth login`; the project identity goes through `init`.
+ */
+const SETTABLE = {
+  endpoint: "Backend base URL",
+  defaultChannel: "Channel used when --channel is omitted",
+} satisfies Partial<Record<keyof GlobalConfig, string>>;
 
-// @ts-ignore - oclif v4 has internal typing incompatibility issues with arg definitions
+type SettableKey = keyof typeof SETTABLE;
+
 export default class ConfigSet extends Command {
-  static args = {
-    key: {
-      description: 'Config key (e.g. apiKey, defaultEnvironment)',
-      name: 'key',
-      required: true,
-    },
-    value: {
-      description: 'Config value',
-      name: 'value',
-      required: true,
-    },
-  } as const
+  static override description = "Set a user preference in ~/.capucho/config.json";
 
-  static description = 'Set a configuration value'
-  static flags = {
-    global: Flags.boolean({char: 'g', default: false, description: 'Set in global config'}),
-  }
+  static override examples = [
+    "<%= config.bin %> config set endpoint https://capucho.internal",
+    "<%= config.bin %> config set defaultChannel staging",
+  ];
+
+  static override args = {
+    key: Args.string({
+      description: "Preference to set",
+      options: Object.keys(SETTABLE),
+      required: true,
+    }),
+    value: Args.string({ description: "New value", required: true }),
+  };
 
   async run(): Promise<void> {
-    // @ts-ignore - oclif typing issue with parse method
-    const {args, flags} = await this.parse(ConfigSet)
-    const configManager = new ConfigManager(process.cwd())
+    const { args } = await this.parse(ConfigSet);
+    const key = args.key as SettableKey;
+    let value = args.value.trim();
 
-    const typedArgs = args as {key: string; value: string}
-    if (flags.global) {
-      await configManager.setGlobalConfig(typedArgs.key, typedArgs.value)
-      this.log(chalk.green(`✓ Global config '${typedArgs.key}' set to '${typedArgs.value}'`))
-    } else {
-      await configManager.setProjectConfig(typedArgs.key, typedArgs.value)
-      this.log(chalk.green(`✓ Project config '${typedArgs.key}' set to '${typedArgs.value}'`))
+    if (key === "endpoint") {
+      if (!/^https?:\/\/.+/.test(value)) {
+        this.error("endpoint must start with http:// or https://");
+      }
+      value = value.replace(/\/+$/, "");
     }
+
+    updateGlobalConfig({ [key]: value });
+    this.log(chalk.green(`${key} = ${value}`));
   }
 }

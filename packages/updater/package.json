@@ -1,0 +1,64 @@
+{
+  "name": "@capucho/updater",
+  "version": "0.1.0",
+  "description": "App-side runtime for Capucho OTA and native updates in Capacitor apps",
+  "license": "MIT",
+  "author": "aybinv7",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./vue": {
+      "types": "./dist/vue.d.ts",
+      "default": "./dist/vue.js"
+    },
+    "./capacitor": {
+      "types": "./dist/capacitor-config.d.ts",
+      "default": "./dist/capacitor-config.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "vp pack",
+    "test": "vp test --run"
+  },
+  "dependencies": {
+    "@capucho/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@capacitor/app": "catalog:",
+    "@capacitor/core": "catalog:",
+    "@capacitor/file-transfer": "catalog:",
+    "@capacitor/filesystem": "catalog:",
+    "@capacitor/network": "catalog:",
+    "@capawesome-team/capacitor-file-opener": "catalog:",
+    "@capgo/capacitor-updater": "catalog:",
+    "vue": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@capacitor/app": "catalog:",
+    "@capacitor/core": "catalog:",
+    "@capacitor/file-transfer": "catalog:",
+    "@capacitor/filesystem": "catalog:",
+    "@capacitor/network": "catalog:",
+    "@capawesome-team/capacitor-file-opener": "catalog:",
+    "@capgo/capacitor-updater": "catalog:",
+    "typescript": "catalog:",
+    "vue": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,128 +1,97 @@
-import {Command, Flags} from '@oclif/core'
-import chalk from 'chalk'
-import {input, password} from '@inquirer/prompts'
-import ora from 'ora'
+import { input, password } from "@inquirer/prompts";
+import { Command, Flags } from "@oclif/core";
+import chalk from "chalk";
+import ora from "ora";
+import { CloudClient } from "../../services/cloud.js";
+import { readGlobalConfig, updateGlobalConfig } from "../../utils/config.js";
 
-import {AuthService} from '../../services/auth.service.js'
-import {ConfigManager} from '../../utils/config.js'
+const DEFAULT_ENDPOINT = "https://capucho-back.onrender.com";
 
 export default class AuthLogin extends Command {
-  static description = 'Authenticate with Capucho platform using an API key'
+  static override description = "Store an API key for the Capucho backend";
 
-  static examples = [
-    '<%= config.bin %> auth login',
-    '<%= config.bin %> auth login --api-key cap_xxxx',
-    '<%= config.bin %> auth login --endpoint https://your-server.com',
-  ]
+  static override examples = [
+    "<%= config.bin %> auth login",
+    "<%= config.bin %> auth login --endpoint https://capucho.internal --api-key cap_...",
+  ];
 
-  static flags = {
-    'api-key': Flags.string({
-      char: 'k',
-      description: 'API key (get from Settings > API Keys in dashboard)',
-      required: false,
+  static override flags = {
+    "api-key": Flags.string({
+      char: "k",
+      description: "API key from Settings > API Keys in the dashboard",
     }),
-    endpoint: Flags.string({
-      char: 'e',
-      description: 'API endpoint',
-      required: false,
-    }),
-  }
+    endpoint: Flags.string({ char: "e", description: "Backend base URL" }),
+  };
 
   async run(): Promise<void> {
-    const {flags} = await this.parse(AuthLogin)
-    const root = process.cwd()
-
-    // Header
-    this.log('')
-    this.log(chalk.cyan('╔═══════════════════════════════════════════╗'))
-    this.log(chalk.cyan('║') + chalk.bold('          Capucho CLI Login                 ') + chalk.cyan('║'))
-    this.log(chalk.cyan('╚═══════════════════════════════════════════╝'))
-    this.log('')
-
-    await AuthLogin.performLogin(root, flags.endpoint, flags['api-key'])
+    const { flags } = await this.parse(AuthLogin);
+    await AuthLogin.performLogin(flags.endpoint, flags["api-key"]);
   }
 
   /**
-   * Static method to perform login, can be called from other commands
+   * Shared with `capucho init`, which offers to log in when it finds no
+   * credentials.
+   *
+   * Throws on failure rather than calling `this.error`, so the caller decides
+   * whether a failed login ends the process or just ends the login step.
    */
-  public static async performLogin(root: string, flagEndpoint?: string, flagApiKey?: string): Promise<void> {
-    const configManager = new ConfigManager(root)
-    const authService = new AuthService(root)
-    const currentConfig = await configManager.loadConfig()
+  static async performLogin(
+    flagEndpoint?: string,
+    flagApiKey?: string,
+  ): Promise<void> {
+    const existing = readGlobalConfig();
 
-    // 1. Get API Endpoint
-    let endpoint = flagEndpoint
+    const endpoint = (
+      flagEndpoint ??
+      (await input({
+        message: "Backend URL",
+        default: existing.endpoint ?? DEFAULT_ENDPOINT,
+        validate: (value) =>
+          /^https?:\/\/.+/.test(value.trim()) ||
+          "Must start with http:// or https://",
+      }))
+    )
+      .trim()
+      .replace(/\/+$/, "");
 
-    if (!endpoint) {
-      endpoint = await input({
-        message: 'Capucho API Endpoint:',
-        default: currentConfig.endpoint || 'https://capucho-back.onrender.com',
-        validate: (value) => {
-          if (!value.startsWith('http://') && !value.startsWith('https://')) {
-            return 'Endpoint must start with http:// or https://'
-          }
-          return true
-        },
-      })
-    } else {
-      console.log(chalk.gray(`  Using endpoint: ${endpoint}`))
-    }
-
-    // 2. Get API Key
-    let apiKey = flagApiKey
-
+    let apiKey = flagApiKey;
     if (!apiKey) {
-      console.log('')
-      console.log(chalk.yellow('  Get your API key from Settings > API Keys in the dashboard'))
-      console.log(chalk.gray(`  Dashboard: ${endpoint.replace('/api', '')}`))
-      console.log('')
-
+      process.stderr.write(
+        chalk.dim(`\n  Create a key under Settings > API Keys at ${endpoint}\n\n`),
+      );
       apiKey = await password({
-        message: 'Enter your API Key:',
-        validate: (value) => {
-          if (!value.startsWith('cap_')) {
-            return 'API key should start with "cap_"'
-          }
-          if (value.length < 10) {
-            return 'API key is too short'
-          }
-          return true
-        },
-      })
+        message: "API key",
+        // Only a length check. The previous version required the key to start
+        // with "cap_", which is a server-side format decision the CLI has no
+        // business enforcing - a rotated prefix would have locked users out.
+        validate: (value) =>
+          value.trim().length >= 16 || "That key looks too short",
+      });
     }
 
-    const spinner = ora('Validating credentials...').start()
+    apiKey = apiKey.trim();
 
-    try {
-      // Validate by fetching user profile
-      const profile = await authService.fetchUserProfile(endpoint as string, apiKey as string)
+    const spinner = ora({ text: "Verifying", stream: process.stderr }).start();
+    const profile = await new CloudClient(endpoint, apiKey).whoami();
 
-      if (!profile) {
-        spinner.fail('Authentication failed')
-        console.log(chalk.red('\n  Invalid API key or unreachable endpoint.'))
-        console.log(chalk.gray('  Please check your credentials and try again.\n'))
-        throw new Error('Authentication failed')
-      }
-
-      spinner.succeed('Authenticated successfully!')
-
-      // Save to global config
-      await configManager.setGlobalConfig('apiKey', apiKey)
-      await configManager.setGlobalConfig('endpoint', endpoint)
-      await configManager.setGlobalConfig('user', profile.user)
-      await configManager.setGlobalConfig('authenticatedAt', new Date().toISOString())
-
-      // Welcome message
-      console.log('')
-      console.log(chalk.green('─────────────────────────────────────────'))
-      console.log(chalk.bold(`  Welcome, ${profile.user.email}!`))
-      console.log(chalk.green('─────────────────────────────────────────'))
-      console.log('')
-    } catch (error: unknown) {
-      spinner.fail('Login failed')
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.log(chalk.red(`\n  Error: ${errorMessage}\n`))
-      throw error
+    if (!profile) {
+      spinner.fail("Those credentials were rejected");
+      throw new Error(
+        `${endpoint} did not accept that API key. Check the key and the URL.`,
+      );
     }
+
+    spinner.succeed(`Signed in as ${profile.user.email}`);
+
+    // Only what is needed to authenticate, plus who it belongs to. The old
+    // implementation also wrote the full app and organization lists, which went
+    // stale immediately - and `auth whoami` then read fields that `auth login`
+    // never actually saved, so it always reported no organizations.
+    updateGlobalConfig({
+      endpoint,
+      apiKey,
+      user: { id: profile.user.id, email: profile.user.email },
+      authenticatedAt: new Date().toISOString(),
+    });
   }
 }

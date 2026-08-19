@@ -85,12 +85,11 @@ export default defineConfig({
 
       // Everything a pull request must satisfy. Sub-commands are cached
       // independently by Vite Task.
+      //
+      // `vp check` is the built-in and lints the whole workspace in one pass,
+      // so it is not run per package.
       ci: {
-        command: [
-          "vp run -r --cache check",
-          "vp run -r --cache build",
-          "vp run -r --cache test",
-        ],
+        command: ["vp check", "vp run -r --cache build", "vp run -r --cache test"],
         cache: false,
       },
     },

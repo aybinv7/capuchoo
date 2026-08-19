@@ -1,7 +1,7 @@
 {
   "name": "capucho-apps-manager",
   "version": "0.0.1",
-  "description": "capacitor plugin to list and get info abotu the installed app in ur device",
+  "description": "Capacitor plugin that lists and inspects apps installed on the device",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -43,7 +43,8 @@
     "build": "npm run clean && npm run docgen && tsc && rollup -c rollup.config.mjs",
     "clean": "rimraf ./dist",
     "watch": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "echo \"no tests yet\" && exit 0"
   },
   "devDependencies": {
     "@capacitor/android": "^8.0.0",

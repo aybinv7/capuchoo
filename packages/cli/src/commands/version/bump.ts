@@ -1,71 +1,74 @@
-import {Command, Flags} from '@oclif/core'
-import chalk from 'chalk'
-import {execSync} from 'node:child_process'
+import {
+  ENVIRONMENTS,
+  bumpVersion,
+  nextVersionCode,
+  type BumpType,
+  type Environment,
+} from "@capucho/core";
+import { Args, Command, Flags } from "@oclif/core";
+import chalk from "chalk";
+import { readVersionCodes, writeVersionCodes } from "../../pipeline/flavour.js";
+import {
+  readAppVersion,
+  requireProjectConfig,
+  writeAppVersion,
+} from "../../utils/config.js";
 
-import VersionSync from './sync.js'
-
-// @ts-ignore - oclif v4 has internal typing incompatibility issues with arg definitions
 export default class VersionBump extends Command {
-  static args = {
-    type: {
-      description: 'Version bump type (major, minor, patch)',
-      name: 'type',
-      options: ['major', 'minor', 'patch'],
-      required: true,
-    },
-  } as const
+  static override description =
+    "Raise the app's semantic version, and optionally an environment's build number";
 
-  static description = 'Bump version and sync to env files'
-  static flags = {
+  static override examples = [
+    "<%= config.bin %> version bump patch",
+    "<%= config.bin %> version bump minor --environment staging",
+  ];
+
+  // Declared with `Args` rather than a bare object. The previous version used a
+  // plain object cast `as const` and needed two @ts-ignore comments to compile,
+  // which also meant the option list was never actually enforced.
+  static override args = {
+    type: Args.string({
+      description: "Which part of the version to raise",
+      options: ["major", "minor", "patch"],
+      required: true,
+    }),
+  };
+
+  static override flags = {
     environment: Flags.string({
-      char: 'e',
-      description: 'Environment whose version code is incremented',
-      options: ['dev', 'staging', 'prod'],
+      char: "e",
+      options: [...ENVIRONMENTS],
+      description: "Also increment this environment's native build number",
     }),
-    'git-tag-version': Flags.boolean({
-      allowNo: true,
-      default: false, // Default to false as per legacy script behavior
-      description: 'Create a git tag',
-    }),
-  }
+  };
 
   async run(): Promise<void> {
-    // @ts-ignore - oclif typing issue with parse method
-    const {args, flags} = await this.parse(VersionBump)
+    const { args, flags } = await this.parse(VersionBump);
+    const appDir = process.cwd();
+    const project = requireProjectConfig(appDir);
 
-    const typedArgs = args as {type: string}
-    this.log(chalk.magenta(`[0] Bumping version (${typedArgs.type})...`))
+    const previous = readAppVersion(appDir);
+    const next = bumpVersion(previous, args.type as BumpType);
 
-    try {
-      const gitTagFlag = flags['git-tag-version'] ? '' : '--no-git-tag-version'
-      execSync(`npm version ${typedArgs.type} ${gitTagFlag}`, {cwd: process.cwd(), stdio: 'inherit'})
+    writeAppVersion(appDir, next);
+    this.log(`  version  ${chalk.dim(previous)} -> ${chalk.green(next)}`);
 
-      // After bumping, run sync
-      // We can invoke the command helper or run the logic.
-      // Invoking the command class directly is acceptable in Oclif if structured right,
-      // but calling the run method manually can be tricky with parsing.
-      // Easier to just spawn it or duplicate the sync logic call?
-      // Better: Instantiate VersionSync and run it.
-
-      // Actually, let's just use execSync to call our own CLI or just use the sync logic if we exported it?
-      // Since we are inside the CLI, we can't easily "exec" ourselves without knowing the bin name.
-      // But we can import the run method.
-
-      // Let's just run the sync command logic logic via a shared service?
-      // Or just exec `npm run sync-version` if the user has it? NO, we want to replace the scripts.
-
-      // I will just spawn the sync command using Oclif's Config.runCommand is complicated.
-      // SImple approach: `await VersionSync.run(['--bump'])` (handles args parsing again)
-
-      this.log(chalk.green('[1] Syncing version to env files...'))
-      const syncArgs = ['--bump']
-      if (flags.environment) {
-        syncArgs.push('--environment', flags.environment)
-      }
-      await VersionSync.run(syncArgs)
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.error(errorMessage)
+    if (flags.environment) {
+      const environment = flags.environment as Environment;
+      const codes = nextVersionCode(readVersionCodes(appDir, project), environment);
+      writeVersionCodes(appDir, project, codes);
+      this.log(
+        `  build    ${environment} -> ${chalk.green(String(codes[environment]))}`,
+      );
     }
+
+    this.log("");
+    // No git tag, and no commit. The old command shelled out to
+    // `npm version <type> --no-git-tag-version`, which in a workspace bumped
+    // whichever package.json was nearest the process directory. Tagging stays
+    // with git and CI, where the release actually happens.
+    this.log(
+      chalk.dim("  Nothing was committed or tagged. Commit the change yourself."),
+    );
   }
 }

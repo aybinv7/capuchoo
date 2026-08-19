@@ -1,104 +1,102 @@
-import {Command, Flags} from '@oclif/core'
-import fs from 'fs-extra'
-import path from 'node:path'
+import { ENVIRONMENTS, versionEnv, type Environment } from "@capucho/core";
+import { Command, Flags } from "@oclif/core";
+import chalk from "chalk";
+import {
+  readVersionCodes,
+  resolveFlavour,
+  writeVersionCodes,
+} from "../../pipeline/flavour.js";
+import { readAppVersion, requireProjectConfig } from "../../utils/config.js";
+import { nextVersionCode } from "@capucho/core";
 
 export default class VersionSync extends Command {
-  static description = 'Sync version from package.json to environment files'
-static flags = {
+  static override description =
+    "Show, or advance, the version and build number used for each flavour";
+
+  static override examples = [
+    "<%= config.bin %> version sync",
+    "<%= config.bin %> version sync --bump --environment staging",
+  ];
+
+  static override flags = {
     bump: Flags.boolean({
-      char: 'b',
+      char: "b",
       default: false,
-      description: 'Bump version code',
+      description: "Increment the build number for the selected environments",
     }),
     environment: Flags.string({
-      char: 'e',
-      description: 'Target environment (dev, staging, prod)',
-      required: false,
+      char: "e",
+      options: [...ENVIRONMENTS],
+      description: "Limit to one environment",
     }),
-  }
+    json: Flags.boolean({ default: false, description: "Machine-readable output" }),
+  };
 
   async run(): Promise<void> {
-    const {flags} = await this.parse(VersionSync)
-    const root = process.cwd()
+    const { flags } = await this.parse(VersionSync);
+    const appDir = process.cwd();
 
-    // Read package.json
-    const packageJsonPath = path.join(root, 'package.json')
-    if (!(await fs.pathExists(packageJsonPath))) {
-      this.error('package.json not found in current directory')
-    }
+    const project = requireProjectConfig(appDir);
+    const version = readAppVersion(appDir);
 
-    const packageJson = await fs.readJson(packageJsonPath)
-    const {version} = packageJson
+    const targets: Environment[] = flags.environment
+      ? [flags.environment as Environment]
+      : [...ENVIRONMENTS];
 
-    // Read or create version-code.json
-    const versionCodePath = path.join(root, 'version-code.json')
-    let versionCodes: Record<string, number> = {dev: 1, prod: 1, staging: 1}
-
-    if (await fs.pathExists(versionCodePath)) {
-      versionCodes = await fs.readJson(versionCodePath)
-    }
-
-    // Env file mappings - TODO: Make this configurable? For now hardcoded to match legacy
-    const envFiles: Record<string, string> = {
-      dev: path.join(root, 'build/dev/.env.dev'),
-      prod: path.join(root, 'build/prod/.env.prod'),
-      staging: path.join(root, 'build/staging/.env.staging'),
-    }
-
-    const targetEnvs = flags.environment ? [flags.environment] : Object.keys(envFiles)
-
-    this.log(`\n📦 Syncing version: ${version}\n`)
-
-    // Pre-calculate version codes if needed to avoid modifying during async operations
+    let codes = readVersionCodes(appDir, project);
     if (flags.bump) {
-      for (const env of targetEnvs) {
-        versionCodes[env] = (versionCodes[env] || 0) + 1
+      for (const environment of targets) {
+        codes = nextVersionCode(codes, environment);
+      }
+      writeVersionCodes(appDir, project, codes);
+    }
+
+    const rows = targets.map((environment) => {
+      const flavour = resolveFlavour(appDir, project, environment);
+      return {
+        environment,
+        versionCode: codes[environment],
+        envFile: flavour.config.envFile,
+        // A flavour with no env file on disk cannot be built, and that is worth
+        // saying here rather than at deploy time.
+        present: flavour.envFile !== null,
+        variables: versionEnv(version, codes[environment]),
+      };
+    });
+
+    if (flags.json) {
+      this.log(JSON.stringify({ version, flavours: rows }, null, 2));
+      return;
+    }
+
+    this.log("");
+    this.log(`  version ${chalk.green(version)} ${chalk.dim("(from package.json)")}`);
+    this.log("");
+
+    for (const row of rows) {
+      const marker = row.present ? chalk.green("*") : chalk.red("!");
+      this.log(
+        `  ${marker} ${row.environment.padEnd(8)} build ${String(row.versionCode).padEnd(5)} ${chalk.dim(row.envFile)}`,
+      );
+      if (!row.present) {
+        this.log(chalk.dim(`      missing - this flavour cannot be built`));
       }
     }
 
-    // Process environments sequentially using a recursive approach to satisfy lint rules
-    const processEnv = async (index: number): Promise<void> => {
-      if (index >= targetEnvs.length) return;
-
-      const env = targetEnvs[index]
-      const envPath = envFiles[env]
-      if (!envPath) {
-        this.warn(`Unknown environment: ${env}`)
-        return processEnv(index + 1)
-      }
-
-      if (!(await fs.pathExists(envPath))) {
-        this.warn(`⚠ File not found: ${envPath}`)
-        return processEnv(index + 1)
-      }
-
-      let content = await fs.readFile(envPath, 'utf8')
-
-      const versionCode = versionCodes[env]
-
-      // Replace logic
-      if (content.includes('VITE_APP_VERSION=')) {
-        content = content.replaceAll(/VITE_APP_VERSION=.*/g, `VITE_APP_VERSION=${version}`)
-      }
-
-      if (content.includes('VERSION_CODE=')) {
-        content = content.replaceAll(/VERSION_CODE=.*/g, `VERSION_CODE=${versionCode}`)
-      }
-
-      if (content.includes('BUILD_NUMBER=')) {
-        content = content.replaceAll(/BUILD_NUMBER=.*/g, `BUILD_NUMBER=${versionCode}`)
-      }
-
-      await fs.writeFile(envPath, content)
-      this.log(`  ✓ ${path.basename(envPath)}: v${version} (code: ${versionCode})`)
-
-      return processEnv(index + 1)
+    this.log("");
+    // The old `version sync` command rewrote these three variables into each
+    // committed .env file. It no longer writes to them at all - the deploy
+    // pipeline passes the values as environment variables, so nothing in the
+    // working tree changes. Only version-code.json is persisted.
+    this.log(
+      chalk.dim(
+        "  These values are passed to the build as VITE_APP_VERSION, VERSION_CODE\n" +
+          "  and BUILD_NUMBER. The env files are read, never written.",
+      ),
+    );
+    if (flags.bump) {
+      this.log(chalk.dim(`  ${project.versionCodeFile} updated.`));
     }
-
-    await processEnv(0)
-
-    // Save version codes
-    await fs.writeJson(versionCodePath, versionCodes, {spaces: 2})
-    this.log(`\n✓ Version codes saved to version-code.json\n`)
+    this.log("");
   }
 }

@@ -7,15 +7,38 @@ packages:
 # package that forgets to write "catalog:" still lands on the pinned version.
 catalogMode: prefer
 
-# pnpm >=10 requires build scripts to be approved explicitly.
-# Keep this list minimal and reviewed - every entry here runs arbitrary
-# install-time code.
-onlyBuiltDependencies:
-  - '@capacitor/cli'
-  - '@parcel/watcher'
-  - esbuild
-  - sharp
-  - unrs-resolver
+# pnpm requires dependency build scripts to be approved explicitly. Every
+# entry here runs arbitrary install-time code, so each one is a decision.
+# `false` is meaningful: it records that the package was reviewed and refused,
+# and stops pnpm asking again.
+allowBuilds:
+  # Native binaries these packages download or compile for the host platform.
+  '@capacitor/cli': true
+  '@firebase/util': set this to true or false
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
+  maplibre-gl: set this to true or false
+  protobufjs: set this to true or false
+  sharp: true
+  swiftlint: set this to true or false
+  unrs-resolver: true
+  vue-demi: set this to true or false
+  # vue-demi's postinstall picks the Vue 2 or Vue 3 shim. Without it, every
+  # library built on vue-demi (@vueuse, pinia plugins) resolves to a stub.
+  vue-demi: true
+  # protobufjs generates its runtime helpers in postinstall.
+  protobufjs: true
+
+  # Reviewed and refused.
+  # Pulled in transitively by a dev tool; this workspace drives pnpm through
+  # Vite+, so yarn never needs to install itself.
+  yarn: false
+  # Downloads a macOS-only binary for a lint task nothing in CI runs.
+  swiftlint: false
+  # Optional postinstall; the published artefacts are already usable.
+  '@firebase/util': false
+  maplibre-gl: false
 
 # Single source of truth for versions shared across packages. A package refers
 # to an entry with "catalog:" instead of a literal range, so bumping Capacitor

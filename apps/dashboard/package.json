@@ -1,5 +1,5 @@
 {
-  "name": "capgo-front",
+  "name": "@capucho/dashboard",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,8 @@
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
     "lint:eslint": "eslint . --fix --cache",
     "lint": "run-s lint:*",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "test": "echo \"no tests yet\" && exit 0"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -100,5 +101,5 @@
     "vite-plugin-vue-devtools": "^8.0.3",
     "vue-tsc": "^3.1.1"
   },
-  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
+  "description": "Capucho dashboard - organizations, apps, channels, releases"
 }
