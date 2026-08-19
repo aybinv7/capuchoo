@@ -1,0 +1,69 @@
+import dotenv from "dotenv";
+import Joi from "joi";
+import { ServerConfig } from "@/types";
+
+dotenv.config();
+
+const envSchema = Joi.object({
+  NODE_ENV: Joi.string()
+    .valid("development", "production", "test")
+    .default("development"),
+  PORT: Joi.number().default(3000),
+
+  SUPABASE_URL: Joi.string().uri().required(),
+  SUPABASE_KEY: Joi.string().required(),
+  SUPABASE_SERVICE_KEY: Joi.string().optional(),
+  BUCKET_NAME: Joi.string().default("updates"),
+
+  CORS_ORIGIN: Joi.alternatives()
+    .try(Joi.string(), Joi.array().items(Joi.string()))
+    .default("*"),
+
+  MAX_FILE_SIZE: Joi.number().default(100 * 1024 * 1024), // 100MB
+}).unknown(true);
+
+const { error, value: envVars } = envSchema.validate(process.env);
+
+if (error) {
+  throw new Error(
+    `Environment variable validation error: ${error.details
+      .map((d) => d.message)
+      .join(", ")}`
+  );
+}
+
+const config: ServerConfig = {
+  port: envVars.PORT,
+  supabase: {
+    url: envVars.SUPABASE_URL,
+    key: envVars.SUPABASE_KEY,
+    serviceKey: envVars.SUPABASE_SERVICE_KEY,
+    bucketName: envVars.BUCKET_NAME,
+  },
+  security: {
+    rateLimit: {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 10000, // limit each IP to 100 requests per windowMs
+    },
+    cors: {
+      origin: envVars.CORS_ORIGIN,
+      credentials: false, // Set to true if you need credentials
+    },
+  },
+  upload: {
+    maxFileSize: envVars.MAX_FILE_SIZE,
+    allowedMimeTypes: [
+      "application/zip",
+      "application/octet-stream",
+      "application/x-zip-compressed",
+    ],
+  },
+};
+
+if (!config.supabase.url || !config.supabase.key) {
+  throw new Error("Supabase URL and API key are required");
+}
+
+export default config;
+
+export const { port, supabase, security, upload } = config;
