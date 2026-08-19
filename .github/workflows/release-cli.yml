@@ -1,0 +1,60 @@
+name: release-cli
+
+# Publishes packages/cli to npm when a tag like cli-v0.2.0 is pushed.
+#
+# The tag is the trigger and the record: git owns version history, npm owns
+# distribution. Nothing here writes back to the repository, so there is no
+# bot commit racing a developer push (the old onPushToMain workflow did that).
+on:
+  push:
+    tags: ['cli-v*']
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Build and pack without publishing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: voidzero-dev/setup-vp@07d0b0e993009eb3b908ea06e49e88e933b728a2 # v1.17.0
+        with:
+          node-version: '24'
+          cache: true
+
+      - run: vp install --frozen-lockfile
+
+      # Only the CLI and everything it depends on.
+      - run: vp run -t capucho-cli#build
+
+      - run: vp run --filter capucho-cli test
+
+      - name: Verify the tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF_NAME#cli-v}"
+          pkg="$(node -p "require('./packages/cli/package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::tag cli-v$tag does not match packages/cli version $pkg"
+            exit 1
+          fi
+
+      - name: Publish
+        if: ${{ github.event_name == 'push' || !inputs.dry-run }}
+        working-directory: packages/cli
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Pack only (dry run)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+        working-directory: packages/cli
+        run: npm pack --dry-run

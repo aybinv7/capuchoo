@@ -1,4 +1,0 @@
-﻿
-> capucho@12.0.0 type-check C:\Users\PC\code\ayb\project-0\capucho-app
-> vue-tsc --noEmit
-

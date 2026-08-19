@@ -1,33 +1,75 @@
 name: Capucho deploy
 description: Build and deploy an OTA or native Capacitor release through Capucho.
 
+# Reusable action for application repositories that are NOT part of this
+# monorepo. It runs the published CLI rather than building it from source, so
+# consumers do not need this repository's toolchain, lockfile or Node version.
 inputs:
   channel:
-    description: Capucho channel name.
+    description: Capucho channel name. Its environment selects the build flavour.
     required: true
   project-directory:
     description: Application directory containing .capucho/project.json.
     required: true
-  release-notes:
-    description: Release notes shown in Capucho.
-    required: false
-    default: ""
   type:
-    description: Deployment type.
+    description: Deployment type - ota or native.
     required: false
     default: ota
+  build-type:
+    description: For type=native - release or debug.
+    required: false
+    default: release
+  release-notes:
+    description: Release notes shown to users in the update prompt.
+    required: false
+    default: ''
+  cli-version:
+    description: Version of capucho-cli to run. Pin this in production.
+    required: false
+    default: latest
+
+outputs:
+  version:
+    description: Semantic version that was published.
+    value: ${{ steps.deploy.outputs.version }}
 
 runs:
   using: composite
   steps:
-    - name: Install Capucho CLI dependencies
-      shell: bash
-      working-directory: ${{ github.action_path }}
-      run: |
-        corepack enable
-        pnpm install --frozen-lockfile
-        pnpm build
     - name: Deploy through Capucho
+      id: deploy
       shell: bash
       working-directory: ${{ inputs.project-directory }}
-      run: node "$GITHUB_ACTION_PATH/bin/run.js" deploy "${{ inputs.type }}" --channel "${{ inputs.channel }}" --note "${{ inputs.release-notes }}" --yes
+      run: |
+        set -euo pipefail
+
+        if [ -z "${CAPUCHO_ENDPOINT:-}" ] || [ -z "${CAPUCHO_API_KEY:-}" ]; then
+          echo "::error::CAPUCHO_ENDPOINT and CAPUCHO_API_KEY must be passed as env to this step."
+          exit 1
+        fi
+
+        args=(deploy "${{ inputs.type }}"
+              --channel "${{ inputs.channel }}"
+              --note "${{ inputs.release-notes }}"
+              --yes
+              --json)
+
+        if [ "${{ inputs.type }}" = "native" ]; then
+          args+=(--type "${{ inputs.build-type }}")
+        fi
+
+        npx --yes "capucho-cli@${{ inputs.cli-version }}" "${args[@]}" | tee capucho-deploy.json
+
+        version="$(node -p "JSON.parse(require('node:fs').readFileSync('capucho-deploy.json','utf8')).version ?? ''")"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Surface the deploy log on failure
+      if: failure()
+      shell: bash
+      working-directory: ${{ inputs.project-directory }}
+      run: |
+        if [ -f capucho-deploy.log ]; then
+          echo '::group::capucho-deploy.log'
+          cat capucho-deploy.log
+          echo '::endgroup::'
+        fi

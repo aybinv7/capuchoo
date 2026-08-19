@@ -1,0 +1,111 @@
+name: deploy-app
+
+# Ships an application through the Capucho CLI.
+#
+# This workflow deliberately contains no build logic of its own: it installs the
+# toolchain, then hands the whole pipeline to `capucho deploy`. The CLI resolves
+# the flavour, generates assets, builds the web bundle, applies the native
+# configuration, compiles or zips the artefact, and uploads it. That way local
+# deploys and CI deploys run exactly the same code path.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Workspace directory of the app to ship'
+        required: true
+        type: choice
+        options: [apps/template]
+        default: apps/template
+      type:
+        description: 'ota = web bundle only, native = APK'
+        required: true
+        type: choice
+        options: [ota, native]
+        default: ota
+      channel:
+        description: 'Capucho channel (its environment decides the flavour)'
+        required: true
+        type: string
+      build-type:
+        description: 'native only: release needs signing secrets'
+        type: choice
+        options: [release, debug]
+        default: release
+      release-notes:
+        description: 'Shown to users in the update prompt'
+        type: string
+        default: ''
+
+concurrency:
+  group: deploy-${{ inputs.app }}-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Scope CAPUCHO_API_KEY to a protected environment so production needs a
+    # human approval.
+    environment: ${{ inputs.channel }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: voidzero-dev/setup-vp@07d0b0e993009eb3b908ea06e49e88e933b728a2 # v1.17.0
+        with:
+          node-version: '24'
+          cache: true
+
+      - run: vp install --frozen-lockfile
+
+      # The app imports @capucho/updater from dist, and the CLI itself is a
+      # workspace package, so both have to be built before the deploy runs.
+      - run: vp run libs
+      - run: vp run -t capucho-cli#build
+
+      - uses: actions/setup-java@v5
+        if: inputs.type == 'native'
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Restore the release keystore
+        if: inputs.type == 'native' && inputs['build-type'] == 'release'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set; a release build cannot be signed."
+            echo "::error::Set the signing secrets, or run this workflow with build-type=debug."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "${{ inputs.app }}/android/release.keystore"
+
+      - name: Deploy
+        working-directory: ${{ inputs.app }}
+        env:
+          CAPUCHO_ENDPOINT: ${{ secrets.CAPUCHO_ENDPOINT }}
+          CAPUCHO_API_KEY: ${{ secrets.CAPUCHO_API_KEY }}
+          # Consumed by the release signingConfig in android/app/build.gradle.
+          CAPUCHO_KEYSTORE_FILE: release.keystore
+          CAPUCHO_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          CAPUCHO_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          CAPUCHO_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          node "$GITHUB_WORKSPACE/packages/cli/bin/run.js" deploy "${{ inputs.type }}" \
+            --channel "${{ inputs.channel }}" \
+            --note "${{ inputs.release-notes }}" \
+            ${{ inputs.type == 'native' && format('--type {0}', inputs['build-type']) || '' }} \
+            --yes
+
+      - name: Always surface the deploy log
+        if: always()
+        working-directory: ${{ inputs.app }}
+        run: |
+          if [ -f capucho-deploy.log ]; then
+            echo '::group::capucho-deploy.log'
+            cat capucho-deploy.log
+            echo '::endgroup::'
+          fi
+
+      - name: Remove the keystore from the runner
+        if: always()
+        run: rm -f "${{ inputs.app }}/android/release.keystore"

@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: voidzero-dev/setup-vp@07d0b0e993009eb3b908ea06e49e88e933b728a2 # v1.17.0
+        with:
+          node-version: '24'
+          cache: true
+
+      - run: vp install --frozen-lockfile
+
+      # Format, lint and type check the whole workspace in one pass.
+      - run: vp check
+
+      # `vp run -r` walks the workspace dependency graph, so @capucho/core is
+      # built before @capucho/updater, which is built before the apps.
+      - run: vp run -r build
+
+      - run: vp run -r test
