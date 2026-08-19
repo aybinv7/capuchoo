@@ -1,0 +1,11 @@
+{
+  "general": {
+    "checkpointing": {
+      "enabled": true
+    }
+  },
+  "ide": {
+    "enabled": true
+  },
+  "$version": 2
+}

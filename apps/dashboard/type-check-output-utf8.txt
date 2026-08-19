@@ -1,0 +1,10 @@
+﻿
+> capgo-front@0.0.0 type-check C:\Users\PC\code\ayb\project-0\capucho-front
+> vue-tsc --build
+
+src/services/products.service.ts(1,45): error TS2307: Cannot find module '../types/product.types' or its corresponding type declarations.
+src/stores/products.store.ts(4,50): error TS2307: Cannot find module '../types/product.types' or its corresponding type declarations.
+src/stores/products.store.ts(12,28): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/stores/products.store.ts(45,47): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/stores/products.store.ts(60,47): error TS7006: Parameter 'p' implicitly has an 'any' type.
+ ELIFECYCLE  Command failed with exit code 2.
