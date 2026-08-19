@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment files.
+#
+# Real secrets live in .env / .env.local and never enter git. The per-flavour
+# files under build/<env>/ are committed on purpose: they hold the public build
+# configuration (app id, display name, update endpoint, channel) that Trapeze
+# and Vite both read, and the CLI needs them present to resolve a flavour.
+.env
+.env.*
+!.env.example
+!build/**/.env.*
+
+# Editor directories and files
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# AI agent worktrees
+.claude/worktrees/
+
+# Capacitor / native build output
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+ios/App/Pods/
+ios/App/build/
+*.apk
+*.aab
+*.ipa
+*.keystore
+!debug.keystore
+
+# Capucho local state. project.json IS committed (it identifies the app);
+# config.json holds the API key and must not be.
+.capucho/config.json
+.capucho/cloud-cache.json
+capucho-deploy.log
+
+# Build artefacts produced by `capucho deploy`
+*.tsbuildinfo
+capucho-bundle-*.zip
+
+# Transient tool output that earlier repos committed by mistake
+type-error*.txt
+type-errors*.txt
+type-check-*.txt
+tsc_error.txt

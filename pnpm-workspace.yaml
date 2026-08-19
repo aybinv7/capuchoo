@@ -1,0 +1,65 @@
+packages:
+  - packages/*
+  - apps/*
+  - services/*
+
+# Resolve a bare dependency range to the catalog entry when one exists, so a
+# package that forgets to write "catalog:" still lands on the pinned version.
+catalogMode: prefer
+
+# pnpm >=10 requires build scripts to be approved explicitly.
+# Keep this list minimal and reviewed - every entry here runs arbitrary
+# install-time code.
+onlyBuiltDependencies:
+  - '@capacitor/cli'
+  - '@parcel/watcher'
+  - esbuild
+  - sharp
+  - unrs-resolver
+
+# Single source of truth for versions shared across packages. A package refers
+# to an entry with "catalog:" instead of a literal range, so bumping Capacitor
+# or TypeScript is a one-line change here rather than five package.json edits.
+catalog:
+  # Vite+ toolchain. `vite` is deliberately an alias: Vite+ ships its own Vite
+  # core, and the `overrides` + `peerDependencyRules` blocks below stop every
+  # package that peer-depends on upstream `vite` from pulling a second copy.
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.9
+  vite-plus: 0.2.9
+
+  # Capacitor runtime - the updater package, the plugin and the apps must agree
+  # exactly, otherwise the native bridge ends up loading two copies.
+  '@capacitor/android': ^8.0.0
+  '@capacitor/app': ^8.0.0
+  '@capacitor/cli': ^8.0.0
+  '@capacitor/core': ^8.0.0
+  '@capacitor/device': ^8.0.0
+  '@capacitor/file-transfer': ^2.0.5
+  '@capacitor/filesystem': ^8.1.2
+  '@capacitor/ios': ^8.0.0
+  '@capacitor/network': ^8.0.1
+  '@capacitor/preferences': ^8.0.0
+  '@capawesome-team/capacitor-file-opener': ^8.0.1
+  '@capgo/capacitor-updater': ^8.51.8
+
+  # Native project configuration and icon generation. The CLI drives both, so
+  # it needs the same versions the apps were validated against.
+  '@capacitor/assets': ^3.0.5
+  '@trapezedev/configure': ^7.1.3
+
+  # Shared toolchain. TypeScript stays on 5.x rather than the 7.x the Vite+
+  # generator suggests: oclif's typings and vue-tsc are not validated on 7 yet.
+  # Revisit as one deliberate upgrade, not as a side effect of scaffolding.
+  '@types/node': ^24.10.4
+  axios: ^1.19.0
+  typescript: ^5.9.3
+  vue: ^3.5.25
+
+overrides:
+  vite: 'catalog:'
+
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: '*'
