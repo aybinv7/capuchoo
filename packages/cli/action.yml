@@ -1,0 +1,33 @@
+name: Capucho deploy
+description: Build and deploy an OTA or native Capacitor release through Capucho.
+
+inputs:
+  channel:
+    description: Capucho channel name.
+    required: true
+  project-directory:
+    description: Application directory containing .capucho/project.json.
+    required: true
+  release-notes:
+    description: Release notes shown in Capucho.
+    required: false
+    default: ""
+  type:
+    description: Deployment type.
+    required: false
+    default: ota
+
+runs:
+  using: composite
+  steps:
+    - name: Install Capucho CLI dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        corepack enable
+        pnpm install --frozen-lockfile
+        pnpm build
+    - name: Deploy through Capucho
+      shell: bash
+      working-directory: ${{ inputs.project-directory }}
+      run: node "$GITHUB_ACTION_PATH/bin/run.js" deploy "${{ inputs.type }}" --channel "${{ inputs.channel }}" --note "${{ inputs.release-notes }}" --yes
