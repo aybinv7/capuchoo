@@ -47,7 +47,7 @@
     "@types/node": "catalog:",
     "oclif": "^4",
     "typescript": "catalog:",
-    "vitest": "^4.1.10"
+    "vite-plus": "catalog:"
   },
   "oclif": {
     "bin": "capucho",

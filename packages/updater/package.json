@@ -44,7 +44,7 @@
     "@capawesome-team/capacitor-file-opener": "catalog:",
     "@capgo/capacitor-updater": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^4.1.10",
+    "vite-plus": "catalog:",
     "vue": "catalog:"
   },
   "peerDependencies": {
