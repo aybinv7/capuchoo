@@ -3,6 +3,9 @@
 Everything found while merging the five Capucho repositories into one workspace, what it broke, and
 what replaced it. Ordered by how much damage each item could do, not by where it lived.
 
+A later pass over the backend and dashboard is in [BACKEND-AUDIT.md](./BACKEND-AUDIT.md) - it covers
+why the dashboard never showed a single device or log row.
+
 Two things need action from you and are not fixed by any commit here:
 
 1. **Rotate the Supabase keys.** `capucho-back/.env` was committed with seven populated values,

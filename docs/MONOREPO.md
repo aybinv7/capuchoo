@@ -108,6 +108,14 @@ breaks every subsequent pnpm command.
    `sig/presalio-monorepo` and `ayb/capubridge`.
 6. `vp install`.
 
+`services/back` and `apps/dashboard` are the exception to step 5: they rely on the root install and
+declare no `vite-plus` of their own. Both pin an older `@types/node` than the catalog resolves for,
+so a direct dependency made pnpm install a _second_ `@voidzero-dev/vite-plus-core` under a different
+peer set - and the dashboard's `vite.config.ts` then mixed types from both copies, failing `vue-tsc`
+with `TS2321: Excessive stack depth`. `vite-plus/test` resolves from the root either way, so
+`"test": "vp test --run"` works without the dependency. Bump their `@types/node` before adding it
+back.
+
 Do not add a `check` script - `vp check` covers the workspace in one pass, and a per-package one
 would run the linter N times over the same files.
 
