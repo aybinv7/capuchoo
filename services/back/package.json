@@ -19,7 +19,8 @@
     "start": "node dist/server.js",
     "dev": "nodemon",
     "dev:debug": "nodemon --inspect --exec ts-node-dev -r tsconfig-paths/register src/server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vp test --run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",

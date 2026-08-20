@@ -46,6 +46,16 @@ class StatsController {
         appId: normalized.appId,
         platform: normalized.platform,
         version: normalized.version,
+        // Everything below was received and then dropped here, which is why
+        // the dashboard's device columns were permanently blank.
+        version_name: normalized.version,
+        versionBuild: normalized.versionBuild,
+        isEmulator: normalized.isEmulator,
+        isProd: normalized.isProd,
+        channel: req.body.channel,
+        versionOs: req.body.version_os || req.body.versionOs,
+        pluginVersion: req.body.plugin_version || req.body.pluginVersion,
+        oldVersionName: req.body.old_version_name || req.body.oldVersionName,
       });
 
       // Official Capgo response format

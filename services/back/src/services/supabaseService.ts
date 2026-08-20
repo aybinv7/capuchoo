@@ -163,6 +163,38 @@ class SupabaseService implements ISupabaseService {
     }
   }
 
+  /**
+   * Insert or update in one round trip, keyed on `onConflict`.
+   *
+   * Only the keys present in `data` are written, so an upsert of a subset of
+   * columns leaves the rest of an existing row untouched - which is what the
+   * device telemetry path needs: a stats call knows the platform and version,
+   * a channel assignment knows the channel, and neither should blank the
+   * other's columns.
+   */
+  async upsert(
+    table: string,
+    data: any,
+    options: { onConflict: string; select?: string },
+  ): Promise<any> {
+    try {
+      const { data: result, error } = await this.client
+        .from(table)
+        .upsert(data, { onConflict: options.onConflict })
+        .select(options.select || "*");
+
+      if (error) {
+        logger.error("Supabase upsert error", { table, data, error });
+        throw new DatabaseError(`Upsert failed: ${error.message}`);
+      }
+
+      return result;
+    } catch (error) {
+      logger.error("Supabase service upsert error", { table, data, error });
+      throw error;
+    }
+  }
+
   async update(table: string, data: any, filter: any): Promise<any> {
     try {
       let query = this.client.from(table).update(data);

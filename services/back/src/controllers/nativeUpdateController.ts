@@ -9,6 +9,8 @@ import {
 import config from "@/config";
 import fileService from "@/services/fileService";
 import supabaseService from "@/services/supabaseService";
+import deviceService from "@/services/deviceService";
+import updateService from "@/services/updateService";
 import logger from "@/utils/logger";
 import semver from "semver";
 import multer, { FileFilterCallback } from "multer";
@@ -137,43 +139,58 @@ class NativeUpdateController {
         throw new ValidationError("Missing required parameters: event, platform");
       }
 
+      // native_update_logs.app_id is NOT NULL and its device_id is a foreign
+      // key into devices(id) - not the plugin's device string. Both were wrong,
+      // so every insert on this endpoint was rejected.
+      const appIdString = req.body.appId || req.body.app_id;
+      const appUuid = appIdString ? await updateService.resolveAppUuid(appIdString) : null;
+
+      if (!appUuid) {
+        throw new ValidationError("Unknown app_id for native update log");
+      }
+
+      const channelId = channel ? await deviceService.resolveChannelId(appUuid, channel) : null;
+
+      const device = device_id
+        ? await deviceService.registerDevice({
+            appUuid,
+            deviceId: device_id,
+            platform,
+            channelId,
+            channelOverride: channel,
+            versionBuild:
+              current_version_code !== undefined && current_version_code !== null
+                ? String(current_version_code)
+                : undefined,
+            versionOs: req.body.version_os || req.body.versionOs,
+            pluginVersion: req.body.plugin_version || req.body.pluginVersion,
+          })
+        : null;
+
       const logRecord: NativeUpdateLogRecord = {
+        app_id: appUuid,
         event,
         platform,
-        device_id,
         current_version_code,
         new_version,
         new_version_code,
         channel,
         error_message,
+        ...(device ? { device_id: device.id } : {}),
       };
 
       await this.supabaseService.insert("native_update_logs", [logRecord]);
 
-      // Also register the device in device_channels if it doesn't exist
-      // This ensures the device appears in the dashboard
-      if (device_id && req.body.appId && logRecord.platform) {
-        const existing = await this.supabaseService.query("device_channels", {
-          match: {
-            app_id: req.body.appId,
-            device_id: device_id,
-          },
-        });
-
-        if (!existing.data || existing.data.length === 0) {
-          await this.supabaseService.insert("device_channels", [
-            {
-              app_id: req.body.appId,
-              device_id: device_id,
-              channel: logRecord.channel || "stable",
-              platform: logRecord.platform,
-              updated_at: new Date().toISOString(),
-            },
-          ]);
-        }
+      if (device && channelId) {
+        await deviceService.linkChannel(device.id, channelId, platform);
       }
 
-      logger.info("Native update event logged", { event, platform, device_id });
+      logger.info("Native update event logged", {
+        event,
+        platform,
+        device_id,
+        deviceUuid: device?.id ?? null,
+      });
 
       res.json({ success: true });
     } catch (error) {

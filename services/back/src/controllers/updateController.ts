@@ -102,9 +102,13 @@ class UpdateController {
         userAgent: req.get("User-Agent"),
       });
 
+      // "download_complete", not "downloaded": update_logs.action has a CHECK
+      // constraint (migration 003) and "downloaded" is not one of its values,
+      // so every row this endpoint wrote was rejected.
       await this.updateService.logStats({
         ...stats,
-        status: "downloaded",
+        action: "download_complete",
+        status: "download_complete",
       });
 
       res.json({ success: true });
@@ -132,7 +136,8 @@ class UpdateController {
 
       await this.updateService.logStats({
         ...stats,
-        status: "applied",
+        action: "install",
+        status: "install",
       });
 
       res.json({ success: true });
@@ -160,7 +165,8 @@ class UpdateController {
 
       await this.updateService.logStats({
         ...stats,
-        status: "failed",
+        action: "update_failed",
+        status: "update_failed",
       });
 
       res.json({ success: true });

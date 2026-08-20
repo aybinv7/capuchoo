@@ -1,12 +1,14 @@
 import { IUpdateService, UpdateRequest, UpdateResponse, UpdateRecord, StatsRequest } from "@/types";
 import supabaseService from "./supabaseService";
+import deviceService from "./deviceService";
+import { statsVersion } from "./telemetry";
 import logger from "@/utils/logger";
 
 class UpdateService implements IUpdateService {
   /**
    * Resolve string App ID (e.g. "com.example.app") to UUID
    */
-  private async resolveAppUuid(appIdString: string): Promise<string | null> {
+  async resolveAppUuid(appIdString: string): Promise<string | null> {
     try {
       // 1. Try exact match
       let result = await supabaseService.query("apps", {
@@ -178,6 +180,17 @@ class UpdateService implements IUpdateService {
         }
       }
 
+      // Record the device before any of the "no update" exits below.
+      //
+      // This used to happen only on a successful OTA delivery, which is the
+      // rarest outcome of a check - so a device that was up to date, or on a
+      // channel with no bundle, was never recorded at all.
+      const device = await this.recordDeviceActivity({
+        appUuid,
+        request,
+        channelId: channelData.id,
+      });
+
       // 3. NATIVE FIRST: Check if there is a newer NATIVE binary available for this channel
       const userNativeVersion = parseInt(request.versionCode || request.versionBuild || "0") || 0;
 
@@ -302,40 +315,14 @@ class UpdateService implements IUpdateService {
         channel: channelToUse,
       });
 
-      if (request.deviceId) {
-        // Log the update event
-        await supabaseService.insert("update_logs", [
-          {
-            device_id: request.deviceId,
-            app_id: appUuid,
-            current_version: request.version_name,
-            new_version: latestUpdate.version_name,
-            platform: request.platform,
-            action: "get",
-            created_at: new Date().toISOString(),
-          },
-        ]);
-
-        // Also register the device in device_channels if it doesn't exist
-        const { data: existing } = await supabaseService
-          .getClient()
-          .from("device_channels")
-          .select("id")
-          .eq("device_id", request.deviceId)
-          .eq("channel_id", channelData.id)
-          .maybeSingle();
-
-        if (!existing) {
-          await supabaseService.insert("device_channels", [
-            {
-              device_id: request.deviceId,
-              channel_id: channelData.id,
-              platform: request.platform,
-              updated_at: new Date().toISOString(),
-            },
-          ]);
-        }
-      }
+      await this.logUpdateEvent({
+        deviceUuid: device?.id,
+        appUuid,
+        currentVersion,
+        newVersion: latestUpdate.version_name,
+        platform: request.platform,
+        action: "get",
+      });
 
       return {
         version_name: latestUpdate.version_name,
@@ -350,6 +337,76 @@ class UpdateService implements IUpdateService {
     } catch (error) {
       logger.error("Update check failed", { request, error });
       throw error;
+    }
+  }
+
+  /**
+   * Upsert the device row and its channel binding.
+   *
+   * Best-effort by design: a telemetry failure used to surface as a 500 from
+   * `/api/update` (or `/api/stats`, where the plugin swallows it silently),
+   * which turned a bookkeeping problem into a device that could not update.
+   */
+  private async recordDeviceActivity(input: {
+    appUuid: string;
+    request: UpdateRequest;
+    channelId: string;
+  }): Promise<{ id: string } | null> {
+    const { appUuid, request, channelId } = input;
+    if (!request.deviceId) return null;
+
+    try {
+      const device = await deviceService.registerDevice({
+        appUuid,
+        deviceId: request.deviceId,
+        platform: request.platform,
+        channelId,
+        versionName: request.version_name,
+        versionBuild: request.versionBuild || request.versionCode,
+        versionOs: request.versionOs,
+        pluginVersion: request.pluginVersion,
+        isProd: request.isProd,
+        isEmulator: request.isEmulator,
+      });
+
+      if (device) {
+        await deviceService.linkChannel(device.id, channelId, request.platform);
+      }
+
+      return device;
+    } catch (error) {
+      logger.error("Failed to record device activity", {
+        appId: request.appId,
+        deviceId: request.deviceId,
+        error,
+      });
+      return null;
+    }
+  }
+
+  /** Write an `update_logs` row. Never throws - see `recordDeviceActivity`. */
+  private async logUpdateEvent(input: {
+    deviceUuid?: string | undefined;
+    appUuid: string;
+    currentVersion?: string | null;
+    newVersion?: string | null;
+    platform?: string | undefined;
+    action: string;
+  }): Promise<void> {
+    try {
+      await supabaseService.insert("update_logs", [
+        {
+          device_id: input.deviceUuid ?? null,
+          app_id: input.appUuid,
+          current_version: input.currentVersion ?? null,
+          new_version: input.newVersion ?? null,
+          platform: input.platform ?? null,
+          action: input.action,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+    } catch (error) {
+      logger.error("Failed to write update log", { input, error });
     }
   }
 
@@ -421,50 +478,53 @@ class UpdateService implements IUpdateService {
 
       // Accept both 'action' (official) and 'status' (legacy)
       const actionOrStatus = stats.action || stats.status || "unknown";
+      const version = statsVersion(stats);
 
-      await supabaseService.insert("update_logs", [
-        {
-          device_id: stats.deviceId,
-          app_id: appUuid,
-          new_version: stats.bundleId || stats.version_name || "unknown",
-          action: actionOrStatus,
-          platform: stats.platform,
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      // The channel the device is actually on: what the caller reported, else
+      // the binding stored on the device row.
+      //
+      // This used to be `.eq("name", "prod")` - a literal. Devices were filed
+      // under whatever channel happened to be named `prod` regardless of the
+      // channel serving them, and an app without one registered no devices at
+      // all.
+      const requestedChannelId = stats.channel
+        ? await deviceService.resolveChannelId(appUuid, stats.channel)
+        : null;
 
-      // Also register the device in device_channels if it doesn't exist
-      // We need to find a channel to link it to
-      const { data: channelData } = await supabaseService
-        .getClient()
-        .from("channels")
-        .select("id")
-        .eq("app_id", appUuid)
-        .eq("name", "prod")
-        .maybeSingle();
+      const device = await deviceService.registerDevice({
+        appUuid,
+        deviceId: stats.deviceId,
+        platform: stats.platform,
+        channelId: requestedChannelId,
+        versionName: version ?? undefined,
+        versionBuild: stats.versionBuild,
+        versionOs: stats.versionOs,
+        pluginVersion: stats.pluginVersion,
+        isProd: stats.isProd,
+        isEmulator: stats.isEmulator,
+      });
 
-      if (channelData) {
-        const { data: existing } = await supabaseService
-          .getClient()
-          .from("device_channels")
-          .select("id")
-          .eq("device_id", stats.deviceId)
-          .eq("channel_id", channelData.id)
-          .maybeSingle();
-
-        if (!existing) {
-          await supabaseService.insert("device_channels", [
-            {
-              device_id: stats.deviceId,
-              channel_id: channelData.id,
-              platform: stats.platform,
-              updated_at: new Date().toISOString(),
-            },
-          ]);
-        }
+      const channelId = requestedChannelId ?? device?.channel_id ?? null;
+      if (device && channelId) {
+        await deviceService.linkChannel(device.id, channelId, stats.platform);
       }
 
-      logger.info("Stats logged", { stats });
+      await this.logUpdateEvent({
+        deviceUuid: device?.id,
+        appUuid,
+        currentVersion: stats.oldVersionName ?? null,
+        newVersion: version,
+        platform: stats.platform,
+        action: actionOrStatus,
+      });
+
+      logger.info("Stats logged", {
+        appId: stats.appId,
+        deviceId: stats.deviceId,
+        action: actionOrStatus,
+        version,
+        deviceUuid: device?.id ?? null,
+      });
     } catch (error) {
       logger.error("Failed to log stats", { stats, error });
       throw error;
@@ -483,49 +543,28 @@ class UpdateService implements IUpdateService {
         throw new Error("App not found");
       }
 
-      // 1. Find the channel UUID by name
-      const { data: channelData, error: channelError } = await supabaseService
-        .getClient()
-        .from("channels")
-        .select("id")
-        .eq("app_id", appUuid)
-        .eq("name", assignment.channel)
-        .maybeSingle();
-
-      if (channelError || !channelData) {
+      const channelId = await deviceService.resolveChannelId(appUuid, assignment.channel);
+      if (!channelId) {
         throw new Error(`Channel '${assignment.channel}' not found for app`);
       }
 
-      // 2. Update or insert into device_channels
-      const { data: existing } = await supabaseService
-        .getClient()
-        .from("device_channels")
-        .select("id")
-        .eq("device_id", assignment.deviceId)
-        .eq("channel_id", channelData.id)
-        .maybeSingle();
+      // The device row has to exist first: device_channels.device_id is a
+      // foreign key into it, not the plugin's device string.
+      const device = await deviceService.registerDevice({
+        appUuid,
+        deviceId: assignment.deviceId,
+        platform: assignment.platform,
+        channelId,
+        channelOverride: assignment.channel,
+      });
 
-      if (existing) {
-        await supabaseService.update(
-          "device_channels",
-          {
-            platform: assignment.platform,
-            updated_at: new Date().toISOString(),
-          },
-          { id: existing.id },
-        );
-      } else {
-        await supabaseService.insert("device_channels", [
-          {
-            device_id: assignment.deviceId,
-            channel_id: channelData.id,
-            platform: assignment.platform,
-            updated_at: new Date().toISOString(),
-          },
-        ]);
+      if (!device) {
+        throw new Error("Could not register device for channel assignment");
       }
 
-      logger.info("Channel assigned", { assignment });
+      await deviceService.linkChannel(device.id, channelId, assignment.platform);
+
+      logger.info("Channel assigned", { assignment, deviceUuid: device.id });
     } catch (error) {
       logger.error("Channel assignment failed", { assignment, error });
       throw error;
@@ -541,23 +580,21 @@ class UpdateService implements IUpdateService {
       const appUuid = await this.resolveAppUuid(query.appId);
       if (!appUuid) return { channel: "prod" };
 
+      // Read the device row directly. The old query filtered
+      // `device_channels.device_id` - a UUID column - by the plugin's device
+      // string, which matches nothing.
       const { data, error } = await supabaseService
         .getClient()
-        .from("device_channels")
-        .select(
-          `
-          channels!inner (
-            name
-          )
-        `,
-        )
+        .from("devices")
+        .select("channel_override, channels ( name )")
+        .eq("app_id", appUuid)
         .eq("device_id", query.deviceId)
-        .eq("channels.app_id", appUuid)
         .maybeSingle();
 
       if (error || !data) return { channel: "prod" };
 
-      return { channel: (data.channels as any).name };
+      const channelName = (data.channels as any)?.name;
+      return { channel: data.channel_override || channelName || "prod" };
     } catch (error) {
       logger.error("Get device channel failed", { query, error });
       throw error;

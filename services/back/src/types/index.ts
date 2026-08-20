@@ -18,6 +18,8 @@ export interface UpdateRequest {
   isEmulator?: boolean;
   isProd?: boolean;
   pluginVersion?: string;
+  /** OS version, e.g. "14" */
+  versionOs?: string;
 }
 
 /**
@@ -77,6 +79,11 @@ export interface StatsRequest {
   isProd?: boolean;
   /** Old version for upgrade tracking */
   oldVersionName?: string;
+  /** Channel the device is on, when the caller knows it */
+  channel?: string;
+  /** OS version, e.g. "14" */
+  versionOs?: string;
+  pluginVersion?: string;
 }
 
 export interface ChannelAssignmentRequest {
@@ -245,6 +252,8 @@ export interface NativeUpdateCheckResponse {
 
 export interface NativeUpdateLogRecord {
   id?: string;
+  /** apps.id - NOT NULL in the table, so a log row without it is rejected */
+  app_id?: string;
   event: string;
   platform: string;
   device_id?: string;
@@ -274,6 +283,7 @@ export interface QueryResult<T = any> {
 export interface ISupabaseService {
   query<T = any>(table: string, options?: QueryOptions): Promise<QueryResult<T>>;
   insert(table: string, data: any): Promise<any>;
+  upsert(table: string, data: any, options: { onConflict: string; select?: string }): Promise<any>;
   update(table: string, data: any, filter: any): Promise<any>;
   delete(table: string, filter: any): Promise<any>;
   createSignedUrl(filePath: string, expiresIn: number): Promise<string>;
