@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  describeEnvironmentMismatch,
   environmentFromAppId,
+  isEnvironmentAllowed,
   isValidBundleId,
   normaliseProjectConfig,
   validateProjectConfig,
@@ -92,6 +94,44 @@ describe("isValidBundleId", () => {
     expect(isValidBundleId("Com.Ayb.Lowmaro")).toBe(false);
     expect(isValidBundleId("com..lowmaro")).toBe(false);
     expect(isValidBundleId("1com.lowmaro")).toBe(false);
+  });
+});
+
+describe("isEnvironmentAllowed", () => {
+  it("allows a build on a channel of its own environment", () => {
+    expect(isEnvironmentAllowed("io.capucho.inv", "prod")).toBe(true);
+    expect(isEnvironmentAllowed("io.capucho.inv.staging", "staging")).toBe(true);
+    expect(isEnvironmentAllowed("io.capucho.inv.dev", "dev")).toBe(true);
+  });
+
+  it("allows a production build on a staging channel", () => {
+    // The server permits this on purpose, so a release candidate can be
+    // beta-tested by real installs. Lowmaro relies on it: its app id carries no
+    // suffix and all three of its channels are bound to staging.
+    expect(isEnvironmentAllowed("com.ayb.lowmaro", "staging")).toBe(true);
+  });
+
+  it("refuses everything else", () => {
+    expect(isEnvironmentAllowed("io.capucho.inv", "dev")).toBe(false);
+    expect(isEnvironmentAllowed("io.capucho.inv.staging", "prod")).toBe(false);
+    expect(isEnvironmentAllowed("io.capucho.inv.dev", "prod")).toBe(false);
+    expect(isEnvironmentAllowed("io.capucho.inv.dev", "staging")).toBe(false);
+  });
+});
+
+describe("describeEnvironmentMismatch", () => {
+  it("says nothing when the pairing is allowed", () => {
+    expect(describeEnvironmentMismatch("com.ayb.lowmaro", "staging", "prod")).toBeNull();
+  });
+
+  it("names the channel, the environment and the bundle id", () => {
+    const message = describeEnvironmentMismatch(
+      "io.capucho.inv.staging",
+      "prod",
+      "production",
+    );
+    expect(message).toContain("production");
+    expect(message).toContain("io.capucho.inv.staging");
   });
 });
 

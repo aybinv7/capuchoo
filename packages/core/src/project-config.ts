@@ -181,3 +181,41 @@ export function environmentFromAppId(appId: string): Environment {
   if (id.endsWith(".dev") || id.endsWith(".debug")) return "dev";
   return "prod";
 }
+
+/**
+ * Whether a build may be served a channel bound to `channelEnvironment`.
+ *
+ * This mirrors the server's isolation check exactly, including its one
+ * deliberate exception: a production build is allowed on a staging channel, so
+ * a release candidate can be beta-tested by real installs without shipping a
+ * separate bundle identifier.
+ *
+ * The rule lives here rather than being restated at each call site because the
+ * CLI had reimplemented it as a plain equality check - which is *stricter* than
+ * the server and rejected the exact beta-testing setup Lowmaro uses, where all
+ * three channels are bound to staging and the app id carries no suffix.
+ */
+export function isEnvironmentAllowed(
+  appId: string,
+  channelEnvironment: Environment,
+): boolean {
+  const expected = environmentFromAppId(appId);
+  if (expected === channelEnvironment) return true;
+  return expected === "prod" && channelEnvironment === "staging";
+}
+
+/** Explains a rejected pairing, or null when it is allowed. */
+export function describeEnvironmentMismatch(
+  appId: string,
+  channelEnvironment: Environment,
+  channelName: string,
+): string | null {
+  if (isEnvironmentAllowed(appId, channelEnvironment)) return null;
+
+  const expected = environmentFromAppId(appId);
+  return (
+    `Channel "${channelName}" serves the ${channelEnvironment} environment, but ` +
+    `the build's VITE_APP_ID is "${appId}", which is a ${expected} bundle id. ` +
+    "The server rejects this pairing, so the upload would be wasted."
+  );
+}

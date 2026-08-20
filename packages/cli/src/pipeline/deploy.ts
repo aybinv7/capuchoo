@@ -1,4 +1,8 @@
-import { environmentFromAppId, type Environment, type ResolvedProjectConfig } from "@capucho/core";
+import {
+  describeEnvironmentMismatch,
+  type Environment,
+  type ResolvedProjectConfig,
+} from "@capucho/core";
 import fs from "node:fs";
 import path from "node:path";
 import { CommandError, type RunOptions } from "../utils/exec.js";
@@ -115,16 +119,17 @@ export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour
 
   const declaredAppId = flavour.fileEnv.VITE_APP_ID;
   if (declaredAppId) {
-    const expected = environmentFromAppId(declaredAppId);
-    if (expected !== request.environment) {
-      // The backend enforces this too and answers "Environment mismatch",
-      // which is a confusing thing to discover after a 40 MB upload.
-      problems.push(
-        `Channel "${request.channel}" serves the ${request.environment} environment, but ` +
-          `${flavour.config.envFile} declares VITE_APP_ID=${declaredAppId}, which is a ` +
-          `${expected} bundle id. The server will refuse this pairing.`,
-      );
-    }
+    // Uses the shared rule rather than a plain equality check, so the CLI
+    // rejects exactly what the server rejects and nothing more. A production
+    // build on a staging channel is deliberately allowed - that is how a
+    // release candidate gets beta-tested - and an equality check here blocked
+    // it, which is a legitimate setup the CLI has no business refusing.
+    const mismatch = describeEnvironmentMismatch(
+      declaredAppId,
+      request.environment,
+      request.channel,
+    );
+    if (mismatch) problems.push(`${mismatch} (from ${flavour.config.envFile})`);
   }
 
   if (request.kind === "native" && request.platform === "ios") {
