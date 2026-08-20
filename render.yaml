@@ -1,0 +1,72 @@
+# Render Blueprint for the Capucho monorepo.
+#
+# The five original repositories were standalone, so Render could infer how to
+# build them. A workspace cannot be inferred: the lockfile, the catalog and the
+# toolchain live at the repository root, so every service builds from the root
+# and selects its package with a filter. `rootDir` stays `.` for that reason -
+# pointing it at `services/back` would hide `pnpm-workspace.yaml` and the
+# install would fail.
+#
+# Values are never committed. Every `sync: false` variable has to be set in the
+# Render dashboard; see docs/DEPLOY.md for which value goes where, and for the
+# order to apply them in relative to rotating the Supabase keys.
+#
+# Applying this file creates *new* services. The two that exist today
+# (capucho-back, capucho-front) are configured by hand with the same settings -
+# docs/DEPLOY.md lists them field by field.
+
+services:
+  - type: web
+    name: capucho-back
+    runtime: node
+    rootDir: .
+    # `pnpm --filter` puts the workspace root's node_modules/.bin on PATH, so a
+    # package script resolves `vp` even though only the root declares it.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @capucho/back run build
+    startCommand: pnpm --filter @capucho/back run start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # config/index.ts validates this against development|production|test, and
+      # server.ts registers module-alias only in production.
+      - key: NODE_ENV
+        value: production
+      # Render injects PORT; config/index.ts reads it and falls back to 3000.
+      - key: SUPABASE_URL
+        sync: false
+      # sb_secret_... - carries BYPASSRLS. The service refuses to start without
+      # it, because a publishable key here means telemetry writes are silently
+      # rejected. See docs/SUPABASE-KEYS.md.
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: BUCKET_NAME
+        value: updates
+      - key: ENVIRONMENT
+        value: prod
+
+  - type: web
+    name: capucho-front
+    runtime: static
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @capucho/dashboard run build
+    staticPublishPath: apps/dashboard/dist
+    autoDeploy: true
+    # vue-router uses history mode: every path has to serve index.html or a
+    # refresh on /channels/<id> is a 404 from the CDN.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: VITE_SUPABASE_URL
+        sync: false
+      # sb_publishable_... only. VITE_ variables are inlined into the bundle at
+      # build time, so a secret key here would be published to every visitor.
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_API_URL
+        sync: false
