@@ -1,6 +1,31 @@
 {
+  "version": 2,
   "appId": "io.capucho.inv",
   "cloudAppId": "572621ed-3493-4406-8946-0cc58b351a0f",
   "appName": "capucho-app",
-  "createdAt": "2026-01-31T23:53:21.972Z"
+  "createdAt": "2026-01-31T23:53:21.972Z",
+  "webDir": "dist",
+  "androidDir": "android",
+  "iosDir": "ios",
+  "versionCodeFile": "version-code.json",
+  "flavours": {
+    "dev": {
+      "envFile": "build/dev/.env.dev",
+      "trapezeConfig": "build/dev/trapeze.dev.yaml",
+      "assetPath": "build/dev/assets",
+      "mode": "dev"
+    },
+    "staging": {
+      "envFile": "build/staging/.env.staging",
+      "trapezeConfig": "build/staging/trapeze.staging.yaml",
+      "assetPath": "build/staging/assets",
+      "mode": "staging"
+    },
+    "prod": {
+      "envFile": "build/prod/.env.prod",
+      "trapezeConfig": "build/prod/trapeze.prod.yaml",
+      "assetPath": "build/prod/assets",
+      "mode": "prod"
+    }
+  }
 }
