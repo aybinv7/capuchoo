@@ -1,4 +1,4 @@
-import { Args, Command } from "@oclif/core";
+import { Args } from "@oclif/core";
 import chalk from "chalk";
 import { updateGlobalConfig, type GlobalConfig } from "../../utils/config.js";
 import { BaseCommand } from "../../base-command.js";

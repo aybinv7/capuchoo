@@ -10,7 +10,9 @@
   ],
   "compilerOptions": {
     "composite": true,
-    "baseUrl": ".",
+    // No baseUrl: since TypeScript 4.4 `paths` resolve relative to the
+    // tsconfig when it is absent, which is both equivalent here and what
+    // TypeScript 7 requires.
     "paths": {
       "@/*": ["./src/*"],
       "@/modules/*": ["./src/modules/*"],

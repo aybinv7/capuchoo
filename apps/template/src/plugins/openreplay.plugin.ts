@@ -4,10 +4,18 @@ import { Capacitor } from "@capacitor/core";
 import { Device } from "@capacitor/device";
 import { Network } from "@capacitor/network";
 import trackerVuex from "@openreplay/tracker-vuex";
-import type { StartOptions } from "node_modules/@openreplay/tracker/dist/lib/main/app";
 import { trackedStores } from "@/plugins/openreplay/tracked-stores";
 import { useAuthStore } from "@/shared/stores/auth.store";
 import { f7 } from "framework7-vue";
+
+/**
+ * @openreplay/tracker does not export `StartOptions` from its package root, and
+ * the previous import reached into `node_modules/@openreplay/tracker/dist/lib/
+ * main/app` by path - which resolved only because tsconfig set `baseUrl: "."`.
+ * Deriving the type from the public `start` signature is equivalent and does
+ * not depend on the package's internal file layout.
+ */
+type StartOptions = NonNullable<Parameters<OpenReplay["start"]>[0]>;
 
 export interface OpenReplayOptions {
   enabled?: boolean;

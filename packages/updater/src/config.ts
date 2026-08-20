@@ -1,4 +1,3 @@
-import type { Environment } from "@capucho/core";
 
 /**
  * Runtime configuration for the updater.
@@ -17,7 +16,8 @@ export interface UpdaterConfig {
   appName: string;
   /** Channel to consult. Bound to an environment server-side. */
   channel: string;
-  environment: Environment | string;
+  /** Free-form: an app may use flavours beyond dev/staging/prod. */
+  environment: string;
   /** Milliseconds before an update check is abandoned. */
   timeoutMs: number;
 }

@@ -21,16 +21,18 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-    "baseUrl": "./src",
+    // No baseUrl: since TypeScript 4.4 `paths` resolve relative to the
+    // tsconfig when it is absent, which is both equivalent here and what
+    // TypeScript 7 requires.
     "paths": {
-      "@/*": ["*"],
-      "@/types/*": ["types/*"],
-      "@/config/*": ["config/*"],
-      "@/services/*": ["services/*"],
-      "@/controllers/*": ["controllers/*"],
-      "@/middleware/*": ["middleware/*"],
-      "@/routes/*": ["routes/*"],
-      "@/utils/*": ["utils/*"]
+      "@/*": ["./src/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/config/*": ["./src/config/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/controllers/*": ["./src/controllers/*"],
+      "@/middleware/*": ["./src/middleware/*"],
+      "@/routes/*": ["./src/routes/*"],
+      "@/utils/*": ["./src/utils/*"]
     }
   },
   "include": [

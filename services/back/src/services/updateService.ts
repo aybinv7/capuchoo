@@ -371,13 +371,9 @@ class UpdateService implements IUpdateService {
         sessionKey: latestUpdate.session_key || undefined,
         config: appConfig,
       };
-
-      logger.info("No updates available", {
-        request,
-        channelUsed: channelToUse,
-        platform: request.platform,
-      });
-      return {};
+      // Nothing follows: every "no update" outcome already returned above.
+      // A `logger.info("No updates available")` plus `return {}` used to sit
+      // here, unreachable, which is why that log line never appeared.
     } catch (error) {
       logger.error("Update check failed", { request, error });
       throw error;

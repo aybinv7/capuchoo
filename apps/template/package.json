@@ -16,7 +16,6 @@
     "build": "vue-tsc --noEmit && vp build",
     "type-check": "vue-tsc --noEmit",
     "preview": "vp preview --port 4173",
-    "test": "echo \"no tests yet\" && exit 0",
     "build:staging": "dotenv -e build/staging/.env.staging -- vp build --mode staging",
     "build:prod": "dotenv -e build/prod/.env.prod -- vp build --mode prod",
     "build:dev": "dotenv -e build/dev/.env.dev -- vp build --mode dev",

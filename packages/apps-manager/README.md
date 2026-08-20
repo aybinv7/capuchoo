@@ -27,14 +27,14 @@ npx cap sync
 ### echo(...)
 
 ```typescript
-echo(options: { value: string; }) => any
+echo(options: { value: string; }) => Promise<{ value: string; }>
 ```
 
 | Param         | Type                            |
 | ------------- | ------------------------------- |
 | **`options`** | <code>{ value: string; }</code> |
 
-**Returns:** <code>any</code>
+**Returns:** <code>Promise&lt;{ value: string; }&gt;</code>
 
 --------------------
 
@@ -42,7 +42,7 @@ echo(options: { value: string; }) => any
 ### getAppInfo(...)
 
 ```typescript
-getAppInfo(options: { bundleId: string; }) => any
+getAppInfo(options: { bundleId: string; }) => Promise<AppInfo>
 ```
 
 Get information about an app by its bundle identifier.
@@ -51,7 +51,7 @@ Get information about an app by its bundle identifier.
 | ------------- | ---------------------------------- |
 | **`options`** | <code>{ bundleId: string; }</code> |
 
-**Returns:** <code>any</code>
+**Returns:** <code>Promise&lt;<a href="#appinfo">AppInfo</a>&gt;</code>
 
 --------------------
 
@@ -59,7 +59,7 @@ Get information about an app by its bundle identifier.
 ### openApp(...)
 
 ```typescript
-openApp(options: { bundleId: string; }) => any
+openApp(options: { bundleId: string; }) => Promise<{ completed: boolean; }>
 ```
 
 Attempt to open an app by its bundle identifier.
@@ -68,7 +68,7 @@ Attempt to open an app by its bundle identifier.
 | ------------- | ---------------------------------- |
 | **`options`** | <code>{ bundleId: string; }</code> |
 
-**Returns:** <code>any</code>
+**Returns:** <code>Promise&lt;{ completed: boolean; }&gt;</code>
 
 --------------------
 
@@ -76,13 +76,13 @@ Attempt to open an app by its bundle identifier.
 ### getInstalledApps()
 
 ```typescript
-getInstalledApps() => any
+getInstalledApps() => Promise<{ apps: AppInfo[]; }>
 ```
 
 Get a list of all installed apps on the device.
 Note: Requires QUERY_ALL_PACKAGES on Android.
 
-**Returns:** <code>any</code>
+**Returns:** <code>Promise&lt;{ apps: AppInfo[]; }&gt;</code>
 
 --------------------
 

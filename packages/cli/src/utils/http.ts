@@ -70,7 +70,11 @@ async function request<T>(
           ? {}
           : { "Content-Type": "application/json" }),
       },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      // The key is omitted entirely rather than set to undefined: a GET with a
+      // body is invalid, and some runtimes reject it outright.
+      ...(options.body === undefined
+        ? {}
+        : { body: JSON.stringify(options.body) }),
       signal: controller.signal,
     });
 

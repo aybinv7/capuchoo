@@ -56,7 +56,8 @@
     "@capawesome-team/capacitor-file-opener": "catalog:",
     "@capgo/capacitor-updater": "catalog:",
     "typescript": "catalog:",
-    "vue": "catalog:"
+    "vue": "catalog:",
+    "vitest": "^4.1.10"
   },
   "publishConfig": {
     "access": "public"
