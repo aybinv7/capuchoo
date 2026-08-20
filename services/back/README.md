@@ -114,8 +114,13 @@ Create a `.env` file in the root directory:
 
 ```env
 # Supabase Configuration
+# Settings > API Keys. The secret key is required: every write this server makes
+# targets a table with row level security enabled, and only sb_secret_... keys
+# carry BYPASSRLS. The legacy anon / service_role JWTs still work under the old
+# names (SUPABASE_KEY, SUPABASE_SERVICE_KEY) but Supabase deprecates them by the
+# end of 2026.
 SUPABASE_URL=your_supabase_project_url
-SUPABASE_KEY=your_supabase_anon_or_service_role_key
+SUPABASE_SECRET_KEY=sb_secret_...
 BUCKET_NAME=updates
 
 # Server Configuration
@@ -246,7 +251,7 @@ To deploy the self-hosted update server:
 4. **Set up environment variables** in your server environment:
    ```env
    SUPABASE_URL=your_supabase_project_url
-   SUPABASE_KEY=your_supabase_service_role_key
+   SUPABASE_SECRET_KEY=sb_secret_...
    BUCKET_NAME=updates
    PORT=3000
    ENVIRONMENT=prod

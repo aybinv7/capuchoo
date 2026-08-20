@@ -8,12 +8,21 @@ class SupabaseService implements ISupabaseService {
   private storageClient: SupabaseClient;
 
   constructor() {
-    this.client = createClient(config.supabase.url, config.supabase.key);
-
-    this.storageClient = createClient(
-      config.supabase.url,
-      config.supabase.serviceKey || config.supabase.key,
-    );
+    // Both clients use the secret key.
+    //
+    // This used to build `client` from the *anon* key. Every table this server
+    // writes - devices, device_channels, update_logs, native_update_logs - has
+    // row level security enabled, and every policy on them is keyed on an
+    // authenticated dashboard user via can_access_app(). This process never
+    // forwards a user's JWT to Supabase; it builds one client at boot. So an
+    // anon (or publishable) client can satisfy no policy here, and its writes
+    // are rejected rather than failing loudly.
+    //
+    // Authorisation for these routes is enforced in middleware/auth.ts,
+    // checkAppAccess and checkOrgAccess - before any query is built. A trusted
+    // server holding the secret key is the model this design already assumed.
+    this.client = createClient(config.supabase.url, config.supabase.secretKey);
+    this.storageClient = createClient(config.supabase.url, config.supabase.secretKey);
 
     logger.info("Supabase service initialized", {
       url: config.supabase.url,

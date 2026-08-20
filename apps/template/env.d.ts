@@ -14,6 +14,8 @@ interface ImportMetaEnv {
   readonly VITE_DB_FILENAME: string;
   readonly VITE_DB_LOG_LEVEL: string;
   readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string;
+  /** Deprecated: the anon JWT. Read as a fallback while environments migrate. */
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_POWERSYNC_DEBUG: string;
   readonly VITE_POWERSYNC_TOKEN_DASHBOARD: string;

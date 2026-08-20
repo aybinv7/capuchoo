@@ -1,9 +1,15 @@
 import { createClient, type Session, type User } from "@supabase/supabase-js";
 
-// Initialize Supabase client
+// Initialize Supabase client.
+//
+// The publishable key (sb_publishable_...) replaces the anon JWT, which Supabase
+// deprecates with removal announced for the end of 2026. Both are low-privilege
+// and subject to row level security. VITE_SUPABASE_ANON_KEY is still read so an
+// existing build environment keeps working.
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabasePublishableKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabasePublishableKey);
 
 export interface LoginCredentials {
   email: string;

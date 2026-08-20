@@ -319,8 +319,10 @@ export interface ServerConfig {
   port: number;
   supabase: {
     url: string;
-    key: string;
-    serviceKey?: string;
+    /** Low-privilege key, subject to row level security. Nothing server-side needs it. */
+    publishableKey?: string | undefined;
+    /** Privileged key (BYPASSRLS). Every write this server performs uses it. */
+    secretKey: string;
     bucketName: string;
   };
   security: {

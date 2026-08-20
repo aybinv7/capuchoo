@@ -148,13 +148,40 @@ beta setup. Submitting with no environment chosen is refused: the field is a Sel
 `required` never covered it. Nine tests cover the name matching, which is deliberately whole-name -
 `prod-eu` could be either, and guessing at substrings would warn about names it cannot reason about.
 
+## 11. The server did all of its writes with the `anon` key
+
+`supabaseService` built two clients: `storageClient` from `SUPABASE_SERVICE_KEY`, and `client` from
+`SUPABASE_KEY` - which is the **`anon`** key (confirmed from the `role` claim of the leaked value).
+`client` performed 62 of the 70 database operations in this service, including every write.
+
+`schema.sql:428-431` enables row level security on `devices`, `device_channels`, `update_logs` and
+`native_update_logs`, and every policy on them is keyed on an authenticated dashboard user via
+`can_access_app()`. This process builds one client at boot and never forwards a user's JWT to
+Supabase, so an anonymous client can satisfy none of them. Where RLS is on, those writes are
+rejected
+
+- a second wall standing behind the missing-`devices`-rows problem above, and one that would have
+  kept the fix from working.
+
+**Now:** both clients use the secret key, which carries `BYPASSRLS`. Authorisation for these routes
+is enforced in `middleware/auth.ts`, `checkAppAccess` and `checkOrgAccess`, before any query is
+built
+
+- a trusted server holding a privileged key is the model this design already assumed.
+
+Alongside it, the workspace moved to Supabase's current API keys - `sb_publishable_…` and
+`sb_secret_…` - because `anon` and `service_role` are deprecated with removal announced for the end
+of 2026. `config/keys.ts` accepts both namings, refuses to start with no secret key rather than
+booting into a server that records nothing, and warns when a key looks wrong for its slot. See
+[SUPABASE-KEYS.md](./SUPABASE-KEYS.md) for the rotation runbook.
+
 ---
 
 ## Verified
 
 - `vp run -r build` clean, all 12 tasks, including `vue-tsc` over the dashboard.
-- 19 new unit tests - 10 over `telemetry.ts`, 9 over the dashboard's environment helper.
-  `vp run -r test` is 109 across the workspace.
+- 30 new unit tests - 10 over `telemetry.ts`, 11 over `config/keys.ts`, 9 over the dashboard's
+  environment helper. `vp run -r test` is 120 across the workspace.
 - `vp lint services/back apps/dashboard` reports only the pre-existing warnings listed in AUDIT.md.
 
 **Not verified against a live database.** These are the first writes this schema has ever received,

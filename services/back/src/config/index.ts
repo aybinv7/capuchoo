@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import Joi from "joi";
 import { ServerConfig } from "@/types";
+import { keyWarnings, resolveSupabaseKeys } from "./keys";
 
 dotenv.config();
 
@@ -9,7 +10,13 @@ const envSchema = Joi.object({
   PORT: Joi.number().default(3000),
 
   SUPABASE_URL: Joi.string().uri().required(),
-  SUPABASE_KEY: Joi.string().required(),
+  // Current names. Which key goes in which slot is a privilege decision, not a
+  // naming one - see config/keys.ts.
+  SUPABASE_PUBLISHABLE_KEY: Joi.string().optional(),
+  SUPABASE_SECRET_KEY: Joi.string().optional(),
+  // Deprecated by Supabase (removal announced for end of 2026). Still accepted
+  // so an environment can be migrated without a deploy in between.
+  SUPABASE_KEY: Joi.string().optional(),
   SUPABASE_SERVICE_KEY: Joi.string().optional(),
   BUCKET_NAME: Joi.string().default("updates"),
 
@@ -26,12 +33,19 @@ if (error) {
   );
 }
 
+const keys = resolveSupabaseKeys(envVars);
+
+for (const warning of keyWarnings(keys)) {
+  // Not through @/utils/logger: that module imports this one.
+  console.warn(`[config] ${warning}`);
+}
+
 const config: ServerConfig = {
   port: envVars.PORT,
   supabase: {
     url: envVars.SUPABASE_URL,
-    key: envVars.SUPABASE_KEY,
-    serviceKey: envVars.SUPABASE_SERVICE_KEY,
+    publishableKey: keys.publishableKey,
+    secretKey: keys.secretKey,
     bucketName: envVars.BUCKET_NAME,
   },
   security: {
@@ -54,8 +68,8 @@ const config: ServerConfig = {
   },
 };
 
-if (!config.supabase.url || !config.supabase.key) {
-  throw new Error("Supabase URL and API key are required");
+if (!config.supabase.url) {
+  throw new Error("SUPABASE_URL is required");
 }
 
 export default config;

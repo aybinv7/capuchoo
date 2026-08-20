@@ -9,11 +9,16 @@ why the dashboard never showed a single device or log row.
 Two things need action from you and are not fixed by any commit here:
 
 1. **Rotate the Supabase keys.** `capucho-back/.env` was committed with seven populated values,
-   `SUPABASE_SERVICE_KEY` among them - a service-role key that bypasses row level security entirely.
-   It is untracked here and replaced with `.env.example`, but the value is still in the history of
-   `github.com/aybinv7/capucho-back`. Removing a file does not remove it from a pushed history.
-   Rotate `SUPABASE_SERVICE_KEY` and `SUPABASE_KEY`, update the host's environment, and only then
-   consider rewriting that repository's history.
+   `SUPABASE_SERVICE_KEY` among them - a `service_role` key that bypasses row level security
+   entirely. It is untracked here and replaced with `.env.example`, but the value is still in the
+   history of `github.com/aybinv7/capucho-back`, and in this repository's own history via the
+   `git subtree` import. Removing a file does not remove it from a pushed history.
+
+   Rotate by migrating to Supabase's current keys, which retires the leaked pair in the same
+   operation. See [SUPABASE-KEYS.md](./SUPABASE-KEYS.md) for the runbook. The step that actually
+   ends the exposure is the last one: **creating new keys does not disable the old ones** - the
+   legacy pair has to be deleted in the dashboard, or the leaked string stays valid.
+
 2. **Delete `~/pnpm-workspace.yaml`, `~/package.json` and `~/node_modules`.** A
    `pnpm install claumport` was once run from your home directory. Every project under
    `C:\Users\aybin\` therefore looks like it sits inside a pnpm workspace - which is why `vp create`
