@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ChartConfig } from '@/components/ui/chart'
-import { Donut } from '@unovis/ts'
-import { VisDonut, VisSingleContainer } from '@unovis/vue'
-import { Radio, TrendingUp } from 'lucide-vue-next'
-import { computed } from 'vue'
+import type { ChartConfig } from "@/components/ui/chart";
+import { Donut } from "@unovis/ts";
+import { VisDonut, VisSingleContainer } from "@unovis/vue";
+import { Radio, TrendingUp } from "lucide-vue-next";
+import { computed } from "vue";
 import {
   Card,
   CardContent,
@@ -11,57 +11,57 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   componentToString,
-} from '@/components/ui/chart'
+} from "@/components/ui/chart";
 
 // Define types
 type DataPoint = {
-  channel: string
-  count: number
-  fill: string
-}
+  channel: string;
+  count: number;
+  fill: string;
+};
 
 // Props interface
 interface ChannelDistributionChartProps {
-  title?: string
-  description?: string
-  data: DataPoint[]
+  title?: string;
+  description?: string;
+  data: DataPoint[];
 }
 
 // Default props
 const props = withDefaults(defineProps<ChannelDistributionChartProps>(), {
-  title: 'Channel Distribution',
-  description: 'Distribution across channels',
+  title: "Channel Distribution",
+  description: "Distribution across channels",
   data: () => [],
-})
+});
 
 // Chart configuration
 const chartConfig = {
   count: {
-    label: 'Count',
+    label: "Count",
     color: undefined,
   },
   prod: {
-    label: 'Prod',
-    color: 'var(--color-chart-1)',
+    label: "Prod",
+    color: "var(--color-chart-1)",
   },
   staging: {
-    label: 'Staging',
-    color: 'var(--color-chart-2)',
+    label: "Staging",
+    color: "var(--color-chart-2)",
   },
   dev: {
-    label: 'Dev',
-    color: 'var(--color-chart-3)',
+    label: "Dev",
+    color: "var(--color-chart-3)",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 // Calculate total count
-const totalCount = computed(() => props.data.reduce((sum, item) => sum + item.count, 0))
+const totalCount = computed(() => props.data.reduce((sum, item) => sum + item.count, 0));
 </script>
 
 <template>

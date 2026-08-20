@@ -298,83 +298,83 @@
 </template>
 
 <script setup lang="ts">
-import { useAppStore } from '@/stores/app.store'
-import { storeToRefs } from 'pinia'
-import { useLocalStorage } from '@vueuse/core'
-import { toast } from 'vue-sonner'
+import { useAppStore } from "@/stores/app.store";
+import { storeToRefs } from "pinia";
+import { useLocalStorage } from "@vueuse/core";
+import { toast } from "vue-sonner";
 
 interface EnvVar {
-  id: string
-  key: string
-  value: string
-  value_type: 'string' | 'number' | 'boolean' | 'json'
-  environment: 'production' | 'staging' | 'development' | 'all'
-  channel?: string
-  is_secret: boolean
+  id: string;
+  key: string;
+  value: string;
+  value_type: "string" | "number" | "boolean" | "json";
+  environment: "production" | "staging" | "development" | "all";
+  channel?: string;
+  is_secret: boolean;
 }
 
-const appStore = useAppStore()
-const { activeApp } = storeToRefs(appStore)
+const appStore = useAppStore();
+const { activeApp } = storeToRefs(appStore);
 
 // State
-const activeEnvironment = ref<string>('all')
-const activeChannel = ref<string>('')
-const showAddForm = ref(false)
-const showEditDialog = ref(false)
-const editingVar = ref<EnvVar | null>(null)
-const revealedSecrets = ref<Record<string, boolean>>({})
+const activeEnvironment = ref<string>("all");
+const activeChannel = ref<string>("");
+const showAddForm = ref(false);
+const showEditDialog = ref(false);
+const editingVar = ref<EnvVar | null>(null);
+const revealedSecrets = ref<Record<string, boolean>>({});
 
 // localStorage-based storage with vueuse
-const envVars = useLocalStorage<EnvVar[]>('capucho-demo-env-vars', [])
+const envVars = useLocalStorage<EnvVar[]>("capucho-demo-env-vars", []);
 
 const newVar = ref({
-  key: '',
-  value: '',
-  value_type: 'string' as const,
-  environment: 'production' as const,
-  channel: '',
+  key: "",
+  value: "",
+  value_type: "string" as const,
+  environment: "production" as const,
+  channel: "",
   is_secret: false,
-})
+});
 
 const availableChannels = computed(() => [
-  { label: 'All Channels', value: '' },
-  { label: 'staging', value: 'staging' },
-  { label: 'prod', value: 'prod' },
-  { label: 'dev', value: 'dev' },
-])
+  { label: "All Channels", value: "" },
+  { label: "staging", value: "staging" },
+  { label: "prod", value: "prod" },
+  { label: "dev", value: "dev" },
+]);
 
 const getChannelVarCount = (channelValue: string) => {
   return envVars.value.filter((v) => {
     const matchesEnv =
-      activeEnvironment.value === 'all' ||
+      activeEnvironment.value === "all" ||
       v.environment === activeEnvironment.value ||
-      v.environment === 'all'
-    const matchesChannel = channelValue === '' ? !v.channel : v.channel === channelValue
-    return matchesEnv && matchesChannel
-  }).length
-}
+      v.environment === "all";
+    const matchesChannel = channelValue === "" ? !v.channel : v.channel === channelValue;
+    return matchesEnv && matchesChannel;
+  }).length;
+};
 
 const filteredVars = computed(() => {
   return envVars.value
     .filter((v) => {
       const matchesEnv =
-        activeEnvironment.value === 'all' ||
+        activeEnvironment.value === "all" ||
         v.environment === activeEnvironment.value ||
-        v.environment === 'all'
+        v.environment === "all";
       const matchesChannel =
-        activeChannel.value === '' ? true : !v.channel || v.channel === activeChannel.value
-      return matchesEnv && matchesChannel
+        activeChannel.value === "" ? true : !v.channel || v.channel === activeChannel.value;
+      return matchesEnv && matchesChannel;
     })
     .sort((a, b) => {
-      if (!a.channel && b.channel) return -1
-      if (a.channel && !b.channel) return 1
-      return a.key.localeCompare(b.key)
-    })
-})
+      if (!a.channel && b.channel) return -1;
+      if (a.channel && !b.channel) return 1;
+      return a.key.localeCompare(b.key);
+    });
+});
 
 // Actions
 const addVariable = () => {
-  if (!newVar.value.key) return
+  if (!newVar.value.key) return;
 
   const variable: EnvVar = {
     id: crypto.randomUUID(),
@@ -384,46 +384,46 @@ const addVariable = () => {
     environment: newVar.value.environment,
     channel: newVar.value.channel || undefined,
     is_secret: newVar.value.is_secret,
-  }
+  };
 
-  envVars.value = [...envVars.value, variable]
-  toast.success(`Added ${newVar.value.key}`)
+  envVars.value = [...envVars.value, variable];
+  toast.success(`Added ${newVar.value.key}`);
 
   newVar.value = {
-    key: '',
-    value: '',
-    value_type: 'string',
-    environment: 'production',
-    channel: '',
+    key: "",
+    value: "",
+    value_type: "string",
+    environment: "production",
+    channel: "",
     is_secret: false,
-  }
-  showAddForm.value = false
-}
+  };
+  showAddForm.value = false;
+};
 
 const startEdit = (envVar: EnvVar) => {
-  editingVar.value = { ...envVar }
-  showEditDialog.value = true
-}
+  editingVar.value = { ...envVar };
+  showEditDialog.value = true;
+};
 
 const saveEdit = () => {
-  if (!editingVar.value?.id) return
+  if (!editingVar.value?.id) return;
 
-  const idx = envVars.value.findIndex((v) => v.id === editingVar.value!.id)
+  const idx = envVars.value.findIndex((v) => v.id === editingVar.value!.id);
   if (idx !== -1) {
-    const updated = [...envVars.value]
-    updated[idx] = editingVar.value
-    envVars.value = updated
-    toast.success('Variable updated')
+    const updated = [...envVars.value];
+    updated[idx] = editingVar.value;
+    envVars.value = updated;
+    toast.success("Variable updated");
   }
-  showEditDialog.value = false
-}
+  showEditDialog.value = false;
+};
 
 const deleteVariable = (id: string) => {
-  envVars.value = envVars.value.filter((v) => v.id !== id)
-  toast.success('Variable deleted')
-}
+  envVars.value = envVars.value.filter((v) => v.id !== id);
+  toast.success("Variable deleted");
+};
 
 const toggleReveal = (id: string) => {
-  revealedSecrets.value[id] = !revealedSecrets.value[id]
-}
+  revealedSecrets.value[id] = !revealedSecrets.value[id];
+};
 </script>

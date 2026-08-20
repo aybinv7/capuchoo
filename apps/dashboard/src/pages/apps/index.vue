@@ -65,28 +65,28 @@
 </template>
 
 <script setup lang="ts">
-import { useAppsQuery } from '@/modules/apps/composables/useAppsQuery'
-import { useAppStore } from '@/stores/app.store'
-import type { App } from '@/modules/apps/types/apps.types'
+import { useAppsQuery } from "@/modules/apps/composables/useAppsQuery";
+import { useAppStore } from "@/stores/app.store";
+import type { App } from "@/modules/apps/types/apps.types";
 
 definePage({
   meta: {
-    title: 'Apps - CapGO Updater',
-    description: 'Manage your applications',
-    category: 'apps',
+    title: "Apps - CapGO Updater",
+    description: "Manage your applications",
+    category: "apps",
   },
-})
+});
 
-const router = useRouter()
-const appStore = useAppStore()
-const { data: apps, isLoading } = useAppsQuery()
+const router = useRouter();
+const appStore = useAppStore();
+const { data: apps, isLoading } = useAppsQuery();
 
 const selectApp = (app: App) => {
-  appStore.setActiveApp(app)
-  router.push('/dashboard')
-}
+  appStore.setActiveApp(app);
+  router.push("/dashboard");
+};
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString()
-}
+  return new Date(dateString).toLocaleDateString();
+};
 </script>

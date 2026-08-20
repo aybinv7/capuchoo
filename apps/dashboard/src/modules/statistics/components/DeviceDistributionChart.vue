@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { ChartConfig } from '@/components/ui/chart'
+import type { ChartConfig } from "@/components/ui/chart";
 
-import { VisAxis, VisGroupedBar, VisXYContainer } from '@unovis/vue'
-import { TrendingUp } from 'lucide-vue-next'
+import { VisAxis, VisGroupedBar, VisXYContainer } from "@unovis/vue";
+import { TrendingUp } from "lucide-vue-next";
 import {
   Card,
   CardContent,
@@ -10,41 +10,41 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartCrosshair,
   ChartTooltip,
   ChartTooltipContent,
   componentToString,
-} from '@/components/ui/chart'
+} from "@/components/ui/chart";
 
 const props = defineProps<{
-  data?: any[]
-  title?: string
-  description?: string
-}>()
+  data?: any[];
+  title?: string;
+  description?: string;
+}>();
 
 const chartData = computed(() => {
-  if (!props.data || props.data.length === 0) return []
+  if (!props.data || props.data.length === 0) return [];
   return props.data.map((item) => ({
     ...item,
     date: new Date(item.date),
-  }))
-})
+  }));
+});
 
-type Data = (typeof chartData)['value'][number]
+type Data = (typeof chartData)["value"][number];
 
 const chartConfig = {
   desktop: {
-    label: 'Desktop',
-    color: 'var(--chart-1)',
+    label: "Desktop",
+    color: "var(--chart-1)",
   },
   mobile: {
-    label: 'Mobile',
-    color: 'var(--chart-2)',
+    label: "Mobile",
+    color: "var(--chart-2)",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 </script>
 
 <template>
@@ -73,10 +73,10 @@ const chartConfig = {
             :num-ticks="6"
             :tick-format="
               (d: number) => {
-                const date = new Date(d)
+                const date = new Date(d);
                 return date.toLocaleDateString('en-US', {
                   month: 'short',
-                })
+                });
               }
             "
             :tick-values="chartData.map((d) => d.date)"

@@ -33,11 +33,7 @@ export const useAndroidBackButton = (f7: Framework7) => {
     if ($(".popup.modal-in").length) {
       if ($(".popup.modal-in>.view").length) {
         const currentView = f7.views.get(".popup.modal-in>.view");
-        if (
-          currentView &&
-          currentView.router &&
-          currentView.router.history.length > 1
-        ) {
+        if (currentView && currentView.router && currentView.router.history.length > 1) {
           currentView.router.back();
           return;
         }
@@ -79,11 +75,7 @@ export const useAndroidBackButton = (f7: Framework7) => {
 
     const currentView = f7.views.current;
 
-    if (
-      currentView &&
-      currentView.name === "groups" &&
-      currentView.router.history.length === 1
-    ) {
+    if (currentView && currentView.name === "groups" && currentView.router.history.length === 1) {
       const toast = f7.toast.create({
         text: "Exit the app ?",
         closeTimeout: 2700,
@@ -97,11 +89,7 @@ export const useAndroidBackButton = (f7: Framework7) => {
       return;
     }
 
-    if (
-      currentView &&
-      currentView.router &&
-      currentView.router.history.length > 1
-    ) {
+    if (currentView && currentView.router && currentView.router.history.length > 1) {
       currentView.router.back();
       return;
     }

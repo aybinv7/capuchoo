@@ -37,9 +37,7 @@ describe("normaliseProjectConfig", () => {
     });
 
     expect(resolved.flavours.prod.envFile).toBe("env/production");
-    expect(resolved.flavours.prod.trapezeConfig).toBe(
-      "build/prod/trapeze.prod.yaml",
-    );
+    expect(resolved.flavours.prod.trapezeConfig).toBe("build/prod/trapeze.prod.yaml");
     expect(resolved.flavours.dev.envFile).toBe("build/dev/.env.dev");
   });
 
@@ -82,9 +80,7 @@ describe("validateProjectConfig", () => {
   });
 
   it("treats a missing file as a problem, not a crash", () => {
-    expect(validateProjectConfig(null)).toEqual([
-      "project.json is missing or empty",
-    ]);
+    expect(validateProjectConfig(null)).toEqual(["project.json is missing or empty"]);
   });
 });
 

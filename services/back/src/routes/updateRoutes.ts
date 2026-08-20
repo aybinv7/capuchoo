@@ -21,7 +21,7 @@ router.use(normalizeRequestFields);
 router.post(
   "/update",
   validateUpdateParams,
-  updateController.checkForUpdate.bind(updateController)
+  updateController.checkForUpdate.bind(updateController),
 );
 
 router.get("/config", updateController.getAppConfig.bind(updateController));
@@ -29,30 +29,20 @@ router.get("/config", updateController.getAppConfig.bind(updateController));
 /**
  * Additional update endpoints for dashboard/debugging
  */
-router.get(
-  "/updates",
-  validateUpdateParams,
-  updateController.getAllUpdates.bind(updateController)
-);
+router.get("/updates", validateUpdateParams, updateController.getAllUpdates.bind(updateController));
 
 router.get(
   "/builtin",
   validateUpdateParams,
-  updateController.getBuiltinVersion.bind(updateController)
+  updateController.getBuiltinVersion.bind(updateController),
 );
 
 /**
  * Update lifecycle tracking endpoints
  */
-router.post(
-  "/downloaded",
-  updateController.logDownloadCompleted.bind(updateController)
-);
+router.post("/downloaded", updateController.logDownloadCompleted.bind(updateController));
 
-router.post(
-  "/applied",
-  updateController.logUpdateApplied.bind(updateController)
-);
+router.post("/applied", updateController.logUpdateApplied.bind(updateController));
 
 router.post("/failed", updateController.logUpdateFailed.bind(updateController));
 

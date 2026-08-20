@@ -16,7 +16,7 @@
           class="absolute inset-0 size-2 rounded-full bg-green-500 animate-ping opacity-75"
         ></div>
       </div>
-      <span class="text-xs font-medium truncate flex-1">{{ data.name || 'Unknown Device' }}</span>
+      <span class="text-xs font-medium truncate flex-1">{{ data.name || "Unknown Device" }}</span>
       <ILucideMonitor v-if="data.platform === 'web'" class="size-3 text-muted-foreground" />
       <ILucideSmartphone v-else class="size-3 text-muted-foreground" />
     </div>
@@ -32,16 +32,16 @@
 </template>
 
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import { Handle, Position } from "@vue-flow/core";
 
 defineProps<{
   data: {
-    name: string
-    platform: string
-    os_version: string
-    app_version: string
-    is_online: boolean
-  }
-  selected?: boolean
-}>()
+    name: string;
+    platform: string;
+    os_version: string;
+    app_version: string;
+    is_online: boolean;
+  };
+  selected?: boolean;
+}>();
 </script>

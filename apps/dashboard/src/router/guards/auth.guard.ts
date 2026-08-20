@@ -1,20 +1,20 @@
-import type { NavigationGuardNext, RouteLocationNormalizedGeneric } from 'vue-router'
+import type { NavigationGuardNext, RouteLocationNormalizedGeneric } from "vue-router";
 
 export const useAuthGuard = (
   to: RouteLocationNormalizedGeneric,
   from: RouteLocationNormalizedGeneric,
   next: NavigationGuardNext,
 ) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
-  if (to.meta.layout === 'public') return next()
+  if (to.meta.layout === "public") return next();
 
-  const { isAuthenticated } = storeToRefs(authStore)
+  const { isAuthenticated } = storeToRefs(authStore);
   if ((to.meta.requiresAuth === undefined || to.meta.requiresAuth) && !isAuthenticated.value) {
-    next('/auth/Login')
+    next("/auth/Login");
   } else if (to.meta.requiresAuth != undefined && !to.meta.requiresAuth && isAuthenticated.value) {
-    next('/dashboard')
+    next("/dashboard");
   } else {
-    next()
+    next();
   }
-}
+};

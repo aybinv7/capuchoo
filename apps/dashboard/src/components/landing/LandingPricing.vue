@@ -1,57 +1,57 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Check } from 'lucide-vue-next'
-import AnimatedUnderline from './AnimatedUnderline.vue'
+import { ref } from "vue";
+import { Check } from "lucide-vue-next";
+import AnimatedUnderline from "./AnimatedUnderline.vue";
 
-const billingPeriod = ref<'monthly' | 'yearly'>('monthly')
+const billingPeriod = ref<"monthly" | "yearly">("monthly");
 
 const features = {
-  starter: ['Up to 1,000 MAU', 'Basic OTA Updates', 'Community Support', '1 Member'],
+  starter: ["Up to 1,000 MAU", "Basic OTA Updates", "Community Support", "1 Member"],
   pro: [
-    'Up to 10,000 MAU',
-    'Advanced Analytics',
-    'Priority Support',
-    '5 Members',
-    'Binary Diffing',
-    'Rollback Protection',
+    "Up to 10,000 MAU",
+    "Advanced Analytics",
+    "Priority Support",
+    "5 Members",
+    "Binary Diffing",
+    "Rollback Protection",
   ],
   enterprise: [
-    'Unlimited MAU',
-    'Custom Contracts',
-    'Dedicated Success Manager',
-    'Unlimited Members',
-    'SSO / SAML',
-    'On-premise Option',
-    'SLA Guarantee',
+    "Unlimited MAU",
+    "Custom Contracts",
+    "Dedicated Success Manager",
+    "Unlimited Members",
+    "SSO / SAML",
+    "On-premise Option",
+    "SLA Guarantee",
   ],
-}
+};
 
 const plans = [
   {
-    name: 'Starter',
-    description: 'Perfect for indie developers and side projects.',
+    name: "Starter",
+    description: "Perfect for indie developers and side projects.",
     price: { monthly: 0, yearly: 0 },
     features: features.starter,
-    cta: 'Start for Free',
+    cta: "Start for Free",
     highlight: false,
   },
   {
-    name: 'Pro',
-    description: 'For growing apps that need reliability and scale.',
+    name: "Pro",
+    description: "For growing apps that need reliability and scale.",
     price: { monthly: 49, yearly: 39 }, // 39 * 12 = 468 billed yearly
     features: features.pro,
-    cta: 'Start Free Trial',
+    cta: "Start Free Trial",
     highlight: true,
   },
   {
-    name: 'Enterprise',
-    description: 'For large-scale applications with custom needs.',
-    price: { monthly: 'Custom', yearly: 'Custom' },
+    name: "Enterprise",
+    description: "For large-scale applications with custom needs.",
+    price: { monthly: "Custom", yearly: "Custom" },
     features: features.enterprise,
-    cta: 'Contact Sales',
+    cta: "Contact Sales",
     highlight: false,
   },
-]
+];
 </script>
 
 <template>
@@ -143,7 +143,7 @@ const plans = [
             <div class="mb-8">
               <div class="flex items-baseline gap-1">
                 <span class="text-4xl text-foreground font-bold">
-                  {{ typeof plan.price[billingPeriod] === 'number' ? '$' : ''
+                  {{ typeof plan.price[billingPeriod] === "number" ? "$" : ""
                   }}{{ plan.price[billingPeriod] }}
                 </span>
                 <span v-if="typeof plan.price[billingPeriod] === 'number'" class="text-stone-500"

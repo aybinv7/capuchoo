@@ -9,11 +9,7 @@ import { Args, Flags } from "@oclif/core";
 import chalk from "chalk";
 import { BaseCommand } from "../../base-command.js";
 import { readVersionCodes, writeVersionCodes } from "../../pipeline/flavour.js";
-import {
-  readAppVersion,
-  requireProjectConfig,
-  writeAppVersion,
-} from "../../utils/config.js";
+import { readAppVersion, requireProjectConfig, writeAppVersion } from "../../utils/config.js";
 
 export default class VersionBump extends BaseCommand {
   static override description =
@@ -58,9 +54,7 @@ export default class VersionBump extends BaseCommand {
       const environment = flags.environment as Environment;
       const codes = nextVersionCode(readVersionCodes(appDir, project), environment);
       writeVersionCodes(appDir, project, codes);
-      this.log(
-        `  build    ${environment} -> ${chalk.green(String(codes[environment]))}`,
-      );
+      this.log(`  build    ${environment} -> ${chalk.green(String(codes[environment]))}`);
     }
 
     this.log("");
@@ -68,8 +62,6 @@ export default class VersionBump extends BaseCommand {
     // `npm version <type> --no-git-tag-version`, which in a workspace bumped
     // whichever package.json was nearest the process directory. Tagging stays
     // with git and CI, where the release actually happens.
-    this.log(
-      chalk.dim("  Nothing was committed or tagged. Commit the change yourself."),
-    );
+    this.log(chalk.dim("  Nothing was committed or tagged. Commit the change yourself."));
   }
 }

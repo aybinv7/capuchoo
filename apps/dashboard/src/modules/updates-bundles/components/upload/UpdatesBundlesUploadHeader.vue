@@ -28,8 +28,8 @@
 
 <script setup lang="ts">
 const { isUploading } = defineProps<{
-  isUploading: boolean
-}>()
+  isUploading: boolean;
+}>();
 
-const emit = defineEmits(['click:upload'])
+const emit = defineEmits(["click:upload"]);
 </script>

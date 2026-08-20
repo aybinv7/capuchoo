@@ -28,10 +28,7 @@
         :link="'/channels/' + channel.id"
       >
         <template #media>
-          <F7Icon
-            f7="antenna_radiowaves_left_right"
-            :color="getChannelColor(channel.name)"
-          />
+          <F7Icon f7="antenna_radiowaves_left_right" :color="getChannelColor(channel.name)" />
         </template>
         <template #after>
           <F7Badge :color="channel.active ? 'green' : 'gray'">{{
@@ -54,10 +51,7 @@
 
 <script setup lang="ts">
 import { useAppStore } from "@/shared/stores/app.store";
-import {
-  useChannelsQuery,
-  useCreateChannelMutation,
-} from "../queries/channels.queries";
+import { useChannelsQuery, useCreateChannelMutation } from "../queries/channels.queries";
 import { f7 } from "framework7-vue";
 import { computed, ref } from "vue";
 
@@ -106,9 +100,7 @@ const addChannel = () => {
           app_id: activeApp.value?.app_id,
           active: true,
         });
-        f7.toast
-          .create({ text: `Channel '${name}' created!`, closeTimeout: 2000 })
-          .open();
+        f7.toast.create({ text: `Channel '${name}' created!`, closeTimeout: 2000 }).open();
         await refetch();
       } catch (error: any) {
         f7.dialog.alert(error.message || "Failed to create channel", "Error");

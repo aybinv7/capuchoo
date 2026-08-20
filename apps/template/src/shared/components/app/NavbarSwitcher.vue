@@ -4,9 +4,7 @@
       class="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95 border border-transparent hover:border-black/5 select-none"
     >
       <div class="flex flex-col items-start leading-tight">
-        <span
-          class="text-[9px] uppercase tracking-wider text-gray-400 font-extrabold"
-        >
+        <span class="text-[9px] uppercase tracking-wider text-gray-400 font-extrabold">
           {{ activeOrg?.name || "Select Context" }}
         </span>
         <div class="flex items-center gap-1.5">
@@ -19,10 +17,7 @@
     </div>
 
     <!-- Switcher Popover -->
-    <F7Popover
-      ref="popoverRef"
-      class="switcher-popover rounded-2xl overflow-hidden shadow-2xl"
-    >
+    <F7Popover ref="popoverRef" class="switcher-popover rounded-2xl overflow-hidden shadow-2xl">
       <F7List dividers-ios strong-ios outline-ios class="no-margin !mt-0">
         <F7ListItem
           title="Organizations"
@@ -30,10 +25,7 @@
           class="text-[10px]! uppercase tracking-widest font-black opacity-70 py-2"
         >
           <F7Link class="p-2 -mr-2" @click.stop="handleManualRefetch">
-            <ILucideRefreshCw
-              :size="14"
-              :class="{ 'animate-spin': isRefreshing }"
-            />
+            <ILucideRefreshCw :size="14" :class="{ 'animate-spin': isRefreshing }" />
           </F7Link>
         </F7ListItem>
 
@@ -56,12 +48,7 @@
             </div>
           </template>
           <template #after>
-            <F7Icon
-              v-if="activeOrg?.id === org.id"
-              f7="checkmark_alt"
-              size="16"
-              color="blue"
-            />
+            <F7Icon v-if="activeOrg?.id === org.id" f7="checkmark_alt" size="16" color="blue" />
           </template>
         </F7ListItem>
 
@@ -123,10 +110,7 @@
 <script setup lang="ts">
 import { useOrganizationStore } from "@/shared/stores/organization.store";
 import { useAppStore } from "@/shared/stores/app.store";
-import {
-  useOrganizationsQuery,
-  useAppsQuery,
-} from "@/shared/queries/apps.queries";
+import { useOrganizationsQuery, useAppsQuery } from "@/shared/queries/apps.queries";
 import { computed, ref, onMounted } from "vue";
 import type { Organization, App } from "@/shared/types/models";
 

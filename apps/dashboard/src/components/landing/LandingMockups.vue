@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Monitor, Smartphone } from 'lucide-vue-next'
+import { Monitor, Smartphone } from "lucide-vue-next";
 </script>
 
 <template>

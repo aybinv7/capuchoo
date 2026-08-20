@@ -5,21 +5,18 @@
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogDescription>
           <p v-if="!itemToDelete">
-            Are you sure you want to delete {{ selectedItems.length }} selected items?
-            This action cannot be undone.
+            Are you sure you want to delete {{ selectedItems.length }} selected items? This action
+            cannot be undone.
           </p>
-          <p v-else>
-            Are you sure you want to delete this item?
-            This action cannot be undone.
-          </p>
+          <p v-else>Are you sure you want to delete this item? This action cannot be undone.</p>
         </DialogDescription>
       </DialogHeader>
 
       <DialogFooter>
         <Button variant="outline" @click="dialogOpen = false">Cancel</Button>
-        <Button 
-          variant="destructive" 
-          :disabled="isDeleting" 
+        <Button
+          variant="destructive"
+          :disabled="isDeleting"
           @click="$emit('click:handle-delete-confirm')"
         >
           <span v-if="isDeleting">Deleting...</span>
@@ -31,34 +28,34 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import type { UpdateOrBundle } from '../../types/updates-bundles.types'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import type { UpdateOrBundle } from "../../types/updates-bundles.types";
 
 interface Props {
-  deleteDialogOpen: boolean
-  itemToDelete: string | number | null
-  selectedItems: UpdateOrBundle[]
-  isDeleting: boolean
+  deleteDialogOpen: boolean;
+  itemToDelete: string | number | null;
+  selectedItems: UpdateOrBundle[];
+  isDeleting: boolean;
 }
 
 interface Emits {
-  (e: 'update:deleteDialogOpen', value: boolean): void
-  (e: 'click:handle-delete-confirm'): void
+  (e: "update:deleteDialogOpen", value: boolean): void;
+  (e: "click:handle-delete-confirm"): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const dialogOpen = computed({
   get: () => props.deleteDialogOpen,
-  set: (value) => emit('update:deleteDialogOpen', value)
-})
+  set: (value) => emit("update:deleteDialogOpen", value),
+});
 </script>

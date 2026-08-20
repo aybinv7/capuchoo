@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,51 +8,51 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar'
-import { useOrganizationStore } from '@/stores/organization.store'
-import type { Organization } from '@/types/models'
+} from "@/components/ui/sidebar";
+import { useOrganizationStore } from "@/stores/organization.store";
+import type { Organization } from "@/types/models";
 
 const props = defineProps<{
   userData: {
-    name: string
-    email: string
-    avatar: string
-  }
-}>()
+    name: string;
+    email: string;
+    avatar: string;
+  };
+}>();
 
-const router = useRouter()
-const authStore = useAuthStore()
-const orgStore = useOrganizationStore()
-const { isMobile } = useSidebar()
+const router = useRouter();
+const authStore = useAuthStore();
+const orgStore = useOrganizationStore();
+const { isMobile } = useSidebar();
 
-const { data: organizations } = useOrganizationsQuery()
-const activeOrganization = computed(() => orgStore.activeOrganization)
+const { data: organizations } = useOrganizationsQuery();
+const activeOrganization = computed(() => orgStore.activeOrganization);
 
 // Auto-select first org if none active
 watch(
   organizations,
   (newOrgs) => {
     if (newOrgs && newOrgs.length > 0 && !activeOrganization.value) {
-      orgStore.setActiveOrganization(newOrgs[0] as Organization)
+      orgStore.setActiveOrganization(newOrgs[0] as Organization);
     }
   },
   { immediate: true },
-)
+);
 
 const selectOrg = (org: Organization) => {
-  orgStore.setActiveOrganization(org)
-}
+  orgStore.setActiveOrganization(org);
+};
 
 const handleLogout = async () => {
-  await authStore.logout()
-  router.push('/login')
-}
+  await authStore.logout();
+  router.push("/login");
+};
 </script>
 
 <template>
@@ -72,7 +72,7 @@ const handleLogout = async () => {
             </Avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">
               <span class="truncate font-semibold">{{
-                activeOrganization?.name || 'Personal Account'
+                activeOrganization?.name || "Personal Account"
               }}</span>
               <span class="truncate text-xs text-muted-foreground">Active Workspace</span>
             </div>

@@ -195,9 +195,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
 
   const required =
     flags.required ??
-    (interactive
-      ? await confirm({ message: "Mark as required?", default: false })
-      : false);
+    (interactive ? await confirm({ message: "Mark as required?", default: false }) : false);
 
   let bump = flags.version as BumpType | undefined;
   if (!bump && interactive) {
@@ -215,8 +213,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   }
 
   const note =
-    flags.note ??
-    (interactive ? await input({ message: "Release notes (optional)" }) : "");
+    flags.note ?? (interactive ? await input({ message: "Release notes (optional)" }) : "");
 
   const currentVersion = readAppVersion(appDir);
   const version = bump ? bumpVersion(currentVersion, bump) : currentVersion;

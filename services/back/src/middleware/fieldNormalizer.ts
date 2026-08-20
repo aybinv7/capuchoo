@@ -26,22 +26,19 @@ const FIELD_MAPPINGS: Record<string, string> = {
 /**
  * Reverse mappings for response transformation (camelCase to snake_case)
  */
-const REVERSE_MAPPINGS: Record<string, string> = Object.entries(
-  FIELD_MAPPINGS
-).reduce((acc, [snake, camel]) => {
-  acc[camel] = snake;
-  return acc;
-}, {} as Record<string, string>);
+const REVERSE_MAPPINGS: Record<string, string> = Object.entries(FIELD_MAPPINGS).reduce(
+  (acc, [snake, camel]) => {
+    acc[camel] = snake;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 /**
  * Normalizes request body fields from snake_case (Capgo plugin) to camelCase (backend)
  * Also handles both naming conventions for backwards compatibility
  */
-export function normalizeRequestFields(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function normalizeRequestFields(req: Request, res: Response, next: NextFunction): void {
   if (req.body && typeof req.body === "object") {
     const normalized: Record<string, any> = { ...req.body };
 
@@ -96,9 +93,7 @@ export function normalizeRequestFields(
  * Transforms response body from camelCase (backend) to snake_case (Capgo plugin)
  * Use this if you need strict Capgo compatibility in responses
  */
-export function transformResponseFields(
-  obj: Record<string, any>
-): Record<string, any> {
+export function transformResponseFields(obj: Record<string, any>): Record<string, any> {
   const transformed: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(obj)) {

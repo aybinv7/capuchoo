@@ -1,9 +1,9 @@
-import { ref } from 'vue';
+import { ref } from "vue";
 
 interface Toast {
   id: number;
   message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
+  type: "success" | "error" | "info" | "warning";
   duration?: number;
 }
 
@@ -12,8 +12,8 @@ export function useToast() {
 
   const showToast = (
     message: string,
-    type: 'success' | 'error' | 'info' | 'warning' = 'info',
-    duration = 3000
+    type: "success" | "error" | "info" | "warning" = "info",
+    duration = 3000,
   ) => {
     const id = Date.now();
     toasts.value.push({ id, message, type, duration });
@@ -28,10 +28,10 @@ export function useToast() {
     toasts.value = toasts.value.filter((toast) => toast.id !== id);
   };
 
-  const showSuccess = (message: string) => showToast(message, 'success');
-  const showError = (message: string) => showToast(message, 'error');
-  const showInfo = (message: string) => showToast(message, 'info');
-  const showWarning = (message: string) => showToast(message, 'warning');
+  const showSuccess = (message: string) => showToast(message, "success");
+  const showError = (message: string) => showToast(message, "error");
+  const showInfo = (message: string) => showToast(message, "info");
+  const showWarning = (message: string) => showToast(message, "warning");
 
   return {
     toasts: toasts.value,

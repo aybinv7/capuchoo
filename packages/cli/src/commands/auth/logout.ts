@@ -19,9 +19,7 @@ export default class AuthLogout extends BaseCommand {
 
     if (process.env.CAPUCHO_API_KEY) {
       this.log(
-        chalk.yellow(
-          "! CAPUCHO_API_KEY is set in this environment and still takes precedence.",
-        ),
+        chalk.yellow("! CAPUCHO_API_KEY is set in this environment and still takes precedence."),
       );
     }
   }

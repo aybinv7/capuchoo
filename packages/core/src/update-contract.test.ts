@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import {
-  UpdateMessage,
-  isBlockingResponse,
-  resolveUpdate,
-} from "./update-contract.js";
+import { UpdateMessage, isBlockingResponse, resolveUpdate } from "./update-contract.js";
 
 describe("resolveUpdate", () => {
   it("returns null when there is nothing to install", () => {
@@ -87,12 +83,8 @@ describe("resolveUpdate", () => {
 
 describe("isBlockingResponse", () => {
   it("flags misconfiguration rather than reporting up to date", () => {
-    expect(isBlockingResponse({ message: UpdateMessage.CHANNEL_NOT_FOUND })).toBe(
-      true,
-    );
-    expect(
-      isBlockingResponse({ message: UpdateMessage.ENVIRONMENT_MISMATCH }),
-    ).toBe(true);
+    expect(isBlockingResponse({ message: UpdateMessage.CHANNEL_NOT_FOUND })).toBe(true);
+    expect(isBlockingResponse({ message: UpdateMessage.ENVIRONMENT_MISMATCH })).toBe(true);
     expect(isBlockingResponse({ message: UpdateMessage.NO_UPDATE })).toBe(false);
   });
 });

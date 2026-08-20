@@ -39,11 +39,7 @@ export const useAuthStore = defineStore(
       }
     }
 
-    async function register(data: {
-      email: string;
-      password: string;
-      businessName: string;
-    }) {
+    async function register(data: { email: string; password: string; businessName: string }) {
       loading.value = true;
       error.value = null;
 
@@ -69,12 +65,11 @@ export const useAuthStore = defineStore(
       error.value = null;
 
       try {
-        const { user: verifiedUser, session: newSession } =
-          await authService.verifyOtp(
-            pendingVerificationEmail.value,
-            token,
-            "signup",
-          );
+        const { user: verifiedUser, session: newSession } = await authService.verifyOtp(
+          pendingVerificationEmail.value,
+          token,
+          "signup",
+        );
 
         user.value = verifiedUser;
         session.value = newSession;
@@ -153,9 +148,7 @@ export const useAuthStore = defineStore(
     }
 
     const userRole = computed(() => {
-      return (
-        (user.value?.user_metadata?.role as "admin" | "tester") || "tester"
-      );
+      return (user.value?.user_metadata?.role as "admin" | "tester") || "tester";
     });
 
     const isAdmin = computed(() => userRole.value === "admin");

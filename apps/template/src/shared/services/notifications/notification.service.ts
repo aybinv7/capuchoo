@@ -1,12 +1,6 @@
 import { Capacitor } from "@capacitor/core";
-import {
-  LocalNotifications,
-  type LocalNotificationSchema,
-} from "@capacitor/local-notifications";
-import {
-  FirebaseMessaging,
-  type GetTokenOptions,
-} from "@capacitor-firebase/messaging";
+import { LocalNotifications, type LocalNotificationSchema } from "@capacitor/local-notifications";
+import { FirebaseMessaging, type GetTokenOptions } from "@capacitor-firebase/messaging";
 
 export class NotificationService {
   private static instance: NotificationService;
@@ -78,9 +72,7 @@ export class NotificationService {
   /**
    * Schedule a Local Notification
    */
-  async scheduleLocal(
-    options: Omit<LocalNotificationSchema, "id"> & { id?: number },
-  ) {
+  async scheduleLocal(options: Omit<LocalNotificationSchema, "id"> & { id?: number }) {
     // Generate random ID if not provided
     const id = options.id || Math.floor(Math.random() * 100000000);
 

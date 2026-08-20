@@ -1,14 +1,14 @@
 {
   "name": "@capucho/template",
-  "private": true,
-  "type": "module",
   "version": "19.0.0",
+  "private": true,
   "description": "Reference Capacitor application wired to Capucho updates",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/inventor7/Capucho.git"
   },
-  "license": "MIT",
+  "type": "module",
   "scripts": {
     "dev": "vp dev --host 0.0.0.0",
     "dev:staging": "dotenv -e build/staging/.env.staging -e .env.local -- vp dev --host 0.0.0.0",
@@ -22,12 +22,6 @@
     "deploy": "capucho deploy ota",
     "deploy:native": "capucho deploy native"
   },
-  "browserslist": [
-    "IOS >= 15",
-    "Safari >= 15",
-    "last 5 Chrome versions",
-    "last 5 Firefox versions"
-  ],
   "dependencies": {
     "@capacitor-firebase/messaging": "^8.0.1",
     "@capacitor/android": "catalog:",
@@ -46,6 +40,8 @@
     "@capacitor/status-bar": "^8.0.0",
     "@capawesome-team/capacitor-file-opener": "catalog:",
     "@capgo/capacitor-updater": "catalog:",
+    "@capucho/core": "workspace:*",
+    "@capucho/updater": "workspace:*",
     "@openreplay/tracker": "^17.0.1",
     "@openreplay/tracker-assist": "^11.0.10",
     "@openreplay/tracker-vuex": "^4.0.3",
@@ -74,11 +70,10 @@
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.5.0",
     "vue": "^3.5.25",
-    "vue-i18n": "^11.2.2",
-    "@capucho/core": "workspace:*",
-    "@capucho/updater": "workspace:*"
+    "vue-i18n": "^11.2.2"
   },
   "devDependencies": {
+    "@capacitor/assets": "catalog:",
     "@capacitor/cli": "catalog:",
     "@iconify-json/f7": "^1.2.2",
     "@iconify-json/lucide": "^1.2.80",
@@ -88,6 +83,7 @@
     "@types/three": "^0.182.0",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vue/compiler-sfc": "^3.5.25",
+    "capucho-cli": "workspace:*",
     "cpy-cli": "^6.0.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
@@ -102,8 +98,12 @@
     "unplugin-imagemin": "^0.6.9",
     "unplugin-turbo-console": "^2.3.0",
     "vite-plugin-vue-devtools": "^8.0.5",
-    "vue-tsc": "^3.1.8",
-    "capucho-cli": "workspace:*",
-    "@capacitor/assets": "catalog:"
-  }
+    "vue-tsc": "^3.1.8"
+  },
+  "browserslist": [
+    "IOS >= 15",
+    "Safari >= 15",
+    "last 5 Chrome versions",
+    "last 5 Firefox versions"
+  ]
 }

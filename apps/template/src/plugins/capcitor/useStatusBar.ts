@@ -10,8 +10,5 @@ export const useStatusBar = async (f7: Framework7) => {
 
   const statusBarHeight = (await StatusBar.getInfo()) as any;
 
-  document.documentElement.style.setProperty(
-    "--f7-safe-area-top",
-    `${statusBarHeight.height}px`
-  );
+  document.documentElement.style.setProperty("--f7-safe-area-top", `${statusBarHeight.height}px`);
 };

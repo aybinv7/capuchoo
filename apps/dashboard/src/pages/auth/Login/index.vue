@@ -66,7 +66,7 @@
                 </div>
 
                 <Button type="submit" :disabled="loading">
-                  {{ loading ? 'Loading...' : 'Login' }}
+                  {{ loading ? "Loading..." : "Login" }}
                 </Button>
               </div>
             </form>
@@ -101,43 +101,43 @@
 </template>
 
 <script setup lang="ts">
-import capgoLogo from '@/assets/images/capucho.png'
-import { toast } from 'vue-sonner'
+import capgoLogo from "@/assets/images/capucho.png";
+import { toast } from "vue-sonner";
 
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
+const email = ref("");
+const password = ref("");
+const loading = ref(false);
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
 const login = async () => {
   if (!email.value || !password.value) {
-    toast.error('Please fill all the fields')
-    return
+    toast.error("Please fill all the fields");
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
   try {
-    await authStore.login({ email: email.value, password: password.value })
-    toast.success('Logged in successfully')
-    router.push('/dashboard')
+    await authStore.login({ email: email.value, password: password.value });
+    toast.success("Logged in successfully");
+    router.push("/dashboard");
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'There was an error, please try again'
-    toast.error(message)
+    const message = error instanceof Error ? error.message : "There was an error, please try again";
+    toast.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 definePage({
   meta: {
-    title: 'Login',
-    description: 'Log in to your capgo account',
-    category: 'authentication',
+    title: "Login",
+    description: "Log in to your capgo account",
+    category: "authentication",
     hideFromSearch: true,
     requiresAuth: false,
-    layout: 'empty',
+    layout: "empty",
   },
-})
+});
 </script>

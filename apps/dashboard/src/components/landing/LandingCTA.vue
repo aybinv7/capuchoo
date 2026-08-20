@@ -1,147 +1,147 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue'
-import { ArrowRight } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, nextTick, computed } from "vue";
+import { ArrowRight } from "lucide-vue-next";
+import { useRouter } from "vue-router";
 
-const router = useRouter()
+const router = useRouter();
 const terminalLines = ref([
-  { text: 'capucho deploy --target=production', type: 'command' },
-  { text: 'Analyzing bundle...', type: 'output', delay: 500 },
-  { text: 'Diffing binary...', type: 'output', delay: 1200 },
-  { text: 'Optimizing assets...', type: 'output', delay: 1800 },
-  { text: 'Uploading patch (14kb)...', type: 'output', delay: 2400 },
-  { text: 'Update published successfully! 🚀', type: 'success', delay: 3200 },
-])
+  { text: "capucho deploy --target=production", type: "command" },
+  { text: "Analyzing bundle...", type: "output", delay: 500 },
+  { text: "Diffing binary...", type: "output", delay: 1200 },
+  { text: "Optimizing assets...", type: "output", delay: 1800 },
+  { text: "Uploading patch (14kb)...", type: "output", delay: 2400 },
+  { text: "Update published successfully! 🚀", type: "success", delay: 3200 },
+]);
 
-const visibleLines = ref<any[]>([])
-const isInteractive = ref(false)
-const userInput = ref('')
-const inputRef = ref<HTMLInputElement | null>(null)
-const terminalBodyRef = ref<HTMLDivElement | null>(null)
+const visibleLines = ref<any[]>([]);
+const isInteractive = ref(false);
+const userInput = ref("");
+const inputRef = ref<HTMLInputElement | null>(null);
+const terminalBodyRef = ref<HTMLDivElement | null>(null);
 
 // Conversation State
-type InteractionState = 'idle' | 'awaiting_email' | 'awaiting_message'
-const interactionState = ref<InteractionState>('idle')
-const contactData = ref({ email: '', message: '' })
+type InteractionState = "idle" | "awaiting_email" | "awaiting_message";
+const interactionState = ref<InteractionState>("idle");
+const contactData = ref({ email: "", message: "" });
 
 const promptLabel = computed(() => {
   switch (interactionState.value) {
-    case 'awaiting_email':
-      return 'Email:'
-    case 'awaiting_message':
-      return 'Message:'
+    case "awaiting_email":
+      return "Email:";
+    case "awaiting_message":
+      return "Message:";
     default:
-      return '$'
+      return "$";
   }
-})
+});
 
 const scrollToBottom = async () => {
-  await nextTick()
+  await nextTick();
   if (terminalBodyRef.value) {
-    terminalBodyRef.value.scrollTop = terminalBodyRef.value.scrollHeight
+    terminalBodyRef.value.scrollTop = terminalBodyRef.value.scrollHeight;
   }
-}
+};
 
 const focusInput = () => {
   if (isInteractive.value && inputRef.value) {
-    inputRef.value.focus()
+    inputRef.value.focus();
   }
-}
+};
 
 const handleCommand = () => {
-  const input = userInput.value.trim()
-  if (!input && interactionState.value === 'idle') return
+  const input = userInput.value.trim();
+  if (!input && interactionState.value === "idle") return;
 
   // Echo user input
   visibleLines.value.push({
     text: input,
-    type: 'command',
+    type: "command",
     prompt: promptLabel.value,
-  })
-  userInput.value = ''
-  scrollToBottom()
+  });
+  userInput.value = "";
+  scrollToBottom();
 
   // State Machine
-  if (interactionState.value === 'idle') {
-    if (input === 'contact') {
-      interactionState.value = 'awaiting_email'
-      visibleLines.value.push({ text: 'Please enter your email address:', type: 'output' })
-    } else if (input === 'help') {
-      visibleLines.value.push({ text: 'Available commands: contact, clear, help', type: 'output' })
-    } else if (input === 'clear') {
-      visibleLines.value = []
+  if (interactionState.value === "idle") {
+    if (input === "contact") {
+      interactionState.value = "awaiting_email";
+      visibleLines.value.push({ text: "Please enter your email address:", type: "output" });
+    } else if (input === "help") {
+      visibleLines.value.push({ text: "Available commands: contact, clear, help", type: "output" });
+    } else if (input === "clear") {
+      visibleLines.value = [];
     } else {
       visibleLines.value.push({
         text: `command not found: ${input}. Try 'contact'.`,
-        type: 'warning',
-      })
+        type: "warning",
+      });
     }
-  } else if (interactionState.value === 'awaiting_email') {
-    if (input.includes('@')) {
-      contactData.value.email = input
-      interactionState.value = 'awaiting_message'
-      visibleLines.value.push({ text: "Great! What's your message?", type: 'output' })
+  } else if (interactionState.value === "awaiting_email") {
+    if (input.includes("@")) {
+      contactData.value.email = input;
+      interactionState.value = "awaiting_message";
+      visibleLines.value.push({ text: "Great! What's your message?", type: "output" });
     } else {
       visibleLines.value.push({
         text: "Invalid email. Please try again or type 'cancel'.",
-        type: 'warning',
-      })
-      if (input === 'cancel') {
-        interactionState.value = 'idle'
-        visibleLines.value.push({ text: 'Cancelled.', type: 'output' })
+        type: "warning",
+      });
+      if (input === "cancel") {
+        interactionState.value = "idle";
+        visibleLines.value.push({ text: "Cancelled.", type: "output" });
       }
     }
-  } else if (interactionState.value === 'awaiting_message') {
-    contactData.value.message = input
-    visibleLines.value.push({ text: 'Sending your message...', type: 'output' })
+  } else if (interactionState.value === "awaiting_message") {
+    contactData.value.message = input;
+    visibleLines.value.push({ text: "Sending your message...", type: "output" });
 
     // Simulate API call
     setTimeout(() => {
       visibleLines.value.push({
         text: "Message sent successfully! We'll be in touch.",
-        type: 'success',
-      })
-      interactionState.value = 'idle'
-      contactData.value = { email: '', message: '' }
-      scrollToBottom()
-    }, 1000)
+        type: "success",
+      });
+      interactionState.value = "idle";
+      contactData.value = { email: "", message: "" };
+      scrollToBottom();
+    }, 1000);
   }
 
-  scrollToBottom()
-}
+  scrollToBottom();
+};
 
 const startAnimation = () => {
-  visibleLines.value = []
-  isInteractive.value = false
+  visibleLines.value = [];
+  isInteractive.value = false;
 
-  let delay = 0
+  let delay = 0;
   terminalLines.value.forEach((line) => {
     setTimeout(
       () => {
-        visibleLines.value.push(line)
-        scrollToBottom()
+        visibleLines.value.push(line);
+        scrollToBottom();
         if (line === terminalLines.value[terminalLines.value.length - 1]) {
           // Animation done, switch to interactive
           setTimeout(() => {
-            visibleLines.value.push({ text: '', type: 'separator' })
+            visibleLines.value.push({ text: "", type: "separator" });
             visibleLines.value.push({
               text: "Type 'contact' to send us a message.",
-              type: 'output',
-            })
-            isInteractive.value = true
-            scrollToBottom()
-          }, 1000)
+              type: "output",
+            });
+            isInteractive.value = true;
+            scrollToBottom();
+          }, 1000);
         }
       },
       delay + (line.delay || 0),
-    )
-    delay += (line.delay || 0) + 500
-  })
-}
+    );
+    delay += (line.delay || 0) + 500;
+  });
+};
 
 onMounted(() => {
-  startAnimation()
-})
+  startAnimation();
+});
 </script>
 
 <template>
@@ -234,7 +234,7 @@ onMounted(() => {
                 <!-- Initial Animation Lines -->
                 <div v-for="(line, index) in visibleLines" :key="index" class="flex gap-3">
                   <div v-if="line.type === 'command'" class="text-stone-500 select-none shrink-0">
-                    {{ line.prompt || '$' }}
+                    {{ line.prompt || "$" }}
                   </div>
                   <div
                     :class="{

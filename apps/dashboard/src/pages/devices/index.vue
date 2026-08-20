@@ -52,42 +52,42 @@
 </template>
 
 <script setup lang="ts">
-import DevicesMap from '@/modules/devices/components/DevicesMap.vue'
-import { toast } from 'vue-sonner'
-import { ref } from 'vue'
-import { Button } from '@/components/ui/button'
-import { LayoutList, Map as MapIcon } from 'lucide-vue-next'
+import DevicesMap from "@/modules/devices/components/DevicesMap.vue";
+import { toast } from "vue-sonner";
+import { ref } from "vue";
+import { Button } from "@/components/ui/button";
+import { LayoutList, Map as MapIcon } from "lucide-vue-next";
 
 definePage({
   meta: {
-    title: 'Devices - CapGO Admin',
-    description: 'Manage app devices',
+    title: "Devices - CapGO Admin",
+    description: "Manage app devices",
   },
-})
+});
 
-const { data: devices, isLoading, isFetching, error, refetch } = useDevicesQuery()
-const deleteMutation = useDeleteDeviceMutation()
-const updateChannelMutation = useUpdateDeviceChannelMutation()
+const { data: devices, isLoading, isFetching, error, refetch } = useDevicesQuery();
+const deleteMutation = useDeleteDeviceMutation();
+const updateChannelMutation = useUpdateDeviceChannelMutation();
 
-const viewMode = ref<'list' | 'map'>('list')
+const viewMode = ref<"list" | "map">("list");
 
 const handleDelete = async (id: string) => {
   try {
-    await deleteMutation.mutateAsync(id)
-    toast.success('Device deleted successfully')
-    refetch()
+    await deleteMutation.mutateAsync(id);
+    toast.success("Device deleted successfully");
+    refetch();
   } catch (e: any) {
-    toast.error(e || 'Failed to delete device')
+    toast.error(e || "Failed to delete device");
   }
-}
+};
 
 const handleUpdateChannel = async (id: string, channel: string) => {
   try {
-    await updateChannelMutation.mutateAsync({ id, channel })
-    toast.success('Device channel updated successfully')
-    refetch()
+    await updateChannelMutation.mutateAsync({ id, channel });
+    toast.success("Device channel updated successfully");
+    refetch();
   } catch (e: any) {
-    toast.error(e || 'Failed to update device channel')
+    toast.error(e || "Failed to update device channel");
   }
-}
+};
 </script>

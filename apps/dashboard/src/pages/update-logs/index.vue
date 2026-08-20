@@ -1,72 +1,72 @@
 <script setup lang="ts">
-import type { DateRange } from 'reka-ui'
-import { getLocalTimeZone, today } from '@internationalized/date'
-import { Loader2, ScrollText, BarChart3 } from 'lucide-vue-next'
-import { useUpdateLogsQuery } from '@/modules/update-logs/composables/useUpdateLogsQuery'
-import type { UpdateLog } from '@/modules/update-logs/types/update-logs.types'
-import UpdateLogsFilters from '@/modules/update-logs/components/UpdateLogsFilters.vue'
-import UpdateLogsList from '@/modules/update-logs/components/UpdateLogsList.vue'
+import type { DateRange } from "reka-ui";
+import { getLocalTimeZone, today } from "@internationalized/date";
+import { Loader2, ScrollText, BarChart3 } from "lucide-vue-next";
+import { useUpdateLogsQuery } from "@/modules/update-logs/composables/useUpdateLogsQuery";
+import type { UpdateLog } from "@/modules/update-logs/types/update-logs.types";
+import UpdateLogsFilters from "@/modules/update-logs/components/UpdateLogsFilters.vue";
+import UpdateLogsList from "@/modules/update-logs/components/UpdateLogsList.vue";
 
 definePage({
   meta: {
-    title: 'Update Logs - CapGO Updater',
-    description: 'Activity feed for update events',
-    category: 'update-logs',
+    title: "Update Logs - CapGO Updater",
+    description: "Activity feed for update events",
+    category: "update-logs",
   },
-})
+});
 
 // Filter state
-const searchQuery = ref('')
-const selectedActions = ref<string[]>([])
-const selectedPlatforms = ref<string[]>([])
-const limit = ref(100)
-const isLoadingMore = ref(false)
+const searchQuery = ref("");
+const selectedActions = ref<string[]>([]);
+const selectedPlatforms = ref<string[]>([]);
+const limit = ref(100);
+const isLoadingMore = ref(false);
 
 // Date range using CalendarDate for compatibility with RangeCalendar
-const tz = getLocalTimeZone()
+const tz = getLocalTimeZone();
 const dateRange = ref<DateRange>({
   start: today(tz).subtract({ days: 7 }),
   end: today(tz),
-})
+});
 
 // Query
-const { data: logs, isLoading, isFetching, refetch } = useUpdateLogsQuery({ limit: limit.value })
+const { data: logs, isLoading, isFetching, refetch } = useUpdateLogsQuery({ limit: limit.value });
 
 // Filter logs client-side
 const filteredLogs = computed(() => {
-  if (!logs.value) return []
+  if (!logs.value) return [];
 
   return logs.value.filter((log: UpdateLog) => {
     // Search filter
     if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase()
+      const query = searchQuery.value.toLowerCase();
       const matches =
         log.device_id.toLowerCase().includes(query) ||
         log.ip?.toLowerCase().includes(query) ||
         log.new_version?.toLowerCase().includes(query) ||
-        log.current_version?.toLowerCase().includes(query)
-      if (!matches) return false
+        log.current_version?.toLowerCase().includes(query);
+      if (!matches) return false;
     }
 
     // Action filter
     if (selectedActions.value.length > 0 && !selectedActions.value.includes(log.action)) {
-      return false
+      return false;
     }
 
     // Platform filter
     if (selectedPlatforms.value.length > 0 && !selectedPlatforms.value.includes(log.platform)) {
-      return false
+      return false;
     }
 
     // Date range filter
     if (dateRange.value.start) {
-      const logDate = new Date(log.timestamp)
+      const logDate = new Date(log.timestamp);
       const startDate = new Date(
         dateRange.value.start.year,
         dateRange.value.start.month - 1,
         dateRange.value.start.day,
-      )
-      if (logDate < startDate) return false
+      );
+      if (logDate < startDate) return false;
 
       if (dateRange.value.end) {
         const endDate = new Date(
@@ -77,60 +77,60 @@ const filteredLogs = computed(() => {
           59,
           59,
           999,
-        )
-        if (logDate > endDate) return false
+        );
+        if (logDate > endDate) return false;
       }
     }
 
-    return true
-  })
-})
+    return true;
+  });
+});
 
 // Stats from filtered logs
 const stats = computed(() => {
-  const all = filteredLogs.value
+  const all = filteredLogs.value;
   return {
     total: all.length,
-    downloads: all.filter((l) => l.action === 'download').length,
-    installs: all.filter((l) => l.action === 'install').length,
-    failures: all.filter((l) => l.action.includes('fail')).length,
-  }
-})
+    downloads: all.filter((l) => l.action === "download").length,
+    installs: all.filter((l) => l.action === "install").length,
+    failures: all.filter((l) => l.action.includes("fail")).length,
+  };
+});
 
 // Handlers
 const clearFilters = () => {
-  searchQuery.value = ''
-  selectedActions.value = []
-  selectedPlatforms.value = []
+  searchQuery.value = "";
+  selectedActions.value = [];
+  selectedPlatforms.value = [];
   dateRange.value = {
     start: today(tz).subtract({ days: 7 }),
     end: today(tz),
-  }
-}
+  };
+};
 
 const loadMore = async () => {
-  isLoadingMore.value = true
-  limit.value += 100
-  await refetch()
-  isLoadingMore.value = false
-}
+  isLoadingMore.value = true;
+  limit.value += 100;
+  await refetch();
+  isLoadingMore.value = false;
+};
 
 const handleExport = () => {
   // Export filtered logs as JSON
-  const dataStr = JSON.stringify(filteredLogs.value, null, 2)
-  const blob = new Blob([dataStr], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `update-logs-${new Date().toISOString().split('T')[0]}.json`
-  a.click()
-  URL.revokeObjectURL(url)
-}
+  const dataStr = JSON.stringify(filteredLogs.value, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `update-logs-${new Date().toISOString().split("T")[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 const handleSelectLog = (log: UpdateLog) => {
   // TODO: Open detail drawer/modal
-  console.log('Selected log:', log)
-}
+  console.log("Selected log:", log);
+};
 </script>
 
 <template>
@@ -221,8 +221,8 @@ const handleSelectLog = (log: UpdateLog) => {
       <p class="text-muted-foreground max-w-sm">
         {{
           searchQuery || selectedActions.length || selectedPlatforms.length
-            ? 'Try adjusting your filters to see more results'
-            : 'Logs will appear here when devices interact with updates'
+            ? "Try adjusting your filters to see more results"
+            : "Logs will appear here when devices interact with updates"
         }}
       </p>
     </div>

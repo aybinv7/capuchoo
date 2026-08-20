@@ -5,9 +5,9 @@
 definePage({
   meta: {
     requiresAuth: false,
-    layout: 'empty',
+    layout: "empty",
   },
-})
+});
 </script>
 
 <style scoped></style>

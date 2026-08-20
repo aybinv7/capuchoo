@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { useVModel } from '@vueuse/core'
-import { cn } from '@/lib/utils'
+import { useVModel } from "@vueuse/core";
+import { cn } from "@/lib/utils";
 
 interface Props {
-  modelValue?: Date | string
-  class?: string
+  modelValue?: Date | string;
+  class?: string;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: Date | string): void
-}>()
+  (e: "update:modelValue", value: Date | string): void;
+}>();
 
-const modelValue = useVModel(props, 'modelValue', emit, { passive: true })
+const modelValue = useVModel(props, "modelValue", emit, { passive: true });
 
 // Convert date to string for input
 const dateString = computed({
   get: () => {
-    if (!modelValue.value) return ''
+    if (!modelValue.value) return "";
     if (modelValue.value instanceof Date) {
-      return modelValue.value.toISOString().split('T')[0]
+      return modelValue.value.toISOString().split("T")[0];
     }
-    return modelValue.value
+    return modelValue.value;
   },
   set: (value: string) => {
-    modelValue.value = value ? new Date(value) : undefined
-  }
-})
+    modelValue.value = value ? new Date(value) : undefined;
+  },
+});
 </script>
 
 <template>
@@ -39,5 +39,5 @@ const dateString = computed({
         props.class,
       )
     "
-  >
+  />
 </template>

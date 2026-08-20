@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ChartConfig } from '@/components/ui/chart'
+import type { ChartConfig } from "@/components/ui/chart";
 
 // import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { VisArea, VisAxis, VisLine, VisXYContainer } from '@unovis/vue'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartCrosshair,
@@ -11,23 +11,23 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   componentToString,
-} from '@/components/ui/chart'
+} from "@/components/ui/chart";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 
 const props = defineProps<{
-  data?: any[]
-  title?: string
-  description?: string
-}>()
+  data?: any[];
+  title?: string;
+  description?: string;
+}>();
 
 const chartData = computed(() => {
-  if (!props.data || props.data.length === 0) return []
+  if (!props.data || props.data.length === 0) return [];
   return props.data.map((item) => ({
     ...item,
     date: new Date(item.date),
@@ -35,24 +35,24 @@ const chartData = computed(() => {
     // For now we'll just use 'count' as 'desktop' to show SOMETHING
     desktop: item.count || 0,
     mobile: 0, // Placeholder
-  }))
-})
+  }));
+});
 
-type Data = (typeof chartData)['value'][number]
+type Data = (typeof chartData)["value"][number];
 
 const chartConfig = {
   // visitors: {
   //   label: 'Visitors',
   // },
   mobile: {
-    label: 'Mobile',
-    color: 'var(--chart-2)',
+    label: "Mobile",
+    color: "var(--chart-2)",
   },
   desktop: {
-    label: 'Desktop',
-    color: 'var(--chart-1)',
+    label: "Desktop",
+    color: "var(--chart-1)",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 const svgDefs = `
   <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
@@ -79,24 +79,24 @@ const svgDefs = `
       stop-opacity="0.1"
     />
   </linearGradient>
-`
+`;
 
-const timeRange = ref('90d')
+const timeRange = ref("90d");
 const filterRange = computed(() => {
   return chartData.value.filter((item) => {
-    const date = new Date(item.date)
-    const referenceDate = new Date('2024-06-30')
-    let daysToSubtract = 90
-    if (timeRange.value === '30d') {
-      daysToSubtract = 30
-    } else if (timeRange.value === '7d') {
-      daysToSubtract = 7
+    const date = new Date(item.date);
+    const referenceDate = new Date("2024-06-30");
+    let daysToSubtract = 90;
+    if (timeRange.value === "30d") {
+      daysToSubtract = 30;
+    } else if (timeRange.value === "7d") {
+      daysToSubtract = 7;
     }
-    const startDate = new Date(referenceDate)
-    startDate.setDate(startDate.getDate() - daysToSubtract)
-    return date >= startDate
-  })
-})
+    const startDate = new Date(referenceDate);
+    startDate.setDate(startDate.getDate() - daysToSubtract);
+    return date >= startDate;
+  });
+});
 </script>
 
 <template>
@@ -151,11 +151,11 @@ const filterRange = computed(() => {
             :num-ticks="6"
             :tick-format="
               (d: number, index: number) => {
-                const date = new Date(d)
+                const date = new Date(d);
                 return date.toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
-                })
+                });
               }
             "
           />
@@ -168,7 +168,7 @@ const filterRange = computed(() => {
                   return new Date(d).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
-                  })
+                  });
                 },
               })
             "

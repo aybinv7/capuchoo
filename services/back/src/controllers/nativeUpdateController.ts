@@ -56,9 +56,7 @@ class NativeUpdateController {
       const { platform, channel = "stable", current_version_code } = req.query;
 
       if (!platform || current_version_code === undefined) {
-        throw new ValidationError(
-          "Missing required parameters: platform, current_version_code",
-        );
+        throw new ValidationError("Missing required parameters: platform, current_version_code");
       }
 
       if (!["android", "ios"].includes(platform as string)) {
@@ -77,20 +75,17 @@ class NativeUpdateController {
       });
 
       // Query for a newer version
-      const result = await this.supabaseService.query<NativeUpdateRecord>(
-        "native_updates",
-        {
-          select: "*",
-          eq: {
-            platform,
-            channel,
-            active: true,
-          },
-          gt: { version_code: versionCode },
-          order: { column: "version_code", ascending: false },
-          limit: 1,
+      const result = await this.supabaseService.query<NativeUpdateRecord>("native_updates", {
+        select: "*",
+        eq: {
+          platform,
+          channel,
+          active: true,
         },
-      );
+        gt: { version_code: versionCode },
+        order: { column: "version_code", ascending: false },
+        limit: 1,
+      });
 
       if (result.data && result.data.length > 0) {
         logger.info("Native update available", {
@@ -139,9 +134,7 @@ class NativeUpdateController {
       } = req.body;
 
       if (!event || !platform) {
-        throw new ValidationError(
-          "Missing required parameters: event, platform",
-        );
+        throw new ValidationError("Missing required parameters: event, platform");
       }
 
       const logRecord: NativeUpdateLogRecord = {
@@ -237,15 +230,11 @@ class NativeUpdateController {
 
       // Validate required fields
       if (!finalVersion || !version_code || !platform) {
-        throw new ValidationError(
-          "Missing required parameters: version, version_code, platform",
-        );
+        throw new ValidationError("Missing required parameters: version, version_code, platform");
       }
 
       if (!semver.valid(finalVersion)) {
-        throw new ValidationError(
-          "Version must follow semantic versioning (e.g. 1.2.3)",
-        );
+        throw new ValidationError("Version must follow semantic versioning (e.g. 1.2.3)");
       }
 
       if (!["android", "ios"].includes(platform)) {
@@ -253,9 +242,7 @@ class NativeUpdateController {
       }
 
       // Resolve the app UUID from bundle identifier if provided
-      const appUuid = app_id
-        ? await this.resolveAppUuid(app_id as string)
-        : null;
+      const appUuid = app_id ? await this.resolveAppUuid(app_id as string) : null;
 
       if (!appUuid) {
         throw new ValidationError("Valid App ID is required");
@@ -330,10 +317,7 @@ class NativeUpdateController {
         release_notes: release_notes || null,
       };
 
-      const insertedRecord = await this.supabaseService.insert(
-        "native_updates",
-        [updateRecord],
-      );
+      const insertedRecord = await this.supabaseService.insert("native_updates", [updateRecord]);
 
       logger.info("Native update uploaded successfully", {
         version_name: finalVersion,
@@ -382,9 +366,7 @@ class NativeUpdateController {
       const keyAppId = (req as any).appId;
       if (keyAppId) {
         if (appUuid && keyAppId !== appUuid) {
-          res
-            .status(403)
-            .json({ error: "Forbidden: API key restricted to another app" });
+          res.status(403).json({ error: "Forbidden: API key restricted to another app" });
           return;
         }
         appUuid = keyAppId;
@@ -435,11 +417,7 @@ class NativeUpdateController {
       const { id } = req.params;
       const updateData = req.body;
 
-      const result = await this.supabaseService.update(
-        "native_updates",
-        updateData,
-        { id },
-      );
+      const result = await this.supabaseService.update("native_updates", updateData, { id });
 
       if (result.length === 0) {
         throw new ValidationError("Native update not found");
@@ -490,9 +468,7 @@ class NativeUpdateController {
           "application/x-ios-app", // IPA alternative
         ];
         const allowedExts = [".apk", ".ipa"];
-        const ext = file.originalname
-          .toLowerCase()
-          .slice(file.originalname.lastIndexOf("."));
+        const ext = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf("."));
 
         if (allowedExts.includes(ext)) {
           cb(null, true);

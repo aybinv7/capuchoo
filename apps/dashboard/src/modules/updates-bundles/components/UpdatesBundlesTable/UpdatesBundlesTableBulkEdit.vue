@@ -19,7 +19,7 @@
         </div>
         <div>
           <p class="text-sm font-medium">
-            {{ selectedItems.length }} product{{ selectedItems.length > 1 ? 's' : '' }}
+            {{ selectedItems.length }} product{{ selectedItems.length > 1 ? "s" : "" }}
             selected
           </p>
           <p class="text-xs text-muted-foreground">Perform bulk actions on selected items</p>
@@ -49,15 +49,15 @@
 
 <script setup lang="ts">
 const emit = defineEmits([
-  'click:clear-selection',
-  'click:bulk-delete',
-  'click:bulk-export',
-  'click:bulk-edit',
-])
+  "click:clear-selection",
+  "click:bulk-delete",
+  "click:bulk-export",
+  "click:bulk-edit",
+]);
 
 defineProps<{
-  selectedItems: UpdateOrBundle[]
-}>()
+  selectedItems: UpdateOrBundle[];
+}>();
 </script>
 
 <style scoped></style>

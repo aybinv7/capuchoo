@@ -22,13 +22,9 @@
         </div>
         <div>
           <h2 class="text-xl font-bold no-margin">
-            {{
-              authStore.user?.user_metadata?.full_name || authStore.user?.email
-            }}
+            {{ authStore.user?.user_metadata?.full_name || authStore.user?.email }}
           </h2>
-          <p
-            class="text-xs text-gray-500 font-medium uppercase tracking-widest mt-1"
-          >
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-widest mt-1">
             {{ authStore.userRole }}
           </p>
         </div>
@@ -54,9 +50,7 @@
       </F7ListItem>
     </F7List>
 
-    <F7BlockTitle v-if="activeApp"
-      >Current App: {{ activeApp.name }}</F7BlockTitle
-    >
+    <F7BlockTitle v-if="activeApp">Current App: {{ activeApp.name }}</F7BlockTitle>
     <F7List
       v-if="activeApp"
       dividers-ios
@@ -91,26 +85,15 @@
           <span class="text-sm mr-2 opacity-50">{{
             settingsStore.darkMode ? "Dark" : "Light"
           }}</span>
-          <F7Toggle
-            :checked="settingsStore.darkMode"
-            @change="settingsStore.toggleDarkMode"
-          />
+          <F7Toggle :checked="settingsStore.darkMode" @change="settingsStore.toggleDarkMode" />
         </template>
       </F7ListItem>
 
-      <F7ListItem
-        title="Platform Theme"
-        smart-select
-        :smart-select-params="{ openIn: 'popover' }"
-      >
+      <F7ListItem title="Platform Theme" smart-select :smart-select-params="{ openIn: 'popover' }">
         <template #media>
           <ILucideSmartphone :size="20" class="text-gray-500" />
         </template>
-        <select
-          name="platform-theme"
-          :value="settingsStore.f7Theme"
-          @change="onThemeChange"
-        >
+        <select name="platform-theme" :value="settingsStore.f7Theme" @change="onThemeChange">
           <option value="auto">Auto (Native)</option>
           <option value="ios">iOS Theme</option>
           <option value="md">Material Design (Android)</option>
@@ -133,9 +116,7 @@
     </F7List>
 
     <F7Block class="mt-8 pb-4">
-      <F7Button fill large color="red" outline @click="handleSignOut"
-        >Sign Out</F7Button
-      >
+      <F7Button fill large color="red" outline @click="handleSignOut">Sign Out</F7Button>
     </F7Block>
 
     <F7Block class="text-center text-gray-400 text-xs pb-10">
@@ -167,17 +148,13 @@ const initials = computed(() => {
 });
 
 const handleSignOut = () => {
-  f7.dialog.confirm(
-    "Are you sure you want to sign out?",
-    "Sign Out",
-    async () => {
-      await authStore.logout();
-      f7.views.main.router.navigate("/auth/login", {
-        reloadAll: true,
-        transition: "f7-flip",
-      });
-    },
-  );
+  f7.dialog.confirm("Are you sure you want to sign out?", "Sign Out", async () => {
+    await authStore.logout();
+    f7.views.main.router.navigate("/auth/login", {
+      reloadAll: true,
+      transition: "f7-flip",
+    });
+  });
 };
 
 const onThemeChange = (e: any) => {
@@ -185,8 +162,6 @@ const onThemeChange = (e: any) => {
 };
 
 const openNotificationSettings = () => {
-  f7.toast
-    .create({ text: "Notification settings coming soon!", closeTimeout: 2000 })
-    .open();
+  f7.toast.create({ text: "Notification settings coming soon!", closeTimeout: 2000 }).open();
 };
 </script>

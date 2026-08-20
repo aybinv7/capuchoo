@@ -36,13 +36,7 @@ export default class AuthWhoami extends BaseCommand {
 
     if (!profile) {
       if (flags.json) {
-        this.log(
-          JSON.stringify(
-            { authenticated: false, endpoint: credentials.endpoint },
-            null,
-            2,
-          ),
-        );
+        this.log(JSON.stringify({ authenticated: false, endpoint: credentials.endpoint }, null, 2));
         process.exitCode = 1;
         return;
       }

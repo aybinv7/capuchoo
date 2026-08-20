@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import type { Table } from '@tanstack/vue-table'
+import type { Table } from "@tanstack/vue-table";
 
 interface DataTableViewOptionsProps {
-  table: Table<any>
+  table: Table<any>;
 }
 
-const props = defineProps<DataTableViewOptionsProps>()
+const props = defineProps<DataTableViewOptionsProps>();
 
 const columns = computed(() =>
   props.table.getAllColumns().filter((column) => column.id !== undefined && column.getCanHide()),
-)
+);
 </script>
 
 <template>

@@ -74,39 +74,39 @@
 </template>
 
 <script setup lang="ts">
-import type { Column } from '@tanstack/vue-table'
+import type { Column } from "@tanstack/vue-table";
 
 interface DataTableFacetedFilterProps {
-  column?: Column<any, any>
-  title?: string
+  column?: Column<any, any>;
+  title?: string;
   options: {
-    label: string
-    value: string
-    icon?: any
-  }[]
+    label: string;
+    value: string;
+    icon?: any;
+  }[];
 }
 
-const props = defineProps<DataTableFacetedFilterProps>()
+const props = defineProps<DataTableFacetedFilterProps>();
 
 const selectedValues = computed(() => {
-  const filterValue = props.column?.getFilterValue()
-  return new Set(Array.isArray(filterValue) ? filterValue : [])
-})
+  const filterValue = props.column?.getFilterValue();
+  return new Set(Array.isArray(filterValue) ? filterValue : []);
+});
 
-const facets = computed(() => props.column?.getFacetedUniqueValues())
+const facets = computed(() => props.column?.getFacetedUniqueValues());
 
 function handleSelect(checked: boolean, value: string) {
-  const filterValues = Array.from(selectedValues.value)
+  const filterValues = Array.from(selectedValues.value);
 
   if (checked) {
-    filterValues.push(value)
+    filterValues.push(value);
   } else {
-    const index = filterValues.indexOf(value)
+    const index = filterValues.indexOf(value);
     if (index > -1) {
-      filterValues.splice(index, 1)
+      filterValues.splice(index, 1);
     }
   }
 
-  props.column?.setFilterValue(filterValues.length ? filterValues : undefined)
+  props.column?.setFilterValue(filterValues.length ? filterValues : undefined);
 }
 </script>

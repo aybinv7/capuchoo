@@ -21,19 +21,9 @@
             placeholder="Your name"
             :value="user?.user_metadata?.full_name"
           ></F7ListInput>
-          <F7ListInput
-            label="Email"
-            type="email"
-            :value="user?.email"
-            disabled
-          ></F7ListInput>
+          <F7ListInput label="Email" type="email" :value="user?.email" disabled></F7ListInput>
         </F7List>
-        <F7Button
-          fill
-          large
-          round
-          color="blue"
-          class="mt-4 font-bold shadow-lg shadow-blue-500/20"
+        <F7Button fill large round color="blue" class="mt-4 font-bold shadow-lg shadow-blue-500/20"
           >Save Changes</F7Button
         >
       </div>

@@ -1,17 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import {
-  AppError,
-  ValidationError,
-  NotFoundError,
-  DatabaseError,
-} from "@/types";
+import { AppError, ValidationError, NotFoundError, DatabaseError } from "@/types";
 import logger from "@/utils/logger";
 
-export const errorHandler = (
-  error: Error,
-  req: Request,
-  res: Response
-): void => {
+export const errorHandler = (error: Error, req: Request, res: Response): void => {
   let statusCode = 500;
   let message = "Internal server error";
   let isOperational = false;
@@ -68,15 +59,10 @@ export const errorHandler = (
   });
 };
 
-export const notFoundHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
   const error = new NotFoundError(`Route ${req.originalUrl} not found`);
   next(error);
 };
 
-export const asyncHandler =
-  (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
-    Promise.resolve(fn(req, res, next)).catch(next);
+export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
+  Promise.resolve(fn(req, res, next)).catch(next);

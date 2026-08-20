@@ -30,7 +30,7 @@
           <Button @click="createKey" :disabled="isCreating || !activeApp">
             <ILucidePlus v-if="!isCreating" class="mr-2 h-4 w-4" />
             <ILucideLoader2 v-else class="mr-2 h-4 w-4 animate-spin" />
-            {{ isCreating ? 'Creating...' : 'Generate Key' }}
+            {{ isCreating ? "Creating..." : "Generate Key" }}
           </Button>
         </div>
         <p v-if="!activeApp" class="text-sm text-destructive font-medium">
@@ -113,102 +113,102 @@
 </template>
 
 <script setup lang="ts">
-import { apiClient } from '@/services/api.client'
-import { useAppStore } from '@/stores/app.store'
-import { toast } from 'vue-sonner'
+import { apiClient } from "@/services/api.client";
+import { useAppStore } from "@/stores/app.store";
+import { toast } from "vue-sonner";
 
-const appStore = useAppStore()
-const { activeApp } = storeToRefs(appStore)
+const appStore = useAppStore();
+const { activeApp } = storeToRefs(appStore);
 
 interface ApiKey {
-  id: string
-  name: string
-  key_prefix: string
-  last_used_at: string | null
-  created_at: string
+  id: string;
+  name: string;
+  key_prefix: string;
+  last_used_at: string | null;
+  created_at: string;
 }
 
-const keys = ref<ApiKey[]>([])
-const isLoading = ref(true)
-const isCreating = ref(false)
-const revokingId = ref<string | null>(null)
-const newKeyName = ref('')
-const newlyCreatedKey = ref<string | null>(null)
+const keys = ref<ApiKey[]>([]);
+const isLoading = ref(true);
+const isCreating = ref(false);
+const revokingId = ref<string | null>(null);
+const newKeyName = ref("");
+const newlyCreatedKey = ref<string | null>(null);
 
 const fetchKeys = async () => {
   try {
-    isLoading.value = true
-    const response = await apiClient.get('/api-keys', {
+    isLoading.value = true;
+    const response = await apiClient.get("/api-keys", {
       params: { app_id: activeApp.value?.id },
-    })
-    keys.value = response.data.keys || []
+    });
+    keys.value = response.data.keys || [];
   } catch (error) {
-    console.error('Failed to fetch API keys:', error)
+    console.error("Failed to fetch API keys:", error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const createKey = async () => {
-  if (!activeApp.value) return
+  if (!activeApp.value) return;
 
   try {
-    isCreating.value = true
-    newlyCreatedKey.value = null
+    isCreating.value = true;
+    newlyCreatedKey.value = null;
 
-    const response = await apiClient.post('/api-keys', {
-      name: newKeyName.value || 'CLI Key',
+    const response = await apiClient.post("/api-keys", {
+      name: newKeyName.value || "CLI Key",
       app_id: activeApp.value.id,
-    })
+    });
 
-    newlyCreatedKey.value = response.data.key
-    newKeyName.value = ''
-    toast.success('API key created!')
+    newlyCreatedKey.value = response.data.key;
+    newKeyName.value = "";
+    toast.success("API key created!");
 
     // Refresh the list
-    await fetchKeys()
+    await fetchKeys();
   } catch (error: any) {
-    toast.error(error.response?.data?.error || 'Failed to create API key')
+    toast.error(error.response?.data?.error || "Failed to create API key");
   } finally {
-    isCreating.value = false
+    isCreating.value = false;
   }
-}
+};
 
 const copyKey = async () => {
   if (newlyCreatedKey.value) {
-    await navigator.clipboard.writeText(newlyCreatedKey.value)
-    toast.success('Key copied to clipboard!')
+    await navigator.clipboard.writeText(newlyCreatedKey.value);
+    toast.success("Key copied to clipboard!");
   }
-}
+};
 
 const revokeKey = async (id: string) => {
   try {
-    revokingId.value = id
-    await apiClient.delete(`/api-keys/${id}`)
-    toast.success('API key revoked')
-    await fetchKeys()
+    revokingId.value = id;
+    await apiClient.delete(`/api-keys/${id}`);
+    toast.success("API key revoked");
+    await fetchKeys();
   } catch (error: any) {
-    toast.error(error.response?.data?.error || 'Failed to revoke API key')
+    toast.error(error.response?.data?.error || "Failed to revoke API key");
   } finally {
-    revokingId.value = null
+    revokingId.value = null;
   }
-}
+};
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return 'today'
-  if (diffDays === 1) return 'yesterday'
-  if (diffDays < 30) return `${diffDays} days ago`
-  return date.toLocaleDateString()
-}
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 30) return `${diffDays} days ago`;
+  return date.toLocaleDateString();
+};
 
 watch(activeApp, () => {
-  fetchKeys()
-})
+  fetchKeys();
+});
 
-onMounted(fetchKeys)
+onMounted(fetchKeys);
 </script>

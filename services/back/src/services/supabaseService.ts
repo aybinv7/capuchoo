@@ -12,7 +12,7 @@ class SupabaseService implements ISupabaseService {
 
     this.storageClient = createClient(
       config.supabase.url,
-      config.supabase.serviceKey || config.supabase.key
+      config.supabase.serviceKey || config.supabase.key,
     );
 
     logger.info("Supabase service initialized", {
@@ -61,11 +61,11 @@ class SupabaseService implements ISupabaseService {
             `Supabase count query error [table: ${table}] - ${
               error.message
             } (code: ${error.code}, details: ${JSON.stringify(
-              error.details
+              error.details,
             )}, hint: ${error.hint})`,
             {
               options,
-            }
+            },
           );
           throw new DatabaseError(`Count query failed: ${error.message}`);
         }
@@ -141,7 +141,7 @@ class SupabaseService implements ISupabaseService {
         }`,
         {
           options,
-        }
+        },
       );
       throw error;
     }
@@ -149,10 +149,7 @@ class SupabaseService implements ISupabaseService {
 
   async insert(table: string, data: any): Promise<any> {
     try {
-      const { data: result, error } = await this.client
-        .from(table)
-        .insert(data)
-        .select();
+      const { data: result, error } = await this.client.from(table).insert(data).select();
 
       if (error) {
         logger.error("Supabase insert error", { table, data, error });
@@ -218,7 +215,7 @@ class SupabaseService implements ISupabaseService {
   async uploadFile(
     fileName: string,
     buffer: Buffer,
-    contentType: string = "application/zip"
+    contentType: string = "application/zip",
   ): Promise<string> {
     try {
       const { error } = await this.storageClient.storage
@@ -248,10 +245,7 @@ class SupabaseService implements ISupabaseService {
     }
   }
 
-  async createSignedUrl(
-    filePath: string,
-    expiresIn: number = 3600
-  ): Promise<string> {
+  async createSignedUrl(filePath: string, expiresIn: number = 3600): Promise<string> {
     try {
       const { data, error } = await this.storageClient.storage
         .from(config.supabase.bucketName)

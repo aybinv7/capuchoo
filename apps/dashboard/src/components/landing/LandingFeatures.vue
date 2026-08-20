@@ -1,101 +1,101 @@
 <script setup lang="ts">
 const features = [
   {
-    id: 'instant',
-    title: 'Instant Updates',
-    headline: 'Push updates in seconds, not days',
+    id: "instant",
+    title: "Instant Updates",
+    headline: "Push updates in seconds, not days",
     description:
       "Skip the app store review process entirely. Deploy fixes, features, and improvements directly to your users the moment they're ready. No more waiting for approval.",
     stats: [
-      { value: '~1s', label: 'Delivery time' },
-      { value: '99.9%', label: 'Success rate' },
-      { value: '0', label: 'Store delays' },
+      { value: "~1s", label: "Delivery time" },
+      { value: "99.9%", label: "Success rate" },
+      { value: "0", label: "Store delays" },
     ],
-    gradient: 'from-amber-500/20 via-orange-500/10 to-transparent',
-    accent: 'bg-amber-500',
+    gradient: "from-amber-500/20 via-orange-500/10 to-transparent",
+    accent: "bg-amber-500",
   },
   {
-    id: 'multiplatform',
-    title: 'Multi-Platform',
-    headline: 'One codebase, all platforms',
+    id: "multiplatform",
+    title: "Multi-Platform",
+    headline: "One codebase, all platforms",
     description:
-      'Support iOS and Android with a single integration. Works seamlessly with Capacitor, Cordova, and other hybrid frameworks. Write once, deploy everywhere.',
+      "Support iOS and Android with a single integration. Works seamlessly with Capacitor, Cordova, and other hybrid frameworks. Write once, deploy everywhere.",
     stats: [
-      { value: 'iOS', label: 'Full support' },
-      { value: 'Android', label: 'Full support' },
-      { value: '5min', label: 'Setup time' },
+      { value: "iOS", label: "Full support" },
+      { value: "Android", label: "Full support" },
+      { value: "5min", label: "Setup time" },
     ],
-    gradient: 'from-blue-500/20 via-cyan-500/10 to-transparent',
-    accent: 'bg-blue-500',
+    gradient: "from-blue-500/20 via-cyan-500/10 to-transparent",
+    accent: "bg-blue-500",
   },
   {
-    id: 'rollback',
-    title: 'Instant Rollback',
-    headline: 'Undo mistakes with one click',
+    id: "rollback",
+    title: "Instant Rollback",
+    headline: "Undo mistakes with one click",
     description:
-      'Something went wrong? Roll back to any previous version instantly. Your users will never notice. Keep full version history and restore confidence.',
+      "Something went wrong? Roll back to any previous version instantly. Your users will never notice. Keep full version history and restore confidence.",
     stats: [
-      { value: '∞', label: 'Version history' },
-      { value: '1-click', label: 'Rollback' },
-      { value: '100%', label: 'Data safe' },
+      { value: "∞", label: "Version history" },
+      { value: "1-click", label: "Rollback" },
+      { value: "100%", label: "Data safe" },
     ],
-    gradient: 'from-green-500/20 via-emerald-500/10 to-transparent',
-    accent: 'bg-green-500',
+    gradient: "from-green-500/20 via-emerald-500/10 to-transparent",
+    accent: "bg-green-500",
   },
   {
-    id: 'analytics',
-    title: 'Real-time Analytics',
-    headline: 'Know everything, instantly',
+    id: "analytics",
+    title: "Real-time Analytics",
+    headline: "Know everything, instantly",
     description:
-      'Track update adoption rates, device metrics, and success rates in real-time. Identify issues before they become problems. Data-driven decisions made easy.',
+      "Track update adoption rates, device metrics, and success rates in real-time. Identify issues before they become problems. Data-driven decisions made easy.",
     stats: [
-      { value: 'Live', label: 'Monitoring' },
-      { value: '50+', label: 'Metrics' },
-      { value: '24/7', label: 'Insights' },
+      { value: "Live", label: "Monitoring" },
+      { value: "50+", label: "Metrics" },
+      { value: "24/7", label: "Insights" },
     ],
-    gradient: 'from-purple-500/20 via-violet-500/10 to-transparent',
-    accent: 'bg-purple-500',
+    gradient: "from-purple-500/20 via-violet-500/10 to-transparent",
+    accent: "bg-purple-500",
   },
-]
+];
 
-const activeIndex = ref(0)
-const isPaused = ref(false)
-let intervalId: number | undefined
+const activeIndex = ref(0);
+const isPaused = ref(false);
+let intervalId: number | undefined;
 
-const activeFeature = computed(() => features[activeIndex.value])
+const activeFeature = computed(() => features[activeIndex.value]);
 
-const progress = ref(0)
-const INTERVAL_DURATION = 5000 // 5 seconds per feature
-const PROGRESS_UPDATE_INTERVAL = 50 // Update progress every 50ms
+const progress = ref(0);
+const INTERVAL_DURATION = 5000; // 5 seconds per feature
+const PROGRESS_UPDATE_INTERVAL = 50; // Update progress every 50ms
 
 const startAutoRotate = () => {
-  let elapsed = 0
+  let elapsed = 0;
   intervalId = window.setInterval(() => {
-    if (isPaused.value) return
+    if (isPaused.value) return;
 
-    elapsed += PROGRESS_UPDATE_INTERVAL
-    progress.value = (elapsed / INTERVAL_DURATION) * 100
+    elapsed += PROGRESS_UPDATE_INTERVAL;
+    progress.value = (elapsed / INTERVAL_DURATION) * 100;
 
     if (elapsed >= INTERVAL_DURATION) {
-      elapsed = 0
-      progress.value = 0
-      activeIndex.value = (activeIndex.value + 1) % features.length
+      elapsed = 0;
+      progress.value = 0;
+      activeIndex.value = (activeIndex.value + 1) % features.length;
     }
-  }, PROGRESS_UPDATE_INTERVAL)
-}
+  }, PROGRESS_UPDATE_INTERVAL);
+};
 
 const selectFeature = (index: number) => {
-  activeIndex.value = index
-  progress.value = 0
-}
+  activeIndex.value = index;
+  progress.value = 0;
+};
 
 onMounted(() => {
-  startAutoRotate()
-})
+  startAutoRotate();
+});
 
 onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
+  if (intervalId) clearInterval(intervalId);
+});
 </script>
 
 <template>

@@ -1,38 +1,38 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from "vue";
 
-const containerRef = ref<HTMLDivElement | null>(null)
+const containerRef = ref<HTMLDivElement | null>(null);
 
-let scene: any, camera: any, renderer: any, uniforms: any
-let animationId: number | null = null
+let scene: any, camera: any, renderer: any, uniforms: any;
+let animationId: number | null = null;
 
 const initThreeJS = (THREE: any) => {
-  if (!containerRef.value) return
-  const container = containerRef.value
-  container.innerHTML = ''
+  if (!containerRef.value) return;
+  const container = containerRef.value;
+  container.innerHTML = "";
 
   // Camera
-  camera = new THREE.Camera()
-  camera.position.z = 1
+  camera = new THREE.Camera();
+  camera.position.z = 1;
 
   // Scene
-  scene = new THREE.Scene()
+  scene = new THREE.Scene();
 
   // Geometry
-  const geometry = new THREE.PlaneBufferGeometry(2, 2)
+  const geometry = new THREE.PlaneBufferGeometry(2, 2);
 
   // Uniforms
   uniforms = {
-    time: { type: 'f', value: 1.0 },
-    resolution: { type: 'v2', value: new THREE.Vector2() },
-  }
+    time: { type: "f", value: 1.0 },
+    resolution: { type: "v2", value: new THREE.Vector2() },
+  };
 
   // Shaders
   const vertexShader = `
     void main() {
       gl_Position = vec4(position, 1.0);
     }
-  `
+  `;
   const fragmentShader = `
     #define TWO_PI 6.2831853072
     #define PI 3.14159265359
@@ -72,53 +72,53 @@ const initThreeJS = (THREE: any) => {
 
       gl_FragColor = vec4(color[2],color[1],color[0],1.0);
     }
-  `
+  `;
 
   const material = new THREE.ShaderMaterial({
     uniforms,
     vertexShader,
     fragmentShader,
-  })
+  });
 
-  const mesh = new THREE.Mesh(geometry, material)
-  scene.add(mesh)
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
 
   // Renderer
-  renderer = new THREE.WebGLRenderer()
-  renderer.setPixelRatio(window.devicePixelRatio)
-  container.appendChild(renderer.domElement)
+  renderer = new THREE.WebGLRenderer();
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
 
   // Resize
   const onWindowResize = () => {
-    const rect = container.getBoundingClientRect()
-    renderer.setSize(rect.width, rect.height)
-    uniforms.resolution.value.x = renderer.domElement.width
-    uniforms.resolution.value.y = renderer.domElement.height
-  }
+    const rect = container.getBoundingClientRect();
+    renderer.setSize(rect.width, rect.height);
+    uniforms.resolution.value.x = renderer.domElement.width;
+    uniforms.resolution.value.y = renderer.domElement.height;
+  };
 
-  window.addEventListener('resize', onWindowResize)
-  onWindowResize()
+  window.addEventListener("resize", onWindowResize);
+  onWindowResize();
 
   const animate = () => {
-    animationId = requestAnimationFrame(animate)
-    uniforms.time.value += 0.05
-    renderer.render(scene, camera)
-  }
-  animate()
-}
+    animationId = requestAnimationFrame(animate);
+    uniforms.time.value += 0.05;
+    renderer.render(scene, camera);
+  };
+  animate();
+};
 
 onMounted(async () => {
   // Option 1: Load from CDN dynamically
-  const script = document.createElement('script')
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js'
-  script.onload = () => initThreeJS((window as any).THREE)
-  document.head.appendChild(script)
-})
+  const script = document.createElement("script");
+  script.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js";
+  script.onload = () => initThreeJS((window as any).THREE);
+  document.head.appendChild(script);
+});
 
 onBeforeUnmount(() => {
-  if (animationId) cancelAnimationFrame(animationId)
-  if (renderer) renderer.dispose()
-})
+  if (animationId) cancelAnimationFrame(animationId);
+  if (renderer) renderer.dispose();
+});
 </script>
 
 <template>

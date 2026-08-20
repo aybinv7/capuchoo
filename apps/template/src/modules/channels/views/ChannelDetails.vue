@@ -46,8 +46,7 @@
         </div>
       </F7Block>
 
-      <F7BlockTitle
-        class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+      <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
         >Deployment Status</F7BlockTitle
       >
       <F7List
@@ -61,18 +60,11 @@
             <F7Toggle :checked="channel.active" @change="toggleActive" />
           </template>
         </F7ListItem>
-        <F7ListItem
-          title="Current Version"
-          :after="channel.version_name || 'None'"
-        ></F7ListItem>
-        <F7ListItem
-          title="Last Update"
-          :after="formatDate(channel.updated_at)"
-        ></F7ListItem>
+        <F7ListItem title="Current Version" :after="channel.version_name || 'None'"></F7ListItem>
+        <F7ListItem title="Last Update" :after="formatDate(channel.updated_at)"></F7ListItem>
       </F7List>
 
-      <F7BlockTitle
-        class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+      <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
         >Configuration</F7BlockTitle
       >
       <F7List
@@ -105,11 +97,7 @@
 <script setup lang="ts">
 import { f7 } from "framework7-vue";
 import { computed, ref } from "vue";
-import {
-  useChannelsQuery,
-  deleteChannel,
-  updateChannel,
-} from "../queries/channels.queries";
+import { useChannelsQuery, deleteChannel, updateChannel } from "../queries/channels.queries";
 import { useAppStore } from "@/shared/stores/app.store";
 
 const props = defineProps<{
@@ -126,9 +114,7 @@ const {
   isLoading,
   refetch,
 } = useChannelsQuery(computed(() => activeApp.value?.app_id));
-const channel = computed(() =>
-  channels.value?.find((c: any) => c.id === props.id),
-);
+const channel = computed(() => channels.value?.find((c: any) => c.id === props.id));
 
 const getChannelBg = (name: string) => {
   const n = name.toLowerCase();

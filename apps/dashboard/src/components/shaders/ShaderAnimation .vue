@@ -3,29 +3,29 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
-import * as THREE from 'three'
+import { onMounted, onBeforeUnmount, ref } from "vue";
+import * as THREE from "three";
 
-const containerRef = ref<HTMLDivElement | null>(null)
+const containerRef = ref<HTMLDivElement | null>(null);
 
-let animationId = 0
-let camera: THREE.Camera
-let scene: THREE.Scene
-let renderer: THREE.WebGLRenderer
-let uniforms: { time: { value: number }; resolution: { value: THREE.Vector2 } }
-let geometry: THREE.PlaneGeometry
-let material: THREE.ShaderMaterial
+let animationId = 0;
+let camera: THREE.Camera;
+let scene: THREE.Scene;
+let renderer: THREE.WebGLRenderer;
+let uniforms: { time: { value: number }; resolution: { value: THREE.Vector2 } };
+let geometry: THREE.PlaneGeometry;
+let material: THREE.ShaderMaterial;
 
 onMounted(() => {
-  const container = containerRef.value
-  if (!container) return
+  const container = containerRef.value;
+  if (!container) return;
 
   // Vertex Shader
   const vertexShader = `
     void main() {
       gl_Position = vec4(position, 1.0);
     }
-  `
+  `;
 
   // Fragment Shader
   const fragmentShader = `
@@ -51,68 +51,68 @@ onMounted(() => {
 
       gl_FragColor = vec4(color[0], color[1], color[2], 1.0);
     }
-  `
+  `;
 
   // Setup scene
-  camera = new THREE.Camera()
-  camera.position.z = 1
+  camera = new THREE.Camera();
+  camera.position.z = 1;
 
-  scene = new THREE.Scene()
-  geometry = new THREE.PlaneGeometry(2, 2)
+  scene = new THREE.Scene();
+  geometry = new THREE.PlaneGeometry(2, 2);
 
   uniforms = {
     time: { value: 1.0 },
     resolution: { value: new THREE.Vector2() },
-  }
+  };
 
   material = new THREE.ShaderMaterial({
     uniforms,
     vertexShader,
     fragmentShader,
-  })
+  });
 
-  const mesh = new THREE.Mesh(geometry, material)
-  scene.add(mesh)
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true })
-  renderer.setPixelRatio(window.devicePixelRatio)
-  container.appendChild(renderer.domElement)
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
 
   // Resize handler
   const onWindowResize = () => {
-    const width = container.clientWidth
-    const height = container.clientHeight
-    renderer.setSize(width, height)
-    uniforms.resolution.value.x = renderer.domElement.width
-    uniforms.resolution.value.y = renderer.domElement.height
-  }
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    renderer.setSize(width, height);
+    uniforms.resolution.value.x = renderer.domElement.width;
+    uniforms.resolution.value.y = renderer.domElement.height;
+  };
 
   // Initial resize
-  onWindowResize()
-  window.addEventListener('resize', onWindowResize)
+  onWindowResize();
+  window.addEventListener("resize", onWindowResize);
 
   // Animation loop
   const animate = () => {
-    animationId = requestAnimationFrame(animate)
-    uniforms.time.value += 0.05
-    renderer.render(scene, camera)
-  }
+    animationId = requestAnimationFrame(animate);
+    uniforms.time.value += 0.05;
+    renderer.render(scene, camera);
+  };
 
-  animate()
+  animate();
 
   onBeforeUnmount(() => {
-    window.removeEventListener('resize', onWindowResize)
-    cancelAnimationFrame(animationId)
+    window.removeEventListener("resize", onWindowResize);
+    cancelAnimationFrame(animationId);
 
     if (container && renderer.domElement) {
-      container.removeChild(renderer.domElement)
+      container.removeChild(renderer.domElement);
     }
 
-    renderer.dispose()
-    geometry.dispose()
-    material.dispose()
-  })
-})
+    renderer.dispose();
+    geometry.dispose();
+    material.dispose();
+  });
+});
 </script>
 
 <style scoped>

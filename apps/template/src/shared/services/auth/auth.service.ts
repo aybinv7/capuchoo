@@ -10,10 +10,7 @@ export class Auth {
     return roles ? JSON.parse(roles) : [];
   }
 
-  async login(
-    username: string,
-    password: string
-  ): Promise<{ success: boolean; error?: string }> {
+  async login(username: string, password: string): Promise<{ success: boolean; error?: string }> {
     try {
       const mockUser = {
         username,

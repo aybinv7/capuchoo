@@ -13,9 +13,7 @@ class OnboardingController {
     }
 
     if (!organization || !app) {
-      return res
-        .status(400)
-        .json({ error: "Missing required onboarding data" });
+      return res.status(400).json({ error: "Missing required onboarding data" });
     }
 
     const { name: orgName } = organization;
@@ -41,25 +39,20 @@ class OnboardingController {
         .select()
         .single();
 
-      if (orgError)
-        throw new Error(`Organization creation failed: ${orgError.message}`);
+      if (orgError) throw new Error(`Organization creation failed: ${orgError.message}`);
       const orgId = orgData.id;
 
       // 2. Add User as Organization Member (Owner)
-      const { error: memberError } = await supabase
-        .from("organization_members")
-        .insert({
-          organization_id: orgId,
-          user_id: user.id,
-          role: "owner",
-        });
+      const { error: memberError } = await supabase.from("organization_members").insert({
+        organization_id: orgId,
+        user_id: user.id,
+        role: "owner",
+      });
 
       if (memberError) {
         // Cleanup: Delete org if member addition fails
         await supabase.from("organizations").delete().eq("id", orgId);
-        throw new Error(
-          `Failed to add member to organization: ${memberError.message}`
-        );
+        throw new Error(`Failed to add member to organization: ${memberError.message}`);
       }
 
       // 3. Create App
@@ -81,13 +74,11 @@ class OnboardingController {
       }
 
       // 5. Add App Permission (Admin)
-      const { error: permError } = await supabase
-        .from("app_permissions")
-        .insert({
-          app_id: appData.id,
-          user_id: user.id,
-          role: "admin",
-        });
+      const { error: permError } = await supabase.from("app_permissions").insert({
+        app_id: appData.id,
+        user_id: user.id,
+        role: "admin",
+      });
 
       if (permError) {
         // Log error but don't fail the whole flow as app is created and org owner has implicit access usually
@@ -110,9 +101,7 @@ class OnboardingController {
       });
     } catch (error: any) {
       logger.error("Onboarding failed", { error: error.message });
-      return res
-        .status(500)
-        .json({ error: error.message || "Failed to complete onboarding" });
+      return res.status(500).json({ error: error.message || "Failed to complete onboarding" });
     }
   }
 }

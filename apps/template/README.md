@@ -1,6 +1,8 @@
 # Capucho
 
-Capucho is a modern, modular mobile-first application built with Vue 3, Framework7, and Capacitor for cross-platform deployment. This project follows a modular architecture with TypeScript, Pinia for state management, Vue I18n for internationalization, and Tailwind CSS for styling.
+Capucho is a modern, modular mobile-first application built with Vue 3, Framework7, and Capacitor
+for cross-platform deployment. This project follows a modular architecture with TypeScript, Pinia
+for state management, Vue I18n for internationalization, and Tailwind CSS for styling.
 
 ## Tech Stack
 
@@ -12,7 +14,8 @@ Capucho is a modern, modular mobile-first application built with Vue 3, Framewor
 - **Framework7**: Pixel-perfect native iOS/Android UI components and aesthetics.
 - **Kysely**: Type-safe SQL query builder for high-performance SQLite operations.
 - **OpenReplay**: Advanced session recording and observability for debugging.
-- **Developer Experience**: Zero-boilerplate with auto-imports (API/Components/Icons) and **Turbo Console**.
+- **Developer Experience**: Zero-boilerplate with auto-imports (API/Components/Icons) and **Turbo
+  Console**.
 - **Notifications**: Unified System & In-App notification manager.
 - **Updates**: OTA & Native updates powered by **Capucho Platform**.
 - unplugin-vue-components for automatic component imports
@@ -101,9 +104,11 @@ pnpm install
 
 ### Auto-imports
 
-- `useLocalStorage`, `computed`, `provide`, `inject`, `onMounted`, and other Vue composables are auto-imported
+- `useLocalStorage`, `computed`, `provide`, `inject`, `onMounted`, and other Vue composables are
+  auto-imported
 - No need to manually import these functions from 'vue' or other libraries
-- Uses unplugin-auto-import for automatic API imports from Vue, Pinia, Vue Router, VueUse, and Vue I18n
+- Uses unplugin-auto-import for automatic API imports from Vue, Pinia, Vue Router, VueUse, and Vue
+  I18n
 - Framework7 specific auto-imports are configured through the getFramework7AutoImports function
 
 ### Component Auto-imports
@@ -151,7 +156,8 @@ Check out [official Capacitor documentation](https://capacitorjs.com) for more e
 
 ## Assets
 
-Assets (icons, splash screens) source images are located in the public directory. The project includes icons in various sizes in `public/icons/` and native assets in `public/native/`.
+Assets (icons, splash screens) source images are located in the public directory. The project
+includes icons in various sizes in `public/icons/` and native assets in `public/native/`.
 
 ## Documentation & Resources
 
@@ -164,4 +170,6 @@ Assets (icons, splash screens) source images are located in the public directory
 
 ## Contributing
 
-This project follows a modular architecture designed to scale with multiple developers. Each feature module is self-contained, making it easy for multiple developers to work simultaneously without conflicts.
+This project follows a modular architecture designed to scale with multiple developers. Each feature
+module is self-contained, making it easy for multiple developers to work simultaneously without
+conflicts.

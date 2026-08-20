@@ -177,10 +177,7 @@ export function writeAppVersion(appDir: string, version: string): void {
   const contents = fs.readFileSync(file, "utf8");
 
   // Replace only the top-level "version" value, preserving formatting.
-  const updated = contents.replace(
-    /^(\s*"version"\s*:\s*")[^"]*(")/m,
-    `$1${version}$2`,
-  );
+  const updated = contents.replace(/^(\s*"version"\s*:\s*")[^"]*(")/m, `$1${version}$2`);
 
   if (updated === contents) {
     throw new Error(`Could not update the version field in ${file}`);

@@ -59,10 +59,7 @@ export interface UserProfile {
 }
 
 /** Roles allowed to create an application inside an organization. */
-export const APP_CREATOR_ROLES: ReadonlySet<string> = new Set([
-  "owner",
-  "admin",
-]);
+export const APP_CREATOR_ROLES: ReadonlySet<string> = new Set(["owner", "admin"]);
 
 export function canCreateApps(organization: CloudOrganization): boolean {
   return APP_CREATOR_ROLES.has(organization.role);

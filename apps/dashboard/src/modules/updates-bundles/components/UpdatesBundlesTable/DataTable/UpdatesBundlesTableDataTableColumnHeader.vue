@@ -80,17 +80,17 @@
   </div>
 </template>
 <script setup lang="ts">
-import type { Column } from '@tanstack/vue-table'
+import type { Column } from "@tanstack/vue-table";
 
 interface DataTableColumnHeaderProps {
-  column: Column<any, any>
-  title: string
+  column: Column<any, any>;
+  title: string;
 }
 
-const props = defineProps<DataTableColumnHeaderProps>()
+const props = defineProps<DataTableColumnHeaderProps>();
 
-const sortable = computed(() => props.column.getCanSort())
-const filterable = computed(() => props.column.getCanFilter())
-const groupable = computed(() => props.column.getCanGroup())
-const pinnable = computed(() => props.column.getCanPin())
+const sortable = computed(() => props.column.getCanSort());
+const filterable = computed(() => props.column.getCanFilter());
+const groupable = computed(() => props.column.getCanGroup());
+const pinnable = computed(() => props.column.getCanPin());
 </script>

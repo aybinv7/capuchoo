@@ -39,19 +39,15 @@
             <F7Badge color="blue" class="uppercase text-[9px] font-black">{{
               app.platform
             }}</F7Badge>
-            <F7Badge
-              v-if="app.user_role"
-              color="orange"
-              class="uppercase text-[9px] font-black"
-              >{{ app.user_role }}</F7Badge
-            >
+            <F7Badge v-if="app.user_role" color="orange" class="uppercase text-[9px] font-black">{{
+              app.user_role
+            }}</F7Badge>
           </div>
         </div>
       </div>
     </F7Block>
 
-    <F7BlockTitle
-      class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+    <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
       >Tester Actions</F7BlockTitle
     >
     <F7List
@@ -60,22 +56,12 @@
       outline-ios
       class="no-margin-top rounded-2xl overflow-hidden shadow-sm mx-4"
     >
-      <F7ListItem
-        link
-        title="View Updates"
-        subtitle="Check OTA bundles"
-        @click="viewUpdates"
-      >
+      <F7ListItem link title="View Updates" subtitle="Check OTA bundles" @click="viewUpdates">
         <template #media>
           <F7Icon f7="layers_fill" color="blue" />
         </template>
       </F7ListItem>
-      <F7ListItem
-        link
-        title="Devices"
-        subtitle="Registered test devices"
-        @click="viewDevices"
-      >
+      <F7ListItem link title="Devices" subtitle="Registered test devices" @click="viewDevices">
         <template #media>
           <F7Icon f7="device_phone_portrait" color="purple" />
         </template>
@@ -92,14 +78,10 @@
       </F7ListItem>
     </F7List>
 
-    <F7BlockTitle
-      class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+    <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
       >Sync Status</F7BlockTitle
     >
-    <F7Card
-      outline
-      class="rounded-2xl shadow-sm mx-4 border-none bg-white dark:bg-gray-900"
-    >
+    <F7Card outline class="rounded-2xl shadow-sm mx-4 border-none bg-white dark:bg-gray-900">
       <F7CardContent class="flex items-center justify-between p-4">
         <div class="flex items-center gap-3">
           <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
@@ -132,20 +114,14 @@ const appStore = useAppStore();
 const app = computed(() => appStore.activeApp);
 
 const refetch = () => {
-  f7.toast
-    .create({ text: "Refetching app data...", closeTimeout: 1000 })
-    .open();
+  f7.toast.create({ text: "Refetching app data...", closeTimeout: 1000 }).open();
 };
 
 const viewUpdates = () => f7.tab.show("#view-updates");
 const viewDevices = () =>
-  f7.toast
-    .create({ text: "Devices view coming soon", closeTimeout: 2000 })
-    .open();
+  f7.toast.create({ text: "Devices view coming soon", closeTimeout: 2000 }).open();
 const viewConfig = () =>
-  f7.toast
-    .create({ text: "Remote config coming soon", closeTimeout: 2000 })
-    .open();
+  f7.toast.create({ text: "Remote config coming soon", closeTimeout: 2000 }).open();
 const testConnection = () =>
   f7.toast.create({ text: "Connection stable", closeTimeout: 2000 }).open();
 

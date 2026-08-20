@@ -22,11 +22,7 @@
         validate
       />
 
-      <F7ListItem
-        title="Channel"
-        smart-select
-        :smart-select-params="{ openIn: 'popover' }"
-      >
+      <F7ListItem title="Channel" smart-select :smart-select-params="{ openIn: 'popover' }">
         <select v-model="form.channel">
           <option value="prod">Production</option>
           <option value="staging">Staging</option>
@@ -34,11 +30,7 @@
         </select>
       </F7ListItem>
 
-      <F7ListItem
-        title="Platform"
-        smart-select
-        :smart-select-params="{ openIn: 'popover' }"
-      >
+      <F7ListItem title="Platform" smart-select :smart-select-params="{ openIn: 'popover' }">
         <select v-model="form.platform">
           <option value="ios">iOS</option>
           <option value="android">Android</option>
@@ -57,9 +49,7 @@
 
       <F7ListItem class="file-input-item">
         <div class="p-4 w-full">
-          <div
-            class="text-xs font-black uppercase tracking-widest opacity-40 mb-2"
-          >
+          <div class="text-xs font-black uppercase tracking-widest opacity-40 mb-2">
             Build File (.zip, .apk, .ipa)
           </div>
           <input
@@ -136,9 +126,7 @@ const submit = async () => {
 
     await createBundle(formData);
 
-    f7.toast
-      .create({ text: "Version created successfully!", closeTimeout: 2000 })
-      .open();
+    f7.toast.create({ text: "Version created successfully!", closeTimeout: 2000 }).open();
     props.f7router.back();
   } catch (error: any) {
     f7.dialog.alert(error.message || "Failed to create version", "Error");

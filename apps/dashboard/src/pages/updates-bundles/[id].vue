@@ -5,7 +5,7 @@
       <div class="space-y-1">
         <div class="flex items-center gap-2">
           <Badge variant="outline" class="uppercase text-xs tracking-wider">
-            {{ type === 'bundle' ? 'Web Bundle' : 'Native Update' }}
+            {{ type === "bundle" ? "Web Bundle" : "Native Update" }}
           </Badge>
           <h1 class="text-3xl font-bold tracking-tight">v{{ item?.version_name }}</h1>
         </div>
@@ -54,7 +54,7 @@
       <div class="flex items-center gap-2">
         <span class="text-sm font-medium text-muted-foreground">Status:</span>
         <Badge :variant="item?.active ? 'default' : 'secondary'">
-          {{ item?.active ? 'Active' : 'Inactive' }}
+          {{ item?.active ? "Active" : "Inactive" }}
         </Badge>
         <Badge v-if="item?.required" variant="destructive">Required</Badge>
       </div>
@@ -258,104 +258,104 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
-import UpdatesBundlesTablePromoteDialog from '@/modules/updates-bundles/components/UpdatesBundlesTable/UpdatesBundlesTablePromoteDialog.vue'
+import { toast } from "vue-sonner";
+import UpdatesBundlesTablePromoteDialog from "@/modules/updates-bundles/components/UpdatesBundlesTable/UpdatesBundlesTablePromoteDialog.vue";
 
 const { id: updateId } = defineProps<{
-  id: string
-}>()
+  id: string;
+}>();
 
-const promoteDialogOpen = ref(false)
+const promoteDialogOpen = ref(false);
 
-const route = useRoute()
-const type = route.query.type as 'bundle' | 'native' | undefined
+const route = useRoute();
+const type = route.query.type as "bundle" | "native" | undefined;
 
-const { data: items, refetch } = useUpdatesBundlesQuery()
-const { data: devices } = useDevicesQuery()
+const { data: items, refetch } = useUpdatesBundlesQuery();
+const { data: devices } = useDevicesQuery();
 
 const item = computed(() => {
-  return items.value?.find((i) => String(i.id) === updateId && (!type || i.type === type))
-})
+  return items.value?.find((i) => String(i.id) === updateId && (!type || i.type === type));
+});
 
 const isLatest = computed(() => {
-  if (!item.value || !items.value) return false
+  if (!item.value || !items.value) return false;
   const compare = items.value.filter(
     (i) =>
       i.type === item.value?.type &&
       i.platform === item.value?.platform &&
       i.channel === item.value?.channel,
-  )
+  );
   const sorted = compare.sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  )
-  return sorted.length > 0 && sorted[0]?.id === item.value.id
-})
+  );
+  return sorted.length > 0 && sorted[0]?.id === item.value.id;
+});
 
 const relevantDevices = computed(() => {
-  if (!devices.value || !item.value) return []
+  if (!devices.value || !item.value) return [];
   return devices.value.filter(
     (d) => d.platform === item.value?.platform && (!d.channel || d.channel === item.value?.channel),
-  )
-})
+  );
+});
 
 const getDeviceVersion = (d: Device) => {
-  return type === 'bundle' ? d.current_bundle_id : d.current_native_id
-}
+  return type === "bundle" ? d.current_bundle_id : d.current_native_id;
+};
 
 const currentVersionDevices = computed(() => {
   return relevantDevices.value.filter((d) => {
-    const currentId = type === 'bundle' ? d.current_bundle_id : d.current_native_id
-    return String(currentId) === String(item.value?.id)
-  })
-})
+    const currentId = type === "bundle" ? d.current_bundle_id : d.current_native_id;
+    return String(currentId) === String(item.value?.id);
+  });
+});
 
 const otherVersionDevices = computed(() => {
   return relevantDevices.value.filter((d) => {
-    const currentId = type === 'bundle' ? d.current_bundle_id : d.current_native_id
-    return String(currentId) !== String(item.value?.id)
-  })
-})
+    const currentId = type === "bundle" ? d.current_bundle_id : d.current_native_id;
+    return String(currentId) !== String(item.value?.id);
+  });
+});
 
 const isDeviceOutdated = (_d: Device) => {
-  console.log('isDeviceOutdated', _d)
-  if (isLatest.value) return true
-  return false
-}
+  console.log("isDeviceOutdated", _d);
+  if (isLatest.value) return true;
+  return false;
+};
 
 const adoptionRate = computed(() => {
-  if (relevantDevices.value.length === 0) return 0
-  return Math.round((currentVersionDevices.value.length / relevantDevices.value.length) * 100)
-})
+  if (relevantDevices.value.length === 0) return 0;
+  return Math.round((currentVersionDevices.value.length / relevantDevices.value.length) * 100);
+});
 
 const formatDate = (dateString?: string) => {
-  if (!dateString) return 'Unknown date'
+  if (!dateString) return "Unknown date";
   return new Date(dateString).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const formatFileSize = (bytes: number) => {
-  if (!bytes) return 'Unknown'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (!bytes) return "Unknown";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
 
 const downloadAsset = () => {
   if (item.value?.download_url) {
-    window.open(item.value.download_url, '_blank')
+    window.open(item.value.download_url, "_blank");
   } else {
-    toast.error('Download URL not available')
+    toast.error("Download URL not available");
   }
-}
+};
 
 const configSnippet = computed(() => {
-  if (!item.value) return ''
+  if (!item.value) return "";
   return JSON.stringify(
     {
       url: item.value.download_url,
@@ -364,24 +364,24 @@ const configSnippet = computed(() => {
     },
     null,
     2,
-  )
-})
+  );
+});
 
 const copyConfig = () => {
-  navigator.clipboard.writeText(configSnippet.value)
-  toast.success('Configuration copied to clipboard')
-}
+  navigator.clipboard.writeText(configSnippet.value);
+  toast.success("Configuration copied to clipboard");
+};
 
 const handlePromoted = async () => {
-  promoteDialogOpen.value = false
-  await refetch()
-}
+  promoteDialogOpen.value = false;
+  await refetch();
+};
 
 definePage({
   meta: {
-    title: 'Update Details - CapGO',
-    category: 'updates-bundles',
+    title: "Update Details - CapGO",
+    category: "updates-bundles",
   },
   props: true,
-})
+});
 </script>

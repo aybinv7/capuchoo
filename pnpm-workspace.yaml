@@ -13,9 +13,9 @@ catalogMode: prefer
 # pnpm from asking again.
 allowBuilds:
   # Native binaries these packages download or compile for the host platform.
-  '@capacitor/cli': true
-  '@parcel/watcher': true
-  '@swc/core': true
+  "@capacitor/cli": true
+  "@parcel/watcher": true
+  "@swc/core": true
   esbuild: true
   sharp: true
   unrs-resolver: true
@@ -32,7 +32,7 @@ allowBuilds:
   # Downloads a macOS-only binary for a lint task nothing in CI runs.
   swiftlint: false
   # Optional postinstall; the published artefacts are already usable.
-  '@firebase/util': false
+  "@firebase/util": false
   maplibre-gl: false
 
 # Single source of truth for versions shared across packages. A package refers
@@ -47,37 +47,37 @@ catalog:
 
   # Capacitor runtime - the updater package, the plugin and the apps must agree
   # exactly, otherwise the native bridge ends up loading two copies.
-  '@capacitor/android': ^8.0.0
-  '@capacitor/app': ^8.0.0
-  '@capacitor/cli': ^8.0.0
-  '@capacitor/core': ^8.0.0
-  '@capacitor/device': ^8.0.0
-  '@capacitor/file-transfer': ^2.0.5
-  '@capacitor/filesystem': ^8.1.2
-  '@capacitor/ios': ^8.0.0
-  '@capacitor/network': ^8.0.1
-  '@capacitor/preferences': ^8.0.0
-  '@capawesome-team/capacitor-file-opener': ^8.0.1
-  '@capgo/capacitor-updater': ^8.51.8
+  "@capacitor/android": ^8.0.0
+  "@capacitor/app": ^8.0.0
+  "@capacitor/cli": ^8.0.0
+  "@capacitor/core": ^8.0.0
+  "@capacitor/device": ^8.0.0
+  "@capacitor/file-transfer": ^2.0.5
+  "@capacitor/filesystem": ^8.1.2
+  "@capacitor/ios": ^8.0.0
+  "@capacitor/network": ^8.0.1
+  "@capacitor/preferences": ^8.0.0
+  "@capawesome-team/capacitor-file-opener": ^8.0.1
+  "@capgo/capacitor-updater": ^8.51.8
 
   # Native project configuration and icon generation. The CLI drives both, so
   # it needs the same versions the apps were validated against.
-  '@capacitor/assets': ^3.0.5
-  '@trapezedev/configure': ^7.1.3
+  "@capacitor/assets": ^3.0.5
+  "@trapezedev/configure": ^7.1.3
 
   # Shared toolchain. TypeScript stays on 5.x rather than the 7.x the Vite+
   # generator suggests: oclif's typings and vue-tsc are not validated on 7 yet.
   # Revisit as one deliberate upgrade, not as a side effect of scaffolding.
-  '@types/node': ^24.10.4
+  "@types/node": ^24.10.4
   axios: ^1.19.0
   typescript: ^5.9.3
   vue: ^3.5.25
 
 overrides:
-  vite: 'catalog:'
+  vite: "catalog:"
 
 peerDependencyRules:
   allowAny:
     - vite
   allowedVersions:
-    vite: '*'
+    vite: "*"

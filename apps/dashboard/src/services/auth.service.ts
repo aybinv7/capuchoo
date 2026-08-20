@@ -1,36 +1,36 @@
-import { createClient, type Session, type User } from '@supabase/supabase-js'
+import { createClient, type Session, type User } from "@supabase/supabase-js";
 
 // Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface LoginCredentials {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 export interface RegisterData {
-  email: string
-  password: string
-  businessName: string
+  email: string;
+  password: string;
+  businessName: string;
 }
 
 export interface OtpVerifyData {
-  email: string
-  token: string
-  type: 'signup' | 'email'
+  email: string;
+  token: string;
+  type: "signup" | "email";
 }
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<{ user: User | null; session: Session }> {
-    const { data, error } = await supabase.auth.signInWithPassword(credentials)
+    const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
     if (error) {
-      throw new Error(error.message)
+      throw new Error(error.message);
     }
 
-    return { user: data.user, session: data.session }
+    return { user: data.user, session: data.session };
   },
 
   /**
@@ -48,13 +48,13 @@ export const authService = {
         // Don't auto-confirm, require email verification
         emailRedirectTo: undefined,
       },
-    })
+    });
 
     if (error) {
-      throw new Error(error.message)
+      throw new Error(error.message);
     }
 
-    return { user: signUpData.user }
+    return { user: signUpData.user };
   },
 
   /**
@@ -64,19 +64,19 @@ export const authService = {
   async verifyOtp(
     email: string,
     token: string,
-    type: 'signup' | 'email' = 'signup',
+    type: "signup" | "email" = "signup",
   ): Promise<{ user: User | null; session: Session | null }> {
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
       type,
-    })
+    });
 
     if (error) {
-      throw new Error(error.message)
+      throw new Error(error.message);
     }
 
-    return { user: data.user, session: data.session }
+    return { user: data.user, session: data.session };
   },
 
   /**
@@ -84,55 +84,55 @@ export const authService = {
    */
   async resendOtp(email: string): Promise<void> {
     const { error } = await supabase.auth.resend({
-      type: 'signup',
+      type: "signup",
       email,
-    })
+    });
 
     if (error) {
-      throw new Error(error.message)
+      throw new Error(error.message);
     }
   },
 
   async logout(): Promise<void> {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut();
     if (error) {
-      throw new Error(error.message)
+      throw new Error(error.message);
     }
   },
 
   async getProfile(): Promise<User | null> {
     const {
       data: { user },
-    } = await supabase.auth.getUser()
-    return user
+    } = await supabase.auth.getUser();
+    return user;
   },
 
   async checkAuthState(): Promise<{ user: User | null }> {
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
-    return { user: user }
+    return { user: user };
   },
 
   async getSession() {
-    const { data, error } = await supabase.auth.getSession()
+    const { data, error } = await supabase.auth.getSession();
 
     if (error) {
-      throw Error(error.message)
+      throw Error(error.message);
     }
 
-    return data
+    return data;
   },
 
   onAuthStateChange(callback: (event: any, session: any) => void) {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(callback)
-    return subscription
+    } = supabase.auth.onAuthStateChange(callback);
+    return subscription;
   },
 
   isAuthenticated(): boolean {
-    return !!supabase.auth.getUser()
+    return !!supabase.auth.getUser();
   },
-}
+};

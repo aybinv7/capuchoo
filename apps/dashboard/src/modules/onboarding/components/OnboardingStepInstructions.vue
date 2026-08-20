@@ -70,17 +70,17 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
+import { toast } from "vue-sonner";
 
 const emit = defineEmits<{
-  (e: 'next'): void
-  (e: 'back'): void
-}>()
+  (e: "next"): void;
+  (e: "back"): void;
+}>();
 
-const store = useOnboardingStore()
+const store = useOnboardingStore();
 
 const copy = (text: string) => {
-  navigator.clipboard.writeText(text)
-  toast.success('Copied to clipboard')
-}
+  navigator.clipboard.writeText(text);
+  toast.success("Copied to clipboard");
+};
 </script>

@@ -1,16 +1,16 @@
-import { createRouter, createWebHistory, type RouteRecord } from 'vue-router'
-import { handleHotUpdate, routes } from 'vue-router/auto-routes'
+import { createRouter, createWebHistory, type RouteRecord } from "vue-router";
+import { handleHotUpdate, routes } from "vue-router/auto-routes";
 
-import { setupLayouts } from 'layouts-generated'
-import { useAuthGuard } from './guards/auth.guard'
+import { setupLayouts } from "layouts-generated";
+import { useAuthGuard } from "./guards/auth.guard";
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: setupLayouts(routes as RouteRecord[]),
-})
-router.beforeEach(useAuthGuard)
+});
+router.beforeEach(useAuthGuard);
 
 if (import.meta.hot) {
-  handleHotUpdate(router)
+  handleHotUpdate(router);
 }
-export default router
+export default router;

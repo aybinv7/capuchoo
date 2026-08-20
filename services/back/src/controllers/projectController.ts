@@ -6,11 +6,7 @@ class ProjectController {
    * Get Project Configuration (Flavors, Channels)
    * GET /api/project/config
    */
-  public async getConfig(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async getConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Fetch public channels from DB
       // Assuming 'channels' table exists or we filter unique channels from another table

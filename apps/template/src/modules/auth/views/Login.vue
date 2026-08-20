@@ -1,8 +1,6 @@
 <template>
   <f7-page name="login" no-toolbar no-navbar no-swipeback>
-    <div
-      class="absolute top-0 h-screen w-screen flex flex-col items-center justify-center"
-    >
+    <div class="absolute top-0 h-screen w-screen flex flex-col items-center justify-center">
       <!-- 🔹 Shader background -->
       <ShaderLines class="absolute h-screen w-screen z-0" />
 
@@ -10,9 +8,7 @@
       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm z-10"></div>
 
       <!-- 🔹 Content Container -->
-      <div
-        class="absolute z-20 flex flex-col items-center justify-center w-full px-4"
-      >
+      <div class="absolute z-20 flex flex-col items-center justify-center w-full px-4">
         <!-- Logo & Header -->
         <div class="flex flex-col items-center justify-center mb-8 w-full">
           <img
@@ -20,9 +16,7 @@
             alt="Capucho"
             class="w-24 h-24 object-contain shadow-2xl rounded-2xl mb-4"
           />
-          <h1 class="text-3xl text-white font-bold tracking-tight">
-            Capucho App
-          </h1>
+          <h1 class="text-3xl text-white font-bold tracking-tight">Capucho App</h1>
           <p class="mt-1 text-white/60">Tester Platform</p>
         </div>
 
@@ -30,11 +24,7 @@
         <div
           class="w-full max-w-sm bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-2xl"
         >
-          <f7-list
-            form
-            no-hairlines-md
-            class="no-margin-top no-margin-bottom transparent-list"
-          >
+          <f7-list form no-hairlines-md class="no-margin-top no-margin-bottom transparent-list">
             <f7-list-input
               label="Email"
               type="email"
@@ -78,10 +68,7 @@
             </f7-button>
 
             <div class="text-center mt-2">
-              <f7-link
-                href="/auth/register"
-                class="/80 text-sm hover: transition-colors"
-              >
+              <f7-link href="/auth/register" class="/80 text-sm hover: transition-colors">
                 Don't have an account?
                 <span class="text-primary font-bold ml-1">Sign up</span>
               </f7-link>
@@ -92,8 +79,7 @@
         <!-- Footer Info -->
         <p class="mt-12 text-center text-xs px-8 text-white/60">
           By continuing, you agree to our
-          <span class="underline">Terms</span> and
-          <span class="underline">Privacy Policy</span>.
+          <span class="underline">Terms</span> and <span class="underline">Privacy Policy</span>.
         </p>
       </div>
     </div>

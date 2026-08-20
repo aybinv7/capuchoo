@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { Layers } from 'lucide-vue-next'
+import { Layers } from "lucide-vue-next";
 
-const currentYear = new Date().getFullYear()
+const currentYear = new Date().getFullYear();
 
 const footerLinks = {
   product: [
-    { label: 'Features', href: '#features' },
-    { label: 'Integrations', href: '#' },
-    { label: 'Pricing', href: '#' },
+    { label: "Features", href: "#features" },
+    { label: "Integrations", href: "#" },
+    { label: "Pricing", href: "#" },
   ],
   resources: [
-    { label: 'Documentation', href: '/docs' },
-    { label: 'API Reference', href: '/docs/api' },
-    { label: 'Community', href: '#' },
+    { label: "Documentation", href: "/docs" },
+    { label: "API Reference", href: "/docs/api" },
+    { label: "Community", href: "#" },
   ],
   company: [
-    { label: 'About', href: '/about' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Careers', href: '/careers' },
+    { label: "About", href: "/about" },
+    { label: "Blog", href: "/blog" },
+    { label: "Careers", href: "/careers" },
   ],
-}
+};
 </script>
 
 <template>

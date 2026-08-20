@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 
 interface ShinyTextProps {
-  text: string
-  disabled?: boolean
-  speed?: number
-  className?: string
+  text: string;
+  disabled?: boolean;
+  speed?: number;
+  className?: string;
 }
 
 const props = withDefaults(defineProps<ShinyTextProps>(), {
-  text: '',
+  text: "",
   disabled: false,
   speed: 5,
-  className: '',
-})
+  className: "",
+});
 
-const animationDuration = computed(() => `${props.speed}s`)
+const animationDuration = computed(() => `${props.speed}s`);
 </script>
 
 <template>

@@ -22,7 +22,7 @@ inputs:
   release-notes:
     description: Release notes shown to users in the update prompt.
     required: false
-    default: ''
+    default: ""
   cli-version:
     description: Version of capucho-cli to run. Pin this in production.
     required: false

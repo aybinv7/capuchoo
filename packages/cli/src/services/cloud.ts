@@ -60,10 +60,7 @@ export class CloudClient {
 
   releases(cloudAppId: string, channel?: string): Promise<CloudRelease[]> {
     const query = channel ? `?channel=${encodeURIComponent(channel)}` : "";
-    return get<CloudRelease[]>(
-      `/api/apps/${cloudAppId}/releases${query}`,
-      this.options,
-    );
+    return get<CloudRelease[]>(`/api/apps/${cloudAppId}/releases${query}`, this.options);
   }
 
   /**
@@ -79,9 +76,7 @@ export class CloudClient {
 
     if (!channel) {
       const available = channels.map((c) => c.name).join(", ") || "none";
-      throw new Error(
-        `Channel "${name}" does not exist for this app. Available: ${available}.`,
-      );
+      throw new Error(`Channel "${name}" does not exist for this app. Available: ${available}.`);
     }
 
     if (!channel.environment) {

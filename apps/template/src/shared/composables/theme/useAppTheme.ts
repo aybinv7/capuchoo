@@ -12,13 +12,12 @@ export interface AppContext {
   setDarkMode: (t: AppMode) => Promise<void>;
 }
 
-export const AppContextKey: InjectionKey<ComputedRef<AppContext>> =
-  Symbol("AppContext");
+export const AppContextKey: InjectionKey<ComputedRef<AppContext>> = Symbol("AppContext");
 
 export const useAppThemeProvider = () => {
   const darkMode = useLocalStorage<AppMode>(
     "dark-mode",
-    navigator.userAgent.includes("dark") ? "dark" : "light"
+    navigator.userAgent.includes("dark") ? "dark" : "light",
   );
 
   const theme = useLocalStorage<AppTheme>("app-theme", "auto");
@@ -63,7 +62,7 @@ export const useAppTheme = (): ComputedRef<AppContext> => {
 
   if (!context) {
     throw new Error(
-      "useAppTheme must be used within a component that has useAppThemeProvider called in a parent"
+      "useAppTheme must be used within a component that has useAppThemeProvider called in a parent",
     );
   }
 

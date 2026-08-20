@@ -53,8 +53,7 @@ function binDirs(from: string): string[] {
  * whether that is fatal or a reason to skip a step.
  */
 export function resolveBin(name: string, from: string): string | null {
-  const candidates =
-    process.platform === "win32" ? [`${name}.cmd`, `${name}.exe`, name] : [name];
+  const candidates = process.platform === "win32" ? [`${name}.cmd`, `${name}.exe`, name] : [name];
 
   for (const dir of binDirs(from)) {
     for (const candidate of candidates) {

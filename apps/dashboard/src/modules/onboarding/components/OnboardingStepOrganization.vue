@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useOnboardingStore } from '@/modules/onboarding/stores/onboarding.store'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { ref } from "vue";
+import { useOnboardingStore } from "@/modules/onboarding/stores/onboarding.store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -11,24 +11,24 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { toast } from 'vue-sonner'
+} from "@/components/ui/card";
+import { toast } from "vue-sonner";
 
 const emit = defineEmits<{
-  (e: 'next'): void
-}>()
+  (e: "next"): void;
+}>();
 
-const onboardingStore = useOnboardingStore()
-const orgName = ref(onboardingStore.organizationData.name || '')
+const onboardingStore = useOnboardingStore();
+const orgName = ref(onboardingStore.organizationData.name || "");
 
 async function handleCreateOrg() {
   if (!orgName.value) {
-    toast.error('Please enter an organization name')
-    return
+    toast.error("Please enter an organization name");
+    return;
   }
 
-  onboardingStore.setOrganizationDraft(orgName.value)
-  emit('next')
+  onboardingStore.setOrganizationDraft(orgName.value);
+  emit("next");
 }
 </script>
 

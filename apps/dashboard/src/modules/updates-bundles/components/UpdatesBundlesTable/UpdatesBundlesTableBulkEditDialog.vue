@@ -58,30 +58,30 @@
 </template>
 
 <script setup lang="ts">
-import type { UpdateOrBundle, BulkEditData } from '../../types/updates-bundles.types'
+import type { UpdateOrBundle, BulkEditData } from "../../types/updates-bundles.types";
 
 interface Props {
-  bulkEditDialogOpen: boolean
-  bulkEditData: BulkEditData
-  selectedItems: UpdateOrBundle[]
+  bulkEditDialogOpen: boolean;
+  bulkEditData: BulkEditData;
+  selectedItems: UpdateOrBundle[];
 }
 
 interface Emits {
-  (e: 'update:bulkEditDialogOpen', value: boolean): void
-  (e: 'update:bulkEditData', value: BulkEditData): void
-  (e: 'click:bulk-edit-confirm'): void
+  (e: "update:bulkEditDialogOpen", value: boolean): void;
+  (e: "update:bulkEditData", value: BulkEditData): void;
+  (e: "click:bulk-edit-confirm"): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const dialogOpen = computed({
   get: () => props.bulkEditDialogOpen,
-  set: (value) => emit('update:bulkEditDialogOpen', value),
-})
+  set: (value) => emit("update:bulkEditDialogOpen", value),
+});
 
 const bulkEditData = computed({
   get: () => props.bulkEditData,
-  set: (value) => emit('update:bulkEditData', value),
-})
+  set: (value) => emit("update:bulkEditData", value),
+});
 </script>

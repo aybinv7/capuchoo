@@ -1,51 +1,51 @@
 <script setup lang="ts">
-import { Star, Quote } from 'lucide-vue-next'
-import LandingMarquee from '@/components/landing/LandingMarquee.vue'
+import { Star, Quote } from "lucide-vue-next";
+import LandingMarquee from "@/components/landing/LandingMarquee.vue";
 
 const testimonials = [
   {
     content:
-      'Capucho completely transformed our deployment pipeline. We push updates 10x faster now!',
-    author: 'Sarah Chen',
-    role: 'CTO, TechFlow',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+      "Capucho completely transformed our deployment pipeline. We push updates 10x faster now!",
+    author: "Sarah Chen",
+    role: "CTO, TechFlow",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
   },
   {
-    content: 'The binary diffing is magic. Our users on slow connections are finally happy.',
-    author: 'Michael Ross',
-    role: 'Lead Dev, Appify',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Michael',
+    content: "The binary diffing is magic. Our users on slow connections are finally happy.",
+    author: "Michael Ross",
+    role: "Lead Dev, Appify",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael",
   },
   {
     content:
-      'Finally a solution that handles both native and OTA updates in one place. A game changer.',
-    author: 'Jessica Li',
-    role: 'Product Manager, ScaleUp',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica',
+      "Finally a solution that handles both native and OTA updates in one place. A game changer.",
+    author: "Jessica Li",
+    role: "Product Manager, ScaleUp",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica",
   },
   {
-    content: 'The rollback feature saved us during a critical bug. Worth every penny.',
-    author: 'David Miller',
-    role: 'Engineering Manager, FinTech Co',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
+    content: "The rollback feature saved us during a critical bug. Worth every penny.",
+    author: "David Miller",
+    role: "Engineering Manager, FinTech Co",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
   },
   {
-    content: 'Setup was incredibly easy. We were running in production within an hour.',
-    author: 'Emily Watson',
-    role: 'DevOps Lead, CloudSystem',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily',
+    content: "Setup was incredibly easy. We were running in production within an hour.",
+    author: "Emily Watson",
+    role: "DevOps Lead, CloudSystem",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emily",
   },
   {
-    content: 'Best in class support. The team really cares about their customers.',
-    author: 'James Wilson',
-    role: 'Founder, StartupX',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James',
+    content: "Best in class support. The team really cares about their customers.",
+    author: "James Wilson",
+    role: "Founder, StartupX",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=James",
   },
-]
+];
 
 // Split reviews into columns for the marquee effect
-const firstColumn = testimonials.slice(0, 3)
-const secondColumn = testimonials.slice(3, 6)
+const firstColumn = testimonials.slice(0, 3);
+const secondColumn = testimonials.slice(3, 6);
 </script>
 
 <template>

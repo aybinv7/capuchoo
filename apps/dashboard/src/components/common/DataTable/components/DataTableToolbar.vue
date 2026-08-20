@@ -78,54 +78,54 @@
 </template>
 
 <script setup lang="ts" generic="TData">
-import { type Table } from '@tanstack/vue-table'
-import { computed } from 'vue'
-import { X, Columns, Download, FileText, FileSpreadsheet, FileJson } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { type Table } from "@tanstack/vue-table";
+import { computed } from "vue";
+import { X, Columns, Download, FileText, FileSpreadsheet, FileJson } from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import type { DataTableConfig, DataTableFilterDef, DataTableFilterOption } from '../types'
+} from "@/components/ui/dropdown-menu";
+import type { DataTableConfig, DataTableFilterDef, DataTableFilterOption } from "../types";
 
 const props = defineProps<{
-  table: Table<TData>
-  config?: DataTableConfig
-  filters?: DataTableFilterDef[]
-  density?: 'compact' | 'normal' | 'comfortable'
-  isLoading?: boolean
-}>()
+  table: Table<TData>;
+  config?: DataTableConfig;
+  filters?: DataTableFilterDef[];
+  density?: "compact" | "normal" | "comfortable";
+  isLoading?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'toggleDensity'): void
-  (e: 'resetFilters'): void
-  (e: 'export', format: 'csv' | 'excel' | 'json'): void
-  (e: 'click:refresh'): void
-}>()
+  (e: "toggleDensity"): void;
+  (e: "resetFilters"): void;
+  (e: "export", format: "csv" | "excel" | "json"): void;
+  (e: "click:refresh"): void;
+}>();
 
 const isFiltered = computed(() => {
-  return props.table.getState().columnFilters.length > 0 || !!props.table.getState().globalFilter
-})
+  return props.table.getState().columnFilters.length > 0 || !!props.table.getState().globalFilter;
+});
 
 const getFilterOptions = (filter: DataTableFilterDef): DataTableFilterOption[] => {
   // Handle both function-based and direct array options
-  if (typeof filter.options === 'function') {
-    const data = props.table.getPreFilteredRowModel().rows.map((row) => row.original)
-    return filter.options(data)
+  if (typeof filter.options === "function") {
+    const data = props.table.getPreFilteredRowModel().rows.map((row) => row.original);
+    return filter.options(data);
   }
-  return filter.options as DataTableFilterOption[]
-}
+  return filter.options as DataTableFilterOption[];
+};
 
 const toggleDensity = () => {
-  emit('toggleDensity')
-}
+  emit("toggleDensity");
+};
 
 const resetFilters = () => {
-  props.table.resetColumnFilters()
-  props.table.setGlobalFilter('')
-  emit('resetFilters')
-}
+  props.table.resetColumnFilters();
+  props.table.setGlobalFilter("");
+  emit("resetFilters");
+};
 </script>

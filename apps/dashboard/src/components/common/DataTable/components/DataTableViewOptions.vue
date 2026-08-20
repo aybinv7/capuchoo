@@ -25,9 +25,9 @@
 </template>
 
 <script setup lang="ts" generic="TData">
-import { type Table } from '@tanstack/vue-table'
-import { Settings2 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
+import { type Table } from "@tanstack/vue-table";
+import { Settings2 } from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -35,9 +35,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 
 defineProps<{
-  table: Table<TData>
-}>()
+  table: Table<TData>;
+}>();
 </script>

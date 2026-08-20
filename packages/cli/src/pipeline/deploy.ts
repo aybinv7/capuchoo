@@ -1,17 +1,9 @@
-import {
-  environmentFromAppId,
-  type Environment,
-  type ResolvedProjectConfig,
-} from "@capucho/core";
+import { environmentFromAppId, type Environment, type ResolvedProjectConfig } from "@capucho/core";
 import fs from "node:fs";
 import path from "node:path";
 import { CommandError, type RunOptions } from "../utils/exec.js";
 import { Reporter, type Step } from "../utils/reporter.js";
-import {
-  assembleAndroid,
-  collectAndroidArtifact,
-  type BuildType,
-} from "./android.js";
+import { assembleAndroid, collectAndroidArtifact, type BuildType } from "./android.js";
 import { buildWeb, generateAssets, syncCapacitor, type StepContext } from "./build.js";
 import {
   buildEnvironment,
@@ -118,10 +110,7 @@ export function planSteps(request: DeployRequest): Step[] {
  * file at step 2, leaving the repository holding a version that was never
  * published.
  */
-export function validateRequest(
-  request: DeployRequest,
-  flavour: ResolvedFlavour,
-): string[] {
+export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour): string[] {
   const problems = describeFlavourProblems(flavour);
 
   const declaredAppId = flavour.fileEnv.VITE_APP_ID;
@@ -255,10 +244,7 @@ export async function runDeploy(
   if (request.kind === "ota") {
     reporter.begin("bundle");
     const webDir = path.resolve(request.appDir, request.project.webDir);
-    const outFile = path.join(
-      request.appDir,
-      bundleFileName(request.project.appId, state.version),
-    );
+    const outFile = path.join(request.appDir, bundleFileName(request.project.appId, state.version));
     const bundle = createBundleZip({ webDir, outFile });
     reporter.note(
       `${bundle.fileCount} files, ${formatBytes(bundle.byteSize)} -> ${path.basename(bundle.zipPath)}`,
@@ -273,19 +259,13 @@ export async function runDeploy(
     reporter.begin("compile");
     const androidDir = path.resolve(request.appDir, request.project.androidDir);
     await assembleAndroid(androidDir, request.buildType, runOptions);
-    const built = collectAndroidArtifact(
-      androidDir,
-      request.buildType,
-      request.allowUnsigned,
-    );
+    const built = collectAndroidArtifact(androidDir, request.buildType, request.allowUnsigned);
     reporter.note(
       `${path.basename(built.apkPath)}, ${formatBytes(built.byteSize)}` +
         (built.signed ? "" : " (unsigned)"),
     );
     if (!built.signed) {
-      warnings.push(
-        "This artefact is not signed. Android will not install it as-is.",
-      );
+      warnings.push("This artefact is not signed. Android will not install it as-is.");
     }
     artifact = {
       kind: "native",
@@ -321,9 +301,7 @@ export function formatBytes(bytes: number): string {
 /** Turns a pipeline failure into something worth printing. */
 export function describeFailure(error: unknown, appDir: string): string {
   if (error instanceof CommandError) {
-    return (
-      `${error.message}\n\n  Full output: ${path.join(appDir, LOG_FILE)}`
-    );
+    return `${error.message}\n\n  Full output: ${path.join(appDir, LOG_FILE)}`;
   }
   return error instanceof Error ? error.message : String(error);
 }

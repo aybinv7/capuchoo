@@ -123,11 +123,11 @@
         <div class="p-5 border-b bg-muted/10 flex justify-between items-center shrink-0">
           <h3 class="font-semibold text-base">
             {{
-              selectedNode?.type === 'app'
-                ? 'App Details'
-                : selectedNode?.type === 'channel'
-                  ? 'Channel Settings'
-                  : 'Properties'
+              selectedNode?.type === "app"
+                ? "App Details"
+                : selectedNode?.type === "channel"
+                  ? "Channel Settings"
+                  : "Properties"
             }}
           </h3>
           <Button
@@ -167,7 +167,7 @@
                 >
                   <ILucideSmartphone class="size-4 text-primary" />
                   <span class="text-sm font-medium">{{
-                    selectedNode.data.platform || 'Cross-platform'
+                    selectedNode.data.platform || "Cross-platform"
                   }}</span>
                 </div>
               </div>
@@ -357,38 +357,38 @@
 </template>
 
 <script setup lang="ts">
-import { VueFlow, useVueFlow, type Node, type Edge } from '@vue-flow/core'
-import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
-import { MiniMap } from '@vue-flow/minimap'
-import { onMounted, ref, computed, watch } from 'vue'
+import { VueFlow, useVueFlow, type Node, type Edge } from "@vue-flow/core";
+import { Background } from "@vue-flow/background";
+import { Controls } from "@vue-flow/controls";
+import { MiniMap } from "@vue-flow/minimap";
+import { onMounted, ref, computed, watch } from "vue";
 
-import '@vue-flow/minimap/dist/style.css'
-import { useAppStore } from '@/stores/app.store'
-import { storeToRefs } from 'pinia'
-import AppNode from '../nodes/AppNode.vue'
-import ChannelNode from '../nodes/ChannelNode.vue'
-import BundleNode from '../nodes/BundleNode.vue'
-import DeviceFleetNode from '../nodes/DeviceFleetNode.vue'
-import GithubNode from '../nodes/GithubNode.vue'
-import DataFlowEdge from '../edges/DataFlowEdge.vue'
-import PipelineEdge from '../edges/PipelineEdge.vue'
+import "@vue-flow/minimap/dist/style.css";
+import { useAppStore } from "@/stores/app.store";
+import { storeToRefs } from "pinia";
+import AppNode from "../nodes/AppNode.vue";
+import ChannelNode from "../nodes/ChannelNode.vue";
+import BundleNode from "../nodes/BundleNode.vue";
+import DeviceFleetNode from "../nodes/DeviceFleetNode.vue";
+import GithubNode from "../nodes/GithubNode.vue";
+import DataFlowEdge from "../edges/DataFlowEdge.vue";
+import PipelineEdge from "../edges/PipelineEdge.vue";
 
 // Styles
-import '@vue-flow/core/dist/style.css'
-import '@vue-flow/controls/dist/style.css'
-import '@vue-flow/minimap/dist/style.css'
+import "@vue-flow/core/dist/style.css";
+import "@vue-flow/controls/dist/style.css";
+import "@vue-flow/minimap/dist/style.css";
 
-const router = useRouter()
-const appStore = useAppStore()
-const { activeApp } = storeToRefs(appStore)
+const router = useRouter();
+const appStore = useAppStore();
+const { activeApp } = storeToRefs(appStore);
 
 // Graph State
-const elements = ref<(Node | Edge)[]>([])
-const isLoading = ref(false)
-const isStorming = ref(false)
+const elements = ref<(Node | Edge)[]>([]);
+const isLoading = ref(false);
+const isStorming = ref(false);
 
-import dagre from 'dagre'
+import dagre from "dagre";
 
 const {
   onNodeClick,
@@ -403,91 +403,91 @@ const {
   project,
   removeNodes,
   setNodes,
-} = useVueFlow()
+} = useVueFlow();
 
 onConnect((params) => {
   addEdges([
     {
       ...params,
-      type: 'pipeline',
-      data: { state: 'idle', label: 'Manual Link' },
+      type: "pipeline",
+      data: { state: "idle", label: "Manual Link" },
     },
-  ])
-})
+  ]);
+});
 
 // Add Delete key listener
 onMounted(() => {
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      const selectedNodes = nodes.value.filter((n) => n.selected)
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Delete" || e.key === "Backspace") {
+      const selectedNodes = nodes.value.filter((n) => n.selected);
       if (selectedNodes.length > 0) {
-        removeNodes(selectedNodes)
+        removeNodes(selectedNodes);
       }
     }
-  })
-})
+  });
+});
 
 const triggerDeployment = async (channelId: string) => {
-  const edgeId = elements.value.find((e) => 'target' in e && e.target === channelId)?.id
-  if (!edgeId) return
+  const edgeId = elements.value.find((e) => "target" in e && e.target === channelId)?.id;
+  if (!edgeId) return;
 
-  isStorming.value = true
+  isStorming.value = true;
   // 1. Start "Deploying" animation on the edge
   elements.value = elements.value.map((el) => {
-    if (el.id === edgeId && 'data' in el) {
-      return { ...el, data: { ...el.data, state: 'deploying', label: 'Compiling...' } }
+    if (el.id === edgeId && "data" in el) {
+      return { ...el, data: { ...el.data, state: "deploying", label: "Compiling..." } };
     }
-    return el
-  })
+    return el;
+  });
 
   // 2. Simulate build time
-  await new Promise((r) => setTimeout(r, 2000))
+  await new Promise((r) => setTimeout(r, 2000));
 
   // 3. Complete deployment
   elements.value = elements.value.map((el) => {
-    if (el.id === edgeId && 'data' in el) {
-      return { ...el, data: { ...el.data, state: 'success', label: 'Deployed v1.2' } }
+    if (el.id === edgeId && "data" in el) {
+      return { ...el, data: { ...el.data, state: "success", label: "Deployed v1.2" } };
     }
-    if (el.id === channelId && 'data' in el) {
-      return { ...el, data: { ...el.data, bundle_count: (el.data.bundle_count || 0) + 1 } }
+    if (el.id === channelId && "data" in el) {
+      return { ...el, data: { ...el.data, bundle_count: (el.data.bundle_count || 0) + 1 } };
     }
-    return el
-  })
-  isStorming.value = false
-}
+    return el;
+  });
+  isStorming.value = false;
+};
 
-const addNode = (type: 'channel' | 'bundle' | 'github' | 'device') => {
-  const id = `${type}-${Date.now()}`
+const addNode = (type: "channel" | "bundle" | "github" | "device") => {
+  const id = `${type}-${Date.now()}`;
   const newNode = {
     id,
     type,
     position: project({ x: 100, y: 100 }),
     data:
-      type === 'github'
-        ? { branch: 'main' }
-        : type === 'device'
+      type === "github"
+        ? { branch: "main" }
+        : type === "device"
           ? {
-              name: 'New Device',
-              platform: 'native',
+              name: "New Device",
+              platform: "native",
               is_online: true,
             }
-          : type === 'channel'
+          : type === "channel"
             ? {
-                name: 'New Channel',
+                name: "New Channel",
                 is_prod: false,
                 device_count: 0,
                 bundle_count: 0,
               }
             : {
-                version_code: '1',
-                version_name: '1.0.0',
+                version_code: "1",
+                version_name: "1.0.0",
                 size: 0,
               },
-  }
-  addNodes([newNode])
-}
+  };
+  addNodes([newNode]);
+};
 
-const selectedNode = ref<Node | null>(null)
+const selectedNode = ref<Node | null>(null);
 
 // Adjust viewport when sidebar opens to avoid obscuring nodes
 watch(selectedNode, (newNode) => {
@@ -499,78 +499,78 @@ watch(selectedNode, (newNode) => {
         nodes: nodes.value as any,
         duration: 800,
         // We use padding to keep things centered in the remaining space
-      })
-    }, 100)
+      });
+    }, 100);
   }
-})
+});
 
 // Clear selection on background click or right click
 onPaneClick(() => {
-  selectedNode.value = null
-})
+  selectedNode.value = null;
+});
 
 onPaneContextMenu(() => {
-  selectedNode.value = null
-})
+  selectedNode.value = null;
+});
 
 onNodeClick(({ node }) => {
-  selectedNode.value = node
-})
+  selectedNode.value = node;
+});
 
-const hasSelection = computed(() => !!selectedNode.value)
+const hasSelection = computed(() => !!selectedNode.value);
 
 const clearSelection = () => {
-  selectedNode.value = null
-}
+  selectedNode.value = null;
+};
 
 const mockFetchChannels = async () => {
   // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  await new Promise((resolve) => setTimeout(resolve, 500));
   return [
-    { id: '1', name: 'Production', type: 'public' },
-    { id: '2', name: 'Development', type: 'private' },
-    { id: '3', name: 'Staging', type: 'public' },
-  ]
-}
+    { id: "1", name: "Production", type: "public" },
+    { id: "2", name: "Development", type: "private" },
+    { id: "3", name: "Staging", type: "public" },
+  ];
+};
 
 const buildGraph = async () => {
-  if (!activeApp.value) return
-  isLoading.value = true
+  if (!activeApp.value) return;
+  isLoading.value = true;
 
   // Try to load saved layout
-  const savedLayout = localStorage.getItem(`canvas-layout-${activeApp.value.id}`)
+  const savedLayout = localStorage.getItem(`canvas-layout-${activeApp.value.id}`);
   if (savedLayout) {
     try {
-      const { nodes: savedNodes, edges: savedEdges } = JSON.parse(savedLayout)
-      elements.value = [...savedNodes, ...savedEdges]
-      isLoading.value = false
-      return
+      const { nodes: savedNodes, edges: savedEdges } = JSON.parse(savedLayout);
+      elements.value = [...savedNodes, ...savedEdges];
+      isLoading.value = false;
+      return;
     } catch (e) {
-      console.error('Failed to parse saved layout', e)
+      console.error("Failed to parse saved layout", e);
     }
   }
 
-  const appId = activeApp.value.id
-  const nodes: Node[] = []
-  const edges: Edge[] = []
+  const appId = activeApp.value.id;
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
 
   // 0. GitHub Source Node (Root)
-  const githubNodeId = `github-root`
+  const githubNodeId = `github-root`;
   nodes.push({
     id: githubNodeId,
-    type: 'github',
+    type: "github",
     position: { x: 0, y: -250 },
     data: {
-      branch: 'main',
-      repo: `${activeApp.value.name.toLowerCase().replace(/ /g, '-')}/repo`,
+      branch: "main",
+      repo: `${activeApp.value.name.toLowerCase().replace(/ /g, "-")}/repo`,
     },
-  })
+  });
 
   // 1. Root App Node
-  const appNodeId = `app-${appId}`
+  const appNodeId = `app-${appId}`;
   nodes.push({
     id: appNodeId,
-    type: 'app',
+    type: "app",
     position: { x: 0, y: 0 },
     data: {
       name: activeApp.value.name,
@@ -579,129 +579,129 @@ const buildGraph = async () => {
       platform: activeApp.value.platform,
       // Schemas for compatibility
       schemas: {
-        update_logic: 'semantic_versioning',
+        update_logic: "semantic_versioning",
         allowed_platforms: [activeApp.value.platform],
       },
     },
-  })
+  });
 
   edges.push({
     id: `e-github-app`,
     source: githubNodeId,
     target: appNodeId,
-    type: 'pipeline',
-    data: { label: 'Repository Sync', state: 'idle' },
-  })
+    type: "pipeline",
+    data: { label: "Repository Sync", state: "idle" },
+  });
 
   try {
-    const channels = await mockFetchChannels()
-    const channelY = 300
-    const totalWidth = channels.length * 350
-    let channelX = -(totalWidth / 2) + 175
+    const channels = await mockFetchChannels();
+    const channelY = 300;
+    const totalWidth = channels.length * 350;
+    let channelX = -(totalWidth / 2) + 175;
 
     for (let i = 0; i < channels.length; i++) {
-      const channel = channels[i]
-      const channelNodeId = `channel-${channel?.id}`
-      const fleetNodeId = `fleet-${channel?.id}`
+      const channel = channels[i];
+      const channelNodeId = `channel-${channel?.id}`;
+      const fleetNodeId = `fleet-${channel?.id}`;
 
       // Channel Node
       nodes.push({
         id: channelNodeId,
-        type: 'channel',
+        type: "channel",
         position: { x: channelX, y: channelY },
         data: {
           name: channel?.name,
-          is_prod: channel?.type === 'public',
+          is_prod: channel?.type === "public",
           is_deploying: i === 0,
           is_online: i !== 1,
           bundle_count: Math.floor(Math.random() * 10),
           device_count: Math.floor(Math.random() * 500000),
         },
-      })
+      });
 
       // Link App to Channel
       edges.push({
         id: `e-${appNodeId}-${channelNodeId}`,
         source: appNodeId,
         target: channelNodeId,
-        type: 'pipeline',
+        type: "pipeline",
         data: {
-          state: i === 0 ? 'deploying' : 'idle',
-          duration: i === 0 ? '1.2s' : '4s',
-          label: i === 0 ? 'Pushing Build...' : 'Live',
+          state: i === 0 ? "deploying" : "idle",
+          duration: i === 0 ? "1.2s" : "4s",
+          label: i === 0 ? "Pushing Build..." : "Live",
         },
-      })
+      });
 
       // Device Fleet Node (Scalability!)
       nodes.push({
         id: fleetNodeId,
-        type: 'device',
+        type: "device",
         position: { x: channelX, y: channelY + 300 },
         data: {
           total_count: Math.floor(Math.random() * 800000) + 100000,
           health_percentage: 95 + Math.floor(Math.random() * 4),
           main_version: `v1.2.${i + 1}`,
         },
-      })
+      });
 
       // Link Channel to Fleet
       edges.push({
         id: `e-${channelNodeId}-${fleetNodeId}`,
         source: channelNodeId,
         target: fleetNodeId,
-        type: 'flow',
-        data: { animated: true, duration: '2s', label: 'Updates' },
-      })
+        type: "flow",
+        data: { animated: true, duration: "2s", label: "Updates" },
+      });
 
-      channelX += 350
+      channelX += 350;
     }
   } catch (e) {
-    console.error('Failed to load graph data', e)
+    console.error("Failed to load graph data", e);
   } finally {
-    isLoading.value = false
-    elements.value = [...nodes, ...edges]
+    isLoading.value = false;
+    elements.value = [...nodes, ...edges];
   }
-}
+};
 
 // Initial Data Load
 onMounted(() => {
-  buildGraph()
-})
+  buildGraph();
+});
 
 // Re-build if app changes
 watch(activeApp, () => {
-  buildGraph()
-})
+  buildGraph();
+});
 
 const autoLayout = () => {
-  const dagreGraph = new dagre.graphlib.Graph()
-  dagreGraph.setDefaultEdgeLabel(() => ({}))
-  dagreGraph.setGraph({ rankdir: 'TB', marginx: 50, marginy: 50, ranksep: 100, nodesep: 80 })
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({ rankdir: "TB", marginx: 50, marginy: 50, ranksep: 100, nodesep: 80 });
 
   nodes.value.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 250, height: 150 })
-  })
+    dagreGraph.setNode(node.id, { width: 250, height: 150 });
+  });
 
   edges.value.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target)
-  })
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
 
-  dagre.layout(dagreGraph)
+  dagre.layout(dagreGraph);
 
   const newNodes = nodes.value.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id)
+    const nodeWithPosition = dagreGraph.node(node.id);
     return {
       ...node,
       position: {
         x: nodeWithPosition.x - 125,
         y: nodeWithPosition.y - 75,
       },
-    }
-  })
+    };
+  });
 
-  setNodes(newNodes)
-  fitView({ duration: 800, padding: 0.2 })
-}
+  setNodes(newNodes);
+  fitView({ duration: 800, padding: 0.2 });
+};
 
 const saveGraph = () => {
   const layout = {
@@ -713,16 +713,16 @@ const saveGraph = () => {
       type: e.type,
       data: e.data,
     })),
-  }
-  localStorage.setItem(`canvas-layout-${activeApp.value?.id}`, JSON.stringify(layout))
-  console.log('Layout saved to LocalStorage')
-}
+  };
+  localStorage.setItem(`canvas-layout-${activeApp.value?.id}`, JSON.stringify(layout));
+  console.log("Layout saved to LocalStorage");
+};
 
 const formatFleetCount = (num: number) => {
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
-  return num
-}
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1) + "k";
+  return num;
+};
 </script>
 
 <style>

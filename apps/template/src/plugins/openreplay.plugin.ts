@@ -56,25 +56,17 @@ const openReplay = async function openReplay(
   app: any,
   options: OpenReplayOptions = {},
 ): Promise<void> {
-  const {
-    enabled = false,
-    projectKey = "",
-    ingestPoint,
-    userConsent = true,
-  } = options;
+  const { enabled = false, projectKey = "", ingestPoint, userConsent = true } = options;
 
   const isEnabled = import.meta.env.VITE_OPENREPLAY_ENABLED || enabled;
   const isNative = Capacitor.isNativePlatform();
 
   if (!isEnabled) {
-    console.warn(
-      "OpenReplay is disabled via VITE_OPENREPLAY_ENABLED or options.",
-    );
+    console.warn("OpenReplay is disabled via VITE_OPENREPLAY_ENABLED or options.");
     return;
   }
 
-  const finalProjectKey =
-    import.meta.env.VITE_OPENREPLAY_PROJECT_KEY || projectKey;
+  const finalProjectKey = import.meta.env.VITE_OPENREPLAY_PROJECT_KEY || projectKey;
   if (!finalProjectKey) {
     console.error(
       "OpenReplay project key is required. Set VITE_OPENREPLAY_PROJECT_KEY or provide it in options.",
@@ -82,14 +74,11 @@ const openReplay = async function openReplay(
     return;
   }
 
-  const finalIngestPoint =
-    import.meta.env.VITE_OPENREPLAY_INGEST_POINT || ingestPoint;
+  const finalIngestPoint = import.meta.env.VITE_OPENREPLAY_INGEST_POINT || ingestPoint;
 
   try {
     if (!userConsent) {
-      console.warn(
-        "User consent for OpenReplay is not granted. Skipping initialization.",
-      );
+      console.warn("User consent for OpenReplay is not granted. Skipping initialization.");
       return;
     }
 
@@ -157,8 +146,7 @@ const openReplay = async function openReplay(
 
     const originalErrorHandler = app.config.errorHandler;
     app.config.errorHandler = (err: any, instance: any, info: string) => {
-      const componentName =
-        instance?.$options.__name || instance?.type?.__name || "Unknown";
+      const componentName = instance?.$options.__name || instance?.type?.__name || "Unknown";
       const currentRoute = f7.views.current.router.currentRoute.name;
       const routeJson = JSON.stringify({
         name: currentRoute,

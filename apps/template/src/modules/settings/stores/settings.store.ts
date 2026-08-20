@@ -13,9 +13,7 @@ export const useSettingsStore = defineStore(
       (localStorage.getItem("f7-theme") as any) || "auto",
     );
 
-    const notificationsEnabled = ref(
-      localStorage.getItem("notifications-enabled") !== "false",
-    );
+    const notificationsEnabled = ref(localStorage.getItem("notifications-enabled") !== "false");
 
     function toggleDarkMode() {
       darkMode.value = !darkMode.value;
@@ -24,10 +22,7 @@ export const useSettingsStore = defineStore(
 
     function toggleNotifications() {
       notificationsEnabled.value = !notificationsEnabled.value;
-      localStorage.setItem(
-        "notifications-enabled",
-        String(notificationsEnabled.value),
-      );
+      localStorage.setItem("notifications-enabled", String(notificationsEnabled.value));
     }
 
     function setDarkMode(val: boolean) {

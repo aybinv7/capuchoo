@@ -27,8 +27,7 @@ export const queryErrorHandler = (error: unknown): QueryError => {
       objError.error ||
       objError.response?.data?.message ||
       "An unknown error occurred";
-    status =
-      objError.status || objError.statusCode || objError.response?.status;
+    status = objError.status || objError.statusCode || objError.response?.status;
   } else {
     message = String(error);
   }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Users, Shield, Key } from 'lucide-vue-next'
-import AnimatedUnderline from './AnimatedUnderline.vue'
+import { Users, Shield, Key } from "lucide-vue-next";
+import AnimatedUnderline from "./AnimatedUnderline.vue";
 </script>
 
 <template>
@@ -104,7 +104,7 @@ import AnimatedUnderline from './AnimatedUnderline.vue'
                     <div class="h-2 w-16 bg-stone-800 rounded opacity-60" />
                   </div>
                   <div class="px-2 py-1 rounded text-xs bg-stone-800 text-stone-400">
-                    {{ ['Owner', 'Admin', 'Developer', 'Viewer'][i - 1] }}
+                    {{ ["Owner", "Admin", "Developer", "Viewer"][i - 1] }}
                   </div>
                 </div>
               </div>

@@ -23,11 +23,9 @@ const routes: Router.RouteParameters[] = [
     name: "create-update",
     path: "/updates-bundles/create",
     async({ resolve }) {
-      import("@/modules/updates-bundles/views/CreateUpdateView.vue").then(
-        (vc) => {
-          resolve({ component: vc.default });
-        },
-      );
+      import("@/modules/updates-bundles/views/CreateUpdateView.vue").then((vc) => {
+        resolve({ component: vc.default });
+      });
     },
   },
 ];

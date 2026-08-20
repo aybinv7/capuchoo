@@ -1,6 +1,7 @@
 # Route Guards
 
-This directory contains Framework7 route guards used to protect routes based on authentication, roles, and permissions.
+This directory contains Framework7 route guards used to protect routes based on authentication,
+roles, and permissions.
 
 ## Available Guards
 
@@ -51,4 +52,6 @@ This directory contains Framework7 route guards used to protect routes based on 
 
 ## Extending Guards
 
-To pass dynamic options (like specific roles) to a guard, you may need to wrap them or use route context data if supported by your router implementation, or refactor the guards to check `route.path` or other properties.
+To pass dynamic options (like specific roles) to a guard, you may need to wrap them or use route
+context data if supported by your router implementation, or refactor the guards to check
+`route.path` or other properties.

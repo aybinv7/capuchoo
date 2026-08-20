@@ -2,10 +2,20 @@
   "name": "capucho-apps-manager",
   "version": "0.0.1",
   "description": "Capacitor plugin that lists and inspects apps installed on the device",
-  "main": "dist/plugin.cjs.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/esm/index.d.ts",
-  "unpkg": "dist/plugin.js",
+  "keywords": [
+    "capacitor",
+    "native",
+    "plugin"
+  ],
+  "bugs": {
+    "url": "https://github.com/inventor7/capucho-apps-manager/issues"
+  },
+  "license": "MIT",
+  "author": "aybinv7",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inventor7/capucho-apps-manager.git"
+  },
   "files": [
     "android/src/main/",
     "android/build.gradle",
@@ -15,20 +25,10 @@
     "Package.swift",
     "CapuchoAppsManager.podspec"
   ],
-  "author": "aybinv7",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/inventor7/capucho-apps-manager.git"
-  },
-  "bugs": {
-    "url": "https://github.com/inventor7/capucho-apps-manager/issues"
-  },
-  "keywords": [
-    "capacitor",
-    "plugin",
-    "native"
-  ],
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "unpkg": "dist/plugin.js",
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
     "verify:ios": "xcodebuild -scheme CapuchoAppsManager -destination generic/platform=iOS",
@@ -65,7 +65,6 @@
     "@capacitor/core": ">=8.0.0"
   },
   "prettier": "@ionic/prettier-config",
-  "swiftlint": "@ionic/swiftlint-config",
   "eslintConfig": {
     "extends": "@ionic/eslint-config/recommended"
   },
@@ -76,5 +75,6 @@
     "android": {
       "src": "android"
     }
-  }
+  },
+  "swiftlint": "@ionic/swiftlint-config"
 }

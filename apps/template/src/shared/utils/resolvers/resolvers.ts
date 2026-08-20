@@ -181,9 +181,7 @@ export function Framework7VueResolver(): ComponentResolver {
 
       // Handle camelCase f7 components (f7App -> f7-app)
       if (name.match(/^f7[A-Z]/)) {
-        const kebabName = name
-          .replace(/([a-z])([A-Z])/g, "$1-$2")
-          .toLowerCase();
+        const kebabName = name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 
         if (framework7Components.includes(kebabName)) {
           return {

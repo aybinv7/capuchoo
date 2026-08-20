@@ -44,15 +44,11 @@
               <h2 class="text-2xl font-black no-margin tracking-tight">
                 {{ activeApp.name }}
               </h2>
-              <F7Badge
-                color="blue"
-                class="uppercase text-[9px] font-black px-1.5 h-4"
-                >{{ activeApp.platform }}</F7Badge
-              >
+              <F7Badge color="blue" class="uppercase text-[9px] font-black px-1.5 h-4">{{
+                activeApp.platform
+              }}</F7Badge>
             </div>
-            <p
-              class="text-xs text-gray-400 font-mono mt-0.5 opacity-70 break-all max-w-[200px]"
-            >
+            <p class="text-xs text-gray-400 font-mono mt-0.5 opacity-70 break-all max-w-[200px]">
               {{ activeApp.app_id }}
             </p>
           </div>
@@ -60,8 +56,7 @@
       </F7Block>
 
       <!-- Statistics Dashboard -->
-      <F7BlockTitle
-        class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+      <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
         >Performance Insights</F7BlockTitle
       >
 
@@ -86,8 +81,7 @@
                   :value-font-size="28"
                   :value-font-weight="900"
                 />
-                <span
-                  class="text-[10px] uppercase font-black opacity-30 mt-2 tracking-tighter"
+                <span class="text-[10px] uppercase font-black opacity-30 mt-2 tracking-tighter"
                   >Total Devices</span
                 >
               </div>
@@ -113,8 +107,7 @@
                   :value-font-size="28"
                   :value-font-weight="900"
                 />
-                <span
-                  class="text-[10px] uppercase font-black opacity-30 mt-2 tracking-tighter"
+                <span class="text-[10px] uppercase font-black opacity-30 mt-2 tracking-tighter"
                   >Release History</span
                 >
               </div>
@@ -129,12 +122,8 @@
         >
           <div class="flex items-center justify-between mb-6">
             <div>
-              <h3 class="no-margin text-lg font-black tracking-tight">
-                System Distribution
-              </h3>
-              <p class="no-margin text-xs text-gray-400">
-                Device health and versions
-              </p>
+              <h3 class="no-margin text-lg font-black tracking-tight">System Distribution</h3>
+              <p class="no-margin text-xs text-gray-400">Device health and versions</p>
             </div>
             <div
               class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center"
@@ -165,13 +154,10 @@
               >
                 <div :class="['w-2 h-2 rounded-full', tag.c]"></div>
                 <div class="flex flex-col">
-                  <span
-                    class="text-[10px] font-black uppercase opacity-30 leading-none"
-                    >{{ tag.l }}</span
-                  >
-                  <span class="text-xs font-bold leading-none mt-1">{{
-                    tag.v
+                  <span class="text-[10px] font-black uppercase opacity-30 leading-none">{{
+                    tag.l
                   }}</span>
+                  <span class="text-xs font-bold leading-none mt-1">{{ tag.v }}</span>
                 </div>
               </div>
             </div>
@@ -180,8 +166,7 @@
       </F7Block>
 
       <!-- Action Quick Access -->
-      <F7BlockTitle
-        class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+      <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
         >Quick Actions</F7BlockTitle
       >
       <F7Block class="no-margin-top grid grid-cols-2 gap-4">
@@ -218,18 +203,12 @@
       <div
         class="w-24 h-24 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-8 relative"
       >
-        <F7Icon
-          f7="app_badge"
-          size="48"
-          class="opacity-20 animate-pulse text-blue-500"
-        />
+        <F7Icon f7="app_badge" size="48" class="opacity-20 animate-pulse text-blue-500" />
         <div
           class="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full border-4 border-white dark:border-gray-900 shadow-lg"
         ></div>
       </div>
-      <h2 class="text-2xl font-black no-margin tracking-tight">
-        Ready to start?
-      </h2>
+      <h2 class="text-2xl font-black no-margin tracking-tight">Ready to start?</h2>
       <p class="text-gray-400 text-sm mt-3 leading-relaxed max-w-[240px]">
         Select an active project context to view your application metrics.
       </p>

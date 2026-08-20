@@ -51,9 +51,7 @@ export function formatVersion(version: SemanticVersion): string {
 export function bumpVersion(value: string, type: BumpType): string {
   const parsed = parseVersion(value);
   if (!parsed) {
-    throw new Error(
-      `"${value}" is not a semantic version, so it cannot be bumped`,
-    );
+    throw new Error(`"${value}" is not a semantic version, so it cannot be bumped`);
   }
 
   switch (type) {
@@ -96,11 +94,7 @@ export function compareVersions(a: string, b: string): number {
   if (left.prerelease && !right.prerelease) return -1;
   if (!left.prerelease && right.prerelease) return 1;
   if (left.prerelease && right.prerelease) {
-    return left.prerelease < right.prerelease
-      ? -1
-      : left.prerelease > right.prerelease
-        ? 1
-        : 0;
+    return left.prerelease < right.prerelease ? -1 : left.prerelease > right.prerelease ? 1 : 0;
   }
 
   return 0;

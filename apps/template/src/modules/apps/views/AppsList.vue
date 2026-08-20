@@ -60,8 +60,7 @@
         </F7ListItem>
       </F7List>
 
-      <F7BlockTitle
-        class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+      <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
         >Available Apps</F7BlockTitle
       >
       <F7List
@@ -91,11 +90,7 @@
         </F7ListItem>
 
         <F7Block v-if="!apps.length" class="text-center text-gray-400 py-10">
-          <F7Icon
-            f7="square_stack_3d_up_slash"
-            size="48"
-            class="mb-4 opacity-20"
-          />
+          <F7Icon f7="square_stack_3d_up_slash" size="48" class="mb-4 opacity-20" />
           <p>No apps found.</p>
         </F7Block>
       </F7List>
@@ -116,9 +111,7 @@ const orgStore = useOrganizationStore();
 const activeApp = computed(() => appStore.activeApp);
 const isNavbarCollapsed = ref(false);
 
-const { data: appsData, isLoading } = useAppsQuery(
-  computed(() => orgStore.activeOrganization?.id),
-);
+const { data: appsData, isLoading } = useAppsQuery(computed(() => orgStore.activeOrganization?.id));
 const apps = computed(() => appsData.value || []);
 
 const otherApps = computed(() => {
@@ -126,25 +119,19 @@ const otherApps = computed(() => {
 });
 
 const selectApp = (app: App) => {
-  f7.dialog.confirm(
-    `Switch to testing "${app.name}"?`,
-    "Confirm Context Switch",
-    () => {
-      appStore.setActiveApp(app);
-      f7.toast
-        .create({
-          text: `Context switched to ${app.name}`,
-          closeTimeout: 2000,
-        })
-        .open();
-    },
-  );
+  f7.dialog.confirm(`Switch to testing "${app.name}"?`, "Confirm Context Switch", () => {
+    appStore.setActiveApp(app);
+    f7.toast
+      .create({
+        text: `Context switched to ${app.name}`,
+        closeTimeout: 2000,
+      })
+      .open();
+  });
 };
 
 const createNewApp = () => {
-  f7.toast
-    .create({ text: "App creation coming soon!", closeTimeout: 2000 })
-    .open();
+  f7.toast.create({ text: "App creation coming soon!", closeTimeout: 2000 }).open();
 };
 </script>
 

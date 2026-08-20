@@ -1,4 +1,4 @@
-import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -7,7 +7,7 @@ const queryClient = new QueryClient({
       staleTime: 1 * 60 * 1000, // 1 minute
       retry: 3,
       retryDelay: (attemptIndex) => {
-        return Math.min(1000 * 2 ** attemptIndex, 30000) // Max 30 seconds
+        return Math.min(1000 * 2 ** attemptIndex, 30000); // Max 30 seconds
       },
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
@@ -17,11 +17,11 @@ const queryClient = new QueryClient({
     mutations: {
       retry: 3,
       retryDelay: (attemptIndex) => {
-        return Math.min(1000 * 2 ** attemptIndex, 30000) // Max 30 seconds
+        return Math.min(1000 * 2 ** attemptIndex, 30000); // Max 30 seconds
       },
       throwOnError: false,
     },
   },
-})
+});
 
-export { queryClient, VueQueryPlugin }
+export { queryClient, VueQueryPlugin };

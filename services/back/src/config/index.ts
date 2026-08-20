@@ -5,9 +5,7 @@ import { ServerConfig } from "@/types";
 dotenv.config();
 
 const envSchema = Joi.object({
-  NODE_ENV: Joi.string()
-    .valid("development", "production", "test")
-    .default("development"),
+  NODE_ENV: Joi.string().valid("development", "production", "test").default("development"),
   PORT: Joi.number().default(3000),
 
   SUPABASE_URL: Joi.string().uri().required(),
@@ -15,9 +13,7 @@ const envSchema = Joi.object({
   SUPABASE_SERVICE_KEY: Joi.string().optional(),
   BUCKET_NAME: Joi.string().default("updates"),
 
-  CORS_ORIGIN: Joi.alternatives()
-    .try(Joi.string(), Joi.array().items(Joi.string()))
-    .default("*"),
+  CORS_ORIGIN: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).default("*"),
 
   MAX_FILE_SIZE: Joi.number().default(100 * 1024 * 1024), // 100MB
 }).unknown(true);
@@ -26,9 +22,7 @@ const { error, value: envVars } = envSchema.validate(process.env);
 
 if (error) {
   throw new Error(
-    `Environment variable validation error: ${error.details
-      .map((d) => d.message)
-      .join(", ")}`
+    `Environment variable validation error: ${error.details.map((d) => d.message).join(", ")}`,
   );
 }
 

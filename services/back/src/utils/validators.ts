@@ -1,13 +1,11 @@
 import Joi from "joi";
 import { ValidationError } from "@/types";
 
-export const platformSchema = Joi.string()
-  .valid("android", "ios", "web")
-  .required();
+export const platformSchema = Joi.string().valid("android", "ios", "web").required();
 
 export const semverSchema = Joi.string()
   .pattern(
-    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/,
   )
   .required();
 
@@ -51,7 +49,7 @@ export function validateRequest(schema: Joi.ObjectSchema) {
 
     if (error) {
       throw new ValidationError(
-        `Validation error: ${error.details.map((d) => d.message).join(", ")}`
+        `Validation error: ${error.details.map((d) => d.message).join(", ")}`,
       );
     }
 
@@ -63,8 +61,7 @@ export function validateRequest(schema: Joi.ObjectSchema) {
 import logger from "./logger";
 
 export const validateUpdateParams = (req: any, res: any, next: any) => {
-  const { platform, version_build, appId, app_id, version, version_name } =
-    req.body;
+  const { platform, version_build, appId, app_id, version, version_name } = req.body;
   const actualAppId = appId || app_id;
   const actualVersion = version_name || version || version_build;
 

@@ -21,7 +21,7 @@
               <AppWindow class="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 class="text-2xl font-bold tracking-tight">{{ app?.name || 'Loading...' }}</h1>
+              <h1 class="text-2xl font-bold tracking-tight">{{ app?.name || "Loading..." }}</h1>
               <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <code class="bg-muted px-2 py-0.5 rounded text-xs">{{ app?.app_id }}</code>
                 <Badge v-if="app?.platform" variant="secondary" class="text-xs">
@@ -262,12 +262,12 @@
                           <Avatar class="h-8 w-8">
                             <AvatarImage :src="perm.users?.avatar_url" />
                             <AvatarFallback>{{
-                              getInitials(perm.users?.full_name || perm.users?.email || '?')
+                              getInitials(perm.users?.full_name || perm.users?.email || "?")
                             }}</AvatarFallback>
                           </Avatar>
                           <div class="flex flex-col">
                             <span class="font-medium text-sm">{{
-                              perm.users?.full_name || 'No Name'
+                              perm.users?.full_name || "No Name"
                             }}</span>
                             <span class="text-xs text-muted-foreground">{{
                               perm.users?.email
@@ -397,39 +397,39 @@ import {
   Code,
   UserPlus,
   UserMinus,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 
 const props = defineProps<{
-  id: string
-}>()
+  id: string;
+}>();
 
-const router = useRouter()
-const { showSuccess, showError } = useToast()
+const router = useRouter();
+const { showSuccess, showError } = useToast();
 
-const { data: app, isLoading } = useAppQuery(props.id)
-const deleteMutation = useDeleteAppMutation()
+const { data: app, isLoading } = useAppQuery(props.id);
+const deleteMutation = useDeleteAppMutation();
 
-const isDeleting = ref(false)
-const appPermissions = ref<any[]>([])
-const orgMembers = ref<any[]>([])
+const isDeleting = ref(false);
+const appPermissions = ref<any[]>([]);
+const orgMembers = ref<any[]>([]);
 
 // Add Team Member state
-const isAddTeamMemberOpen = ref(false)
-const isAddingTeamMember = ref(false)
+const isAddTeamMemberOpen = ref(false);
+const isAddingTeamMember = ref(false);
 const newTeamMember = ref({
-  user_id: '',
-  role: 'viewer',
-})
+  user_id: "",
+  role: "viewer",
+});
 
 // Settings state
-const isSavingSettings = ref(false)
+const isSavingSettings = ref(false);
 const editForm = ref({
-  name: '',
-  app_id: '',
-  icon_url: '',
-  platform: 'all' as any,
+  name: "",
+  app_id: "",
+  icon_url: "",
+  platform: "all" as any,
   config: {} as any,
-})
+});
 
 // Update form when app data loads
 watch(
@@ -439,86 +439,86 @@ watch(
       editForm.value = {
         name: newApp.name,
         app_id: newApp.app_id,
-        icon_url: newApp.icon_url || '',
-        platform: newApp.platform || 'all',
+        icon_url: newApp.icon_url || "",
+        platform: newApp.platform || "all",
         config: newApp.config || {},
-      }
-      fetchTeamData()
+      };
+      fetchTeamData();
     }
   },
   { immediate: true },
-)
+);
 
 const fetchTeamData = async () => {
-  if (!app.value) return
+  if (!app.value) return;
   try {
-    const perms = await appService.getPermissions(app.value.id)
-    appPermissions.value = perms
+    const perms = await appService.getPermissions(app.value.id);
+    appPermissions.value = perms;
 
-    const members = await organizationService.getMembers(app.value.organization_id)
-    orgMembers.value = members
+    const members = await organizationService.getMembers(app.value.organization_id);
+    orgMembers.value = members;
   } catch {
-    console.error('Failed to fetch team data:')
+    console.error("Failed to fetch team data:");
   }
-}
+};
 
 const addTeamMember = async () => {
-  if (!newTeamMember.value.user_id) return
-  isAddingTeamMember.value = true
+  if (!newTeamMember.value.user_id) return;
+  isAddingTeamMember.value = true;
   try {
-    if (!app.value?.id) return
+    if (!app.value?.id) return;
     await appService.setPermission(
       app.value.id,
       newTeamMember.value.user_id,
       newTeamMember.value.role,
-    )
-    showSuccess('Team member added')
-    isAddTeamMemberOpen.value = false
-    newTeamMember.value = { user_id: '', role: 'viewer' }
-    await fetchTeamData()
+    );
+    showSuccess("Team member added");
+    isAddTeamMemberOpen.value = false;
+    newTeamMember.value = { user_id: "", role: "viewer" };
+    await fetchTeamData();
   } catch {
-    showError('Failed to add team member')
+    showError("Failed to add team member");
   } finally {
-    isAddingTeamMember.value = true
+    isAddingTeamMember.value = true;
   }
-}
+};
 
 const removeTeamMember = async (userId: string) => {
-  if (!confirm('Are you sure you want to remove this member from the app team?')) return
+  if (!confirm("Are you sure you want to remove this member from the app team?")) return;
   try {
-    if (!app.value?.id) return
+    if (!app.value?.id) return;
 
-    await appService.removePermission(app.value?.id, userId)
-    showSuccess('Member removed from team')
-    await fetchTeamData()
+    await appService.removePermission(app.value?.id, userId);
+    showSuccess("Member removed from team");
+    await fetchTeamData();
   } catch {
-    showError('Failed to remove member')
+    showError("Failed to remove member");
   }
-}
+};
 
 const saveSettings = async () => {
-  isSavingSettings.value = true
+  isSavingSettings.value = true;
   try {
-    if (!app.value?.id) return
-    await appService.update(app.value.id, editForm.value)
-    showSuccess('Settings saved successfully')
+    if (!app.value?.id) return;
+    await appService.update(app.value.id, editForm.value);
+    showSuccess("Settings saved successfully");
     // We might need to refresh the app query here
   } catch {
-    showError('Failed to save settings')
+    showError("Failed to save settings");
   } finally {
-    isSavingSettings.value = false
+    isSavingSettings.value = false;
   }
-}
+};
 
-const channelCount = computed(() => 0) // TODO: Fetch from API
+const channelCount = computed(() => 0); // TODO: Fetch from API
 
 const sdkSnippet = computed(() => {
-  const apiBase = window.location.origin.replace(/:\d+$/, ':3000') + '/api'
+  const apiBase = window.location.origin.replace(/:\d+$/, ":3000") + "/api";
   return `import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: '${app.value?.app_id || 'com.example.app'}',
-  appName: '${app.value?.name || 'My App'}',
+  appId: '${app.value?.app_id || "com.example.app"}',
+  appName: '${app.value?.name || "My App"}',
   webDir: 'dist',
   plugins: {
     CapacitorUpdater: {
@@ -529,65 +529,65 @@ const config: CapacitorConfig = {
   }
 };
 
-export default config;`
-})
+export default config;`;
+});
 
 const copySnippet = async () => {
   try {
-    await navigator.clipboard.writeText(sdkSnippet.value)
-    showSuccess('Configuration snippet copied to clipboard!')
+    await navigator.clipboard.writeText(sdkSnippet.value);
+    showSuccess("Configuration snippet copied to clipboard!");
   } catch (err) {
-    console.error('Failed to copy:', err)
+    console.error("Failed to copy:", err);
   }
-}
+};
 
 const getInitials = (name: string) => {
   return name
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
-    .substring(0, 2)
-}
+    .substring(0, 2);
+};
 
 const formatDate = (dateString?: string) => {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleDateString()
-}
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString();
+};
 
 const formatRelativeTime = (dateString?: string) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 30) return `${diffDays} days ago`
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
-  return `${Math.floor(diffDays / 365)} years ago`
-}
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 30) return `${diffDays} days ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+  return `${Math.floor(diffDays / 365)} years ago`;
+};
 
 const handleDelete = async () => {
-  if (!confirm('Are you sure you want to delete this app? This action cannot be undone.')) return
+  if (!confirm("Are you sure you want to delete this app? This action cannot be undone.")) return;
 
-  isDeleting.value = true
+  isDeleting.value = true;
   try {
-    await deleteMutation.mutateAsync(props.id)
-    router.push('/apps')
+    await deleteMutation.mutateAsync(props.id);
+    router.push("/apps");
   } catch {
-    console.error('Failed to delete app')
+    console.error("Failed to delete app");
   } finally {
-    isDeleting.value = false
+    isDeleting.value = false;
   }
-}
+};
 
 definePage({
   meta: {
-    title: 'App Details - setup',
-    category: 'apps',
+    title: "App Details - setup",
+    category: "apps",
   },
   props: true,
-})
+});
 </script>

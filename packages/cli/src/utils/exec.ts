@@ -38,19 +38,11 @@ export class CommandError extends Error {
   readonly stderr: string;
   readonly logFile?: string;
 
-  constructor(
-    command: string,
-    result: RunResult,
-    logFile?: string,
-  ) {
+  constructor(command: string, result: RunResult, logFile?: string) {
     // Put the last few lines of stderr in the message. The old code told the
     // user to "see capucho-deploy.log" and nothing else, which meant every
     // failure needed a second round trip to diagnose.
-    const tail = (result.stderr || result.stdout)
-      .trimEnd()
-      .split("\n")
-      .slice(-6)
-      .join("\n");
+    const tail = (result.stderr || result.stdout).trimEnd().split("\n").slice(-6).join("\n");
 
     super(`${command} exited with ${result.code}${tail ? `\n${tail}` : ""}`);
     this.name = "CommandError";
@@ -90,8 +82,7 @@ function windowsSafeSpawn(
   file: string,
   args: string[],
 ): { file: string; args: string[]; options: { windowsVerbatimArguments?: boolean } } {
-  const needsShell =
-    process.platform === "win32" && /\.(cmd|bat)$/i.test(file);
+  const needsShell = process.platform === "win32" && /\.(cmd|bat)$/i.test(file);
 
   if (!needsShell) return { file, args, options: {} };
 
@@ -117,17 +108,10 @@ function quoteForCmd(value: string): string {
  * `file` and `args` are passed to the OS separately - there is no shell on
  * POSIX, so nothing in `args` can be reinterpreted as shell syntax.
  */
-export async function run(
-  file: string,
-  args: string[],
-  options: RunOptions,
-): Promise<RunResult> {
+export async function run(file: string, args: string[], options: RunOptions): Promise<RunResult> {
   const printable = [file, ...args].join(" ");
 
-  appendLog(
-    options.logFile,
-    `\n$ ${printable}\n  cwd: ${options.cwd}\n${"-".repeat(60)}\n`,
-  );
+  appendLog(options.logFile, `\n$ ${printable}\n  cwd: ${options.cwd}\n${"-".repeat(60)}\n`);
 
   const spawned = windowsSafeSpawn(file, args);
 
@@ -147,9 +131,7 @@ export async function run(
       timer = setTimeout(() => {
         child.kill();
         reject(
-          new Error(
-            `${printable} did not finish within ${options.timeoutMs}ms and was stopped`,
-          ),
+          new Error(`${printable} did not finish within ${options.timeoutMs}ms and was stopped`),
         );
       }, options.timeoutMs);
     }
@@ -189,11 +171,7 @@ export async function run(
 }
 
 /** Runs a command and returns false instead of throwing when it fails. */
-export async function tryRun(
-  file: string,
-  args: string[],
-  options: RunOptions,
-): Promise<boolean> {
+export async function tryRun(file: string, args: string[], options: RunOptions): Promise<boolean> {
   try {
     await run(file, args, options);
     return true;

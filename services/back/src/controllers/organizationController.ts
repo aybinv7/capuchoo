@@ -28,13 +28,10 @@ class OrganizationController {
       }
 
       // 1. Get memberships
-      const membersResult = await supabaseService.query(
-        "organization_members",
-        {
-          select: "organization_id, role",
-          eq: { user_id: userId },
-        }
-      );
+      const membersResult = await supabaseService.query("organization_members", {
+        select: "organization_id, role",
+        eq: { user_id: userId },
+      });
 
       if (!membersResult.data || membersResult.data.length === 0) {
         res.json([]);
@@ -54,9 +51,7 @@ class OrganizationController {
 
       // 3. Merge roles into orgs
       const orgsWithRoles = orgsResult.data.map((org: any) => {
-        const membership = membersResult.data.find(
-          (m: any) => m.organization_id === org.id
-        );
+        const membership = membersResult.data.find((m: any) => m.organization_id === org.id);
         return {
           ...org,
           role: membership?.role,
@@ -210,7 +205,7 @@ class OrganizationController {
       const result = await supabaseService.update(
         "organization_members",
         { role },
-        { organization_id: orgId, user_id: userId }
+        { organization_id: orgId, user_id: userId },
       );
 
       if (!result || result.length === 0) {

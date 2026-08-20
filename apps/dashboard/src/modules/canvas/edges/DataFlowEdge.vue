@@ -20,16 +20,16 @@
 </template>
 
 <script setup lang="ts">
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@vue-flow/core'
-import { computed } from 'vue'
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@vue-flow/core";
+import { computed } from "vue";
 
 const props = defineProps<
   EdgeProps<{
-    animated?: boolean
-    duration?: string
-    label?: string
+    animated?: boolean;
+    duration?: string;
+    label?: string;
   }>
->()
+>();
 
-const path = computed(() => getSmoothStepPath(props))
+const path = computed(() => getSmoothStepPath(props));
 </script>

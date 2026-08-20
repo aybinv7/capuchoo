@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ArrowUp } from 'lucide-vue-next'
-import { useWindowScroll } from '@vueuse/core'
+import { ArrowUp } from "lucide-vue-next";
+import { useWindowScroll } from "@vueuse/core";
 
-const { y } = useWindowScroll()
+const { y } = useWindowScroll();
 
 const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
 </script>
 
 <template>

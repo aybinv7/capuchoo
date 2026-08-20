@@ -1,8 +1,8 @@
 export interface Data {
-  [key: string]: any
+  [key: string]: any;
 }
 
-export type Direction = 'horizontal' | 'vertical'
+export type Direction = "horizontal" | "vertical";
 
 // export type ChartConfig = {
 //   [k: string]: {
@@ -12,4 +12,4 @@ export type Direction = 'horizontal' | 'vertical'
 //   }
 // }
 
-export type ChartStyle = Record<string, string | number>
+export type ChartStyle = Record<string, string | number>;

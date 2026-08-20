@@ -8,11 +8,7 @@ class ApiKeyController {
    * Generate a new API key
    * POST /api/api-keys
    */
-  public async create(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = (req as any).user;
       if (!user) {
@@ -70,11 +66,7 @@ class ApiKeyController {
    * List user's API keys (without the actual keys)
    * GET /api/api-keys
    */
-  public async list(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = (req as any).user;
       if (!user) {
@@ -114,11 +106,7 @@ class ApiKeyController {
    * Revoke an API key
    * DELETE /api/api-keys/:id
    */
-  public async revoke(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async revoke(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = (req as any).user;
       if (!user) {
@@ -151,9 +139,7 @@ class ApiKeyController {
    * Validate an API key and return user info + app scope
    * Used internally by auth middleware
    */
-  public async validateKey(
-    apiKey: string
-  ): Promise<{ userId: string; appId?: string } | null> {
+  public async validateKey(apiKey: string): Promise<{ userId: string; appId?: string } | null> {
     try {
       const keyHash = createHash("sha256").update(apiKey).digest("hex");
 

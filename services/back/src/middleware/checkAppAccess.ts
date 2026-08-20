@@ -13,11 +13,7 @@ export type AppRole = "admin" | "developer" | "tester" | "viewer";
  * @param requiredRoles - Optional array of app roles required (e.g., ['admin', 'developer'])
  */
 export const checkAppAccess = (requiredRoles?: AppRole[]) => {
-  return async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -42,14 +38,9 @@ export const checkAppAccess = (requiredRoles?: AppRole[]) => {
 
       if (permission) {
         // Has direct permission, check role if required
-        if (
-          requiredRoles &&
-          !requiredRoles.includes(permission.role as AppRole)
-        ) {
+        if (requiredRoles && !requiredRoles.includes(permission.role as AppRole)) {
           res.status(403).json({
-            error: `Insufficient app permissions. Required: ${requiredRoles.join(
-              " or "
-            )}`,
+            error: `Insufficient app permissions. Required: ${requiredRoles.join(" or ")}`,
           });
           return;
         }
@@ -90,9 +81,7 @@ export const checkAppAccess = (requiredRoles?: AppRole[]) => {
       // But if specific roles are required and 'admin' is not in them, deny
       if (requiredRoles && !requiredRoles.includes("admin")) {
         res.status(403).json({
-          error: `Insufficient app permissions. Required: ${requiredRoles.join(
-            " or "
-          )}`,
+          error: `Insufficient app permissions. Required: ${requiredRoles.join(" or ")}`,
         });
         return;
       }
@@ -121,5 +110,4 @@ export const requireAppDeveloper = () => checkAppAccess(["admin", "developer"]);
 /**
  * Convenience middleware: allow any viewer or above
  */
-export const requireAppViewer = () =>
-  checkAppAccess(["admin", "developer", "tester", "viewer"]);
+export const requireAppViewer = () => checkAppAccess(["admin", "developer", "tester", "viewer"]);

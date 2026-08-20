@@ -26,9 +26,7 @@ function gradleWrapper(androidDir: string): string {
   const wrapper = path.join(androidDir, name);
 
   if (!fs.existsSync(wrapper)) {
-    throw new Error(
-      `No Gradle wrapper at ${wrapper}. Run "cap add android" in the app first.`,
-    );
+    throw new Error(`No Gradle wrapper at ${wrapper}. Run "cap add android" in the app first.`);
   }
 
   // Gradle's wrapper must be executable; a fresh git clone on Unix sometimes
@@ -62,14 +60,7 @@ export async function assembleAndroid(
 
 /** Finds the APK produced for a variant. */
 export function findApk(androidDir: string, buildType: BuildType): string | null {
-  const variantDir = path.join(
-    androidDir,
-    "app",
-    "build",
-    "outputs",
-    "apk",
-    buildType,
-  );
+  const variantDir = path.join(androidDir, "app", "build", "outputs", "apk", buildType);
   if (!fs.existsSync(variantDir)) return null;
 
   const found: { file: string; mtime: number }[] = [];
@@ -79,10 +70,7 @@ export function findApk(androidDir: string, buildType: BuildType): string | null
       const absolute = path.join(dir, item.name);
       if (item.isDirectory()) {
         walk(absolute);
-      } else if (
-        item.name.endsWith(".apk") &&
-        !item.name.includes("androidTest")
-      ) {
+      } else if (item.name.endsWith(".apk") && !item.name.includes("androidTest")) {
         found.push({ file: absolute, mtime: fs.statSync(absolute).mtimeMs });
       }
     }

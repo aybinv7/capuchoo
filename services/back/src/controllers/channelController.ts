@@ -31,7 +31,7 @@ class ChannelController {
         !normalized.platform
       ) {
         throw new ValidationError(
-          "Missing required parameters: channel, device_id, app_id, platform"
+          "Missing required parameters: channel, device_id, app_id, platform",
         );
       }
 
@@ -88,9 +88,7 @@ class ChannelController {
       });
 
       if (!normalized.deviceId || !normalized.appId || !normalized.platform) {
-        throw new ValidationError(
-          "Missing required parameters: device_id, app_id, platform"
-        );
+        throw new ValidationError("Missing required parameters: device_id, app_id, platform");
       }
 
       const result = await this.updateService.getDeviceChannel({
@@ -141,9 +139,7 @@ class ChannelController {
       });
 
       if (!normalized.appId || !normalized.platform) {
-        throw new ValidationError(
-          "Missing required parameters: app_id, platform"
-        );
+        throw new ValidationError("Missing required parameters: app_id, platform");
       }
 
       const result = await this.updateService.getAvailableChannels({
@@ -186,9 +182,7 @@ class ChannelController {
       });
 
       if (!normalized.deviceId || !normalized.appId) {
-        throw new ValidationError(
-          "Missing required parameters: device_id, app_id"
-        );
+        throw new ValidationError("Missing required parameters: device_id, app_id");
       }
 
       // Reset to default channel (production)

@@ -555,7 +555,7 @@
 </template>
 
 <script setup lang="ts" generic="TData, TValue">
-import type { ColumnDef } from '@tanstack/vue-table'
+import type { ColumnDef } from "@tanstack/vue-table";
 import {
   FlexRender,
   getCoreRowModel,
@@ -568,68 +568,68 @@ import {
   getFacetedUniqueValues,
   getFacetedMinMaxValues,
   useVueTable,
-} from '@tanstack/vue-table'
-import { useVirtualizer } from '@tanstack/vue-virtual'
-import { useUpdatesBundlesDataTable } from '@/modules/updates-bundles/composables/useUpdatesBundlesDataTable'
+} from "@tanstack/vue-table";
+import { useVirtualizer } from "@tanstack/vue-virtual";
+import { useUpdatesBundlesDataTable } from "@/modules/updates-bundles/composables/useUpdatesBundlesDataTable";
 
 const rankItem = (rowValue: any, value: string) => {
-  const passed = String(rowValue).toLowerCase().includes(value.toLowerCase())
-  return { passed: passed, score: passed ? 1 : 0 }
-}
+  const passed = String(rowValue).toLowerCase().includes(value.toLowerCase());
+  return { passed: passed, score: passed ? 1 : 0 };
+};
 
 interface DataTableProps {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  meta?: Record<string, any>
-  isLoading?: boolean
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  meta?: Record<string, any>;
+  isLoading?: boolean;
 }
 
-const props = defineProps<DataTableProps>()
+const props = defineProps<DataTableProps>();
 
 const emit = defineEmits<{
-  (e: 'selectionChange', selection: TData[]): void
-  (e: 'rowClick', row: TData): void
-  (e: 'refresh'): void
-}>()
+  (e: "selectionChange", selection: TData[]): void;
+  (e: "rowClick", row: TData): void;
+  (e: "refresh"): void;
+}>();
 
-const tableState = useUpdatesBundlesDataTable()
-const sidebarExpanded = ref(true)
+const tableState = useUpdatesBundlesDataTable();
+const sidebarExpanded = ref(true);
 
 onMounted(() => {
-  const sidebar = document.querySelector('[data-state]')
+  const sidebar = document.querySelector("[data-state]");
   if (sidebar) {
-    sidebarExpanded.value = sidebar.getAttribute('data-state') === 'expanded'
+    sidebarExpanded.value = sidebar.getAttribute("data-state") === "expanded";
 
     const observer = new MutationObserver(() => {
-      sidebarExpanded.value = sidebar.getAttribute('data-state') === 'expanded'
-    })
-    observer.observe(sidebar, { attributes: true, attributeFilter: ['data-state'] })
+      sidebarExpanded.value = sidebar.getAttribute("data-state") === "expanded";
+    });
+    observer.observe(sidebar, { attributes: true, attributeFilter: ["data-state"] });
   }
 
   if (props.columns && props.columns.length > 0 && tableState.columnOrder.value.length === 0) {
-    tableState.columnOrder.value = props.columns.map((col: any) => col.id || col.accessorKey)
+    tableState.columnOrder.value = props.columns.map((col: any) => col.id || col.accessorKey);
   }
-})
+});
 
 const fuzzyFilter = (row: any, columnId: string, value: string, addMeta: any) => {
   try {
-    const itemRank = rankItem(row.getValue(columnId), value)
-    addMeta({ itemRank })
-    return itemRank.passed
+    const itemRank = rankItem(row.getValue(columnId), value);
+    addMeta({ itemRank });
+    return itemRank.passed;
   } catch {
-    return String(row.getValue(columnId)).toLowerCase().includes(value.toLowerCase())
+    return String(row.getValue(columnId)).toLowerCase().includes(value.toLowerCase());
   }
-}
+};
 
 const table = useVueTable({
   get data() {
-    return props.data
+    return props.data;
   },
   get columns() {
-    return props.columns
+    return props.columns;
   },
   get meta() {
-    return props.meta
+    return props.meta;
   },
 
   // Core
@@ -668,53 +668,53 @@ const table = useVueTable({
   onColumnPinningChange: tableState.onColumnPinningChange,
   onColumnSizingChange: tableState.onColumnSizingChange,
   enableColumnResizing: true,
-  columnResizeMode: 'onChange',
+  columnResizeMode: "onChange",
 
   // Row features
   onRowSelectionChange: (updater) => {
-    tableState.onRowSelectionChange(updater)
-    const selectedRows = table.getFilteredSelectedRowModel().rows.map((row) => row.original)
-    emit('selectionChange', selectedRows)
+    tableState.onRowSelectionChange(updater);
+    const selectedRows = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
+    emit("selectionChange", selectedRows);
   },
   onRowPinningChange: tableState.onRowPinningChange,
 
   // State
   state: {
     get sorting() {
-      return tableState.sorting.value
+      return tableState.sorting.value;
     },
     get columnFilters() {
-      return tableState.columnFilters.value
+      return tableState.columnFilters.value;
     },
     get globalFilter() {
-      return tableState.globalFilter.value
+      return tableState.globalFilter.value;
     },
     get columnVisibility() {
-      return tableState.columnVisibility.value
+      return tableState.columnVisibility.value;
     },
     get rowSelection() {
-      return tableState.rowSelection.value
+      return tableState.rowSelection.value;
     },
     get pagination() {
-      return tableState.pagination.value
+      return tableState.pagination.value;
     },
     get grouping() {
-      return tableState.grouping.value
+      return tableState.grouping.value;
     },
     get expanded() {
-      return tableState.expanded.value
+      return tableState.expanded.value;
     },
     get columnOrder() {
-      return tableState.columnOrder.value
+      return tableState.columnOrder.value;
     },
     get columnPinning() {
-      return tableState.columnPinning.value
+      return tableState.columnPinning.value;
     },
     get columnSizing() {
-      return tableState.columnSizing.value
+      return tableState.columnSizing.value;
     },
     get rowPinning() {
-      return tableState.rowPinning.value
+      return tableState.rowPinning.value;
     },
   },
 
@@ -722,31 +722,31 @@ const table = useVueTable({
   filterFns: {
     fuzzy: fuzzyFilter,
   },
-})
+});
 
 const densityClasses = computed(() => {
   const base = {
-    compact: 'text-xs',
-    normal: 'text-sm',
-    comfortable: 'text-base',
-  }
-  return base[tableState.density.value]
-})
+    compact: "text-xs",
+    normal: "text-sm",
+    comfortable: "text-base",
+  };
+  return base[tableState.density.value];
+});
 
 const cellPadding = computed(() => {
   const padding = {
-    compact: 'px-2 py-1',
-    normal: 'px-4 py-2',
-    comfortable: 'px-6 py-3',
-  }
-  return padding[tableState.density.value]
-})
+    compact: "px-2 py-1",
+    normal: "px-4 py-2",
+    comfortable: "px-6 py-3",
+  };
+  return padding[tableState.density.value];
+});
 
-const tableContainerRef = ref<HTMLElement | null>(null)
+const tableContainerRef = ref<HTMLElement | null>(null);
 
 const virtualizer = computed(() => {
   if (!tableState.features.enableVirtualization || !tableContainerRef.value) {
-    return null
+    return null;
   }
 
   try {
@@ -754,41 +754,41 @@ const virtualizer = computed(() => {
       count: table.getRowModel().rows.length,
       getScrollElement: () => tableContainerRef.value,
       estimateSize: () => 56,
-    })
+    });
   } catch (error) {
-    console.warn('Virtualization failed, falling back to regular rendering:', error)
-    return null
+    console.warn("Virtualization failed, falling back to regular rendering:", error);
+    return null;
   }
-})
+});
 
 const getVirtualItems = computed(() => {
-  if (virtualizer.value && typeof (virtualizer.value as any).getVirtualItems === 'function') {
-    return (virtualizer.value as any).getVirtualItems() || []
+  if (virtualizer.value && typeof (virtualizer.value as any).getVirtualItems === "function") {
+    return (virtualizer.value as any).getVirtualItems() || [];
   }
-  return []
-})
+  return [];
+});
 
 const getTotalSize = computed(() => {
-  if (virtualizer.value && typeof (virtualizer.value as any).getTotalSize === 'function') {
-    return (virtualizer.value as any).getTotalSize() || 0
+  if (virtualizer.value && typeof (virtualizer.value as any).getTotalSize === "function") {
+    return (virtualizer.value as any).getTotalSize() || 0;
   }
-  return 0
-})
+  return 0;
+});
 
 const handleRowClick = (row: any) => {
   if (row && row.original) {
-    emit('rowClick', row.original)
+    emit("rowClick", row.original);
   }
-}
+};
 
 defineExpose({
   table,
   state: tableState,
   getSelectedRows: () => table.getFilteredSelectedRowModel().rows.map((row) => row.original),
   clearSelection: () => {
-    tableState.rowSelection.value = {}
+    tableState.rowSelection.value = {};
   },
-})
+});
 </script>
 
 <style scoped>

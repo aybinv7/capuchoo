@@ -30,28 +30,13 @@ export {
   type UpdaterConfig,
 } from "./config.js";
 
-export {
-  getBundleVersion,
-  getDeviceId,
-  getPlatform,
-  getVersionCode,
-  isNative,
-} from "./device.js";
+export { getBundleVersion, getDeviceId, getPlatform, getVersionCode, isNative } from "./device.js";
 
-export {
-  cleanApkCache,
-  downloadNativeUpdate,
-  type DownloadProgress,
-} from "./download.service.js";
+export { cleanApkCache, downloadNativeUpdate, type DownloadProgress } from "./download.service.js";
 
 export { openNativeInstaller } from "./install.service.js";
 
-export {
-  applyOtaUpdate,
-  discardBundle,
-  getCurrentBundle,
-  notifyAppReady,
-} from "./ota.service.js";
+export { applyOtaUpdate, discardBundle, getCurrentBundle, notifyAppReady } from "./ota.service.js";
 
 // Re-exported so an app does not need a direct @capucho/core dependency just
 // to type an update.

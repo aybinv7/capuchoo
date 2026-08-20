@@ -35,27 +35,27 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import type { Channel } from '../../types/channels.types'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import type { Channel } from "../../types/channels.types";
 
 interface Props {
-  deleteDialogOpen: boolean
-  itemToDelete: string | null
-  selectedItems: Channel[]
-  isDeleting: boolean
+  deleteDialogOpen: boolean;
+  itemToDelete: string | null;
+  selectedItems: Channel[];
+  isDeleting: boolean;
 }
 
 interface Emits {
-  (e: 'update:deleteDialogOpen', value: boolean): void
-  (e: 'click:handle-delete-confirm'): void
+  (e: "update:deleteDialogOpen", value: boolean): void;
+  (e: "click:handle-delete-confirm"): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const dialogOpen = computed({
   get: () => props.deleteDialogOpen,
-  set: (value) => emit('update:deleteDialogOpen', value),
-})
+  set: (value) => emit("update:deleteDialogOpen", value),
+});
 </script>

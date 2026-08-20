@@ -29,10 +29,7 @@ export default class Init extends BaseCommand {
   static override description =
     "Link this directory to a Capucho app and write .capucho/project.json";
 
-  static override examples = [
-    "<%= config.bin %> init",
-    "<%= config.bin %> init --link",
-  ];
+  static override examples = ["<%= config.bin %> init", "<%= config.bin %> init --link"];
 
   static override flags = {
     link: Flags.boolean({
@@ -58,10 +55,7 @@ export default class Init extends BaseCommand {
 
     const existing = readProjectConfig(appDir);
     if (existing && !flags.force) {
-      this.log(
-        chalk.yellow("  Already initialised: ") +
-          `${existing.appName} (${existing.appId})`,
-      );
+      this.log(chalk.yellow("  Already initialised: ") + `${existing.appName} (${existing.appId})`);
       const action = await select({
         message: "What now?",
         choices: [
@@ -107,10 +101,7 @@ export default class Init extends BaseCommand {
           ],
         });
 
-    const app =
-      mode === "existing"
-        ? await this.linkExisting(cloud)
-        : await this.createNew(cloud);
+    const app = mode === "existing" ? await this.linkExisting(cloud) : await this.createNew(cloud);
 
     // --- flavours ------------------------------------------------------------
 
@@ -178,9 +169,7 @@ export default class Init extends BaseCommand {
           chalk.cyan(`capucho deploy ota --channel ${deployable[0]!.name}`),
       );
     } else {
-      this.log(
-        chalk.yellow("  This app has no channel with an environment set yet."),
-      );
+      this.log(chalk.yellow("  This app has no channel with an environment set yet."));
       this.log(
         chalk.dim(
           "  Create one in the dashboard - the environment is what tells the CLI\n" +
@@ -207,17 +196,11 @@ export default class Init extends BaseCommand {
 
   /** Reads `webDir` out of capacitor.config.* so the CLI zips the right folder. */
   private detectWebDir(appDir: string): string {
-    for (const name of [
-      "capacitor.config.ts",
-      "capacitor.config.js",
-      "capacitor.config.json",
-    ]) {
+    for (const name of ["capacitor.config.ts", "capacitor.config.js", "capacitor.config.json"]) {
       const file = path.join(appDir, name);
       if (!fs.existsSync(file)) continue;
 
-      const match = /webDir\s*[:=]\s*["']([^"']+)["']/.exec(
-        fs.readFileSync(file, "utf8"),
-      );
+      const match = /webDir\s*[:=]\s*["']([^"']+)["']/.exec(fs.readFileSync(file, "utf8"));
       if (match?.[1]) return match[1];
     }
 

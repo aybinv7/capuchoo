@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-This project is a Vue 3 frontend application that serves as a management interface for Capgo updates and bundles. It's designed to be a scalable and maintainable solution following modern Vue 3 patterns.
+This project is a Vue 3 frontend application that serves as a management interface for Capgo updates
+and bundles. It's designed to be a scalable and maintainable solution following modern Vue 3
+patterns.
 
 ## Architecture
 
@@ -58,7 +60,8 @@ module-name/
 ### API Composables
 
 - Named with `useCapgo` prefix to avoid conflicts
-- Follow the pattern: `useCapgo{FeatureName}Query` for queries and `useCapgo{FeatureName}Mutation` for mutations
+- Follow the pattern: `useCapgo{FeatureName}Query` for queries and `useCapgo{FeatureName}Mutation`
+  for mutations
 - Use the centralized `useApiQuery` and `useApiMutation` functions from the config
 
 ### Component Architecture
@@ -142,4 +145,5 @@ module-name/
 3. Follow centralized error handling patterns
 4. Use proper loading states for async operations
 
-This documentation captures the approach used for building the Capgo-Updater frontend with a focus on scalability, maintainability, and modularity.
+This documentation captures the approach used for building the Capgo-Updater frontend with a focus
+on scalability, maintainability, and modularity.

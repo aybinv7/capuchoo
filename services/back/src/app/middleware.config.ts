@@ -3,7 +3,7 @@ import path from "path";
 
 import {
   securityHeaders,
- corsMiddleware,
+  corsMiddleware,
   rateLimiter,
   sanitizeRequest,
 } from "../middleware/security";

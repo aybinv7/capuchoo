@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import type { Data } from './interface'
-import { VisTooltip } from '@unovis/vue'
+import type { Data } from "./interface";
+import { VisTooltip } from "@unovis/vue";
 
 interface ChartTooltip {
-  x?: (d: Data, i: number) => number
-  [key: string]: any
+  x?: (d: Data, i: number) => number;
+  [key: string]: any;
 }
 
 const props = withDefaults(defineProps<ChartTooltip>(), {
   x: (d: Data, i: number) => i,
-})
+});
 </script>
 
 <template>

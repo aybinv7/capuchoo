@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { CheckCircle } from 'lucide-vue-next'
-import AnimatedUnderline from './AnimatedUnderline.vue'
+import { CheckCircle } from "lucide-vue-next";
+import AnimatedUnderline from "./AnimatedUnderline.vue";
 
 const steps = [
-  { number: 1, label: 'Install the SDK', active: true },
-  { number: 2, label: 'Configure your app keys', active: false },
-  { number: 3, label: 'Push to deploy', active: false },
-]
+  { number: 1, label: "Install the SDK", active: true },
+  { number: 2, label: "Configure your app keys", active: false },
+  { number: 3, label: "Push to deploy", active: false },
+];
 
 const terminalLines = [
-  { type: 'command', text: 'capucho deploy' },
-  { type: 'output', text: 'Building bundle...', time: '420ms' },
-  { type: 'output', text: 'Optimizing assets...', time: '120ms' },
-  { type: 'output', text: 'Signing package...', time: '85ms' },
-  { type: 'success', text: 'Deployment v2.4.1 is live' },
-]
+  { type: "command", text: "capucho deploy" },
+  { type: "output", text: "Building bundle...", time: "420ms" },
+  { type: "output", text: "Optimizing assets...", time: "120ms" },
+  { type: "output", text: "Signing package...", time: "85ms" },
+  { type: "success", text: "Deployment v2.4.1 is live" },
+];
 </script>
 
 <template>

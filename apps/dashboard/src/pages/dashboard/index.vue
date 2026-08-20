@@ -171,29 +171,29 @@
 </template>
 
 <script setup lang="ts">
-import { useAppStore } from '@/stores/app.store'
-import { toast } from 'vue-sonner'
+import { useAppStore } from "@/stores/app.store";
+import { toast } from "vue-sonner";
 
-const router = useRouter()
-const appStore = useAppStore()
-const { activeApp } = storeToRefs(appStore)
+const router = useRouter();
+const appStore = useAppStore();
+const { activeApp } = storeToRefs(appStore);
 
 definePage({
   meta: {
-    title: 'Dashboard',
-    description: 'App Overview',
+    title: "Dashboard",
+    description: "App Overview",
   },
-})
+});
 
-const channelCount = computed(() => 0) // TODO: Fetch from API context-aware
+const channelCount = computed(() => 0); // TODO: Fetch from API context-aware
 
 const sdkSnippet = computed(() => {
-  const apiBase = window.location.origin.replace(/:\d+$/, ':3000') + '/api'
+  const apiBase = window.location.origin.replace(/:\d+$/, ":3000") + "/api";
   return `import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: '${activeApp.value?.app_id || 'com.example.app'}',
-  appName: '${activeApp.value?.name || 'My App'}',
+  appId: '${activeApp.value?.app_id || "com.example.app"}',
+  appName: '${activeApp.value?.name || "My App"}',
   webDir: 'dist',
   plugins: {
     CapacitorUpdater: {
@@ -204,34 +204,34 @@ const config: CapacitorConfig = {
   }
 };
 
-export default config;`
-})
+export default config;`;
+});
 
 const copySnippet = async () => {
   try {
-    await navigator.clipboard.writeText(sdkSnippet.value)
-    toast.success('Configuration snippet copied to clipboard!')
+    await navigator.clipboard.writeText(sdkSnippet.value);
+    toast.success("Configuration snippet copied to clipboard!");
   } catch (err) {
-    console.error('Failed to copy:', err)
+    console.error("Failed to copy:", err);
   }
-}
+};
 
 const formatDate = (dateString?: string) => {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleDateString()
-}
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString();
+};
 
 const formatRelativeTime = (dateString?: string) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 30) return `${diffDays} days ago`
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
-  return `${Math.floor(diffDays / 365)} years ago`
-}
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 30) return `${diffDays} days ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+  return `${Math.floor(diffDays / 365)} years ago`;
+};
 </script>

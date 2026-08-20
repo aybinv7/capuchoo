@@ -23,9 +23,7 @@ export interface OtpVerifyData {
 }
 
 export const authService = {
-  async login(
-    credentials: LoginCredentials,
-  ): Promise<{ user: User | null; session: Session }> {
+  async login(credentials: LoginCredentials): Promise<{ user: User | null; session: Session }> {
     const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
     if (error) {

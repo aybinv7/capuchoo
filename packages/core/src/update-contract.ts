@@ -35,8 +35,7 @@ export const UpdateMessage = {
   ENVIRONMENT_MISMATCH: "Environment mismatch",
 } as const;
 
-export type UpdateMessageValue =
-  (typeof UpdateMessage)[keyof typeof UpdateMessage];
+export type UpdateMessageValue = (typeof UpdateMessage)[keyof typeof UpdateMessage];
 
 /** What the device tells the server about itself. */
 export interface UpdateCheckRequest {
@@ -142,8 +141,7 @@ export function resolveUpdate(
       // A native update is mandatory when the server says the OTA bundle
       // cannot run without it, whatever the record's own flag says.
       required:
-        response.message === UpdateMessage.NATIVE_UPDATE_REQUIRED ||
-        (native.required ?? false),
+        response.message === UpdateMessage.NATIVE_UPDATE_REQUIRED || (native.required ?? false),
       platform: native.platform,
     };
   }

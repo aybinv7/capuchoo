@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { Diff, ShieldCheck, BarChart3, History, Users, Lock } from 'lucide-vue-next'
-import AnimatedUnderline from './AnimatedUnderline.vue'
+import { Diff, ShieldCheck, BarChart3, History, Users, Lock } from "lucide-vue-next";
+import AnimatedUnderline from "./AnimatedUnderline.vue";
 
 const CardGlow = defineComponent({
   setup() {
     return () =>
-      h('div', {
+      h("div", {
         class:
-          'absolute -top-12 left-0 -translate-x-1/3 w-full h-40 bg-primary/30 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none',
-      })
+          "absolute -top-12 left-0 -translate-x-1/3 w-full h-40 bg-primary/30 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none",
+      });
   },
-})
+});
 
 const FeatureCard = defineComponent({
   props: {
     title: { type: String, required: true },
     description: { type: String, required: true },
     icon: { type: [Object, Function] as PropType<Component>, required: true },
-    className: { type: String, default: '' },
+    className: { type: String, default: "" },
     index: { type: Number, default: 0 },
   },
   setup(props, { slots }) {
@@ -27,65 +27,65 @@ const FeatureCard = defineComponent({
         {
           class: `h-64 p-8 flex flex-col justify-between relative overflow-hidden bg-stone-900 text-stone-50 border-stone-800 group hover:shadow-xl transition-all duration-300 animate-scale-pop ${props.className}`,
           style: {
-            'animation-delay': `${props.index * 0.2}s`,
+            "animation-delay": `${props.index * 0.2}s`,
           },
         },
         {
           default: () => [
-            h('div', { class: 'absolute inset-0 bg-linear-to-br from-stone-800 to-stone-950' }),
+            h("div", { class: "absolute inset-0 bg-linear-to-br from-stone-800 to-stone-950" }),
             h(CardGlow),
             // Glow Edge
-            h('div', {
+            h("div", {
               class:
-                'absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-stone-500 to-transparent opacity-50',
+                "absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-stone-500 to-transparent opacity-50",
             }),
-            h(CardContent, { class: 'relative z-10 p-0' }, () => [
+            h(CardContent, { class: "relative z-10 p-0" }, () => [
               h(
-                'div',
+                "div",
                 {
                   class: `w-12 h-12 bg-stone-800 rounded-2xl flex items-center justify-center shadow-inner mb-6 border border-stone-700 animate-float`,
                   style: {
-                    'animation-delay': `${props.index * 0.2}s`,
+                    "animation-delay": `${props.index * 0.2}s`,
                   },
                 },
-                [h(props.icon, { class: 'w-6 h-6 text-white' })],
+                [h(props.icon, { class: "w-6 h-6 text-white" })],
               ),
               h(
-                'h3',
+                "h3",
                 {
-                  class: 'text-2xl font-semibold mb-2 text-white animate-slide-up',
+                  class: "text-2xl font-semibold mb-2 text-white animate-slide-up",
                   style: {
-                    'animation-delay': `${props.index * 0.2 + 0.1}s`,
+                    "animation-delay": `${props.index * 0.2 + 0.1}s`,
                   },
                 },
                 [
                   (() => {
-                    const spaceIndex = props.title.indexOf(' ')
+                    const spaceIndex = props.title.indexOf(" ");
                     if (spaceIndex === -1) {
                       // If no space, apply special font to the whole title
                       return h(
-                        'span',
-                        { class: 'noto-serif-display-300 font-thin italic' },
+                        "span",
+                        { class: "noto-serif-display-300 font-thin italic" },
                         props.title,
-                      )
+                      );
                     }
                     return [
-                      h('span', { class: 'font-sans' }, props.title.substring(0, spaceIndex)),
+                      h("span", { class: "font-sans" }, props.title.substring(0, spaceIndex)),
                       h(
-                        'span',
-                        { class: 'noto-serif-display-300 font-thin italic' },
+                        "span",
+                        { class: "noto-serif-display-300 font-thin italic" },
                         props.title.substring(spaceIndex),
                       ),
-                    ]
+                    ];
                   })(),
                 ],
               ),
               h(
-                'p',
+                "p",
                 {
-                  class: 'text-stone-400 text-sm max-w-sm animate-fade-in',
+                  class: "text-stone-400 text-sm max-w-sm animate-fade-in",
                   style: {
-                    'animation-delay': `${props.index * 0.2 + 0.2}s`,
+                    "animation-delay": `${props.index * 0.2 + 0.2}s`,
                   },
                 },
                 props.description,
@@ -94,9 +94,9 @@ const FeatureCard = defineComponent({
             slots.default ? slots.default() : null,
           ],
         },
-      )
+      );
   },
-})
+});
 </script>
 
 <template>

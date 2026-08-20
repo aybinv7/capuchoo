@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { RadioGroupItemProps, RadioGroupItemEmits } from 'reka-ui'
-import { RadioGroupIndicator, RadioGroupItem, useForwardPropsEmits } from 'reka-ui'
-import type { HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+import type { RadioGroupItemProps, RadioGroupItemEmits } from "reka-ui";
+import { RadioGroupIndicator, RadioGroupItem, useForwardPropsEmits } from "reka-ui";
+import type { HTMLAttributes } from "vue";
+import { cn } from "@/lib/utils";
 
-const props = defineProps<RadioGroupItemProps & { class?: HTMLAttributes['class'] }>()
-const emits = defineEmits<RadioGroupItemEmits>()
+const props = defineProps<RadioGroupItemProps & { class?: HTMLAttributes["class"] }>();
+const emits = defineEmits<RadioGroupItemEmits>();
 
-const forwarded = useForwardPropsEmits(props, emits)
+const forwarded = useForwardPropsEmits(props, emits);
 </script>
 
 <template>

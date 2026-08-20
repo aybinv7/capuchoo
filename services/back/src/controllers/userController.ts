@@ -54,7 +54,7 @@ class UserController {
           avatar_url,
           updated_at: new Date().toISOString(),
         },
-        { id: userId }
+        { id: userId },
       );
 
       res.json(result[0]);

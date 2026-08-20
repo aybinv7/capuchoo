@@ -69,7 +69,7 @@ import {
   useVueTable,
   type ColumnDef,
   type SortingState,
-} from '@tanstack/vue-table'
+} from "@tanstack/vue-table";
 import {
   Table,
   TableBody,
@@ -77,34 +77,34 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 const props = defineProps<{
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-}>()
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+}>();
 
-const sorting = ref<SortingState>([])
+const sorting = ref<SortingState>([]);
 
 const table = useVueTable({
   get data() {
-    return props.data
+    return props.data;
   },
   get columns() {
-    return props.columns
+    return props.columns;
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
   onSortingChange: (updaterOrValue) => {
     sorting.value =
-      typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
+      typeof updaterOrValue === "function" ? updaterOrValue(sorting.value) : updaterOrValue;
   },
   state: {
     get sorting() {
-      return sorting.value
+      return sorting.value;
     },
   },
-})
+});
 </script>

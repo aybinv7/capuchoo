@@ -2,23 +2,24 @@
 
 /* Material Icons Rounded (default) */
 @font-face {
-  font-family: 'Material Icons';
+  font-family: "Material Icons";
   font-style: normal;
   font-weight: 400;
-  src: local('Material Icons'),
-    url(../fonts/material-icons-round.woff2) format('woff2');
+  src:
+    local("Material Icons"),
+    url(../fonts/material-icons-round.woff2) format("woff2");
 }
 
 /* Material Icons Outlined */
 @font-face {
-  font-family: 'Material Icons Outlined';
+  font-family: "Material Icons Outlined";
   font-style: normal;
   font-weight: 400;
-  src: url(../fonts/material-icons-outlined.woff2) format('woff2');
+  src: url(../fonts/material-icons-outlined.woff2) format("woff2");
 }
 
 .material-icons {
-  font-family: 'Material Icons';
+  font-family: "Material Icons";
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -32,12 +33,12 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: 'liga';
+  font-feature-settings: "liga";
 }
 
 /* Add outlined variant class */
 .material-icons-outlined {
-  font-family: 'Material Icons Outlined';
+  font-family: "Material Icons Outlined";
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -51,22 +52,19 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: 'liga';
+  font-feature-settings: "liga";
 }
-
-
-
 
 /* Framework7 Icons Font (for iOS theme) */
 @font-face {
-  font-family: 'Framework7 Icons';
+  font-family: "Framework7 Icons";
   font-style: normal;
   font-weight: 400;
-  src: url(../fonts/Framework7Icons-Regular.woff2) format('woff2');
+  src: url(../fonts/Framework7Icons-Regular.woff2) format("woff2");
 }
-  
+
 .f7-icons {
-  font-family: 'Framework7 Icons';
+  font-family: "Framework7 Icons";
   font-weight: normal;
   font-style: normal;
   font-size: 28px;
@@ -80,9 +78,9 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-font-feature-settings: 'liga';
-  -moz-font-feature-settings: 'liga=1';
-  -moz-font-feature-settings: 'liga';
-  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: "liga";
+  -moz-font-feature-settings: "liga=1";
+  -moz-font-feature-settings: "liga";
+  font-feature-settings: "liga";
   text-align: center;
 }

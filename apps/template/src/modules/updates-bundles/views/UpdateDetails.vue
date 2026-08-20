@@ -26,14 +26,10 @@
             }}</F7Badge>
             <F7Badge v-if="item.required" color="red">Required</F7Badge>
           </div>
-          <span class="text-sm text-gray-400">{{
-            formatDate(item.created_at)
-          }}</span>
+          <span class="text-sm text-gray-400">{{ formatDate(item.created_at) }}</span>
         </div>
 
-        <h1 class="text-3xl font-black mb-1 tracking-tight">
-          Version {{ item.version_name }}
-        </h1>
+        <h1 class="text-3xl font-black mb-1 tracking-tight">Version {{ item.version_name }}</h1>
         <p class="text-gray-500 mb-8 flex items-center gap-2 font-medium">
           <F7Icon :f7="getPlatformIcon(item.platform)" size="18" />
           {{ item.platform }} Project • {{ item.channel }}
@@ -51,37 +47,23 @@
             <F7Icon f7="arrow_down_circle_fill" size="20" class="mr-2" />
             Download
           </F7Button>
-          <F7Button
-            outline
-            large
-            round
-            color="orange"
-            @click="promote"
-            class="font-bold border-2"
-          >
+          <F7Button outline large round color="orange" @click="promote" class="font-bold border-2">
             <F7Icon f7="zap_fill" size="20" class="mr-2" />
             Promote
           </F7Button>
         </div>
       </F7Block>
 
-      <F7BlockTitle
-        class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+      <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
         >Release Notes</F7BlockTitle
       >
-      <F7Block
-        strong
-        class="rounded-2xl mx-4 shadow-sm border-none bg-white dark:bg-gray-900"
-      >
+      <F7Block strong class="rounded-2xl mx-4 shadow-sm border-none bg-white dark:bg-gray-900">
         <p class="text-sm leading-relaxed whitespace-pre-wrap opacity-70">
-          {{
-            item.release_notes || "No release notes provided for this version."
-          }}
+          {{ item.release_notes || "No release notes provided for this version." }}
         </p>
       </F7Block>
 
-      <F7BlockTitle
-        class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
+      <F7BlockTitle class="mt-8 px-6 font-black text-xs uppercase tracking-widest opacity-40"
         >Metadata</F7BlockTitle
       >
       <F7List
@@ -90,18 +72,12 @@
         outline-ios
         class="no-margin-top rounded-2xl overflow-hidden shadow-sm mx-4"
       >
-        <F7ListItem
-          title="Version Code"
-          :after="String(item.version_code || 'N/A')"
-        ></F7ListItem>
+        <F7ListItem title="Version Code" :after="String(item.version_code || 'N/A')"></F7ListItem>
         <F7ListItem
           title="File Size"
           :after="formatFileSize(item.file_size_bytes || 0)"
         ></F7ListItem>
-        <F7ListItem
-          title="Created By"
-          :after="item.created_by || 'System'"
-        ></F7ListItem>
+        <F7ListItem title="Created By" :after="item.created_by || 'System'"></F7ListItem>
         <F7ListItem title="Checksum" class="text-xs">
           <template #subtitle>
             <span class="font-mono break-all opacity-40">{{
@@ -121,11 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  useUpdateQuery,
-  deleteBundle,
-  promoteBundle,
-} from "../queries/updates.queries";
+import { useUpdateQuery, deleteBundle, promoteBundle } from "../queries/updates.queries";
 import { useChannelsQuery } from "../../channels/queries/channels.queries";
 import { useAppStore } from "@/shared/stores/app.store";
 import { f7 } from "framework7-vue";
@@ -144,9 +116,7 @@ const activeApp = computed(() => appStore.activeApp);
 
 const type = (props.f7route.query.type as "bundle" | "native") || "bundle";
 const { data: item, isLoading, refetch } = useUpdateQuery(props.id, type);
-const { data: channels } = useChannelsQuery(
-  computed(() => activeApp.value?.app_id),
-);
+const { data: channels } = useChannelsQuery(computed(() => activeApp.value?.app_id));
 
 const getPlatformIcon = (p: string) => {
   if (p === "android") return "logo_android";
@@ -198,9 +168,7 @@ const promote = () => {
         f7.preloader.show();
         try {
           await promoteBundle(props.id, activeApp.value!.app_id, c.name);
-          f7.toast
-            .create({ text: `Promoted to ${c.name}`, closeTimeout: 2000 })
-            .open();
+          f7.toast.create({ text: `Promoted to ${c.name}`, closeTimeout: 2000 }).open();
           await refetch();
         } catch (error: any) {
           f7.dialog.alert(error.message || "Promotion failed");
@@ -215,9 +183,7 @@ const promote = () => {
     return;
   }
 
-  f7.actions
-    .create({ buttons: [...buttons, { text: "Cancel", color: "red" }] })
-    .open();
+  f7.actions.create({ buttons: [...buttons, { text: "Cancel", color: "red" }] }).open();
 };
 
 const confirmDelete = () => {

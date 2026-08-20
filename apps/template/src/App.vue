@@ -13,12 +13,7 @@
     <!-- Main App (Tabs) -->
     <F7Views v-else tabs animated class="safe-areas">
       <F7View name="home" id="view-home" main tab tab-active url="/"></F7View>
-      <F7View
-        name="updates"
-        id="view-updates"
-        tab
-        url="/updates-bundles"
-      ></F7View>
+      <F7View name="updates" id="view-updates" tab url="/updates-bundles"></F7View>
       <F7View name="channels" id="view-channels" tab url="/channels"></F7View>
       <F7View name="settings" id="view-settings" tab url="/settings"></F7View>
 

@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { GitCommit, Package, Zap } from 'lucide-vue-next'
+import { GitCommit, Package, Zap } from "lucide-vue-next";
 
 const steps = [
   {
     icon: GitCommit,
-    title: 'Push Code',
-    description: 'Git push triggers the CI pipeline. Capucho CLI detects changes.',
+    title: "Push Code",
+    description: "Git push triggers the CI pipeline. Capucho CLI detects changes.",
     code: '> git commit -m "fix: login UI"\n> git push origin main',
     active: false,
   },
   {
     icon: Package,
-    title: 'Build & Diff',
-    description: 'We build the bundle and calculate the binary difference.',
-    code: 'Building bundle... [800ms]\nGenerating diff... [45ms]',
+    title: "Build & Diff",
+    description: "We build the bundle and calculate the binary difference.",
+    code: "Building bundle... [800ms]\nGenerating diff... [45ms]",
     active: false,
   },
   {
     icon: Zap,
-    title: 'Instant OTA',
-    description: 'Users download only the changed bits in the background.',
-    badge: 'Live in production',
+    title: "Instant OTA",
+    description: "Users download only the changed bits in the background.",
+    badge: "Live in production",
     active: true,
   },
-]
+];
 </script>
 
 <template>

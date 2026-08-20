@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
-import { Renderer, Program, Mesh, Color, Triangle } from 'ogl'
+import { onMounted, onBeforeUnmount, ref } from "vue";
+import { Renderer, Program, Mesh, Color, Triangle } from "ogl";
 
 // Props interface
 interface GradientMeshProps {
-  colors?: string[]
-  distortion?: number
-  swirl?: number
-  speed?: number
-  scale?: number
-  offsetX?: number
-  offsetY?: number
-  rotation?: number
-  waveAmp?: number
-  waveFreq?: number
-  waveSpeed?: number
-  grain?: number
+  colors?: string[];
+  distortion?: number;
+  swirl?: number;
+  speed?: number;
+  scale?: number;
+  offsetX?: number;
+  offsetY?: number;
+  rotation?: number;
+  waveAmp?: number;
+  waveFreq?: number;
+  waveSpeed?: number;
+  grain?: number;
 }
 
 // Default props
 const props = withDefaults(defineProps<GradientMeshProps>(), {
-  colors: () => ['#ff0000', '#cc0000', '#990000'], // Red gradient as default
+  colors: () => ["#ff0000", "#cc0000", "#990000"], // Red gradient as default
   distortion: 5,
   swirl: 0.5,
   speed: 1.0,
@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<GradientMeshProps>(), {
   waveFreq: 10.0,
   waveSpeed: 0.2,
   grain: 0.06,
-})
+});
 
 // Vertex shader
 const vert = `
@@ -43,7 +43,7 @@ void main() {
   vUv = uv;
   gl_Position = vec4(position, 0, 1);
 }
-`
+`;
 
 // Fragment shader
 const frag = (distortion: number) => `
@@ -102,29 +102,29 @@ void main() {
   col = colorDodge(col, grainCol);
   gl_FragColor = vec4(col, 1.0);
 }
-`
+`;
 
 // Reactive references
-const container = ref<HTMLDivElement | null>(null)
-let renderer: any = null
-let gl: any = null
-let program: any = null
-let mesh: any = null
-let animId: number | null = null
+const container = ref<HTMLDivElement | null>(null);
+let renderer: any = null;
+let gl: any = null;
+let program: any = null;
+let mesh: any = null;
+let animId: number | null = null;
 
 const init = () => {
-  const ctn = container.value
-  if (!ctn) return
+  const ctn = container.value;
+  if (!ctn) return;
 
-  renderer = new Renderer()
-  gl = renderer.gl
-  gl.clearColor(0, 0, 0, 1)
+  renderer = new Renderer();
+  gl = renderer.gl;
+  gl.clearColor(0, 0, 0, 1);
 
-  const resize = () => renderer.setSize(ctn.offsetWidth, ctn.offsetHeight)
-  window.addEventListener('resize', resize)
-  resize()
+  const resize = () => renderer.setSize(ctn.offsetWidth, ctn.offsetHeight);
+  window.addEventListener("resize", resize);
+  resize();
 
-  const geometry = new Triangle(gl)
+  const geometry = new Triangle(gl);
 
   // Initialize uniforms with fixed red gradient colors
   const uniforms: Record<string, any> = {
@@ -145,46 +145,46 @@ const init = () => {
     uColorA: { value: new Float32Array([0.788, 0.34, 0.0]) }, // #BC6C25
     uColorB: { value: new Float32Array([0.682, 0.347, 0.0]) }, // #DDA15E
     uColorC: { value: new Float32Array([0.396, 0.263, 0.129]) }, // #606C38
-  }
+  };
 
   program = new Program(gl, {
     vertex: vert,
     fragment: frag(props.distortion),
     uniforms,
-  })
+  });
 
-  mesh = new Mesh(gl, { geometry, program })
+  mesh = new Mesh(gl, { geometry, program });
 
   const update = (t: number) => {
     if (animId !== null) {
-      animId = requestAnimationFrame(update)
-      program.uniforms.uTime.value = t * 0.001
-      renderer.render({ scene: mesh })
+      animId = requestAnimationFrame(update);
+      program.uniforms.uTime.value = t * 0.001;
+      renderer.render({ scene: mesh });
     }
-  }
+  };
 
-  animId = requestAnimationFrame(update)
-  ctn.appendChild(gl.canvas)
+  animId = requestAnimationFrame(update);
+  ctn.appendChild(gl.canvas);
 
-  return { resize }
-}
+  return { resize };
+};
 
 onMounted(() => {
-  const { resize } = init() || {}
+  const { resize } = init() || {};
 
   onBeforeUnmount(() => {
     if (animId !== null) {
-      cancelAnimationFrame(animId)
+      cancelAnimationFrame(animId);
     }
     if (resize) {
-      window.removeEventListener('resize', resize)
+      window.removeEventListener("resize", resize);
     }
     if (container.value && gl.canvas.parentNode) {
-      ;(gl.canvas.parentNode as HTMLElement).removeChild(gl.canvas)
+      (gl.canvas.parentNode as HTMLElement).removeChild(gl.canvas);
     }
-    gl?.getExtension('WEBGL_lose_context')?.loseContext()
-  })
-})
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+  });
+});
 </script>
 
 <template>

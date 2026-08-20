@@ -11,13 +11,9 @@ export type OrgRole = "owner" | "admin" | "member";
  */
 export const checkOrgMembership = (
   requiredRoles?: OrgRole[],
-  orgIdSource: "params" | "query" | "body" = "params"
+  orgIdSource: "params" | "query" | "body" = "params",
 ) => {
-  return async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -68,9 +64,7 @@ export const checkOrgMembership = (
           required: requiredRoles,
         });
         res.status(403).json({
-          error: `Insufficient permissions. Required role: ${requiredRoles.join(
-            " or "
-          )}`,
+          error: `Insufficient permissions. Required role: ${requiredRoles.join(" or ")}`,
         });
         return;
       }
@@ -90,13 +84,11 @@ export const checkOrgMembership = (
  * Middleware to check if user is an org admin (owner or admin role)
  * Convenience wrapper around checkOrgMembership
  */
-export const requireOrgAdmin = (
-  orgIdSource: "params" | "query" | "body" = "params"
-) => checkOrgMembership(["owner", "admin"], orgIdSource);
+export const requireOrgAdmin = (orgIdSource: "params" | "query" | "body" = "params") =>
+  checkOrgMembership(["owner", "admin"], orgIdSource);
 
 /**
  * Middleware to check if user is the org owner
  */
-export const requireOrgOwner = (
-  orgIdSource: "params" | "query" | "body" = "params"
-) => checkOrgMembership(["owner"], orgIdSource);
+export const requireOrgOwner = (orgIdSource: "params" | "query" | "body" = "params") =>
+  checkOrgMembership(["owner"], orgIdSource);

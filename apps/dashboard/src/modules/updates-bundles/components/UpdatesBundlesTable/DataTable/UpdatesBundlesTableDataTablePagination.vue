@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import type { Table } from '@tanstack/vue-table'
-import { Button } from '@/components/ui/button'
+import type { Table } from "@tanstack/vue-table";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 
 interface DataTablePaginationProps<TData> {
-  table: Table<TData>
+  table: Table<TData>;
 }
 
-const { table } = defineProps<DataTablePaginationProps<any>>()
+const { table } = defineProps<DataTablePaginationProps<any>>();
 
 function handlePageSizeChange(value: any) {
-  table.setPageSize(Number(value))
+  table.setPageSize(Number(value));
 }
 </script>
 
@@ -37,7 +37,11 @@ function handlePageSizeChange(value: any) {
             <SelectValue :placeholder="table.getState().pagination.pageSize.toString()" />
           </SelectTrigger>
           <SelectContent side="top">
-            <SelectItem v-for="pageSize in [10, 20, 30, 40, 50]" :key="pageSize" :value="`${pageSize}`">
+            <SelectItem
+              v-for="pageSize in [10, 20, 30, 40, 50]"
+              :key="pageSize"
+              :value="`${pageSize}`"
+            >
               {{ pageSize }}
             </SelectItem>
           </SelectContent>

@@ -109,7 +109,7 @@
           <p class="text-xs text-muted-foreground">Permanently delete all data and history.</p>
         </div>
         <Button variant="destructive" size="sm" @click="handleDeleteApp" :disabled="isDeleting">
-          {{ isDeleting ? 'Deleting...' : 'Delete App' }}
+          {{ isDeleting ? "Deleting..." : "Delete App" }}
         </Button>
       </div>
     </section>
@@ -117,28 +117,28 @@
 </template>
 
 <script setup lang="ts">
-import { appService } from '@/services/app.service'
-import { useAppStore } from '@/stores/app.store'
-import { useDeleteAppMutation } from '@/modules/apps/composables/useAppsQuery'
-import { useQueryClient } from '@tanstack/vue-query'
-import { toast } from 'vue-sonner'
-import { Separator } from '@/components/ui/separator'
+import { appService } from "@/services/app.service";
+import { useAppStore } from "@/stores/app.store";
+import { useDeleteAppMutation } from "@/modules/apps/composables/useAppsQuery";
+import { useQueryClient } from "@tanstack/vue-query";
+import { toast } from "vue-sonner";
+import { Separator } from "@/components/ui/separator";
 
-const router = useRouter()
-const appStore = useAppStore()
-const { activeApp } = storeToRefs(appStore)
-const deleteMutation = useDeleteAppMutation()
-const queryClient = useQueryClient()
+const router = useRouter();
+const appStore = useAppStore();
+const { activeApp } = storeToRefs(appStore);
+const deleteMutation = useDeleteAppMutation();
+const queryClient = useQueryClient();
 
-const isLoading = ref(false)
-const isDeleting = ref(false)
+const isLoading = ref(false);
+const isDeleting = ref(false);
 
 const form = ref({
-  name: '',
-  app_id: '',
-  icon_url: '',
-  platform: 'all' as any,
-})
+  name: "",
+  app_id: "",
+  icon_url: "",
+  platform: "all" as any,
+});
 
 // Initialize form
 watch(
@@ -148,17 +148,17 @@ watch(
       form.value = {
         name: newApp.name,
         app_id: newApp.app_id,
-        icon_url: newApp.icon_url || '',
-        platform: newApp.platform || 'all',
-      }
+        icon_url: newApp.icon_url || "",
+        platform: newApp.platform || "all",
+      };
     }
   },
   { immediate: true },
-)
+);
 
 const updateApp = async () => {
-  if (!activeApp.value) return
-  isLoading.value = true
+  if (!activeApp.value) return;
+  isLoading.value = true;
   try {
     const updatedApp = await appService.update(activeApp.value.id, {
       name: form.value.name,
@@ -166,34 +166,34 @@ const updateApp = async () => {
       app_id: form.value.app_id, // Usually backend ignores this if immutable
       organization_id: activeApp.value.organization_id,
       platform: form.value.platform,
-    })
+    });
 
     // Update local state immediately for snappy feel
-    appStore.setActiveApp(updatedApp)
-    await queryClient.invalidateQueries({ queryKey: ['apps'] })
-    toast.success('App updated successfully')
+    appStore.setActiveApp(updatedApp);
+    await queryClient.invalidateQueries({ queryKey: ["apps"] });
+    toast.success("App updated successfully");
   } catch (error: any) {
-    toast.error(error.message || 'Failed to update app')
+    toast.error(error.message || "Failed to update app");
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const handleDeleteApp = async () => {
-  if (!activeApp.value) return
-  if (!confirm('Are you sure you want to delete this app? This is irreversible.')) return
+  if (!activeApp.value) return;
+  if (!confirm("Are you sure you want to delete this app? This is irreversible.")) return;
 
-  isDeleting.value = true
+  isDeleting.value = true;
   try {
-    await deleteMutation.mutateAsync(activeApp.value.id)
-    await queryClient.invalidateQueries({ queryKey: ['apps'] })
-    appStore.setActiveApp(null)
-    toast.success('App deleted')
-    router.push('/dashboard')
+    await deleteMutation.mutateAsync(activeApp.value.id);
+    await queryClient.invalidateQueries({ queryKey: ["apps"] });
+    appStore.setActiveApp(null);
+    toast.success("App deleted");
+    router.push("/dashboard");
   } catch (error: any) {
-    toast.error(error.message || 'Failed to delete app')
+    toast.error(error.message || "Failed to delete app");
   } finally {
-    isDeleting.value = false
+    isDeleting.value = false;
   }
-}
+};
 </script>

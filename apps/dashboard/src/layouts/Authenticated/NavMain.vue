@@ -50,83 +50,83 @@
 </template>
 
 <script setup lang="ts">
-import type { LucideIcon } from 'lucide-vue-next'
-import { ChevronRight } from 'lucide-vue-next'
-import { useDirection } from 'reka-ui'
-import { onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import type { LucideIcon } from "lucide-vue-next";
+import { ChevronRight } from "lucide-vue-next";
+import { useDirection } from "reka-ui";
+import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const props = defineProps<{
-  groupName: string
+  groupName: string;
   items: {
-    title: string
-    url: string
-    icon: LucideIcon
+    title: string;
+    url: string;
+    icon: LucideIcon;
     items?: {
-      title: string
-      url: string
-    }[]
-  }[]
-}>()
+      title: string;
+      url: string;
+    }[];
+  }[];
+}>();
 
-const router = useRouter()
-const route = useRoute()
-const direction = useDirection()
-const STORAGE_KEY = 'sidebar-collapsible-states'
+const router = useRouter();
+const route = useRoute();
+const direction = useDirection();
+const STORAGE_KEY = "sidebar-collapsible-states";
 
-const openStates = ref<boolean[]>([])
+const openStates = ref<boolean[]>([]);
 
 onMounted(() => {
-  const saved = localStorage.getItem(STORAGE_KEY)
+  const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      openStates.value = JSON.parse(saved)
+      openStates.value = JSON.parse(saved);
       if (openStates.value.length !== props.items.length) {
-        openStates.value = initializeStates()
+        openStates.value = initializeStates();
       }
     } catch {
-      openStates.value = initializeStates()
+      openStates.value = initializeStates();
     }
   } else {
-    openStates.value = initializeStates()
+    openStates.value = initializeStates();
   }
-})
+});
 
 const initializeStates = (): boolean[] => {
   return props.items.map((item) => {
-    const hasActiveChild = item.items?.some((child) => route.path === child.url)
-    return hasActiveChild || false
-  })
-}
+    const hasActiveChild = item.items?.some((child) => route.path === child.url);
+    return hasActiveChild || false;
+  });
+};
 
 watch(
   openStates,
   (newStates) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newStates))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newStates));
   },
   { deep: true },
-)
+);
 
 watch(
   () => route.path,
   (newPath) => {
     props.items.forEach((item, index) => {
       if (item.items?.some((child) => child.url === newPath)) {
-        openStates.value[index] = true
+        openStates.value[index] = true;
       }
-    })
+    });
   },
-)
+);
 
 const goToRoute = (url: string) => {
-  router.push(url)
-}
+  router.push(url);
+};
 
 const isParentActive = (item: any): boolean => {
-  return route.path === item.url
-}
+  return route.path === item.url;
+};
 
 const isChildActive = (url: string): boolean => {
-  return route.path === url
-}
+  return route.path === url;
+};
 </script>

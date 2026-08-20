@@ -52,35 +52,35 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
+import { toast } from "vue-sonner";
 
 const emit = defineEmits<{
-  (e: 'next'): void
-  (e: 'back'): void
-}>()
+  (e: "next"): void;
+  (e: "back"): void;
+}>();
 
-const store = useOnboardingStore()
-const newChannel = ref('')
+const store = useOnboardingStore();
+const newChannel = ref("");
 
 onMounted(() => {
-  if (!store.channels.includes('Production')) {
-    store.channels.unshift('Production')
+  if (!store.channels.includes("Production")) {
+    store.channels.unshift("Production");
   }
-})
+});
 
 const addChannel = () => {
-  const val = newChannel.value.trim()
-  if (!val) return
+  const val = newChannel.value.trim();
+  if (!val) return;
   if (store.channels.includes(val)) {
-    toast.error('Channel already exists')
-    return
+    toast.error("Channel already exists");
+    return;
   }
-  store.channels.push(val)
-  newChannel.value = ''
-}
+  store.channels.push(val);
+  newChannel.value = "";
+};
 
 const removeChannel = (idx: number) => {
-  if (store.channels[idx] === 'Production') return
-  store.channels.splice(idx, 1)
-}
+  if (store.channels[idx] === "Production") return;
+  store.channels.splice(idx, 1);
+};
 </script>

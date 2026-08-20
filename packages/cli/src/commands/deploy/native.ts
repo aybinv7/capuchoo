@@ -28,8 +28,7 @@ export default class DeployNative extends BaseCommand {
     }),
     "allow-unsigned": Flags.boolean({
       default: false,
-      description:
-        "Publish a release build with no signature. Android will refuse to install it.",
+      description: "Publish a release build with no signature. Android will refuse to install it.",
     }),
   };
 

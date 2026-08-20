@@ -52,7 +52,7 @@
           :key="i"
           class="size-5 rounded-full border-2 border-background bg-muted flex items-center justify-center text-[8px] font-bold"
         >
-          {{ ['A', 'B', 'C'][i - 1] }}
+          {{ ["A", "B", "C"][i - 1] }}
         </div>
       </div>
       <Button
@@ -68,20 +68,20 @@
 </template>
 
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import { Handle, Position } from "@vue-flow/core";
 
 defineProps<{
   data: {
-    total_count: number
-    health_percentage: number
-    main_version: string
-  }
-  selected?: boolean
-}>()
+    total_count: number;
+    health_percentage: number;
+    main_version: string;
+  };
+  selected?: boolean;
+}>();
 
 const formatCount = (num: number) => {
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
-  return num
-}
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1) + "k";
+  return num;
+};
 </script>

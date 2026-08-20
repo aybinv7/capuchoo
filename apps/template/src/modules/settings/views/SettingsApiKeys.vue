@@ -14,8 +14,7 @@
       class="no-margin-top border-none bg-linear-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 p-8 rounded-b-2xl shadow-sm"
     >
       <p class="text-sm text-gray-500 mb-8 font-medium">
-        Use these keys to authenticate your CI/CD pipelines and external
-        integrations.
+        Use these keys to authenticate your CI/CD pipelines and external integrations.
       </p>
       <F7List
         dividers-ios
@@ -25,9 +24,7 @@
       >
         <F7ListItem title="Main API Key">
           <template #subtitle>
-            <span class="font-mono text-[10px] opacity-40"
-              >cap_live_xxxxxxxxxxxxxxxxxxxx</span
-            >
+            <span class="font-mono text-[10px] opacity-40">cap_live_xxxxxxxxxxxxxxxxxxxx</span>
           </template>
           <template #after>
             <F7Link class="p-2!" @click="copyKey">
@@ -36,12 +33,7 @@
           </template>
         </F7ListItem>
       </F7List>
-      <F7Button
-        fill
-        large
-        round
-        color="blue"
-        class="mt-8 font-bold shadow-lg shadow-blue-500/20"
+      <F7Button fill large round color="blue" class="mt-8 font-bold shadow-lg shadow-blue-500/20"
         >Generate New Key</F7Button
       >
     </F7Block>

@@ -47,89 +47,89 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
+import { toast } from "vue-sonner";
 
 interface Props {
-  promoteDialogOpen: boolean
-  itemId: string | null
+  promoteDialogOpen: boolean;
+  itemId: string | null;
 }
 
 interface Emits {
-  (e: 'update:promoteDialogOpen', value: boolean): void
-  (e: 'promoted', data: any): void
+  (e: "update:promoteDialogOpen", value: boolean): void;
+  (e: "promoted", data: any): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
-const appStore = useAppStore()
-const targetAppId = ref('')
-const targetChannel = ref('')
-const password = ref('')
-const isPromoting = ref(false)
+const appStore = useAppStore();
+const targetAppId = ref("");
+const targetChannel = ref("");
+const password = ref("");
+const isPromoting = ref(false);
 
 onMounted(() => {
   if (appStore.activeApp) {
-    targetAppId.value = appStore.activeApp.app_id
+    targetAppId.value = appStore.activeApp.app_id;
   }
-})
+});
 
 watch(
   () => appStore.activeApp,
   (newApp) => {
     if (newApp) {
-      targetAppId.value = newApp.app_id
+      targetAppId.value = newApp.app_id;
     }
   },
-)
+);
 
 const dialogOpen = computed({
   get: () => props.promoteDialogOpen,
-  set: (value) => emit('update:promoteDialogOpen', value),
-})
+  set: (value) => emit("update:promoteDialogOpen", value),
+});
 
-const channels = ref<any[]>([])
-const isLoadingChannels = ref(false)
+const channels = ref<any[]>([]);
+const isLoadingChannels = ref(false);
 
 watch(targetAppId, async (newAppId) => {
   if (newAppId) {
-    isLoadingChannels.value = true
+    isLoadingChannels.value = true;
     try {
-      const response = await apiClient.get(`/dashboard/channels?app_id=${newAppId}`)
-      channels.value = response.data
+      const response = await apiClient.get(`/dashboard/channels?app_id=${newAppId}`);
+      channels.value = response.data;
     } catch (error) {
-      console.error('Failed to fetch channels', error)
-      toast.error('Failed to load channels for the selected application.')
+      console.error("Failed to fetch channels", error);
+      toast.error("Failed to load channels for the selected application.");
     } finally {
-      isLoadingChannels.value = false
+      isLoadingChannels.value = false;
     }
   } else {
-    channels.value = []
+    channels.value = [];
   }
-  targetChannel.value = ''
-})
+  targetChannel.value = "";
+});
 
 const handlePromote = async () => {
-  if (!props.itemId || !targetAppId.value || !targetChannel.value) return
+  if (!props.itemId || !targetAppId.value || !targetChannel.value) return;
 
-  isPromoting.value = true
+  isPromoting.value = true;
   try {
     const response = await apiClient.post(`/dashboard/bundles/${props.itemId}/promote`, {
       target_app_id: targetAppId.value,
       target_channel: targetChannel.value,
       password: password.value,
-    })
+    });
 
-    toast.success('Item promoted successfully.')
+    toast.success("Item promoted successfully.");
 
-    emit('promoted', response.data)
-    dialogOpen.value = false
+    emit("promoted", response.data);
+    dialogOpen.value = false;
   } catch (error: any) {
-    console.error('Promotion failed', error)
-    const message = error.response?.data?.error || 'Could not promote the item.'
-    toast.error(message)
+    console.error("Promotion failed", error);
+    const message = error.response?.data?.error || "Could not promote the item.";
+    toast.error(message);
   } finally {
-    isPromoting.value = false
+    isPromoting.value = false;
   }
-}
+};
 </script>

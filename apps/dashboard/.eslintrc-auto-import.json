@@ -412,6 +412,7 @@
     "shallowReadonly": true,
     "shallowRef": true,
     "sidebarMenuButtonVariants": true,
+    "sm": true,
     "sortBy": true,
     "storeToRefs": true,
     "syncRef": true,

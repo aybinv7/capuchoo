@@ -36,10 +36,7 @@ export default class AuthLogin extends BaseCommand {
    * Throws on failure rather than calling `this.error`, so the caller decides
    * whether a failed login ends the process or just ends the login step.
    */
-  static async performLogin(
-    flagEndpoint?: string,
-    flagApiKey?: string,
-  ): Promise<void> {
+  static async performLogin(flagEndpoint?: string, flagApiKey?: string): Promise<void> {
     const existing = readGlobalConfig();
 
     const endpoint = (
@@ -48,8 +45,7 @@ export default class AuthLogin extends BaseCommand {
         message: "Backend URL",
         default: existing.endpoint ?? DEFAULT_ENDPOINT,
         validate: (value) =>
-          /^https?:\/\/.+/.test(value.trim()) ||
-          "Must start with http:// or https://",
+          /^https?:\/\/.+/.test(value.trim()) || "Must start with http:// or https://",
       }))
     )
       .trim()
@@ -65,8 +61,7 @@ export default class AuthLogin extends BaseCommand {
         // Only a length check. The previous version required the key to start
         // with "cap_", which is a server-side format decision the CLI has no
         // business enforcing - a rotated prefix would have locked users out.
-        validate: (value) =>
-          value.trim().length >= 16 || "That key looks too short",
+        validate: (value) => value.trim().length >= 16 || "That key looks too short",
       });
     }
 
@@ -77,9 +72,7 @@ export default class AuthLogin extends BaseCommand {
 
     if (!profile) {
       spinner.fail("Those credentials were rejected");
-      throw new Error(
-        `${endpoint} did not accept that API key. Check the key and the URL.`,
-      );
+      throw new Error(`${endpoint} did not accept that API key. Check the key and the URL.`);
     }
 
     spinner.succeed(`Signed in as ${profile.user.email}`);

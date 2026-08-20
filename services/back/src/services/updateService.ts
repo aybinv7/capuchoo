@@ -1,10 +1,4 @@
-import {
-  IUpdateService,
-  UpdateRequest,
-  UpdateResponse,
-  UpdateRecord,
-  StatsRequest,
-} from "@/types";
+import { IUpdateService, UpdateRequest, UpdateResponse, UpdateRecord, StatsRequest } from "@/types";
 import supabaseService from "./supabaseService";
 import logger from "@/utils/logger";
 
@@ -33,9 +27,7 @@ class UpdateService implements IUpdateService {
             eq: { app_id: baseAppId },
           });
           if (result.data && result.data.length > 0) {
-            logger.info(
-              `Resolved App UUID via suffix match: ${appIdString} -> ${baseAppId}`
-            );
+            logger.info(`Resolved App UUID via suffix match: ${appIdString} -> ${baseAppId}`);
             return result.data[0].id;
           }
         }
@@ -83,7 +75,7 @@ class UpdateService implements IUpdateService {
   async resolveEnvConfig(
     appUuid: string,
     environment: string,
-    channel: string
+    channel: string,
   ): Promise<Record<string, any>> {
     try {
       const { data, error } = await supabaseService
@@ -134,17 +126,12 @@ class UpdateService implements IUpdateService {
       // 1. Get channel metadata - plugin sends defaultChannel (camelCase) or default_channel (snake_case)
       // Priority: explicit channel > defaultChannel > default_channel > fallback to "staging"
       const channelToUse =
-        request.channel ||
-        request.defaultChannel ||
-        (request as any).default_channel ||
-        "staging";
+        request.channel || request.defaultChannel || (request as any).default_channel || "staging";
 
       const { data: channelData, error: channelError } = await supabaseService
         .getClient()
         .from("channels")
-        .select(
-          "id, environment, current_version_id, current_native_version_id"
-        )
+        .select("id, environment, current_version_id, current_native_version_id")
         .eq("app_id", appUuid)
         .eq("name", channelToUse)
         .maybeSingle();
@@ -157,11 +144,7 @@ class UpdateService implements IUpdateService {
       const environment = channelData.environment || "staging";
 
       // 2. Get resolved config from app_env_vars using the channel's environment
-      const appConfig = await this.resolveEnvConfig(
-        appUuid,
-        environment,
-        channelToUse
-      );
+      const appConfig = await this.resolveEnvConfig(appUuid, environment, channelToUse);
 
       // 1.5. Strict Environment Isolation Check
       // Ensure that the requesting App ID matches the Channel's environment matches expectations
@@ -170,10 +153,7 @@ class UpdateService implements IUpdateService {
 
       if (incomingAppId.endsWith(".staging")) {
         expectedEnv = "staging";
-      } else if (
-        incomingAppId.endsWith(".dev") ||
-        incomingAppId.endsWith(".debug")
-      ) {
+      } else if (incomingAppId.endsWith(".dev") || incomingAppId.endsWith(".debug")) {
         expectedEnv = "dev";
       }
 
@@ -199,13 +179,10 @@ class UpdateService implements IUpdateService {
       }
 
       // 3. NATIVE FIRST: Check if there is a newer NATIVE binary available for this channel
-      const userNativeVersion =
-        parseInt(request.versionCode || request.versionBuild || "0") || 0;
+      const userNativeVersion = parseInt(request.versionCode || request.versionBuild || "0") || 0;
 
       const currentVersion =
-        request.version_name === "builtin"
-          ? "0.0.0"
-          : request.version_name || "0.0.0";
+        request.version_name === "builtin" ? "0.0.0" : request.version_name || "0.0.0";
       // 3. NATIVE FIRST: Check if channel has an explicit NATIVE version assigned
       if (channelData.current_native_version_id) {
         const { data: assignedNative } = await supabaseService
@@ -253,7 +230,7 @@ class UpdateService implements IUpdateService {
           session_key,
           min_update_version,
           platform
-        `
+        `,
         )
         .eq("id", channelData.current_version_id)
         .maybeSingle();
@@ -278,8 +255,7 @@ class UpdateService implements IUpdateService {
       }
 
       // Compare versions - check if latest is actually newer than current
-      const isNewer =
-        this.compareVersions(latestUpdate.version_name, currentVersion) > 0;
+      const isNewer = this.compareVersions(latestUpdate.version_name, currentVersion) > 0;
 
       if (!isNewer) {
         logger.info("No update needed - already on latest version", {
@@ -292,8 +268,7 @@ class UpdateService implements IUpdateService {
 
       // Check if user's native version meets the minimum requirement
       // Note: mapping min_update_version (string) to minNativeRequired
-      const minNativeRequired =
-        parseInt(latestUpdate.min_update_version || "0") || 0;
+      const minNativeRequired = parseInt(latestUpdate.min_update_version || "0") || 0;
 
       if (minNativeRequired > 0 && userNativeVersion < minNativeRequired) {
         logger.info("OTA update requires newer native version", {
@@ -364,9 +339,7 @@ class UpdateService implements IUpdateService {
 
       return {
         version_name: latestUpdate.version_name,
-        url: await this.generateDownloadUrl(
-          latestUpdate.external_url || latestUpdate.r2_path
-        ),
+        url: await this.generateDownloadUrl(latestUpdate.external_url || latestUpdate.r2_path),
         checksum: latestUpdate.checksum,
         sessionKey: latestUpdate.session_key || undefined,
         config: appConfig,
@@ -409,7 +382,7 @@ class UpdateService implements IUpdateService {
           created_at,
           active,
           required
-        `
+        `,
         )
         .eq("app_id", appUuid)
         .eq("platform", query.platform)
@@ -539,7 +512,7 @@ class UpdateService implements IUpdateService {
             platform: assignment.platform,
             updated_at: new Date().toISOString(),
           },
-          { id: existing.id }
+          { id: existing.id },
         );
       } else {
         await supabaseService.insert("device_channels", [
@@ -576,7 +549,7 @@ class UpdateService implements IUpdateService {
           channels!inner (
             name
           )
-        `
+        `,
         )
         .eq("device_id", query.deviceId)
         .eq("channels.app_id", appUuid)
@@ -591,10 +564,7 @@ class UpdateService implements IUpdateService {
     }
   }
 
-  async getAvailableChannels(query: {
-    appId: string;
-    platform: string;
-  }): Promise<{
+  async getAvailableChannels(query: { appId: string; platform: string }): Promise<{
     channels: {
       id: string;
       name: string;

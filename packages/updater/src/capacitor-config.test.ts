@@ -39,12 +39,8 @@ describe("capuchoUpdaterConfig", () => {
     // The plugin accepts an empty updateUrl and then silently never checks,
     // which is the worst possible outcome. The old config produced exactly
     // that whenever VITE_UPDATE_API_URL was unset.
-    expect(() => capuchoUpdaterConfig({ ...base, apiUrl: "" })).toThrow(
-      /apiUrl is empty/,
-    );
-    expect(() => capuchoUpdaterConfig({ ...base, apiUrl: "///" })).toThrow(
-      /apiUrl is empty/,
-    );
+    expect(() => capuchoUpdaterConfig({ ...base, apiUrl: "" })).toThrow(/apiUrl is empty/);
+    expect(() => capuchoUpdaterConfig({ ...base, apiUrl: "///" })).toThrow(/apiUrl is empty/);
   });
 
   it("never lets the plugin apply a bundle under the user", () => {
@@ -55,9 +51,7 @@ describe("capuchoUpdaterConfig", () => {
   it("keeps allowModifyUrl off unless asked", () => {
     // It lets anything running in the WebView redirect update downloads.
     expect(capuchoUpdaterConfig(base).allowModifyUrl).toBe(false);
-    expect(
-      capuchoUpdaterConfig({ ...base, allowModifyUrl: true }).allowModifyUrl,
-    ).toBe(true);
+    expect(capuchoUpdaterConfig({ ...base, allowModifyUrl: true }).allowModifyUrl).toBe(true);
   });
 
   it("passes the channel and version straight through", () => {
@@ -68,8 +62,6 @@ describe("capuchoUpdaterConfig", () => {
 
   it("has timeouts that can be overridden", () => {
     expect(capuchoUpdaterConfig(base).appReadyTimeout).toBe(10_000);
-    expect(
-      capuchoUpdaterConfig({ ...base, appReadyTimeout: 20_000 }).appReadyTimeout,
-    ).toBe(20_000);
+    expect(capuchoUpdaterConfig({ ...base, appReadyTimeout: 20_000 }).appReadyTimeout).toBe(20_000);
   });
 });

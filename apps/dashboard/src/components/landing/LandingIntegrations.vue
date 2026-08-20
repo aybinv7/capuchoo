@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type PropType } from 'vue'
+import { type PropType } from "vue";
 import {
   Github,
   MessageSquare,
@@ -13,30 +13,30 @@ import {
   Globe,
   Cpu,
   Layers,
-} from 'lucide-vue-next'
-import AnimatedUnderline from './AnimatedUnderline.vue'
+} from "lucide-vue-next";
+import AnimatedUnderline from "./AnimatedUnderline.vue";
 
 const row1 = [
-  { name: 'GitHub', icon: Github },
-  { name: 'GitLab', icon: GitBranch },
-  { name: 'Slack', icon: Slack },
-  { name: 'Sentry', icon: AlertCircle },
-  { name: 'Datadog', icon: BarChart2 },
-  { name: 'Discord', icon: MessageSquare },
-]
+  { name: "GitHub", icon: Github },
+  { name: "GitLab", icon: GitBranch },
+  { name: "Slack", icon: Slack },
+  { name: "Sentry", icon: AlertCircle },
+  { name: "Datadog", icon: BarChart2 },
+  { name: "Discord", icon: MessageSquare },
+];
 
 const row2 = [
-  { name: 'Postgres', icon: Database },
-  { name: 'Cloudflare', icon: Cloud },
-  { name: 'Terminal', icon: Terminal },
-  { name: 'Vercel', icon: Globe },
-  { name: 'AWS', icon: Cpu },
-  { name: 'Docker', icon: Layers },
-]
+  { name: "Postgres", icon: Database },
+  { name: "Cloudflare", icon: Cloud },
+  { name: "Terminal", icon: Terminal },
+  { name: "Vercel", icon: Globe },
+  { name: "AWS", icon: Cpu },
+  { name: "Docker", icon: Layers },
+];
 
 // Duplicate arrays for seamless infinite scroll
-const marqueeRow1 = [...row1, ...row1]
-const marqueeRow2 = [...row2, ...row2]
+const marqueeRow1 = [...row1, ...row1];
+const marqueeRow2 = [...row2, ...row2];
 
 // --- Internal Reusable Component ---
 const IntegrationPill = defineComponent({
@@ -47,26 +47,26 @@ const IntegrationPill = defineComponent({
   setup(props) {
     return () =>
       h(
-        'div',
+        "div",
         {
           class:
-            'flex items-center gap-3 md:px-6 md:py-3 px-4 py-2 rounded-2xl bg-stone-900 border border-stone-800 text-stone-50 hover:shadow-xl hover:scale-105 hover:bg-stone-800 transition-all duration-300 cursor-pointer relative overflow-hidden group/card',
+            "flex items-center gap-3 md:px-6 md:py-3 px-4 py-2 rounded-2xl bg-stone-900 border border-stone-800 text-stone-50 hover:shadow-xl hover:scale-105 hover:bg-stone-800 transition-all duration-300 cursor-pointer relative overflow-hidden group/card",
         },
         [
           // Hover Gradient
-          h('div', {
+          h("div", {
             class:
-              'absolute inset-0 bg-linear-to-br from-stone-800 to-stone-950 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500',
+              "absolute inset-0 bg-linear-to-br from-stone-800 to-stone-950 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500",
           }),
           // Content
-          h('div', { class: 'relative z-10 flex items-center gap-2 md:gap-3' }, [
-            h(props.icon, { class: 'md:w-5 md:h-5 w-4 h-4 text-white' }),
-            h('span', { class: 'md:text-sm text-xs font-medium' }, props.name),
+          h("div", { class: "relative z-10 flex items-center gap-2 md:gap-3" }, [
+            h(props.icon, { class: "md:w-5 md:h-5 w-4 h-4 text-white" }),
+            h("span", { class: "md:text-sm text-xs font-medium" }, props.name),
           ]),
         ],
-      )
+      );
   },
-})
+});
 </script>
 
 <template>

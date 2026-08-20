@@ -9,7 +9,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-3xl font-bold tracking-tight capitalize">
-              {{ channel?.name || 'Channel' }}
+              {{ channel?.name || "Channel" }}
             </h1>
             <Badge variant="outline">Channel</Badge>
           </div>
@@ -320,7 +320,7 @@
                           :variant="update.active ? 'default' : 'secondary'"
                           class="text-[10px]"
                         >
-                          {{ update.active ? 'LIVE' : 'INACTIVE' }}
+                          {{ update.active ? "LIVE" : "INACTIVE" }}
                         </Badge>
                       </div>
                     </TableCell>
@@ -375,7 +375,7 @@
             <Separator />
             <div class="space-y-1">
               <p class="text-xs text-muted-foreground">Latest Release</p>
-              <p class="font-medium">{{ latestVersion || 'No versions' }}</p>
+              <p class="font-medium">{{ latestVersion || "No versions" }}</p>
             </div>
           </CardContent>
         </Card>
@@ -410,85 +410,85 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
+import { ref, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import {
   useChannelQuery,
   useUpdateChannelMutation,
   useDeleteChannelMutation,
-} from '@/modules/channels/composables/useChannelsQuery'
-import { useUpdatesBundlesQuery } from '@/modules/updates-bundles/composables/useUpdatesBundlesQuery'
-import { useDevicesQuery } from '@/modules/devices/composables/useDevicesQuery'
+} from "@/modules/channels/composables/useChannelsQuery";
+import { useUpdatesBundlesQuery } from "@/modules/updates-bundles/composables/useUpdatesBundlesQuery";
+import { useDevicesQuery } from "@/modules/devices/composables/useDevicesQuery";
 
-const route = useRoute()
-const router = useRouter()
-const channelId = computed(() => (route.params as any).id as string)
+const route = useRoute();
+const router = useRouter();
+const channelId = computed(() => (route.params as any).id as string);
 
 // Data queries
-const { data: channel, isLoading, error } = useChannelQuery(channelId)
-const { data: updates } = useUpdatesBundlesQuery()
-const { data: devices } = useDevicesQuery()
+const { data: channel, isLoading, error } = useChannelQuery(channelId);
+const { data: updates } = useUpdatesBundlesQuery();
+const { data: devices } = useDevicesQuery();
 
 // Mutations
-const { mutateAsync: updateChannel, isPending: isUpdating } = useUpdateChannelMutation()
-const { mutateAsync: deleteChannel, isPending: isDeleting } = useDeleteChannelMutation()
+const { mutateAsync: updateChannel, isPending: isUpdating } = useUpdateChannelMutation();
+const { mutateAsync: deleteChannel, isPending: isDeleting } = useDeleteChannelMutation();
 
 // Local state
-const isDeleteDialogOpen = ref(false)
+const isDeleteDialogOpen = ref(false);
 const editForm = ref({
-  name: '',
-  environment: 'staging' as 'prod' | 'staging' | 'dev',
+  name: "",
+  environment: "staging" as "prod" | "staging" | "dev",
   ios_enabled: true,
   android_enabled: true,
   is_public: false,
   allow_device_self_set: false,
   allow_emulator: true,
   allow_dev: true,
-  disable_auto_update: 'none' as 'none' | 'major' | 'minor' | 'patch',
+  disable_auto_update: "none" as "none" | "major" | "minor" | "patch",
   disable_auto_update_under_native: false,
-  current_version_id: 'none',
-  current_native_version_id: 'none',
-})
+  current_version_id: "none",
+  current_native_version_id: "none",
+});
 
 // Analytics logic
 const channelBundles = computed(() => {
   // Show all available OTA bundles for this app, they are not channel-specific until assigned
-  return updates.value?.filter((u: any) => u.type === 'bundle') || []
-})
+  return updates.value?.filter((u: any) => u.type === "bundle") || [];
+});
 
 const channelNativeUpdates = computed(() => {
   // Show all available Native updates for this app
-  return updates.value?.filter((u: any) => u.type === 'native') || []
-})
+  return updates.value?.filter((u: any) => u.type === "native") || [];
+});
 
 const channelDevices = computed(() => {
-  return devices.value?.filter((d) => d.channel === channel.value?.name) || []
-})
+  return devices.value?.filter((d) => d.channel === channel.value?.name) || [];
+});
 
 const recentUpdates = computed(() => {
   return [...channelBundles.value, ...channelNativeUpdates.value]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10)
-})
+    .slice(0, 10);
+});
 
 const latestVersion = computed(() => {
-  if (recentUpdates.value.length === 0) return null
-  return recentUpdates.value[0]?.version_name
-})
+  if (recentUpdates.value.length === 0) return null;
+  return recentUpdates.value[0]?.version_name;
+});
 
 const configSnippet = computed(() => {
   return `// capacitor.config.ts
 {
   plugins: {
     CapacitorUpdater: {
-      appId: "${channel.value?.app_id || 'YOUR_APP_ID'}",
-      channel: "${channel.value?.name || 'prod'}",
+      appId: "${channel.value?.app_id || "YOUR_APP_ID"}",
+      channel: "${channel.value?.name || "prod"}",
       autoUpdate: true
     }
   }
-}`
-})
+}`;
+});
 
 // Initialize form when data is loaded
 watch(
@@ -497,73 +497,73 @@ watch(
     if (newChannel) {
       editForm.value = {
         name: newChannel.name,
-        environment: newChannel.environment || 'staging',
+        environment: newChannel.environment || "staging",
         ios_enabled: newChannel.ios_enabled ?? true,
         android_enabled: newChannel.android_enabled ?? true,
         is_public: newChannel.is_public ?? false,
         allow_device_self_set: newChannel.allow_device_self_set ?? false,
         allow_emulator: newChannel.allow_emulator ?? true,
         allow_dev: newChannel.allow_dev ?? true,
-        disable_auto_update: newChannel.disable_auto_update || 'none',
+        disable_auto_update: newChannel.disable_auto_update || "none",
         disable_auto_update_under_native: newChannel.disable_auto_update_under_native ?? false,
-        current_version_id: newChannel.current_version_id || 'none',
-        current_native_version_id: newChannel.current_native_version_id || 'none',
-      }
+        current_version_id: newChannel.current_version_id || "none",
+        current_native_version_id: newChannel.current_native_version_id || "none",
+      };
     }
   },
   { immediate: true },
-)
+);
 
 const handleUpdate = async () => {
   try {
-    const payload = { ...editForm.value }
-    if (payload.current_version_id === 'none') {
-      payload.current_version_id = null as any
+    const payload = { ...editForm.value };
+    if (payload.current_version_id === "none") {
+      payload.current_version_id = null as any;
     }
-    if (payload.current_native_version_id === 'none') {
-      payload.current_native_version_id = null as any
+    if (payload.current_native_version_id === "none") {
+      payload.current_native_version_id = null as any;
     }
 
     await updateChannel({
       id: channelId.value,
       data: payload,
-    })
-    toast.success('Channel updated successfully')
+    });
+    toast.success("Channel updated successfully");
   } catch (error: any) {
-    toast.error(error.message || 'Failed to update channel')
+    toast.error(error.message || "Failed to update channel");
   }
-}
+};
 
 const confirmDelete = async () => {
   try {
-    await deleteChannel(channelId.value)
-    toast.success('Channel deleted successfully')
-    isDeleteDialogOpen.value = false
-    router.push('/channels')
+    await deleteChannel(channelId.value);
+    toast.success("Channel deleted successfully");
+    isDeleteDialogOpen.value = false;
+    router.push("/channels");
   } catch (error: any) {
-    toast.error(error.message || 'Failed to delete channel')
+    toast.error(error.message || "Failed to delete channel");
   }
-}
+};
 
 const copyConfig = () => {
-  navigator.clipboard.writeText(configSnippet.value)
-  toast.success('Config copied to clipboard')
-}
+  navigator.clipboard.writeText(configSnippet.value);
+  toast.success("Config copied to clipboard");
+};
 
 const formatDate = (dateString?: string) => {
-  if (!dateString) return 'Never'
+  if (!dateString) return "Never";
   return new Date(dateString).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-}
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
 
 definePage({
   meta: {
-    title: 'Channel Details - CapGO',
-    category: 'channels',
+    title: "Channel Details - CapGO",
+    category: "channels",
   },
   props: true,
-})
+});
 </script>

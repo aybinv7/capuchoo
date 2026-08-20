@@ -5,7 +5,9 @@
 
 \## COMPREHENSIVE BUILD SPECIFICATION v1.0
 
-You are tasked with building Jawbli, a Darija-speaking AI chatbot platform that helps Algerian e-commerce businesses automate customer service and order management on WhatsApp. This is a production-grade MVP designed for immediate deployment and future scaling.
+You are tasked with building Jawbli, a Darija-speaking AI chatbot platform that helps Algerian
+e-commerce businesses automate customer service and order management on WhatsApp. This is a
+production-grade MVP designed for immediate deployment and future scaling.
 
 ---
 
@@ -1919,23 +1921,23 @@ export class WhatsAppWebProvider {
 \#### \*\*6. src/api/routes/webhooks.routes.ts (WhatsApp Webhook)\*\*
 
 ```typescript
-import { Router } from 'express'
+import { Router } from "express";
 
-import { WebhooksController } from '../controllers/webhooks.controller'
+import { WebhooksController } from "../controllers/webhooks.controller";
 
-import { validateWebhookSignature } from '../middleware/webhook.middleware'
+import { validateWebhookSignature } from "../middleware/webhook.middleware";
 
-const router = Router()
+const router = Router();
 
-const controller = new WebhooksController()
+const controller = new WebhooksController();
 
 // Meta Business API webhook (for official WhatsApp Business API)
 
-router.get('/whatsapp', controller.verifyWebhook)
+router.get("/whatsapp", controller.verifyWebhook);
 
-router.post('/whatsapp', validateWebhookSignature, controller.handleWhatsAppWebhook)
+router.post("/whatsapp", validateWebhookSignature, controller.handleWhatsAppWebhook);
 
-export default router
+export default router;
 ```
 
 ---
@@ -2159,25 +2161,25 @@ frontend/
 \#### \*\*1. src/main.ts\*\*
 
 ```typescript
-import { createApp } from 'vue'
+import { createApp } from "vue";
 
-import { createPinia } from 'pinia'
+import { createPinia } from "pinia";
 
-import App from './App.vue'
+import App from "./App.vue";
 
-import router from './router'
+import router from "./router";
 
-import './assets/styles/main.css'
+import "./assets/styles/main.css";
 
-const app = createApp(App)
+const app = createApp(App);
 
-const pinia = createPinia()
+const pinia = createPinia();
 
-app.use(pinia)
+app.use(pinia);
 
-app.use(router)
+app.use(router);
 
-app.mount('#app')
+app.mount("#app");
 ```
 
 \#### \*\*2. src/router/index.ts\*\*
@@ -4251,7 +4253,8 @@ const DARIJA\_INTENTS = {
 
 \### \*\*Common Products in Algeria:\*\*
 
-Fashion, electronics, home decor, cosmetics, sports equipment, baby products, traditional clothing (qandura, karakou), etc.
+Fashion, electronics, home decor, cosmetics, sports equipment, baby products, traditional clothing
+(qandura, karakou), etc.
 
 \### \*\*Payment Methods:\*\*
 
@@ -4267,7 +4270,9 @@ Fashion, electronics, home decor, cosmetics, sports equipment, baby products, tr
 
 \## 🏁 END OF SPECIFICATION
 
-This specification is comprehensive and production-ready. Follow it precisely, and you'll build a scalable, maintainable, and market-ready product. Jawbli will dominate the Algerian e-commerce chatbot market! 🇩🇿🚀
+This specification is comprehensive and production-ready. Follow it precisely, and you'll build a
+scalable, maintainable, and market-ready product. Jawbli will dominate the Algerian e-commerce
+chatbot market! 🇩🇿🚀
 
 \*\*RAHOU KHIR! YALعه NKHDMOU!\*\* (It's perfect! Let's work!)
 

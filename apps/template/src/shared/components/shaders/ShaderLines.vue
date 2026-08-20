@@ -4,10 +4,7 @@ import * as THREE from "three";
 
 const containerRef = ref<HTMLDivElement | null>(null);
 
-let scene: THREE.Scene,
-  camera: THREE.Camera,
-  renderer: THREE.WebGLRenderer,
-  uniforms: any;
+let scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer, uniforms: any;
 let animationId: number | null = null;
 
 const initThreeJS = () => {

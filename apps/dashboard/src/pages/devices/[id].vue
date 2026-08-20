@@ -36,7 +36,7 @@
           <Radio class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold capitalize">{{ device?.channel || 'Production' }}</div>
+          <div class="text-2xl font-bold capitalize">{{ device?.channel || "Production" }}</div>
         </CardContent>
       </Card>
       <Card>
@@ -45,7 +45,7 @@
           <GitCommit class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ device?.current_bundle_id || 'N/A' }}</div>
+          <div class="text-2xl font-bold">{{ device?.current_bundle_id || "N/A" }}</div>
           <p class="text-xs text-muted-foreground">Bundle ID</p>
         </CardContent>
       </Card>
@@ -55,7 +55,7 @@
           <Smartphone class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ device?.current_native_id || 'N/A' }}</div>
+          <div class="text-2xl font-bold">{{ device?.current_native_id || "N/A" }}</div>
         </CardContent>
       </Card>
       <Card>
@@ -155,37 +155,37 @@
 
 <script setup lang="ts">
 const { id: deviceId } = defineProps<{
-  id: string
-}>()
+  id: string;
+}>();
 
-const { data: devices } = useDevicesQuery()
+const { data: devices } = useDevicesQuery();
 
-const device = computed(() => devices.value?.find((d) => String(d.id) === deviceId))
+const device = computed(() => devices.value?.find((d) => String(d.id) === deviceId));
 
 const mockHistory = [
-  { version: '1.2.0', type: 'Bundled', date: '2 hours ago' },
-  { version: '1.1.0', type: 'Native', date: 'Yesterday' },
-]
+  { version: "1.2.0", type: "Bundled", date: "2 hours ago" },
+  { version: "1.1.0", type: "Native", date: "Yesterday" },
+];
 
 const formatDate = (dateString?: string, time = false) => {
-  if (!dateString) return 'Unknown date'
+  if (!dateString) return "Unknown date";
   const opts: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  };
   if (time) {
-    opts.hour = '2-digit'
-    opts.minute = '2-digit'
+    opts.hour = "2-digit";
+    opts.minute = "2-digit";
   }
-  return new Date(dateString).toLocaleDateString(undefined, opts)
-}
+  return new Date(dateString).toLocaleDateString(undefined, opts);
+};
 
 definePage({
   meta: {
-    title: 'Device Details - CapGO',
-    category: 'devices',
+    title: "Device Details - CapGO",
+    category: "devices",
   },
   props: true,
-})
+});
 </script>

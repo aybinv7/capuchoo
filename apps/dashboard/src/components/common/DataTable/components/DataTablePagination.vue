@@ -74,20 +74,20 @@
 </template>
 
 <script setup lang="ts" generic="TData">
-import { type Table } from '@tanstack/vue-table'
-import { Button } from '@/components/ui/button'
+import { type Table } from "@tanstack/vue-table";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
-import type { DataTableConfig } from '../types'
+} from "@/components/ui/select";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-vue-next";
+import type { DataTableConfig } from "../types";
 
 defineProps<{
-  table: Table<TData>
-  config?: DataTableConfig
-}>()
+  table: Table<TData>;
+  config?: DataTableConfig;
+}>();
 </script>

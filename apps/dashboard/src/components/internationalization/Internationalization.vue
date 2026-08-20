@@ -21,6 +21,6 @@
 </template>
 
 <script setup lang="ts">
-const languageStore = useLanguageStore()
-const { language } = storeToRefs(languageStore)
+const languageStore = useLanguageStore();
+const { language } = storeToRefs(languageStore);
 </script>

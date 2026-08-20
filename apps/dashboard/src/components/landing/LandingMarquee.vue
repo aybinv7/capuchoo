@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 
 const props = defineProps<{
-  vertical?: boolean
-  reverse?: boolean
-  duration?: number
-  gap?: string
-}>()
+  vertical?: boolean;
+  reverse?: boolean;
+  duration?: number;
+  gap?: string;
+}>();
 
-const animationDuration = computed(() => `${props.duration || 40}s`)
+const animationDuration = computed(() => `${props.duration || 40}s`);
 </script>
 
 <template>

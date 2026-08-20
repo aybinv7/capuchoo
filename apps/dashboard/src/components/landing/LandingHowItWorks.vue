@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { Upload, Target, Rocket, Check } from 'lucide-vue-next'
+import { Upload, Target, Rocket, Check } from "lucide-vue-next";
 
 const steps = [
   {
-    number: '01',
+    number: "01",
     icon: Upload,
-    title: 'Upload Your Bundle',
+    title: "Upload Your Bundle",
     description:
-      'Build your app and upload the bundle to CapGO. We support Capacitor, Cordova, and more.',
-    details: ['Automatic versioning', 'Bundle diff optimization', 'Code signature verification'],
+      "Build your app and upload the bundle to CapGO. We support Capacitor, Cordova, and more.",
+    details: ["Automatic versioning", "Bundle diff optimization", "Code signature verification"],
   },
   {
-    number: '02',
+    number: "02",
     icon: Target,
-    title: 'Target Your Devices',
+    title: "Target Your Devices",
     description:
-      'Choose which devices receive the update. Use channels for beta testing or gradual rollouts.',
-    details: ['Device targeting', 'Percentage rollouts', 'A/B testing'],
+      "Choose which devices receive the update. Use channels for beta testing or gradual rollouts.",
+    details: ["Device targeting", "Percentage rollouts", "A/B testing"],
   },
   {
-    number: '03',
+    number: "03",
     icon: Rocket,
-    title: 'Push Live Updates',
+    title: "Push Live Updates",
     description:
-      'Hit deploy and your users receive the update instantly. No app store, no waiting.',
-    details: ['Instant delivery', 'Background updates', 'Force update option'],
+      "Hit deploy and your users receive the update instantly. No app store, no waiting.",
+    details: ["Instant delivery", "Background updates", "Force update option"],
   },
-]
+];
 </script>
 
 <template>

@@ -19,7 +19,7 @@
         <div class="flex flex-col overflow-hidden">
           <span class="text-sm font-semibold truncate">{{ data.name }}</span>
           <span class="text-xs text-muted-foreground truncate font-mono">{{
-            data.app_id || 'no-id'
+            data.app_id || "no-id"
           }}</span>
         </div>
       </div>
@@ -43,7 +43,7 @@
     >
       <div class="flex items-center gap-1.5">
         <ILucideSmartphone class="size-3" />
-        <span class="capitalize">{{ data.platform || 'native' }}</span>
+        <span class="capitalize">{{ data.platform || "native" }}</span>
       </div>
       <div class="flex items-center gap-1.5 overflow-hidden">
         <ILucideShieldCheck class="size-3 text-primary" />
@@ -54,15 +54,15 @@
 </template>
 
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import { Handle, Position } from "@vue-flow/core";
 
 defineProps<{
   data: {
-    name: string
-    app_id: string
-    icon_url?: string
-    platform?: string
-  }
-  selected?: boolean
-}>()
+    name: string;
+    app_id: string;
+    icon_url?: string;
+    platform?: string;
+  };
+  selected?: boolean;
+}>();
 </script>

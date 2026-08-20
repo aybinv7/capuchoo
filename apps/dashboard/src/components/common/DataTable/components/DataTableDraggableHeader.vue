@@ -89,7 +89,7 @@
                   v-on="listeners"
                   @animationend="
                     () => {
-                      if (dragEndedColumn === header.column.id) dragEndedColumn = null
+                      if (dragEndedColumn === header.column.id) dragEndedColumn = null;
                     }
                   "
                 >
@@ -132,71 +132,71 @@
 </template>
 
 <script setup lang="ts" generic="TData, TValue">
-import type { Table } from '@tanstack/vue-table'
-import { FlexRender } from '@tanstack/vue-table'
-import { GripVertical } from 'lucide-vue-next'
-import DndKitDraggable from '@/components/dnd-kit/DndKitDraggable.vue'
-import DndKitDroppable from '@/components/dnd-kit/DndKitDroppable.vue'
-import { ref } from 'vue'
+import type { Table } from "@tanstack/vue-table";
+import { FlexRender } from "@tanstack/vue-table";
+import { GripVertical } from "lucide-vue-next";
+import DndKitDraggable from "@/components/dnd-kit/DndKitDraggable.vue";
+import DndKitDroppable from "@/components/dnd-kit/DndKitDroppable.vue";
+import { ref } from "vue";
 
 interface DataTableDraggableHeaderProps {
-  table: Table<TData>
-  cellPadding: string
-  tableState: any
+  table: Table<TData>;
+  cellPadding: string;
+  tableState: any;
 }
 
-const props = defineProps<DataTableDraggableHeaderProps>()
+const props = defineProps<DataTableDraggableHeaderProps>();
 
 const getDropPosition = (event: DragEvent, headers: any[]) => {
-  if (!event.target) return -1
+  if (!event.target) return -1;
 
-  const target = event.target as HTMLElement
-  const targetHeader = target.closest('[data-header-id]')
+  const target = event.target as HTMLElement;
+  const targetHeader = target.closest("[data-header-id]");
 
-  if (!targetHeader) return -1
+  if (!targetHeader) return -1;
 
-  const targetId = (targetHeader as HTMLElement).dataset.headerId
-  const targetIndex = headers.findIndex((h: any) => h.id === targetId)
+  const targetId = (targetHeader as HTMLElement).dataset.headerId;
+  const targetIndex = headers.findIndex((h: any) => h.id === targetId);
 
-  const rect = targetHeader.getBoundingClientRect()
-  const isLeftHalf = event.clientX < rect.left + rect.width / 2
+  const rect = targetHeader.getBoundingClientRect();
+  const isLeftHalf = event.clientX < rect.left + rect.width / 2;
 
-  return isLeftHalf ? targetIndex : targetIndex + 1
-}
+  return isLeftHalf ? targetIndex : targetIndex + 1;
+};
 
-const dragEndedColumn = ref(null)
+const dragEndedColumn = ref(null);
 
 const handleHeaderDrop = (data: any, event: DragEvent) => {
-  if (!data || data.type !== 'header') return
+  if (!data || data.type !== "header") return;
 
-  const draggedColumnId = data.columnId
+  const draggedColumnId = data.columnId;
 
-  const allHeaders = []
+  const allHeaders = [];
   for (const headerGroup of props.table.getHeaderGroups()) {
     for (const header of headerGroup.headers) {
-      allHeaders.push(header)
+      allHeaders.push(header);
     }
   }
 
-  const dropPosition = getDropPosition(event, allHeaders)
+  const dropPosition = getDropPosition(event, allHeaders);
 
-  if (!draggedColumnId || dropPosition === -1 || !props.tableState) return
+  if (!draggedColumnId || dropPosition === -1 || !props.tableState) return;
 
-  const currentOrder = [...props.tableState.columnOrder.value]
-  const draggedIndex = currentOrder.indexOf(draggedColumnId)
+  const currentOrder = [...props.tableState.columnOrder.value];
+  const draggedIndex = currentOrder.indexOf(draggedColumnId);
 
   if (draggedIndex !== -1 && draggedIndex !== dropPosition) {
-    const [movedColumn] = currentOrder.splice(draggedIndex, 1)
+    const [movedColumn] = currentOrder.splice(draggedIndex, 1);
 
-    const adjustedDropPosition = dropPosition > draggedIndex ? dropPosition - 1 : dropPosition
+    const adjustedDropPosition = dropPosition > draggedIndex ? dropPosition - 1 : dropPosition;
 
-    currentOrder.splice(adjustedDropPosition, 0, movedColumn)
+    currentOrder.splice(adjustedDropPosition, 0, movedColumn);
 
-    props.tableState.onColumnOrderChange(currentOrder)
+    props.tableState.onColumnOrderChange(currentOrder);
 
-    dragEndedColumn.value = draggedColumnId
+    dragEndedColumn.value = draggedColumnId;
   }
-}
+};
 </script>
 
 <style scoped>

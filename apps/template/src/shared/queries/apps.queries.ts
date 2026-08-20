@@ -9,9 +9,7 @@ export function useOrganizationsQuery() {
   return useApiQuery<Organization[]>([ORGS_KEY], "/organizations");
 }
 
-export function useAppsQuery(
-  organizationId: MaybeRefOrGetter<string | undefined>,
-) {
+export function useAppsQuery(organizationId: MaybeRefOrGetter<string | undefined>) {
   return useApiQuery<App[]>(
     computed(() => [APPS_KEY, toValue(organizationId)]),
     computed(() => `/apps?organization_id=${toValue(organizationId)}`),

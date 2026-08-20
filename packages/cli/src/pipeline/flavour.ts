@@ -139,10 +139,7 @@ export interface VersionState {
   codes: VersionCodes;
 }
 
-export function readVersionCodes(
-  appDir: string,
-  project: ResolvedProjectConfig,
-): VersionCodes {
+export function readVersionCodes(appDir: string, project: ResolvedProjectConfig): VersionCodes {
   const file = path.resolve(appDir, project.versionCodeFile);
   if (!fs.existsSync(file)) return { ...INITIAL_VERSION_CODES };
 

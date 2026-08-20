@@ -1,4 +1,3 @@
-
 /**
  * Runtime configuration for the updater.
  *
@@ -25,9 +24,7 @@ export interface UpdaterConfig {
 function env(key: string): string | undefined {
   // `import.meta.env` is replaced at build time by Vite. Guard the access so
   // the module can also be imported from Node (tests, SSR) without throwing.
-  const source = (
-    import.meta as ImportMeta & { env?: Record<string, string | undefined> }
-  ).env;
+  const source = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
   return source?.[key];
 }
 
@@ -59,9 +56,7 @@ export function getUpdaterConfig(): UpdaterConfig {
     appName: overrides.appName ?? env("VITE_APP_NAME") ?? "the app",
     channel: overrides.channel ?? env("VITE_UPDATE_CHANNEL") ?? "prod",
     environment:
-      overrides.environment ??
-      env("VITE_ENVIRONMENT") ??
-      (env("PROD") === "true" ? "prod" : "dev"),
+      overrides.environment ?? env("VITE_ENVIRONMENT") ?? (env("PROD") === "true" ? "prod" : "dev"),
     timeoutMs: overrides.timeoutMs ?? 30_000,
   };
 }

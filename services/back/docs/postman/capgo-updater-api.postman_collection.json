@@ -475,12 +475,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/dashboard/native-updates/{{nativeUpdateId}}",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "dashboard",
-                "native-updates",
-                "{{nativeUpdateId}}"
-              ]
+              "path": ["api", "dashboard", "native-updates", "{{nativeUpdateId}}"]
             },
             "description": "Update a native update record"
           },
@@ -494,12 +489,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/dashboard/native-updates/{{nativeUpdateId}}",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "dashboard",
-                "native-updates",
-                "{{nativeUpdateId}}"
-              ]
+              "path": ["api", "dashboard", "native-updates", "{{nativeUpdateId}}"]
             },
             "description": "Delete a native update"
           },
@@ -788,13 +778,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/dashboard/devices/{{deviceDbId}}/channel",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "dashboard",
-                "devices",
-                "{{deviceDbId}}",
-                "channel"
-              ]
+              "path": ["api", "dashboard", "devices", "{{deviceDbId}}", "channel"]
             },
             "description": "Update device channel assignment"
           },

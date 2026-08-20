@@ -2,11 +2,18 @@
   "name": "capucho-cli",
   "version": "0.2.0",
   "description": "Builds and publishes OTA and native releases for Capacitor applications through Capucho.",
+  "keywords": [
+    "capacitor",
+    "capucho",
+    "deploy",
+    "oclif",
+    "ota"
+  ],
+  "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/cli",
+  "bugs": "https://github.com/aybinv7/capucho/issues",
   "license": "MIT",
   "author": "aybinv7",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "repository": "aybinv7/capucho",
   "bin": {
     "capucho": "./bin/run.js",
     "capucho-cli": "./bin/run.js"
@@ -16,19 +23,12 @@
     "./dist",
     "./oclif.manifest.json"
   ],
-  "engines": {
-    "node": ">=22.12.0"
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
   },
-  "repository": "aybinv7/capucho",
-  "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/cli",
-  "bugs": "https://github.com/aybinv7/capucho/issues",
-  "keywords": [
-    "capacitor",
-    "ota",
-    "deploy",
-    "oclif",
-    "capucho"
-  ],
   "scripts": {
     "build": "tsc -b --force",
     "test": "vp test --run",
@@ -51,8 +51,8 @@
   },
   "oclif": {
     "bin": "capucho",
-    "dirname": "capucho",
     "commands": "./dist/commands",
+    "dirname": "capucho",
     "plugins": [
       "@oclif/plugin-help"
     ],
@@ -61,21 +61,21 @@
       "auth": {
         "description": "Sign in to a Capucho backend"
       },
-      "deploy": {
-        "description": "Build and publish a release"
-      },
       "channel": {
         "description": "Inspect an app's channels"
       },
       "config": {
         "description": "Inspect resolved configuration and detected tools"
       },
+      "deploy": {
+        "description": "Build and publish a release"
+      },
       "version": {
         "description": "Manage the app version and native build numbers"
       }
     }
   },
-  "publishConfig": {
-    "access": "public"
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

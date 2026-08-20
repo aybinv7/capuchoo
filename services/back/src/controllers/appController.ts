@@ -90,9 +90,7 @@ class AppController {
       // Security Check: If API key is scoped to a specific app, enforce it
       const keyAppId = (req as any).appId;
       if (keyAppId && keyAppId !== id) {
-        res
-          .status(403)
-          .json({ error: "Forbidden: API key restricted to another app" });
+        res.status(403).json({ error: "Forbidden: API key restricted to another app" });
         return;
       }
 
@@ -166,14 +164,11 @@ class AppController {
       // Security Check: If API key is scoped to a specific app, enforce it
       const keyAppId = (req as any).appId;
       if (keyAppId && keyAppId !== id) {
-        res
-          .status(403)
-          .json({ error: "Forbidden: API key restricted to another app" });
+        res.status(403).json({ error: "Forbidden: API key restricted to another app" });
         return;
       }
 
-      const { name, app_id, organization_id, platform, icon_url, config } =
-        req.body;
+      const { name, app_id, organization_id, platform, icon_url, config } = req.body;
 
       const dataToUpdate: any = {
         updated_at: new Date().toISOString(),
@@ -181,8 +176,7 @@ class AppController {
 
       if (name !== undefined) dataToUpdate.name = name;
       if (app_id !== undefined) dataToUpdate.app_id = app_id;
-      if (organization_id !== undefined)
-        dataToUpdate.organization_id = organization_id;
+      if (organization_id !== undefined) dataToUpdate.organization_id = organization_id;
       if (platform !== undefined) dataToUpdate.platform = platform;
       if (icon_url !== undefined) dataToUpdate.icon_url = icon_url;
       if (config !== undefined) dataToUpdate.config = config;
@@ -212,9 +206,7 @@ class AppController {
       // Security Check: If API key is scoped to a specific app, enforce it
       const keyAppId = (req as any).appId;
       if (keyAppId && keyAppId !== id) {
-        res
-          .status(403)
-          .json({ error: "Forbidden: API key restricted to another app" });
+        res.status(403).json({ error: "Forbidden: API key restricted to another app" });
         return;
       }
 
@@ -243,9 +235,7 @@ class AppController {
       // Security Check: If API key is scoped to a specific app, enforce it
       const keyAppId = (req as any).appId;
       if (keyAppId && keyAppId !== appId) {
-        res
-          .status(403)
-          .json({ error: "Forbidden: API key restricted to another app" });
+        res.status(403).json({ error: "Forbidden: API key restricted to another app" });
         return;
       }
 
@@ -267,7 +257,7 @@ class AppController {
             role,
             updated_at: new Date().toISOString(),
           },
-          { onConflict: "app_id,user_id" }
+          { onConflict: "app_id,user_id" },
         )
         .select()
         .single();
@@ -291,9 +281,7 @@ class AppController {
       // Security Check: If API key is scoped to a specific app, enforce it
       const keyAppId = (req as any).appId;
       if (keyAppId && keyAppId !== appId) {
-        res
-          .status(403)
-          .json({ error: "Forbidden: API key restricted to another app" });
+        res.status(403).json({ error: "Forbidden: API key restricted to another app" });
         return;
       }
 
@@ -322,9 +310,7 @@ class AppController {
       // Security Check: If API key is scoped to a specific app, enforce it
       const keyAppId = (req as any).appId;
       if (keyAppId && keyAppId !== id) {
-        res
-          .status(403)
-          .json({ error: "Forbidden: API key restricted to another app" });
+        res.status(403).json({ error: "Forbidden: API key restricted to another app" });
         return;
       }
 

@@ -51,14 +51,14 @@
 </template>
 
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import { Handle, Position } from "@vue-flow/core";
 
 defineProps<{
   data: {
-    repo?: string
-    branch?: string
-    last_commit?: string
-  }
-  selected?: boolean
-}>()
+    repo?: string;
+    branch?: string;
+    last_commit?: string;
+  };
+  selected?: boolean;
+}>();
 </script>

@@ -16,7 +16,7 @@
           <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
         </span>
         <span class="text-sm font-medium">
-          {{ selectedCount }} {{ selectedCount === 1 ? 'item' : 'items' }} selected
+          {{ selectedCount }} {{ selectedCount === 1 ? "item" : "items" }} selected
         </span>
       </div>
 
@@ -43,24 +43,24 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
-import { X, Pencil, Trash2, Download } from 'lucide-vue-next'
-import type { Device } from '../../types/devices.types'
+import { Button } from "@/components/ui/button";
+import { X, Pencil, Trash2, Download } from "lucide-vue-next";
+import type { Device } from "../../types/devices.types";
 
 interface Props {
-  selectedItems: Device[]
+  selectedItems: Device[];
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
-const selectedCount = computed(() => props.selectedItems.length)
+const selectedCount = computed(() => props.selectedItems.length);
 
 defineEmits<{
-  (e: 'click:clear-selection'): void
-  (e: 'click:bulk-edit'): void
-  (e: 'click:bulk-delete'): void
-  (e: 'click:bulk-export'): void
-}>()
+  (e: "click:clear-selection"): void;
+  (e: "click:bulk-edit"): void;
+  (e: "click:bulk-delete"): void;
+  (e: "click:bulk-export"): void;
+}>();
 
-import { computed } from 'vue'
+import { computed } from "vue";
 </script>

@@ -88,11 +88,11 @@
                 <Avatar class="size-8 rounded-full border">
                   <AvatarImage :src="perm.users?.avatar_url ?? ''" />
                   <AvatarFallback>{{
-                    getInitials(perm.users?.full_name ?? perm.users?.email ?? '?')
+                    getInitials(perm.users?.full_name ?? perm.users?.email ?? "?")
                   }}</AvatarFallback>
                 </Avatar>
                 <div class="flex flex-col">
-                  <span class="font-medium text-sm">{{ perm.users?.full_name || 'Unknown' }}</span>
+                  <span class="font-medium text-sm">{{ perm.users?.full_name || "Unknown" }}</span>
                   <span class="text-xs text-muted-foreground">{{ perm.users?.email }}</span>
                 </div>
               </div>
@@ -123,90 +123,90 @@
 </template>
 
 <script setup lang="ts">
-import { appService } from '@/services/app.service'
-import { organizationService } from '@/services/organization.service'
-import { useAppStore } from '@/stores/app.store'
-import { toast } from 'vue-sonner'
+import { appService } from "@/services/app.service";
+import { organizationService } from "@/services/organization.service";
+import { useAppStore } from "@/stores/app.store";
+import { toast } from "vue-sonner";
 
-const appStore = useAppStore()
-const { activeApp } = storeToRefs(appStore)
+const appStore = useAppStore();
+const { activeApp } = storeToRefs(appStore);
 
-const appPermissions = ref<any[]>([])
-const orgMembers = ref<any[]>([])
+const appPermissions = ref<any[]>([]);
+const orgMembers = ref<any[]>([]);
 
 // Add Team Member state
-const isAddTeamMemberOpen = ref(false)
-const isAddingTeamMember = ref(false)
+const isAddTeamMemberOpen = ref(false);
+const isAddingTeamMember = ref(false);
 const newTeamMember = ref({
-  user_id: '',
-  role: 'viewer',
-})
+  user_id: "",
+  role: "viewer",
+});
 
 const fetchTeamData = async () => {
-  if (!activeApp.value) return
+  if (!activeApp.value) return;
   try {
-    const perms = await appService.getPermissions(activeApp.value.id)
-    appPermissions.value = perms
+    const perms = await appService.getPermissions(activeApp.value.id);
+    appPermissions.value = perms;
 
-    const members = await organizationService.getMembers(activeApp.value.organization_id)
-    orgMembers.value = members
+    const members = await organizationService.getMembers(activeApp.value.organization_id);
+    orgMembers.value = members;
   } catch (error: any) {
-    console.error('Failed to fetch team data:', error)
-    toast.error(error.message || 'Failed to fetch team data')
+    console.error("Failed to fetch team data:", error);
+    toast.error(error.message || "Failed to fetch team data");
   }
-}
+};
 
 const addTeamMember = async () => {
-  if (!newTeamMember.value.user_id || !activeApp.value) return
-  isAddingTeamMember.value = true
+  if (!newTeamMember.value.user_id || !activeApp.value) return;
+  isAddingTeamMember.value = true;
   try {
     await appService.setPermission(
       activeApp.value.id,
       newTeamMember.value.user_id,
       newTeamMember.value.role,
-    )
-    toast.success('Member added')
-    isAddTeamMemberOpen.value = false
-    newTeamMember.value = { user_id: '', role: 'viewer' }
-    await fetchTeamData()
+    );
+    toast.success("Member added");
+    isAddTeamMemberOpen.value = false;
+    newTeamMember.value = { user_id: "", role: "viewer" };
+    await fetchTeamData();
   } catch (error: any) {
-    toast.error(error?.message || 'Failed to add member')
+    toast.error(error?.message || "Failed to add member");
   } finally {
-    isAddingTeamMember.value = false
+    isAddingTeamMember.value = false;
   }
-}
+};
 
 const removeTeamMember = async (userId: string) => {
-  if (!activeApp.value) return
-  if (!confirm('Remove this member?')) return
+  if (!activeApp.value) return;
+  if (!confirm("Remove this member?")) return;
   try {
-    await appService.removePermission(activeApp.value.id, userId)
-    toast.success('Member removed')
-    await fetchTeamData()
+    await appService.removePermission(activeApp.value.id, userId);
+    toast.success("Member removed");
+    await fetchTeamData();
   } catch (error: any) {
-    toast.error(error?.message || 'Failed to remove member')
+    toast.error(error?.message || "Failed to remove member");
   }
-}
+};
 
 const getInitials = (name: string) => {
   return name
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
-    .substring(0, 2)
-}
+    .substring(0, 2);
+};
 
 watch(
   activeApp,
   (newApp) => {
     if (newApp) {
-      fetchTeamData()
+      fetchTeamData();
     } else {
-      appPermissions.value = []
-      orgMembers.value = []
+      appPermissions.value = [];
+      orgMembers.value = [];
     }
   },
   { immediate: true },
-)
+);
 </script>

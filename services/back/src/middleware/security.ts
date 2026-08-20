@@ -22,11 +22,7 @@ export const corsMiddleware = cors({
   origin: config.security.cors.origin,
   credentials: config.security.cors.credentials,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "ngrok-skip-browser-warning",
-  ],
+  allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
 });
 
 export const rateLimiter = rateLimit({
@@ -39,17 +35,13 @@ export const rateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-export const sanitizeRequest = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const sanitizeRequest = (req: Request, res: Response, next: NextFunction): void => {
   if (req.query) {
     Object.keys(req.query).forEach((key) => {
       if (typeof req.query[key] === "string") {
         req.query[key] = (req.query[key] as string).replace(
           /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-          ""
+          "",
         );
       }
     });
@@ -58,10 +50,7 @@ export const sanitizeRequest = (
   if (req.body && typeof req.body === "object") {
     const sanitizeObject = (obj: any): any => {
       if (typeof obj === "string") {
-        return obj.replace(
-          /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-          ""
-        );
+        return obj.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
       } else if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);
       } else if (obj && typeof obj === "object") {

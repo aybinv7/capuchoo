@@ -2,7 +2,7 @@
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
     <DialogContent :class="className">
       <DialogHeader>
-        <DialogTitle>{{ title || 'Bulk Edit' }}</DialogTitle>
+        <DialogTitle>{{ title || "Bulk Edit" }}</DialogTitle>
         <DialogDescription>
           {{ description || `Edit properties for ${selectedCount} selected items` }}
         </DialogDescription>
@@ -29,19 +29,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 defineProps<{
-  open: boolean
-  title?: string
-  description?: string
-  selectedCount?: number
-  className?: string
-}>()
+  open: boolean;
+  title?: string;
+  description?: string;
+  selectedCount?: number;
+  className?: string;
+}>();
 
 defineEmits<{
-  (e: 'update:open', value: boolean): void
-  (e: 'confirm'): void
-}>()
+  (e: "update:open", value: boolean): void;
+  (e: "confirm"): void;
+}>();
 </script>

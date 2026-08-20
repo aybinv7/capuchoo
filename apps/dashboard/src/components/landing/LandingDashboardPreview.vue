@@ -1,81 +1,81 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Lock, RefreshCw, CheckCircle2, Zap, Download, PartyPopper } from 'lucide-vue-next'
-import AnimatedUnderline from './AnimatedUnderline.vue'
+import { ref, computed } from "vue";
+import { Lock, RefreshCw, CheckCircle2, Zap, Download, PartyPopper } from "lucide-vue-next";
+import AnimatedUnderline from "./AnimatedUnderline.vue";
 
 // Animation States
-type AnimationStage = 'idle' | 'deploying' | 'transferring' | 'downloading' | 'updated'
+type AnimationStage = "idle" | "deploying" | "transferring" | "downloading" | "updated";
 
-const stage = ref<AnimationStage>('idle')
-const progress = ref(0)
-const downloadProgress = ref(0)
+const stage = ref<AnimationStage>("idle");
+const progress = ref(0);
+const downloadProgress = ref(0);
 
 const startRelease = () => {
-  if (stage.value !== 'idle' && stage.value !== 'updated') return
+  if (stage.value !== "idle" && stage.value !== "updated") return;
 
   // Reset
-  stage.value = 'deploying'
-  progress.value = 0
-  downloadProgress.value = 0
+  stage.value = "deploying";
+  progress.value = 0;
+  downloadProgress.value = 0;
 
   // 1. Dashboard Deployment Progress
   const deployInterval = setInterval(() => {
-    progress.value += 2
+    progress.value += 2;
     if (progress.value >= 100) {
-      clearInterval(deployInterval)
-      startTransfer()
+      clearInterval(deployInterval);
+      startTransfer();
     }
-  }, 20)
-}
+  }, 20);
+};
 
 const startTransfer = () => {
-  stage.value = 'transferring'
+  stage.value = "transferring";
   // 2. Asset Transfer (Wire Animation) happens via CSS transition duration
   setTimeout(() => {
-    startDownload()
-  }, 3000) // Match wire animation duration
-}
+    startDownload();
+  }, 3000); // Match wire animation duration
+};
 
 const startDownload = () => {
-  stage.value = 'downloading'
+  stage.value = "downloading";
   // 3. Phone Download Progress
   const downloadInterval = setInterval(() => {
-    downloadProgress.value += 1.5
+    downloadProgress.value += 1.5;
     if (downloadProgress.value >= 100) {
-      clearInterval(downloadInterval)
-      stage.value = 'updated'
+      clearInterval(downloadInterval);
+      stage.value = "updated";
     }
-  }, 30) // slightly slower for dramatic effect
-}
+  }, 30); // slightly slower for dramatic effect
+};
 
 const resetDemo = () => {
-  stage.value = 'idle'
-  progress.value = 0
-  downloadProgress.value = 0
-}
+  stage.value = "idle";
+  progress.value = 0;
+  downloadProgress.value = 0;
+};
 
 // Visual Helpers
-const isDeploying = computed(() => stage.value === 'deploying')
-const isTransferring = computed(() => stage.value === 'transferring')
-const isDownloading = computed(() => stage.value === 'downloading')
-const isUpdated = computed(() => stage.value === 'updated')
+const isDeploying = computed(() => stage.value === "deploying");
+const isTransferring = computed(() => stage.value === "transferring");
+const isDownloading = computed(() => stage.value === "downloading");
+const isUpdated = computed(() => stage.value === "updated");
 
 const buttonText = computed(() => {
   switch (stage.value) {
-    case 'idle':
-      return 'Release v2.0.0'
-    case 'deploying':
-      return 'Building Bundle...'
-    case 'transferring':
-      return 'Pushing to Edge...'
-    case 'downloading':
-      return 'Device Updating...'
-    case 'updated':
-      return 'Deployed Successfully'
+    case "idle":
+      return "Release v2.0.0";
+    case "deploying":
+      return "Building Bundle...";
+    case "transferring":
+      return "Pushing to Edge...";
+    case "downloading":
+      return "Device Updating...";
+    case "updated":
+      return "Deployed Successfully";
     default:
-      return 'Release v2.0.0'
+      return "Release v2.0.0";
   }
-})
+});
 </script>
 
 <template>
@@ -190,7 +190,7 @@ const buttonText = computed(() => {
                       :class="isUpdated ? 'bg-green-500' : 'bg-emerald-500 animate-pulse'"
                     />
                     <span class="text-sm text-stone-400"
-                      >Live: v{{ isUpdated ? '2.0.0' : '1.9.9' }}</span
+                      >Live: v{{ isUpdated ? "2.0.0" : "1.9.9" }}</span
                     >
                   </div>
                 </div>

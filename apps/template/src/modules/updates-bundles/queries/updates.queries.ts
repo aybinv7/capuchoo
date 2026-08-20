@@ -22,11 +22,7 @@ export function deleteBundle(id: string) {
   return apiClient.delete(`/dashboard/bundles/${id}`);
 }
 
-export function promoteBundle(
-  id: string,
-  target_app_id: string,
-  target_channel: string,
-) {
+export function promoteBundle(id: string, target_app_id: string, target_channel: string) {
   return apiClient.post(`/dashboard/bundles/${id}/promote`, {
     target_app_id,
     target_channel,
@@ -39,9 +35,7 @@ export function createBundle(data: any) {
 
 export const UPDATES_KEY = "updates-bundles";
 
-export function useUpdatesQuery(
-  appIdRef: MaybeRefOrGetter<string | undefined>,
-) {
+export function useUpdatesQuery(appIdRef: MaybeRefOrGetter<string | undefined>) {
   return useQuery<UpdateOrBundle[], Error>({
     queryKey: [UPDATES_KEY, computed(() => toValue(appIdRef))],
     queryFn: async () => {
@@ -54,9 +48,7 @@ export function useUpdatesQuery(
           apiClient.get(`/dashboard/bundles?app_id=${appId}`),
         ]);
 
-        const nativeUpdates: UpdateOrBundle[] = Array.isArray(
-          nativeResponse.data,
-        )
+        const nativeUpdates: UpdateOrBundle[] = Array.isArray(nativeResponse.data)
           ? nativeResponse.data.map((update: any) => ({
               ...update,
               id: update.id.toString(),
@@ -76,8 +68,7 @@ export function useUpdatesQuery(
           : [];
 
         return [...nativeUpdates, ...bundles].sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         );
       } catch (error) {
         throw queryErrorHandler(error);
@@ -87,10 +78,7 @@ export function useUpdatesQuery(
   });
 }
 
-export function useUpdateQuery(
-  id: string,
-  type: "bundle" | "native" = "bundle",
-) {
+export function useUpdateQuery(id: string, type: "bundle" | "native" = "bundle") {
   const appStore = useAppStore();
   const activeAppId = computed(() => appStore.activeApp?.app_id);
 

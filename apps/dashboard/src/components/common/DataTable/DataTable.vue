@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts" generic="TData, TValue">
-import { FlexRender } from '@tanstack/vue-table'
+import { FlexRender } from "@tanstack/vue-table";
 import {
   Table,
   TableBody,
@@ -118,79 +118,81 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { computed, ref, onMounted } from 'vue'
-import { useDataTable } from './useDataTable'
-import DataTableToolbar from './components/DataTableToolbar.vue'
-import DataTablePagination from './components/DataTablePagination.vue'
-import DataTableDraggableHeader from './components/DataTableDraggableHeader.vue'
-import DataTableBulkEdit from './components/DataTableBulkEdit.vue'
-import type { DataTableProps } from './types'
+} from "@/components/ui/table";
+import { computed, ref, onMounted } from "vue";
+import { useDataTable } from "./useDataTable";
+import DataTableToolbar from "./components/DataTableToolbar.vue";
+import DataTablePagination from "./components/DataTablePagination.vue";
+import DataTableDraggableHeader from "./components/DataTableDraggableHeader.vue";
+import DataTableBulkEdit from "./components/DataTableBulkEdit.vue";
+import type { DataTableProps } from "./types";
 
-const props = defineProps<DataTableProps<TData, TValue>>()
+const props = defineProps<DataTableProps<TData, TValue>>();
 const emit = defineEmits<{
-  (e: 'update:selection', value: TData[]): void
-  (e: 'bulkActions:edit', value: TData[]): void
-  (e: 'bulkActions:delete', value: TData[]): void
-  (e: 'bulkActions:export', value: TData[], format?: string): void
-  (e: 'row-click', value: TData): void
-  (e: 'refresh'): void
-}>()
+  (e: "update:selection", value: TData[]): void;
+  (e: "bulkActions:edit", value: TData[]): void;
+  (e: "bulkActions:delete", value: TData[]): void;
+  (e: "bulkActions:export", value: TData[], format?: string): void;
+  (e: "row-click", value: TData): void;
+  (e: "refresh"): void;
+}>();
 
-const { table, config: mergedConfig, state } = useDataTable(props, emit)
+const { table, config: mergedConfig, state } = useDataTable(props, emit);
 
 const mergedState = computed(() => ({
   ...state,
   onColumnOrderChange: (order: any) => (state.columnOrder.value = order),
   features: mergedConfig.value.features,
-}))
+}));
 
 // Initialize column order if empty
 onMounted(() => {
   if (props.columns.length > 0 && state.columnOrder.value.length === 0) {
-    state.columnOrder.value = props.columns.map((col: any) => col.id || col.accessorKey) as string[]
+    state.columnOrder.value = props.columns.map(
+      (col: any) => col.id || col.accessorKey,
+    ) as string[];
   }
-})
+});
 
 // Generate filters from faceted columns
 const filters = computed(() => {
   // Only generate if we have data
-  if (!props.data || props.data.length === 0) return []
+  if (!props.data || props.data.length === 0) return [];
 
   return table
     .getAllColumns()
     .filter((column) => column.columnDef.meta && (column.columnDef.meta as any).faceted)
     .map((column) => {
-      const meta = column.columnDef.meta as any
+      const meta = column.columnDef.meta as any;
       const title =
         meta.title ||
-        (typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id)
+        (typeof column.columnDef.header === "string" ? column.columnDef.header : column.id);
 
       // Get faceted values - now resolved, not as getter
-      const facets = column.getFacetedUniqueValues()
+      const facets = column.getFacetedUniqueValues();
       const options = Array.from(facets.entries()).map(([value, count]) => ({
         label: `${value}`,
         value: value,
         count,
-      }))
+      }));
 
       return {
         columnId: column.id,
         title: title || column.id,
         options, // Resolved values, not a function
-      }
+      };
     })
-    .filter((f) => f.options.length > 0) // Only show filters with options
-})
+    .filter((f) => f.options.length > 0); // Only show filters with options
+});
 
 const cellPadding = computed(() => {
   const padding = {
-    compact: 'px-2 py-1',
-    normal: 'px-4 py-2',
-    comfortable: 'px-6 py-3',
-  }
-  return padding[state.density.value]
-})
+    compact: "px-2 py-1",
+    normal: "px-4 py-2",
+    comfortable: "px-6 py-3",
+  };
+  return padding[state.density.value];
+});
 
-const tableContainerRef = ref<HTMLElement | null>(null)
+const tableContainerRef = ref<HTMLElement | null>(null);
 </script>

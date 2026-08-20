@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { ArrowRight } from 'lucide-vue-next'
-import SquareGrids from '@/components/vuebits/SquareGrids.vue'
+import { ArrowRight } from "lucide-vue-next";
+import SquareGrids from "@/components/vuebits/SquareGrids.vue";
 
-const router = useRouter()
-const isMounted = ref(false)
-const mouseX = ref(0)
-const mouseY = ref(0)
+const router = useRouter();
+const isMounted = ref(false);
+const mouseX = ref(0);
+const mouseY = ref(0);
 
 const handleMouseMove = (e: MouseEvent) => {
-  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  mouseX.value = (e.clientX - rect.left - rect.width / 2) / rect.width
-  mouseY.value = (e.clientY - rect.top - rect.height / 2) / rect.height
-}
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  mouseX.value = (e.clientX - rect.left - rect.width / 2) / rect.width;
+  mouseY.value = (e.clientY - rect.top - rect.height / 2) / rect.height;
+};
 
 onMounted(() => {
-  setTimeout(() => (isMounted.value = true), 100)
-})
+  setTimeout(() => (isMounted.value = true), 100);
+});
 </script>
 
 <template>

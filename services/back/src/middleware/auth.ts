@@ -11,15 +11,13 @@ import logger from "@/utils/logger";
 export const authenticate = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader?.startsWith("Bearer ")) {
-      res
-        .status(401)
-        .json({ error: "Missing or invalid authorization header" });
+      res.status(401).json({ error: "Missing or invalid authorization header" });
       return;
     }
 
@@ -61,9 +59,7 @@ export const authenticate = async (
     next();
   } catch (error) {
     logger.error("Authentication check failed", { error });
-    res
-      .status(500)
-      .json({ error: "Internal server error during authentication" });
+    res.status(500).json({ error: "Internal server error during authentication" });
   }
 };
 

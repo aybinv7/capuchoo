@@ -21,25 +21,25 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
+import { toast } from "vue-sonner";
 
 definePage({
   meta: {
-    title: 'Channels - CapGO Admin',
-    description: 'Manage app channels',
+    title: "Channels - CapGO Admin",
+    description: "Manage app channels",
   },
-})
+});
 
-const { data: channels, isLoading, isFetching, error, refetch } = useChannelsQuery()
-const deleteMutation = useDeleteChannelMutation()
+const { data: channels, isLoading, isFetching, error, refetch } = useChannelsQuery();
+const deleteMutation = useDeleteChannelMutation();
 
 const handleDelete = async (id: string) => {
   try {
-    await deleteMutation.mutateAsync(id)
-    toast.success('Channel deleted successfully')
-    refetch()
+    await deleteMutation.mutateAsync(id);
+    toast.success("Channel deleted successfully");
+    refetch();
   } catch (e: any) {
-    toast.error(e || 'Failed to delete channel')
+    toast.error(e || "Failed to delete channel");
   }
-}
+};
 </script>

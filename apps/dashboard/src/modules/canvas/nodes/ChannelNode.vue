@@ -29,7 +29,7 @@
           ></div>
         </div>
         <span class="text-[10px] uppercase tracking-wider font-bold opacity-70">{{
-          isProd ? 'Production' : 'Development'
+          isProd ? "Production" : "Development"
         }}</span>
       </div>
     </div>
@@ -48,20 +48,20 @@
 </template>
 
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
-import { computed } from 'vue'
+import { Handle, Position } from "@vue-flow/core";
+import { computed } from "vue";
 
 const props = defineProps<{
   data: {
-    name: string
-    is_prod?: boolean
-    is_deploying?: boolean
-    is_online?: boolean
-    bundle_count?: number
-    device_count?: number
-  }
-  selected?: boolean
-}>()
+    name: string;
+    is_prod?: boolean;
+    is_deploying?: boolean;
+    is_online?: boolean;
+    bundle_count?: number;
+    device_count?: number;
+  };
+  selected?: boolean;
+}>();
 
-const isProd = computed(() => props.data.name.toLowerCase().includes('prod') || props.data.is_prod)
+const isProd = computed(() => props.data.name.toLowerCase().includes("prod") || props.data.is_prod);
 </script>

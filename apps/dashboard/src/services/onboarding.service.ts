@@ -1,21 +1,21 @@
 export interface OnboardingPayload {
   organization: {
-    name: string
-  }
+    name: string;
+  };
   app: {
-    name: string
-    platform: string
-  }
+    name: string;
+    platform: string;
+  };
 }
 
 export interface OnboardingResponse {
-  organization: Organization
-  app: App
+  organization: Organization;
+  app: App;
 }
 
 export const onboardingService = {
   async complete(payload: OnboardingPayload): Promise<OnboardingResponse> {
-    const response = await apiClient.post<OnboardingResponse>('/onboarding', payload)
-    return response.data
+    const response = await apiClient.post<OnboardingResponse>("/onboarding", payload);
+    return response.data;
   },
-}
+};

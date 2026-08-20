@@ -108,9 +108,7 @@ export function defaultFlavour(environment: Environment): FlavourConfig {
   };
 }
 
-export function normaliseProjectConfig(
-  config: ProjectConfig,
-): ResolvedProjectConfig {
+export function normaliseProjectConfig(config: ProjectConfig): ResolvedProjectConfig {
   const flavours = {} as Record<Environment, FlavourConfig>;
   for (const environment of ENVIRONMENTS) {
     const defaults = defaultFlavour(environment);
@@ -149,9 +147,7 @@ export function normaliseProjectConfig(
 }
 
 /** Fields a `project.json` must carry for a deploy to be possible. */
-export function validateProjectConfig(
-  config: Partial<ProjectConfig> | null | undefined,
-): string[] {
+export function validateProjectConfig(config: Partial<ProjectConfig> | null | undefined): string[] {
   if (!config) return ["project.json is missing or empty"];
 
   const problems: string[] = [];

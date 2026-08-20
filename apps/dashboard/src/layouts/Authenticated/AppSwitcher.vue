@@ -22,11 +22,11 @@
             <!-- Header Text -->
             <div class="grid flex-1 text-left text-sm leading-tight ml-1">
               <span class="truncate font-semibold text-sidebar-foreground">
-                {{ activeApp?.name || 'Select App' }}
+                {{ activeApp?.name || "Select App" }}
               </span>
               <span class="truncate text-xs text-muted-foreground flex items-center gap-1">
                 {{ organizationName }}
-                <span v-if="activeApp">• {{ activeApp.platform || 'All Platforms' }}</span>
+                <span v-if="activeApp">• {{ activeApp.platform || "All Platforms" }}</span>
               </span>
             </div>
 
@@ -54,9 +54,9 @@
                 <ILucideAppWindow v-else class="size-6 text-foreground" />
               </div>
               <div class="flex-1 overflow-hidden">
-                <div class="font-semibold truncate">{{ activeApp?.name || 'No App Selected' }}</div>
+                <div class="font-semibold truncate">{{ activeApp?.name || "No App Selected" }}</div>
                 <div class="text-xs text-muted-foreground truncate">
-                  {{ organizationName }} • {{ activeApp?.app_id || '...' }}
+                  {{ organizationName }} • {{ activeApp?.app_id || "..." }}
                 </div>
               </div>
             </div>
@@ -68,8 +68,8 @@
                 class="h-7 text-xs flex-1 gap-1.5 font-normal bg-background"
                 @click="
                   () => {
-                    router.push(`/settings?tab=general`)
-                    isOpen = false
+                    router.push(`/settings?tab=general`);
+                    isOpen = false;
                   }
                 "
               >
@@ -82,8 +82,8 @@
                 class="h-7 text-xs flex-1 gap-1.5 font-normal bg-background"
                 @click="
                   () => {
-                    router.push(`/settings?tab=members`)
-                    isOpen = false
+                    router.push(`/settings?tab=members`);
+                    isOpen = false;
                   }
                 "
               >
@@ -161,49 +161,49 @@
 </template>
 
 <script setup lang="ts">
-import type { App } from '@/modules/apps/types/apps.types'
-import { useOrganizationStore } from '@/stores/organization.store'
+import type { App } from "@/modules/apps/types/apps.types";
+import { useOrganizationStore } from "@/stores/organization.store";
 
-const router = useRouter()
-const { isMobile } = useSidebar()
-const appStore = useAppStore()
-const orgStore = useOrganizationStore()
-const isOpen = ref(false)
+const router = useRouter();
+const { isMobile } = useSidebar();
+const appStore = useAppStore();
+const orgStore = useOrganizationStore();
+const isOpen = ref(false);
 
 // Queries
-const { data: apps, isLoading } = useAppsQuery()
+const { data: apps, isLoading } = useAppsQuery();
 
 // Computed
-const activeApp = computed(() => appStore.activeApp)
-const activeOrgId = computed(() => orgStore.activeOrganization?.id)
+const activeApp = computed(() => appStore.activeApp);
+const activeOrgId = computed(() => orgStore.activeOrganization?.id);
 
 const organizationName = computed(() => {
-  return orgStore.activeOrganization?.name || 'My Organization'
-})
+  return orgStore.activeOrganization?.name || "My Organization";
+});
 
 const filteredApps = computed(() => {
-  if (!apps.value || !activeOrgId.value) return []
-  return apps.value.filter((a) => a.organization_id === activeOrgId.value)
-})
+  if (!apps.value || !activeOrgId.value) return [];
+  return apps.value.filter((a) => a.organization_id === activeOrgId.value);
+});
 
 const displayApps = computed(() => {
-  return filteredApps.value.slice(0, 5)
-})
+  return filteredApps.value.slice(0, 5);
+});
 
 const hasMoreApps = computed(() => {
-  return filteredApps.value.length > 5
-})
+  return filteredApps.value.length > 5;
+});
 
 // Auto-select first app of org if current app doesn't belong to it
 watch(activeOrgId, (newId) => {
   if (newId && activeApp.value && activeApp.value.organization_id !== newId) {
-    const firstApp = filteredApps.value[0] || null
-    appStore.setActiveApp(firstApp)
+    const firstApp = filteredApps.value[0] || null;
+    appStore.setActiveApp(firstApp);
   }
-})
+});
 
 const selectApp = (app: App) => {
-  appStore.setActiveApp(app)
-  router.push('/dashboard')
-}
+  appStore.setActiveApp(app);
+  router.push("/dashboard");
+};
 </script>

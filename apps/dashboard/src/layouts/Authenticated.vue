@@ -20,13 +20,13 @@
 </template>
 
 <script setup lang="ts">
-import AppSidebar from './Authenticated/AppSidebar.vue'
-import SearchCommand from './Authenticated/SearchCommand.vue'
-import SideBarMainHeader from './Authenticated/SideBarMainHeader.vue'
-import OnboardingGuard from '@/components/guards/OnboardingGuard.vue'
+import AppSidebar from "./Authenticated/AppSidebar.vue";
+import SearchCommand from "./Authenticated/SearchCommand.vue";
+import SideBarMainHeader from "./Authenticated/SideBarMainHeader.vue";
+import OnboardingGuard from "@/components/guards/OnboardingGuard.vue";
 
-const languageStore = useLanguageStore()
-const { langDirection } = storeToRefs(languageStore)
+const languageStore = useLanguageStore();
+const { langDirection } = storeToRefs(languageStore);
 
-const searchCommandRef = ref<InstanceType<typeof SearchCommand> | null>(null)
+const searchCommandRef = ref<InstanceType<typeof SearchCommand> | null>(null);
 </script>

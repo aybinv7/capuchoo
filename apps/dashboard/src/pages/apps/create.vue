@@ -103,51 +103,51 @@
 </template>
 
 <script setup lang="ts">
-import { useCreateAppMutation } from '@/modules/apps/composables/useAppsQuery'
-import { useOrganizationsQuery } from '@/modules/organizations/composables/useOrganizationsQuery'
-import { useAppStore } from '@/stores/app.store'
-import { useQueryClient } from '@tanstack/vue-query'
+import { useCreateAppMutation } from "@/modules/apps/composables/useAppsQuery";
+import { useOrganizationsQuery } from "@/modules/organizations/composables/useOrganizationsQuery";
+import { useAppStore } from "@/stores/app.store";
+import { useQueryClient } from "@tanstack/vue-query";
 
 definePage({
   meta: {
-    title: 'Create App - CapGO Updater',
-    description: 'Register a new application',
-    category: 'apps',
+    title: "Create App - CapGO Updater",
+    description: "Register a new application",
+    category: "apps",
   },
-})
+});
 
 const form = ref({
-  organization_id: '',
-  name: '',
-  app_id: '',
-  platform: 'all' as 'ios' | 'android' | 'all',
-  icon_url: '',
-})
+  organization_id: "",
+  name: "",
+  app_id: "",
+  platform: "all" as "ios" | "android" | "all",
+  icon_url: "",
+});
 
-const router = useRouter()
-const queryClient = useQueryClient()
-const appStore = useAppStore()
+const router = useRouter();
+const queryClient = useQueryClient();
+const appStore = useAppStore();
 
-const { data: organizations, isLoading: isLoadingOrgs } = useOrganizationsQuery()
+const { data: organizations, isLoading: isLoadingOrgs } = useOrganizationsQuery();
 
-const error = ref<string | null>(null)
-const isLoading = ref(false)
+const error = ref<string | null>(null);
+const isLoading = ref(false);
 
 const isValid = computed(() => {
   return (
     form.value.organization_id.length > 0 &&
     form.value.name.length > 0 &&
     form.value.app_id.length > 0
-  )
-})
+  );
+});
 
-const createMutation = useCreateAppMutation()
+const createMutation = useCreateAppMutation();
 
 const handleSubmit = async () => {
-  if (!isValid.value) return
+  if (!isValid.value) return;
 
-  error.value = null
-  isLoading.value = true
+  error.value = null;
+  isLoading.value = true;
 
   try {
     const newApp = await createMutation.mutateAsync({
@@ -156,20 +156,20 @@ const handleSubmit = async () => {
       app_id: form.value.app_id,
       platform: form.value.platform,
       icon_url: form.value.icon_url || undefined,
-    })
+    });
 
     // Invalidate apps query to refetch
-    await queryClient.invalidateQueries({ queryKey: ['apps'] })
+    await queryClient.invalidateQueries({ queryKey: ["apps"] });
 
     // Set as active app
-    appStore.setActiveApp(newApp)
+    appStore.setActiveApp(newApp);
 
     // Navigate to dashboard
-    router.push('/dashboard')
+    router.push("/dashboard");
   } catch (err: any) {
-    error.value = err.message || 'Failed to create app'
+    error.value = err.message || "Failed to create app";
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 </script>

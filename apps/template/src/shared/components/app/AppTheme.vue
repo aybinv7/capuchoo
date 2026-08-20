@@ -1,10 +1,5 @@
 <template>
-  <F7Popup
-    id="theme-popup"
-    class="home-popup-swipe-handler"
-    swipe-to-close="to-bottom"
-    push
-  >
+  <F7Popup id="theme-popup" class="home-popup-swipe-handler" swipe-to-close="to-bottom" push>
     <F7Page>
       <template #fixed>
         <div class="swipe-handler"></div>

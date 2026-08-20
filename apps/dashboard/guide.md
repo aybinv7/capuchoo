@@ -1,6 +1,7 @@
 # 📊 Complete TanStack Table Implementation Guide
 
-A production-ready, feature-complete data table implementation with ALL TanStack Table features, built with Vue 3 and shadcn-vue.
+A production-ready, feature-complete data table implementation with ALL TanStack Table features,
+built with Vue 3 and shadcn-vue.
 
 ## 🎯 Features Implemented
 
@@ -93,10 +94,10 @@ export const tableConfig = {
   },
   defaults: {
     pageSize: 10,
-    density: 'normal',
+    density: "normal",
     // ... more defaults
   },
-}
+};
 ```
 
 ### 4. Use in Your Page
@@ -153,9 +154,9 @@ In `ProductsTable.vue`, add new bulk actions:
 
 ```typescript
 const handleCustomAction = () => {
-  const ids = selectedProducts.value.map((p) => p.id)
+  const ids = selectedProducts.value.map((p) => p.id);
   // Your custom logic here
-}
+};
 ```
 
 ## 🔧 Advanced Usage
@@ -182,9 +183,9 @@ watch([sorting, columnFilters, pagination], async () => {
     pageSize: pagination.value.pageSize,
     sort: sorting.value,
     filters: columnFilters.value,
-  })
+  });
   // Update your data
-})
+});
 ```
 
 ### Virtualization
@@ -225,19 +226,19 @@ const savePreset = () => {
     columnVisibility: table.getState().columnVisibility,
     columnOrder: table.getState().columnOrder,
     columnSizing: table.getState().columnSizing,
-  }
-  localStorage.setItem('table-preset', JSON.stringify(preset))
-}
+  };
+  localStorage.setItem("table-preset", JSON.stringify(preset));
+};
 
 // Load preset
 const loadPreset = () => {
-  const preset = JSON.parse(localStorage.getItem('table-preset'))
+  const preset = JSON.parse(localStorage.getItem("table-preset"));
   if (preset) {
-    table.setColumnVisibility(preset.columnVisibility)
-    table.setColumnOrder(preset.columnOrder)
-    table.setColumnSizing(preset.columnSizing)
+    table.setColumnVisibility(preset.columnVisibility);
+    table.setColumnOrder(preset.columnOrder);
+    table.setColumnSizing(preset.columnSizing);
   }
-}
+};
 ```
 
 ## 📊 Export Functionality
@@ -252,10 +253,10 @@ Extend in `DataTableToolbar.vue`:
 
 ```typescript
 const exportToCSV = () => {
-  const headers = table.getVisibleFlatColumns().map((col) => col.id)
-  const rows = table.getFilteredRowModel().rows.map((row) => headers.map((h) => row.getValue(h)))
+  const headers = table.getVisibleFlatColumns().map((col) => col.id);
+  const rows = table.getFilteredRowModel().rows.map((row) => headers.map((h) => row.getValue(h)));
   // Convert to CSV and download
-}
+};
 ```
 
 ## 🎯 Best Practices
@@ -299,8 +300,8 @@ Ensure `columnResizeMode` is set:
 
 ```typescript
 useVueTable({
-  columnResizeMode: 'onChange', // or 'onEnd'
-})
+  columnResizeMode: "onChange", // or 'onEnd'
+});
 ```
 
 ### Grouping Not Showing
@@ -338,12 +339,8 @@ Make sure `enableGrouping` is true:
 
 This implementation provides a **production-ready**, **fully-featured** data table with:
 
-✅ All TanStack Table features
-✅ Beautiful shadcn-vue UI
-✅ Modular & scalable architecture
-✅ TypeScript support
-✅ Full customization options
-✅ Performance optimizations
-✅ Accessibility built-in
+✅ All TanStack Table features ✅ Beautiful shadcn-vue UI ✅ Modular & scalable architecture ✅
+TypeScript support ✅ Full customization options ✅ Performance optimizations ✅ Accessibility
+built-in
 
 Ready to scale from 10 to 10,000,000 rows! 🚀

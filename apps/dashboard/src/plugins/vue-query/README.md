@@ -1,10 +1,12 @@
 # Vue Query Integration
 
-This project uses Vue Query (TanStack Query) for server state management, data fetching, caching, and synchronization.
+This project uses Vue Query (TanStack Query) for server state management, data fetching, caching,
+and synchronization.
 
 ## Setup
 
-Vue Query is configured in `src/plugins/vue-query.plugin.ts` and is automatically registered in `src/main.ts`. The configuration includes:
+Vue Query is configured in `src/plugins/vue-query.plugin.ts` and is automatically registered in
+`src/main.ts`. The configuration includes:
 
 - Default cache time: 5 minutes
 - Default stale time: 1 minute
@@ -20,9 +22,9 @@ Vue Query is configured in `src/plugins/vue-query.plugin.ts` and is automaticall
 Use the generic `useApiQuery` hook for simple API calls:
 
 ```typescript
-import { useApiQuery } from '@/hooks'
+import { useApiQuery } from "@/hooks";
 
-const { data, isLoading, error } = useApiQuery<Product[]>(['products'], '/products')
+const { data, isLoading, error } = useApiQuery<Product[]>(["products"], "/products");
 ```
 
 ### Specific Entity Queries
@@ -30,13 +32,13 @@ const { data, isLoading, error } = useApiQuery<Product[]>(['products'], '/produc
 For specific entities like products, use the pre-built hooks:
 
 ```typescript
-import { useProductsQuery, useProductQuery } from '@/hooks'
+import { useProductsQuery, useProductQuery } from "@/hooks";
 
 // Get all products
-const productsQuery = useProductsQuery()
+const productsQuery = useProductsQuery();
 
 // Get specific product
-const productQuery = useProductQuery('123')
+const productQuery = useProductQuery("123");
 ```
 
 ### Mutations
@@ -44,24 +46,24 @@ const productQuery = useProductQuery('123')
 Use the generic `useApiMutation` hook for API mutations:
 
 ```typescript
-import { useApiMutation } from '@/hooks'
+import { useApiMutation } from "@/hooks";
 
-const createProductMutation = useApiMutation<Product, Partial<Product>>('/products', 'post')
+const createProductMutation = useApiMutation<Product, Partial<Product>>("/products", "post");
 
 // Execute mutation
 createProductMutation.mutate(
-  { name: 'New Product', price: 19.99 },
+  { name: "New Product", price: 19.99 },
   {
     onSuccess: (data) => {
-      console.log('Product created:', data)
+      console.log("Product created:", data);
       // Optionally invalidate queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
     onError: (error) => {
-      console.error('Failed to create product:', error)
+      console.error("Failed to create product:", error);
     },
   },
-)
+);
 ```
 
 ### Pre-built Mutations
@@ -73,24 +75,25 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-} from '@/hooks'
+} from "@/hooks";
 
 const createMutation = useCreateProductMutation({
   onSuccess: (data) => {
     // Handle success
-    queryClient.invalidateQueries({ queryKey: ['products'] })
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   },
-})
+});
 ```
 
 ### Authentication
 
-For authenticated API calls, use the `useAuthenticatedQuery` hook which handles 401 errors automatically:
+For authenticated API calls, use the `useAuthenticatedQuery` hook which handles 401 errors
+automatically:
 
 ```typescript
-import { useAuthenticatedQuery } from '@/hooks'
+import { useAuthenticatedQuery } from "@/hooks";
 
-const profileQuery = useAuthenticatedQuery<User>(['profile'], '/profile')
+const profileQuery = useAuthenticatedQuery<User>(["profile"], "/profile");
 ```
 
 ## Error Handling
@@ -104,7 +107,8 @@ Errors are handled through the centralized `queryErrorHandler` utility which:
 
 ## TypeScript Support
 
-All hooks are fully typed with proper TypeScript support. The hooks use the project's existing type definitions from `src/types/` directory.
+All hooks are fully typed with proper TypeScript support. The hooks use the project's existing type
+definitions from `src/types/` directory.
 
 ## Best Practices
 

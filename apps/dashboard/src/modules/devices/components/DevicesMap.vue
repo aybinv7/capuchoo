@@ -40,9 +40,9 @@
               <Badge variant="outline" class="text-[10px] h-5">{{ device.platform }}</Badge>
             </div>
             <div class="text-xs text-muted-foreground space-y-1">
-              <div>Version: {{ device.current_bundle_id || 'N/A' }}</div>
+              <div>Version: {{ device.current_bundle_id || "N/A" }}</div>
               <div>Last Seen: {{ formatDate(device.last_check) }}</div>
-              <div>State: {{ device.custom_channel || device.channel || 'Standard' }}</div>
+              <div>State: {{ device.custom_channel || device.channel || "Standard" }}</div>
             </div>
             <div class="border-t pt-2 flex gap-2">
               <Button size="sm" variant="default" class="w-full" @click="openDeviceDetail(device)">
@@ -107,19 +107,19 @@
 </template>
 
 <script setup lang="ts">
-import 'leaflet/dist/leaflet.css'
-import { LMap, LTileLayer, LMarker, LPopup, LIcon } from '@vue-leaflet/vue-leaflet'
-import type { Device } from '@/modules/devices/types/devices.types'
+import "leaflet/dist/leaflet.css";
+import { LMap, LTileLayer, LMarker, LPopup, LIcon } from "@vue-leaflet/vue-leaflet";
+import type { Device } from "@/modules/devices/types/devices.types";
 
 const { items, showControls } = defineProps<{
-  items: Device[]
-  showControls?: boolean
-}>()
+  items: Device[];
+  showControls?: boolean;
+}>();
 
-const router = useRouter()
-const zoom = ref(5)
-const center = ref<[number, number]>([28.0, 3.0])
-const filter = ref<'all' | 'active' | 'issue'>('all')
+const router = useRouter();
+const zoom = ref(5);
+const center = ref<[number, number]>([28.0, 3.0]);
+const filter = ref<"all" | "active" | "issue">("all");
 
 const mapOptions = {
   minZoom: 5,
@@ -130,53 +130,53 @@ const mapOptions = {
   ],
   maxBoundsViscosity: 1.0,
   zoomControl: false,
-}
+};
 
 const filterOptions = [
-  { value: 'all', label: 'All Devices', color: '' },
-  { value: 'active', label: 'Active', color: 'bg-green-500' },
-  { value: 'issue', label: 'Issues', color: 'bg-amber-500' },
-] as const
+  { value: "all", label: "All Devices", color: "" },
+  { value: "active", label: "Active", color: "bg-green-500" },
+  { value: "issue", label: "Issues", color: "bg-amber-500" },
+] as const;
 
 const algeriaCities = [
-  { name: 'Algiers', coords: [36.75, 3.05] },
-  { name: 'Oran', coords: [35.69, -0.63] },
-  { name: 'Constantine', coords: [36.36, 6.61] },
-  { name: 'Ouargla', coords: [31.95, 5.32] },
-]
+  { name: "Algiers", coords: [36.75, 3.05] },
+  { name: "Oran", coords: [35.69, -0.63] },
+  { name: "Constantine", coords: [36.36, 6.61] },
+  { name: "Ouargla", coords: [31.95, 5.32] },
+];
 
 const flyTo = (coords: number[]) => {
-  center.value = coords as [number, number]
-  zoom.value = 10
-}
+  center.value = coords as [number, number];
+  zoom.value = 10;
+};
 
 const getPseudoRandom = (seed: string) => {
-  let hash = 0
+  let hash = 0;
   for (let i = 0; i < seed.length; i++) {
-    const char = seed.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash
+    const char = seed.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
   }
-  const x = Math.sin(hash) * 10000
-  return x - Math.floor(x)
-}
+  const x = Math.sin(hash) * 10000;
+  return x - Math.floor(x);
+};
 
 const mapDevices = computed(() => {
   return items
     .map((d, index) => {
-      const seed = d.device_id || `device-${index}`
-      const rnd1 = getPseudoRandom(seed + 'lat')
-      const rnd2 = getPseudoRandom(seed + 'lng')
+      const seed = d.device_id || `device-${index}`;
+      const rnd1 = getPseudoRandom(seed + "lat");
+      const rnd2 = getPseudoRandom(seed + "lng");
 
-      const active = index % 3 !== 0
+      const active = index % 3 !== 0;
 
-      const baseLat = 28 + rnd1 * 8
-      const baseLng = -2 + rnd2 * 12
+      const baseLat = 28 + rnd1 * 8;
+      const baseLng = -2 + rnd2 * 12;
 
-      const lat = d.latitude ?? baseLat
-      const lng = d.longitude ?? baseLng
+      const lat = d.latitude ?? baseLat;
+      const lng = d.longitude ?? baseLng;
 
-      const hasIssue = index % 5 === 0
+      const hasIssue = index % 5 === 0;
 
       return {
         ...d,
@@ -184,47 +184,47 @@ const mapDevices = computed(() => {
         longitude: lng,
         _hasIssue: hasIssue,
         _isActive: active,
-      }
+      };
     })
     .filter((d) => {
-      if (!showControls) return true
-      if (filter.value === 'issue') return d._hasIssue
-      return true
-    })
-})
+      if (!showControls) return true;
+      if (filter.value === "issue") return d._hasIssue;
+      return true;
+    });
+});
 
 watch(
   () => mapDevices.value,
   (devices) => {
     if (devices.length === 1 && !showControls) {
-      const d = devices[0]
+      const d = devices[0];
       if (d && d.latitude && d.longitude) {
-        center.value = [d.latitude, d.longitude]
-        zoom.value = 14
+        center.value = [d.latitude, d.longitude];
+        zoom.value = 14;
       }
     }
   },
   { immediate: true },
-)
+);
 
 const getStatusColor = (d: any) => {
-  if (d._hasIssue) return 'bg-amber-500 border-amber-600'
-  if (d._isActive) return 'bg-green-500 border-green-600'
-  return 'bg-slate-400 border-slate-500'
-}
+  if (d._hasIssue) return "bg-amber-500 border-amber-600";
+  if (d._isActive) return "bg-green-500 border-green-600";
+  return "bg-slate-400 border-slate-500";
+};
 
 const formatDate = (dateString?: string) => {
-  if (!dateString) return 'Never'
-  return new Date(dateString).toLocaleDateString()
-}
+  if (!dateString) return "Never";
+  return new Date(dateString).toLocaleDateString();
+};
 
 const openDeviceDetail = (device: Device) => {
-  router.push(`/devices/${device.id}`)
-}
+  router.push(`/devices/${device.id}`);
+};
 
 onMounted(() => {
-  console.log(items)
-})
+  console.log(items);
+});
 </script>
 
 <style>

@@ -1,11 +1,7 @@
 import { ENVIRONMENTS, versionEnv, type Environment } from "@capucho/core";
 import { Flags } from "@oclif/core";
 import chalk from "chalk";
-import {
-  readVersionCodes,
-  resolveFlavour,
-  writeVersionCodes,
-} from "../../pipeline/flavour.js";
+import { readVersionCodes, resolveFlavour, writeVersionCodes } from "../../pipeline/flavour.js";
 import { readAppVersion, requireProjectConfig } from "../../utils/config.js";
 import { nextVersionCode } from "@capucho/core";
 import { BaseCommand } from "../../base-command.js";

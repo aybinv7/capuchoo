@@ -1,17 +1,10 @@
 <template>
   <F7List dividers-ios strong-ios outline-ios>
-    <F7ListItem
-      title="Appearance"
-      smart-select
-      :smart-select-params="{ openIn: 'popover' }"
-    >
+    <F7ListItem title="Appearance" smart-select :smart-select-params="{ openIn: 'popover' }">
       <template #media>
         <f7-icon f7="moon_stars_fill" color="purple" />
       </template>
-      <select
-        :value="store.darkMode ? 'dark' : 'light'"
-        @change="onAppearanceChange"
-      >
+      <select :value="store.darkMode ? 'dark' : 'light'" @change="onAppearanceChange">
         <option value="light">Light</option>
         <option value="dark">Dark</option>
       </select>
@@ -22,10 +15,7 @@
         <f7-icon f7="bell_fill" color="red" />
       </template>
       <template #after>
-        <F7Toggle
-          :checked="store.notificationsEnabled"
-          @change="store.toggleNotifications"
-        />
+        <F7Toggle :checked="store.notificationsEnabled" @change="store.toggleNotifications" />
       </template>
     </F7ListItem>
   </F7List>

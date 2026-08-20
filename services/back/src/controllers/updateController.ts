@@ -8,7 +8,7 @@ class UpdateController {
   constructor(
     private updateService: any,
     private supabaseService: any,
-    private fileService: any
+    private fileService: any,
   ) {}
 
   checkForUpdate = async (req: Request, res: Response): Promise<void> => {
@@ -193,10 +193,6 @@ class UpdateController {
   };
 }
 
-const updateController = new UpdateController(
-  updateService,
-  supabaseService,
-  fileService
-);
+const updateController = new UpdateController(updateService, supabaseService, fileService);
 
 export default updateController;

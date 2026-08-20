@@ -66,15 +66,11 @@ async function request<T>(
       method,
       headers: {
         Authorization: `Bearer ${options.apiKey}`,
-        ...(options.body === undefined
-          ? {}
-          : { "Content-Type": "application/json" }),
+        ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
       },
       // The key is omitted entirely rather than set to undefined: a GET with a
       // body is invalid, and some runtimes reject it outright.
-      ...(options.body === undefined
-        ? {}
-        : { body: JSON.stringify(options.body) }),
+      ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
       signal: controller.signal,
     });
 
@@ -108,11 +104,7 @@ export function get<T>(pathname: string, options: HttpOptions): Promise<T> {
   return request<T>("GET", `${options.endpoint}${pathname}`, options);
 }
 
-export function post<T>(
-  pathname: string,
-  body: unknown,
-  options: HttpOptions,
-): Promise<T> {
+export function post<T>(pathname: string, body: unknown, options: HttpOptions): Promise<T> {
   return request<T>("POST", `${options.endpoint}${pathname}`, { ...options, body });
 }
 
@@ -147,10 +139,7 @@ export async function uploadArtifact(
   form.append(options.fileField ?? "bundle", blob, path.basename(filePath));
 
   const controller = new AbortController();
-  const timer = setTimeout(
-    () => controller.abort(),
-    options.timeoutMs ?? 15 * 60 * 1000,
-  );
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 15 * 60 * 1000);
 
   try {
     const response = await fetch(`${options.endpoint}${pathname}`, {

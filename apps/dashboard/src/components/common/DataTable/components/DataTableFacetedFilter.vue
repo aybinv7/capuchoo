@@ -74,11 +74,11 @@
 </template>
 
 <script setup lang="ts" generic="TData, TValue">
-import type { Column } from '@tanstack/vue-table'
-import { computed } from 'vue'
-import { PlusCircle } from 'lucide-vue-next'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import type { Column } from "@tanstack/vue-table";
+import { computed } from "vue";
+import { PlusCircle } from "lucide-vue-next";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -88,38 +88,38 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import type { DataTableFilterOption } from '../types'
+} from "@/components/ui/dropdown-menu";
+import type { DataTableFilterOption } from "../types";
 
 interface DataTableFacetedFilterProps {
-  column?: Column<TData, TValue>
-  title?: string
-  options: DataTableFilterOption[]
+  column?: Column<TData, TValue>;
+  title?: string;
+  options: DataTableFilterOption[];
 }
 
-const props = defineProps<DataTableFacetedFilterProps>()
+const props = defineProps<DataTableFacetedFilterProps>();
 
 const selectedValues = computed(() => {
-  const filterValue = props.column?.getFilterValue()
-  return new Set(Array.isArray(filterValue) ? filterValue : [])
-})
+  const filterValue = props.column?.getFilterValue();
+  return new Set(Array.isArray(filterValue) ? filterValue : []);
+});
 
 const facets = computed(
   () => props.column?.getFacetedUniqueValues() as Map<any, number> | undefined,
-)
+);
 
 function handleSelect(checked: boolean, value: any) {
-  const filterValues = Array.from(selectedValues.value)
+  const filterValues = Array.from(selectedValues.value);
 
   if (checked) {
-    filterValues.push(value)
+    filterValues.push(value);
   } else {
-    const index = filterValues.indexOf(value)
+    const index = filterValues.indexOf(value);
     if (index > -1) {
-      filterValues.splice(index, 1)
+      filterValues.splice(index, 1);
     }
   }
 
-  props.column?.setFilterValue(filterValues.length ? filterValues : undefined)
+  props.column?.setFilterValue(filterValues.length ? filterValues : undefined);
 }
 </script>

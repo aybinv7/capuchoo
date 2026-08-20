@@ -11,30 +11,30 @@ on:
   workflow_dispatch:
     inputs:
       app:
-        description: 'Workspace directory of the app to ship'
+        description: "Workspace directory of the app to ship"
         required: true
         type: choice
         options: [apps/template]
         default: apps/template
       type:
-        description: 'ota = web bundle only, native = APK'
+        description: "ota = web bundle only, native = APK"
         required: true
         type: choice
         options: [ota, native]
         default: ota
       channel:
-        description: 'Capucho channel (its environment decides the flavour)'
+        description: "Capucho channel (its environment decides the flavour)"
         required: true
         type: string
       build-type:
-        description: 'native only: release needs signing secrets'
+        description: "native only: release needs signing secrets"
         type: choice
         options: [release, debug]
         default: release
       release-notes:
-        description: 'Shown to users in the update prompt'
+        description: "Shown to users in the update prompt"
         type: string
-        default: ''
+        default: ""
 
 concurrency:
   group: deploy-${{ inputs.app }}-${{ inputs.channel }}
@@ -51,7 +51,7 @@ jobs:
 
       - uses: voidzero-dev/setup-vp@07d0b0e993009eb3b908ea06e49e88e933b728a2 # v1.17.0
         with:
-          node-version: '24'
+          node-version: "24"
           cache: true
 
       - run: vp install --frozen-lockfile
@@ -65,7 +65,7 @@ jobs:
         if: inputs.type == 'native'
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
 
       - name: Restore the release keystore
         if: inputs.type == 'native' && inputs['build-type'] == 'release'

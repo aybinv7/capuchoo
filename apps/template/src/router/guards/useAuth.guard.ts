@@ -3,9 +3,7 @@ import type { Router } from "framework7/types";
 
 const auth = new Auth();
 
-export async function useAuthGuard({
-  resolve,
-}: Router.RouteCallbackCtx): Promise<void> {
+export async function useAuthGuard({ resolve }: Router.RouteCallbackCtx): Promise<void> {
   const isLoggedIn = await auth.isLoggedIn();
 
   const isRequiredAuth = true;

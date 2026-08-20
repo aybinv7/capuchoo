@@ -21,11 +21,11 @@
           <span
             >Uploading for
             {{
-              formData.platform === 'android'
-                ? 'Android'
-                : formData.platform === 'ios'
-                  ? 'iOS'
-                  : 'Web'
+              formData.platform === "android"
+                ? "Android"
+                : formData.platform === "ios"
+                  ? "iOS"
+                  : "Web"
             }}</span
           >
         </div>
@@ -228,189 +228,189 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import { Package, Smartphone, CloudUpload, FileCheck, Info, Hash } from 'lucide-vue-next'
-import type { Bundle, NativeUpdate } from '@/modules/updates-bundles/types/updates-bundles.types'
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
+import { Package, Smartphone, CloudUpload, FileCheck, Info, Hash } from "lucide-vue-next";
+import type { Bundle, NativeUpdate } from "@/modules/updates-bundles/types/updates-bundles.types";
 import {
   useCreateBundleFormDataMutation,
   useCreateNativeUpdateFormDataMutation,
-} from '@/modules/updates-bundles/composables/useUpdatesBundlesQuery'
-import { useAppStore } from '@/stores/app.store'
+} from "@/modules/updates-bundles/composables/useUpdatesBundlesQuery";
+import { useAppStore } from "@/stores/app.store";
 
 interface FormDataState {
-  type: 'bundle' | 'native'
-  platform: 'android' | 'ios' | 'web'
-  version_name: string
-  channel: 'prod' | 'staging' | 'dev'
-  required: boolean
-  active: boolean
-  file: File | null
-  version_code?: number
-  checksum?: string
-  session_key?: string
-  release_notes?: string
+  type: "bundle" | "native";
+  platform: "android" | "ios" | "web";
+  version_name: string;
+  channel: "prod" | "staging" | "dev";
+  required: boolean;
+  active: boolean;
+  file: File | null;
+  version_code?: number;
+  checksum?: string;
+  session_key?: string;
+  release_notes?: string;
 }
 
 definePage({
   meta: {
-    title: 'New Release - CapGO',
-    category: 'updates-bundles',
+    title: "New Release - CapGO",
+    category: "updates-bundles",
   },
-})
+});
 
-const isUploading = ref(false)
-const isDragging = ref(false)
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const router = useRouter()
-const appStore = useAppStore()
+const isUploading = ref(false);
+const isDragging = ref(false);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const router = useRouter();
+const appStore = useAppStore();
 
 const formData = ref<FormDataState>({
-  type: 'bundle',
-  platform: 'web',
-  version_name: '',
-  channel: 'prod',
+  type: "bundle",
+  platform: "web",
+  version_name: "",
+  channel: "prod",
   required: false,
   active: true,
   file: null,
-})
+});
 
 const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
 
 const handleTypeChange = (val: string | number) => {
-  if (val === 'bundle') {
-    formData.value.platform = 'web'
+  if (val === "bundle") {
+    formData.value.platform = "web";
   } else {
-    if (formData.value.platform === 'web') formData.value.platform = 'android'
+    if (formData.value.platform === "web") formData.value.platform = "android";
   }
-}
+};
 
 const acceptedFileTypes = computed(() => {
-  if (formData.value.type === 'bundle') {
-    return '.zip,.tar,.tar.gz'
+  if (formData.value.type === "bundle") {
+    return ".zip,.tar,.tar.gz";
   } else {
-    return formData.value.platform === 'android' ? '.apk,.aab' : '.ipa'
+    return formData.value.platform === "android" ? ".apk,.aab" : ".ipa";
   }
-})
+});
 
 const acceptedFileTypesText = computed(() => {
-  if (formData.value.type === 'bundle') return 'Archives (.zip, .tar.gz)'
-  if (formData.value.platform === 'android') return 'Android App Bundle (.aab, .apk)'
-  if (formData.value.platform === 'ios') return 'iOS App Store Package (.ipa)'
-  return 'Web Archives'
-})
+  if (formData.value.type === "bundle") return "Archives (.zip, .tar.gz)";
+  if (formData.value.platform === "android") return "Android App Bundle (.aab, .apk)";
+  if (formData.value.platform === "ios") return "iOS App Store Package (.ipa)";
+  return "Web Archives";
+});
 
-const triggerFileInput = () => fileInputRef.value?.click()
+const triggerFileInput = () => fileInputRef.value?.click();
 
 const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
+  const target = event.target as HTMLInputElement;
   if (target.files?.length) {
-    formData.value.file = target.files[0] ?? null
+    formData.value.file = target.files[0] ?? null;
   }
-}
+};
 
 const handleDrop = (e: DragEvent) => {
-  isDragging.value = false
+  isDragging.value = false;
   if (e.dataTransfer?.files.length) {
-    formData.value.file = e.dataTransfer.files[0] ?? null
+    formData.value.file = e.dataTransfer.files[0] ?? null;
   }
-}
+};
 
 const removeFile = () => {
-  formData.value.file = null
-  if (fileInputRef.value) fileInputRef.value.value = ''
-}
+  formData.value.file = null;
+  if (fileInputRef.value) fileInputRef.value.value = "";
+};
 
 const createBundleMutation = useCreateBundleFormDataMutation({
   onSuccess: (data: Bundle) => {
-    toast.success('Bundle deployed successfully')
-    router.push(`/updates-bundles/${data.id}?type=bundle`)
+    toast.success("Bundle deployed successfully");
+    router.push(`/updates-bundles/${data.id}?type=bundle`);
   },
-  onError: (e: any) => toast.error(e.message || 'Failed to upload bundle'),
-})
+  onError: (e: any) => toast.error(e.message || "Failed to upload bundle"),
+});
 
 const createNativeUpdateMutation = useCreateNativeUpdateFormDataMutation({
   onSuccess: (data: NativeUpdate) => {
-    toast.success('Native update deployed successfully')
-    router.push(`/updates-bundles/${data.id}?type=native`)
+    toast.success("Native update deployed successfully");
+    router.push(`/updates-bundles/${data.id}?type=native`);
   },
-  onError: (e: any) => toast.error(e.message || 'Failed to upload native update'),
-})
+  onError: (e: any) => toast.error(e.message || "Failed to upload native update"),
+});
 
 const handleSubmit = async () => {
   if (!formData.value.file) {
-    toast.error('File is required')
-    return
+    toast.error("File is required");
+    return;
   }
 
-  isUploading.value = true
+  isUploading.value = true;
 
   try {
-    const payload = new FormData()
+    const payload = new FormData();
 
-    payload.append('file', formData.value.file)
+    payload.append("file", formData.value.file);
     if (appStore.activeApp?.app_id) {
-      payload.append('app_id', appStore.activeApp.app_id)
+      payload.append("app_id", appStore.activeApp.app_id);
     }
-    payload.append('version', formData.value.version_name)
-    payload.append('platform', formData.value.platform)
-    payload.append('channel', formData.value.channel)
-    payload.append('required', String(formData.value.required))
-    payload.append('active', String(formData.value.active))
+    payload.append("version", formData.value.version_name);
+    payload.append("platform", formData.value.platform);
+    payload.append("channel", formData.value.channel);
+    payload.append("required", String(formData.value.required));
+    payload.append("active", String(formData.value.active));
 
-    if (formData.value.type === 'bundle') {
+    if (formData.value.type === "bundle") {
       if (formData.value.session_key) {
-        payload.append('session_key', formData.value.session_key)
+        payload.append("session_key", formData.value.session_key);
       }
       if (formData.value.checksum) {
-        payload.append('checksum', formData.value.checksum)
+        payload.append("checksum", formData.value.checksum);
       }
 
-      await createBundleMutation.mutateAsync(payload)
+      await createBundleMutation.mutateAsync(payload);
     } else {
       if (formData.value.version_code) {
-        payload.append('version_code', String(formData.value.version_code))
+        payload.append("version_code", String(formData.value.version_code));
       }
       if (formData.value.release_notes) {
-        payload.append('release_notes', formData.value.release_notes)
+        payload.append("release_notes", formData.value.release_notes);
       }
       if (formData.value.checksum) {
-        payload.append('checksum', formData.value.checksum)
+        payload.append("checksum", formData.value.checksum);
       }
 
-      await createNativeUpdateMutation.mutateAsync(payload)
+      await createNativeUpdateMutation.mutateAsync(payload);
     }
   } catch (error: any) {
-    console.error('Upload failed:', error)
+    console.error("Upload failed:", error);
   } finally {
-    isUploading.value = false
+    isUploading.value = false;
   }
-}
+};
 
 const resetForm = () => {
-  const currentType = formData.value.type
-  const currentPlatform = formData.value.platform
+  const currentType = formData.value.type;
+  const currentPlatform = formData.value.platform;
 
   formData.value = {
     type: currentType,
     platform: currentPlatform,
-    version_name: '',
-    channel: 'prod',
+    version_name: "",
+    channel: "prod",
     required: false,
     active: true,
     file: null,
     version_code: undefined,
-    checksum: '',
-    session_key: '',
-    release_notes: '',
-  }
-  removeFile()
-}
+    checksum: "",
+    session_key: "",
+    release_notes: "",
+  };
+  removeFile();
+};
 </script>

@@ -1,41 +1,41 @@
-import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import type { Organization } from '@/types/models'
+import { defineStore } from "pinia";
+import { ref, watch } from "vue";
+import type { Organization } from "@/types/models";
 
-export const useOrganizationStore = defineStore('organization', () => {
-  const activeOrganization = ref<Organization | null>(null)
+export const useOrganizationStore = defineStore("organization", () => {
+  const activeOrganization = ref<Organization | null>(null);
 
   // Initialize from localStorage
   const init = () => {
-    const stored = localStorage.getItem('active_organization')
+    const stored = localStorage.getItem("active_organization");
     if (stored) {
       try {
-        activeOrganization.value = JSON.parse(stored)
+        activeOrganization.value = JSON.parse(stored);
       } catch {
-        localStorage.removeItem('active_organization')
+        localStorage.removeItem("active_organization");
       }
     }
-  }
+  };
 
   // Persist to localStorage
   watch(activeOrganization, (newVal) => {
     if (newVal) {
-      localStorage.setItem('active_organization', JSON.stringify(newVal))
+      localStorage.setItem("active_organization", JSON.stringify(newVal));
     } else {
-      localStorage.removeItem('active_organization')
+      localStorage.removeItem("active_organization");
     }
-  })
+  });
 
   // Set active organization
   const setActiveOrganization = (org: Organization | null) => {
-    activeOrganization.value = org
-  }
+    activeOrganization.value = org;
+  };
 
   // Initialize on store creation
-  init()
+  init();
 
   return {
     activeOrganization,
     setActiveOrganization,
-  }
-})
+  };
+});

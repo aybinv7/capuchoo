@@ -16,9 +16,9 @@ import path from "node:path";
 dotenv.config({ path: path.join(__dirname, ".env.local"), quiet: true });
 dotenv.config({ path: path.join(__dirname, ".env"), quiet: true });
 
-const packageJson = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),
-) as { version: string };
+const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8")) as {
+  version: string;
+};
 
 const isLiveReload = process.env.VITE_LIVE_RELOAD === "true";
 

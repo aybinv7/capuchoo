@@ -43,17 +43,13 @@ class FileService implements IFileService {
     }
 
     if (file.size > config.upload.maxFileSize) {
-      throw new Error(
-        `File size exceeds limit of ${config.upload.maxFileSize} bytes`
-      );
+      throw new Error(`File size exceeds limit of ${config.upload.maxFileSize} bytes`);
     }
 
     const allowedTypes = config.upload.allowedMimeTypes;
     if (!allowedTypes.includes(file.mimetype)) {
       throw new Error(
-        `File type ${
-          file.mimetype
-        } not allowed. Allowed types: ${allowedTypes.join(", ")}`
+        `File type ${file.mimetype} not allowed. Allowed types: ${allowedTypes.join(", ")}`,
       );
     }
 

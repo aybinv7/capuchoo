@@ -24,9 +24,7 @@ export interface StepContext {
   runOptions: Omit<RunOptions, "cwd" | "env">;
 }
 
-export type StepOutcome =
-  | { ran: true; via: string }
-  | { ran: false; reason: string };
+export type StepOutcome = { ran: true; via: string } | { ran: false; reason: string };
 
 /**
  * Generates launcher icons and splash screens.
@@ -61,11 +59,11 @@ export async function generateAssets(
     return { ran: false, reason: "@capacitor/assets is not installed" };
   }
 
-  await run(
-    bin,
-    ["generate", `--${platform}`, "--assetPath", flavour.assetPath],
-    { ...context.runOptions, cwd: toolchain.appDir, env: context.env },
-  );
+  await run(bin, ["generate", `--${platform}`, "--assetPath", flavour.assetPath], {
+    ...context.runOptions,
+    cwd: toolchain.appDir,
+    env: context.env,
+  });
 
   return { ran: true, via: "@capacitor/assets" };
 }
@@ -87,9 +85,7 @@ export async function buildWeb(
   build: { command?: string; cwd?: string },
 ): Promise<StepOutcome> {
   const { toolchain, flavour } = context;
-  const cwd = build.cwd
-    ? path.resolve(toolchain.appDir, build.cwd)
-    : toolchain.appDir;
+  const cwd = build.cwd ? path.resolve(toolchain.appDir, build.cwd) : toolchain.appDir;
 
   const options = { ...context.runOptions, cwd, env: context.env };
 

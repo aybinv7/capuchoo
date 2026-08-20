@@ -10,9 +10,9 @@
       <span class="mr-2 text-muted-foreground">
         <SearchCommand class="size-4" />
       </span>
-      {{ t('404.search_placeholder') }}
+      {{ t("404.search_placeholder") }}
       <span class="ml-auto text-xs text-muted-foreground">
-        {{ t('404.press_slash', 'Press /') }}
+        {{ t("404.press_slash", "Press /") }}
       </span>
     </Button>
 
@@ -69,21 +69,21 @@
 </template>
 
 <script setup lang="ts">
-import Bread from './Bread.vue'
-import SearchCommand from './SearchCommand.vue'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import Bread from "./Bread.vue";
+import SearchCommand from "./SearchCommand.vue";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const { searchCommandRef } = defineProps<{
-  searchCommandRef: InstanceType<typeof SearchCommand> | null
-}>()
+  searchCommandRef: InstanceType<typeof SearchCommand> | null;
+}>();
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const openCommandPalette = () => {
   if (searchCommandRef?.openCommandPalette) {
-    searchCommandRef.openCommandPalette()
+    searchCommandRef.openCommandPalette();
   }
-}
+};
 </script>
 
 <style scoped></style>

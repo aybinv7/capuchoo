@@ -20,9 +20,7 @@ export function useUpdatePrompt() {
     ...updater,
 
     /** Whether the prompt should be on screen at all. */
-    visible: computed(
-      () => updater.updateAvailable.value || updater.error.value !== null,
-    ),
+    visible: computed(() => updater.updateAvailable.value || updater.error.value !== null),
 
     title: computed(() => {
       if (updater.error.value) return "Update problem";
@@ -36,9 +34,7 @@ export function useUpdatePrompt() {
       return `Version ${update.value.version} - ${kind}`;
     }),
 
-    body: computed(
-      () => updater.error.value ?? update.value?.releaseNotes ?? "",
-    ),
+    body: computed(() => updater.error.value ?? update.value?.releaseNotes ?? ""),
 
     /**
      * Native updates need a download step and then an install step; OTA
@@ -58,20 +54,14 @@ export function useUpdatePrompt() {
         : updater.startDownload(),
 
     /** Busy state - the primary button must be disabled. */
-    busy: computed(
-      () => updater.isDownloading.value || updater.isInstalling.value,
-    ),
+    busy: computed(() => updater.isDownloading.value || updater.isInstalling.value),
 
     /** A required update cannot be postponed, and neither can one mid-flight. */
     dismissible: computed(
       () =>
-        !updater.isRequired.value &&
-        !updater.isDownloading.value &&
-        !updater.isInstalling.value,
+        !updater.isRequired.value && !updater.isDownloading.value && !updater.isInstalling.value,
     ),
 
-    showProgress: computed(
-      () => updater.isDownloading.value && updater.progress.value.percent > 0,
-    ),
+    showProgress: computed(() => updater.isDownloading.value && updater.progress.value.percent > 0),
   };
 }

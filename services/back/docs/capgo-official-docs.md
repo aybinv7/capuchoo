@@ -1,4 +1,7 @@
-I'll help you understand the APIs used by the Capgo backend. Let me start by exploring the repository structure to find API documentation and understand the architecture. Perfect! Now let me get the specific API files to extract detailed endpoints: Perfect! I found the API documentation you need. Let me give you a comprehensive guide to all the Capacitor plugin APIs that Capgo uses.
+I'll help you understand the APIs used by the Capgo backend. Let me start by exploring the
+repository structure to find API documentation and understand the architecture. Perfect! Now let me
+get the specific API files to extract detailed endpoints: Perfect! I found the API documentation you
+need. Let me give you a comprehensive guide to all the Capacitor plugin APIs that Capgo uses.
 
 ## 📋 Main Plugin APIs
 
@@ -66,7 +69,8 @@ Based on the codebase, the phone uses **3 main endpoints** via the Capacitor plu
 
 **File:** `supabase/functions/_backend/plugins/channel_self.ts`
 
-**Purpose:** Devices can query available channels, set their channel, or get their current channel assignment.
+**Purpose:** Devices can query available channels, set their channel, or get their current channel
+assignment.
 
 ### **GET** - List compatible channels
 
@@ -265,13 +269,17 @@ The key files to study:
 - `supabase/functions/_backend/utils/` - Shared business logic
 - `tests/` - Complete test examples with exact payloads
 
-Would you like me to extract and document any specific endpoint in more detail, or help you understand the database schema these endpoints use?
+Would you like me to extract and document any specific endpoint in more detail, or help you
+understand the database schema these endpoints use?
 
-Now let me get more details on the backend API implementations: Perfect! Now I have a complete picture. Let me give you a comprehensive guide to **ALL the APIs** that the Capacitor plugin uses, combining both repositories.
+Now let me get more details on the backend API implementations: Perfect! Now I have a complete
+picture. Let me give you a comprehensive guide to **ALL the APIs** that the Capacitor plugin uses,
+combining both repositories.
 
 ## 🎯 Complete API Ecosystem Overview
 
-The Capacitor Updater plugin communicates with your backend through **3 main plugin endpoints** and multiple **internal plugin methods**. Here's the full breakdown:
+The Capacitor Updater plugin communicates with your backend through **3 main plugin endpoints** and
+multiple **internal plugin methods**. Here's the full breakdown:
 
 ---
 
@@ -717,7 +725,8 @@ You need to implement these **3 endpoints minimum**:
 - Plan usage (MAU, bandwidth for paid tiers)
 - Error tracking (download_fail, install_fail, etc.)
 
-Would you like me to show you example implementations for any of these endpoints, or details on how to structure your database schema?
+Would you like me to show you example implementations for any of these endpoints, or details on how
+to structure your database schema?
 
 Perfect! Let me explain the two modes clearly with examples and use cases:
 
@@ -1040,9 +1049,11 @@ async function downloadAndInstallUpdate() {
 **Which to choose?**
 
 - **95% of the time:** Use `autoUpdate: true`
-- **Only use `autoUpdate: false` if:** Testing, staged rollout, large app, or enterprise requirements
+- **Only use `autoUpdate: false` if:** Testing, staged rollout, large app, or enterprise
+  requirements
 
-Perfect! Now let me give you a comprehensive guide on **encryption, sessionKey, checksum, and the database schema** with all the details:
+Perfect! Now let me give you a comprehensive guide on **encryption, sessionKey, checksum, and the
+database schema** with all the details:
 
 ---
 
@@ -1050,7 +1061,8 @@ Perfect! Now let me give you a comprehensive guide on **encryption, sessionKey, 
 
 ### \*What is Encryption & Why? \*\*
 
-The Capgo system uses **end-to-end encryption** to protect your bundles from being intercepted or modified during download. Here's the security model:
+The Capgo system uses **end-to-end encryption** to protect your bundles from being intercepted or
+modified during download. Here's the security model:
 
 ```
 Developer's Server
@@ -1388,9 +1400,7 @@ const encrypted = aes256gcm.encrypt(bundle, aesKey);
 // Create sessionKey
 const iv = crypto.randomBytes(16);
 const encryptedAesKey = rsa.encrypt(aesKey, publicKey);
-const sessionKey = `${iv.toString("hex")}:${encryptedAesKey.toString(
-  "base64"
-)}`;
+const sessionKey = `${iv.toString("hex")}:${encryptedAesKey.toString("base64")}`;
 
 // Create checksum
 const checksum = sha256(encrypted);
@@ -1427,8 +1437,7 @@ const response = {
   version: "1.0.0",
   url: "<https://s3.amazonaws.com/bundles/1.0.0.zip>",
   checksum: "3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a",
-  sessionKey:
-    "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6a1:xY2+KmL9oP8nJvW5qR3tU1sV6wX4yZ0=",
+  sessionKey: "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6a1:xY2+KmL9oP8nJvW5qR3tU1sV6wX4yZ0=",
 };
 ```
 
@@ -1519,7 +1528,9 @@ if (!calculatedChecksum.equals(expectedChecksum)) {
 
 The phone will automatically skip decryption if no sessionKey is provided!
 
-Yes, **absolutely it will work! ** You can name your endpoint whatever you want. The plugin doesn't care about the endpoint name - it only cares about the **URL you configure** in `capacitor.config.json`.
+Yes, **absolutely it will work! ** You can name your endpoint whatever you want. The plugin doesn't
+care about the endpoint name - it only cares about the **URL you configure** in
+`capacitor.config.json`.
 
 Let me explain:
 
@@ -1683,7 +1694,8 @@ export class CapacitorUpdater {
 }
 ```
 
-The plugin **reads the URL from config** and makes the request to **exactly that URL**. No hardcoding, no path detection - it just uses what you tell it to use.
+The plugin **reads the URL from config** and makes the request to **exactly that URL**. No
+hardcoding, no path detection - it just uses what you tell it to use.
 
 ---
 
@@ -1746,7 +1758,8 @@ Content-Type: application/json
 }
 ```
 
-The request body and response format are **fixed by the plugin** - you can't change those. But the URL path is **100% customizable**.
+The request body and response format are **fixed by the plugin** - you can't change those. But the
+URL path is **100% customizable**.
 
 ---
 

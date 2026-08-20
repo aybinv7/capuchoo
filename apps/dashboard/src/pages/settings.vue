@@ -24,7 +24,7 @@
               user?.user_metadata?.full_name || user?.email
             }}</span>
             <span class="text-xs text-muted-foreground truncate">{{
-              activeApp?.name || 'No App'
+              activeApp?.name || "No App"
             }}</span>
           </div>
         </div>
@@ -102,67 +102,67 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth.store'
-import { useAppStore } from '@/stores/app.store'
-import { storeToRefs } from 'pinia'
-import { User, Settings2, Users, KeyRound, Database } from 'lucide-vue-next'
+import { useAuthStore } from "@/stores/auth.store";
+import { useAppStore } from "@/stores/app.store";
+import { storeToRefs } from "pinia";
+import { User, Settings2, Users, KeyRound, Database } from "lucide-vue-next";
 
 // Import Components
-import SettingsAccount from '@/components/settings/SettingsAccount.vue'
-import SettingsApp from '@/components/settings/SettingsApp.vue'
-import SettingsMembers from '@/components/settings/SettingsMembers.vue'
-import SettingsApiKeys from '@/components/settings/SettingsApiKeys.vue'
-import SettingsConfig from '@/components/settings/SettingsConfig.vue'
+import SettingsAccount from "@/components/settings/SettingsAccount.vue";
+import SettingsApp from "@/components/settings/SettingsApp.vue";
+import SettingsMembers from "@/components/settings/SettingsMembers.vue";
+import SettingsApiKeys from "@/components/settings/SettingsApiKeys.vue";
+import SettingsConfig from "@/components/settings/SettingsConfig.vue";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const appStore = useAppStore()
+const router = useRouter();
+const authStore = useAuthStore();
+const appStore = useAppStore();
 
-const { user } = storeToRefs(authStore)
-const { activeApp } = storeToRefs(appStore)
+const { user } = storeToRefs(authStore);
+const { activeApp } = storeToRefs(appStore);
 
 const initials = computed(() => {
-  const metadata = user.value?.user_metadata
-  const name = metadata?.full_name || user.value?.email || '?'
-  return name.substring(0, 2).toUpperCase()
-})
+  const metadata = user.value?.user_metadata;
+  const name = metadata?.full_name || user.value?.email || "?";
+  return name.substring(0, 2).toUpperCase();
+});
 
 const closeSettings = () => {
-  router.push('/dashboard')
-}
+  router.push("/dashboard");
+};
 
-const route = useRoute()
+const route = useRoute();
 
 // Tab Configuration
 const accountTabs = [
-  { id: 'account', label: 'My Account', icon: User, component: SettingsAccount },
-  { id: 'api-keys', label: 'API Keys', icon: KeyRound, component: SettingsApiKeys },
-]
+  { id: "account", label: "My Account", icon: User, component: SettingsAccount },
+  { id: "api-keys", label: "API Keys", icon: KeyRound, component: SettingsApiKeys },
+];
 
 const appTabs = [
-  { id: 'general', label: 'General', icon: Settings2, component: SettingsApp },
-  { id: 'config', label: 'Configuration', icon: Database, component: SettingsConfig },
-  { id: 'members', label: 'Members', icon: Users, component: SettingsMembers },
-]
+  { id: "general", label: "General", icon: Settings2, component: SettingsApp },
+  { id: "config", label: "Configuration", icon: Database, component: SettingsConfig },
+  { id: "members", label: "Members", icon: Users, component: SettingsMembers },
+];
 
 const currentTab = computed({
-  get: () => (route.query.tab as string) || 'account',
+  get: () => (route.query.tab as string) || "account",
   set: (val) => router.replace({ query: { ...route.query, tab: val } }),
-})
+});
 
 const activeComponent = computed(() => {
-  const allTabs = [...accountTabs, ...appTabs]
-  return allTabs.find((t) => t.id === currentTab.value)?.component || SettingsAccount
-})
+  const allTabs = [...accountTabs, ...appTabs];
+  return allTabs.find((t) => t.id === currentTab.value)?.component || SettingsAccount;
+});
 
 // Handle Esc key
 onMounted(() => {
   const handleEsc = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') closeSettings()
-  }
-  window.addEventListener('keydown', handleEsc)
-  onUnmounted(() => window.removeEventListener('keydown', handleEsc))
-})
+    if (e.key === "Escape") closeSettings();
+  };
+  window.addEventListener("keydown", handleEsc);
+  onUnmounted(() => window.removeEventListener("keydown", handleEsc));
+});
 </script>
 
 <style scoped>

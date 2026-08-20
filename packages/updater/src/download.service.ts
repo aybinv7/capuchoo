@@ -58,9 +58,10 @@ export async function downloadNativeUpdate(
     progressListener = await FileTransfer.addListener("progress", (event) => {
       if (event.url !== update.downloadUrl) return;
 
-      const percent = event.lengthComputable && event.contentLength > 0
-        ? Math.round((event.bytes / event.contentLength) * 100)
-        : 0;
+      const percent =
+        event.lengthComputable && event.contentLength > 0
+          ? Math.round((event.bytes / event.contentLength) * 100)
+          : 0;
       onProgress({ loaded: event.bytes, total: event.contentLength, percent });
     });
 
@@ -91,9 +92,7 @@ export async function cleanApkCache(): Promise<void> {
     await Promise.all(
       files
         .filter((file) => file.name.startsWith(prefix) && file.name.endsWith(".apk"))
-        .map((file) =>
-          Filesystem.deleteFile({ directory: Directory.Cache, path: file.name }),
-        ),
+        .map((file) => Filesystem.deleteFile({ directory: Directory.Cache, path: file.name })),
     );
   } catch (error) {
     console.warn("[capucho] could not clean the APK cache", error);

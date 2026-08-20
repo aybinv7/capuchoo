@@ -163,18 +163,21 @@ Your server will be available at `http://your-server-ip:3000`
 
 ## Native Updates (APK/IPA)
 
-The server supports native app updates (APK for Android, IPA for iOS) in addition to web updates. These endpoints are designed for native application updates rather than web bundle updates.
+The server supports native app updates (APK for Android, IPA for iOS) in addition to web updates.
+These endpoints are designed for native application updates rather than web bundle updates.
 
 ### Native Update Process
 
-1. **Check for Updates**: Use `/api/native-updates/check` to determine if a newer native version is available
+1. **Check for Updates**: Use `/api/native-updates/check` to determine if a newer native version is
+   available
 2. **Download Update**: If available, download the APK/IPA from the returned download URL
 3. **Install Update**: Install the native update on the device
 4. **Log Events**: Log update events using `/api/native-updates/log`
 
 ### API Endpoints for Native Updates
 
-- `GET /api/native-updates/check` - Check for available native update based on platform and current version code
+- `GET /api/native-updates/check` - Check for available native update based on platform and current
+  version code
 - `POST /api/native-updates/log` - Log update events (downloaded, applied, failed)
 - `POST /api/admin/native-upload` - Upload new APK/IPA files for distribution
 - Dashboard endpoints for managing native updates:
@@ -317,10 +320,7 @@ Features:
 
 ```
 
-Your App (Capacitor)
-↓ (calls update API)
-Self-Hosted Server (Node.js + Supabase)
-↓ (stores bundles)
+Your App (Capacitor) ↓ (calls update API) Self-Hosted Server (Node.js + Supabase) ↓ (stores bundles)
 Supabase Storage
 
 ```

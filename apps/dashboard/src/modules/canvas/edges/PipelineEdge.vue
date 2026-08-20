@@ -38,40 +38,40 @@
 </template>
 
 <script setup lang="ts">
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@vue-flow/core'
-import { computed } from 'vue'
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@vue-flow/core";
+import { computed } from "vue";
 
 const props = defineProps<
   EdgeProps<{
-    state?: 'idle' | 'deploying' | 'success' | 'error'
-    duration?: string
-    label?: string
+    state?: "idle" | "deploying" | "success" | "error";
+    duration?: string;
+    label?: string;
   }>
->()
+>();
 
-const path = computed(() => getSmoothStepPath(props))
+const path = computed(() => getSmoothStepPath(props));
 
 const edgeStyle = computed(() => {
   switch (props.data?.state) {
-    case 'deploying':
-      return { stroke: '#3b82f6', strokeWidth: 3, strokeDasharray: '5, 5' }
-    case 'error':
-      return { stroke: '#ef4444', strokeWidth: 2 }
+    case "deploying":
+      return { stroke: "#3b82f6", strokeWidth: 3, strokeDasharray: "5, 5" };
+    case "error":
+      return { stroke: "#ef4444", strokeWidth: 2 };
     default:
-      return { stroke: '#94a3b8', strokeWidth: 1.5 }
+      return { stroke: "#94a3b8", strokeWidth: 1.5 };
   }
-})
+});
 
 const labelClasses = computed(() => {
   switch (props.data?.state) {
-    case 'deploying':
-      return 'bg-blue-600 text-white border-blue-400 animate-pulse'
-    case 'error':
-      return 'bg-red-600 text-white border-red-400'
-    case 'success':
-      return 'bg-emerald-100 text-emerald-700 border-emerald-300'
+    case "deploying":
+      return "bg-blue-600 text-white border-blue-400 animate-pulse";
+    case "error":
+      return "bg-red-600 text-white border-red-400";
+    case "success":
+      return "bg-emerald-100 text-emerald-700 border-emerald-300";
     default:
-      return 'bg-background/80 text-muted-foreground border-muted'
+      return "bg-background/80 text-muted-foreground border-muted";
   }
-})
+});
 </script>

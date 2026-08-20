@@ -11,9 +11,7 @@ describe("parseEnvFile", () => {
 
   it("ignores comments and blank lines", () => {
     const parsed = parseEnvFile(
-      ["# Development build", "", "VITE_APP_NAME=Lowmaro", "   ", "# trailing"].join(
-        "\n",
-      ),
+      ["# Development build", "", "VITE_APP_NAME=Lowmaro", "   ", "# trailing"].join("\n"),
     );
     expect(parsed).toEqual({ VITE_APP_NAME: "Lowmaro" });
   });

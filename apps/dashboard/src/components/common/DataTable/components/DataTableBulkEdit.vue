@@ -9,7 +9,7 @@
   >
     <div v-if="selectedCount > 0" class="flex items-center gap-2 p-4 bg-muted rounded-lg">
       <span class="text-sm font-medium">
-        {{ selectedCount }} {{ selectedCount === 1 ? 'item' : 'items' }} selected
+        {{ selectedCount }} {{ selectedCount === 1 ? "item" : "items" }} selected
       </span>
       <Button size="sm" variant="secondary" @click="$emit('click:clear-selection')"> Clear </Button>
       <Button v-if="enableEdit" size="sm" variant="secondary" @click="$emit('click:bulk-edit')">
@@ -31,19 +31,19 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 
 defineProps<{
-  selectedCount: number
-  enableEdit?: boolean
-  enableDelete?: boolean
-  enableExport?: boolean
-}>()
+  selectedCount: number;
+  enableEdit?: boolean;
+  enableDelete?: boolean;
+  enableExport?: boolean;
+}>();
 
 defineEmits<{
-  'click:bulk-edit': []
-  'click:bulk-delete': []
-  'click:bulk-export': []
-  'click:clear-selection': []
-}>()
+  "click:bulk-edit": [];
+  "click:bulk-delete": [];
+  "click:bulk-export": [];
+  "click:clear-selection": [];
+}>();
 </script>

@@ -135,7 +135,7 @@
         class="gap-2"
       >
         {{ table.getColumn(filter.id)?.columnDef.id || filter.id }}:
-        {{ Array.isArray(filter.value) ? filter.value.join(', ') : filter.value }}
+        {{ Array.isArray(filter.value) ? filter.value.join(", ") : filter.value }}
         <button
           @click="table.getColumn(filter.id)?.setFilterValue(undefined)"
           class="hover:bg-secondary-foreground/20 rounded-full p-0.5"
@@ -147,85 +147,85 @@
   </div>
 </template>
 <script setup lang="ts">
-import type { Table } from '@tanstack/vue-table'
-import { exportToCSV, exportToJSON } from '@/utils/tables.utils'
-import StreamlineLogosAndroidLogoBlock from '~icons/streamline-logos/android-logo-block'
-import StreamlineLogosAppleLogoBlock from '~icons/streamline-logos/apple-logo-block'
-import { Globe, Smartphone } from 'lucide-vue-next'
+import type { Table } from "@tanstack/vue-table";
+import { exportToCSV, exportToJSON } from "@/utils/tables.utils";
+import StreamlineLogosAndroidLogoBlock from "~icons/streamline-logos/android-logo-block";
+import StreamlineLogosAppleLogoBlock from "~icons/streamline-logos/apple-logo-block";
+import { Globe, Smartphone } from "lucide-vue-next";
 
 interface DataTableToolbarProps<TData> {
-  table: Table<TData>
-  state: any
-  isLoading?: boolean
+  table: Table<TData>;
+  state: any;
+  isLoading?: boolean;
 }
 
-const props = defineProps<DataTableToolbarProps<any>>()
+const props = defineProps<DataTableToolbarProps<any>>();
 
 defineEmits<{
-  (e: 'click:refresh'): void
-}>()
+  (e: "click:refresh"): void;
+}>();
 
 // Check if any filters are applied
 const isFiltered = computed(() => {
-  return props.state.columnFilters.value.length > 0 || props.state.globalFilter.value !== ''
-})
+  return props.state.columnFilters.value.length > 0 || props.state.globalFilter.value !== "";
+});
 
 // Get grouped columns
 const groupedColumns = computed(() => {
-  return props.table.getState().grouping
-})
+  return props.table.getState().grouping;
+});
 
 // Type options (with counts from faceting)
 const typeOptions = computed(() => {
-  const facets = props.table.getColumn('type')?.getFacetedUniqueValues()
+  const facets = props.table.getColumn("type")?.getFacetedUniqueValues();
   return Array.from(facets?.entries() || []).map(([value, count]) => ({
-    label: value === 'native' ? 'Native' : 'Bundle',
+    label: value === "native" ? "Native" : "Bundle",
     value: value,
     count,
-    icon: value === 'native' ? Smartphone : Globe,
-  }))
-})
+    icon: value === "native" ? Smartphone : Globe,
+  }));
+});
 
 // Channel options (with counts from faceting)
 const channelOptions = computed(() => {
-  const facets = props.table.getColumn('channel')?.getFacetedUniqueValues()
+  const facets = props.table.getColumn("channel")?.getFacetedUniqueValues();
   const channelLabels: Record<string, string> = {
-    staging: 'Staging',
-    prod: 'Prod',
-    dev: 'Dev',
-  }
+    staging: "Staging",
+    prod: "Prod",
+    dev: "Dev",
+  };
   return Array.from(facets?.entries() || []).map(([value, count]) => ({
     label: channelLabels[value] || value,
     value: value,
     count,
-  }))
-})
+  }));
+});
 
 // Platform options (with counts from faceting)
 const platformOptions = computed(() => {
-  const facets = props.table.getColumn('platform')?.getFacetedUniqueValues()
+  const facets = props.table.getColumn("platform")?.getFacetedUniqueValues();
   return Array.from(facets?.entries() || []).map(([value, count]) => ({
     label: value.charAt(0).toUpperCase() + value.slice(1),
     value: value,
     count,
-    icon: value === 'android' ? StreamlineLogosAndroidLogoBlock : StreamlineLogosAppleLogoBlock,
-  }))
-})
+    icon: value === "android" ? StreamlineLogosAndroidLogoBlock : StreamlineLogosAppleLogoBlock,
+  }));
+});
 
 // Export functions
 const exportCSV = () => {
-  const data = props.table.getFilteredRowModel().rows.map((row) => row.original)
-  exportToCSV(data, 'updates-bundles.csv')
-}
+  const data = props.table.getFilteredRowModel().rows.map((row) => row.original);
+  exportToCSV(data, "updates-bundles.csv");
+};
 
 const exportJSON = () => {
-  const data = props.table.getFilteredRowModel().rows.map((row) => row.original)
-  exportToJSON(data, 'updates-bundles.json')
-}
+  const data = props.table.getFilteredRowModel().rows.map((row) => row.original);
+  exportToJSON(data, "updates-bundles.json");
+};
 
 const exportExcel = () => {
   // For Excel export, we'll use CSV format as a fallback since we don't have a specific Excel function
-  const data = props.table.getFilteredRowModel().rows.map((row) => row.original)
-  exportToCSV(data, 'updates-bundles.xlsx')
-}
+  const data = props.table.getFilteredRowModel().rows.map((row) => row.original);
+  exportToCSV(data, "updates-bundles.xlsx");
+};
 </script>

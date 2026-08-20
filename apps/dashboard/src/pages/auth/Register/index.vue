@@ -34,11 +34,11 @@
 
         <Card>
           <CardHeader>
-            <CardTitle>{{ step === 'register' ? 'Sign Up' : 'Verify Email' }}</CardTitle>
+            <CardTitle>{{ step === "register" ? "Sign Up" : "Verify Email" }}</CardTitle>
             <CardDescription>
               {{
-                step === 'register'
-                  ? 'Start managing your apps today.'
+                step === "register"
+                  ? "Start managing your apps today."
                   : `Enter the 6-digit code sent to ${form.email}`
               }}
             </CardDescription>
@@ -107,7 +107,7 @@
                 :disabled="resendCooldown > 0"
                 @click="handleResendCode"
               >
-                {{ resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code' }}
+                {{ resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code" }}
               </Button>
             </div>
           </CardContent>
@@ -150,145 +150,145 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
-import { Mail, Loader2, ArrowLeft } from 'lucide-vue-next'
-import { authService } from '@/services/auth.service'
-import ShaderAnimation from '@/components/shaders/ShaderAnimation .vue'
+import { toast } from "vue-sonner";
+import { Mail, Loader2, ArrowLeft } from "lucide-vue-next";
+import { authService } from "@/services/auth.service";
+import ShaderAnimation from "@/components/shaders/ShaderAnimation .vue";
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
-type Step = 'register' | 'verify'
+type Step = "register" | "verify";
 
-const step = ref<Step>('register')
+const step = ref<Step>("register");
 const form = ref({
-  email: '',
-  password: '',
-  businessName: '',
-})
+  email: "",
+  password: "",
+  businessName: "",
+});
 
-const isLoading = ref(false)
-const isVerifying = ref(false)
-const otpCode = ref('')
-const otpError = ref('')
-const resendCooldown = ref(0)
+const isLoading = ref(false);
+const isVerifying = ref(false);
+const otpCode = ref("");
+const otpError = ref("");
+const resendCooldown = ref(0);
 
 // Resend cooldown timer
-let cooldownInterval: number | null = null
+let cooldownInterval: number | null = null;
 
 const startResendCooldown = () => {
-  resendCooldown.value = 60
+  resendCooldown.value = 60;
   cooldownInterval = window.setInterval(() => {
-    resendCooldown.value--
+    resendCooldown.value--;
     if (resendCooldown.value <= 0 && cooldownInterval) {
-      clearInterval(cooldownInterval)
-      cooldownInterval = null
+      clearInterval(cooldownInterval);
+      cooldownInterval = null;
     }
-  }, 1000)
-}
+  }, 1000);
+};
 
 onUnmounted(() => {
   if (cooldownInterval) {
-    clearInterval(cooldownInterval)
+    clearInterval(cooldownInterval);
   }
-})
+});
 
 async function handleRegister() {
   if (!form.value.email || !form.value.password || !form.value.businessName) {
-    toast.error('Please fill in all fields')
-    return
+    toast.error("Please fill in all fields");
+    return;
   }
 
   try {
-    isLoading.value = true
+    isLoading.value = true;
     await authStore.register({
       email: form.value.email,
       password: form.value.password,
       businessName: form.value.businessName,
-    })
+    });
 
-    toast.success('Verification code sent! Please check your email.')
-    step.value = 'verify'
-    startResendCooldown()
+    toast.success("Verification code sent! Please check your email.");
+    step.value = "verify";
+    startResendCooldown();
   } catch (error: any) {
-    console.error('Registration error:', error)
+    console.error("Registration error:", error);
 
     // Check if user already exists
-    const errorMessage = error.message?.toLowerCase() || ''
+    const errorMessage = error.message?.toLowerCase() || "";
     if (
-      errorMessage.includes('already registered') ||
-      errorMessage.includes('already exists') ||
-      errorMessage.includes('user already')
+      errorMessage.includes("already registered") ||
+      errorMessage.includes("already exists") ||
+      errorMessage.includes("user already")
     ) {
-      toast.error('This email is already registered. Please sign in instead.', {
+      toast.error("This email is already registered. Please sign in instead.", {
         action: {
-          label: 'Sign In',
-          onClick: () => router.push('/auth/login'),
+          label: "Sign In",
+          onClick: () => router.push("/auth/login"),
         },
-      })
+      });
     } else {
-      toast.error(error.message || 'Registration failed')
+      toast.error(error.message || "Registration failed");
     }
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 async function handleOtpComplete(code: string) {
-  otpCode.value = code
-  await handleVerifyOtp()
+  otpCode.value = code;
+  await handleVerifyOtp();
 }
 
 async function handleVerifyOtp() {
   if (otpCode.value.length < 6) {
-    otpError.value = 'Please enter the complete 6-digit code'
-    return
+    otpError.value = "Please enter the complete 6-digit code";
+    return;
   }
 
   try {
-    isVerifying.value = true
-    otpError.value = ''
+    isVerifying.value = true;
+    otpError.value = "";
 
-    const { session } = await authService.verifyOtp(form.value.email, otpCode.value, 'signup')
+    const { session } = await authService.verifyOtp(form.value.email, otpCode.value, "signup");
 
     if (session) {
-      toast.success('Email verified successfully!')
+      toast.success("Email verified successfully!");
       // Reinitialize auth store with new session
-      await authStore.init()
+      await authStore.init();
       // Redirect to onboarding
-      router.push('/onboarding')
+      router.push("/onboarding");
     } else {
-      otpError.value = 'Verification failed. Please try again.'
+      otpError.value = "Verification failed. Please try again.";
     }
   } catch (error: any) {
-    console.error('OTP verification error:', error)
-    otpError.value = error.message || 'Invalid code. Please try again.'
-    otpCode.value = ''
+    console.error("OTP verification error:", error);
+    otpError.value = error.message || "Invalid code. Please try again.";
+    otpCode.value = "";
   } finally {
-    isVerifying.value = false
+    isVerifying.value = false;
   }
 }
 
 async function handleResendCode() {
   try {
-    await authService.resendOtp(form.value.email)
-    toast.success('New verification code sent!')
-    startResendCooldown()
-    otpCode.value = ''
-    otpError.value = ''
+    await authService.resendOtp(form.value.email);
+    toast.success("New verification code sent!");
+    startResendCooldown();
+    otpCode.value = "";
+    otpError.value = "";
   } catch (error: any) {
-    toast.error(error.message || 'Failed to resend code')
+    toast.error(error.message || "Failed to resend code");
   }
 }
 
 definePage({
   meta: {
-    title: 'Register',
-    description: 'Register to your capgo account',
-    category: 'authentication',
+    title: "Register",
+    description: "Register to your capgo account",
+    category: "authentication",
     hideFromSearch: true,
     requiresAuth: false,
-    layout: 'empty',
+    layout: "empty",
   },
-})
+});
 </script>

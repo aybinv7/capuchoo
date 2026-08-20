@@ -88,46 +88,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import { useCreateChannelMutation } from '@/modules/channels/composables/useChannelsQuery'
-import { useAppStore } from '@/stores/app.store'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
+import { useCreateChannelMutation } from "@/modules/channels/composables/useChannelsQuery";
+import { useAppStore } from "@/stores/app.store";
 
 definePage({
   meta: {
-    title: 'Create Channel - CapGO',
-    category: 'channels',
+    title: "Create Channel - CapGO",
+    category: "channels",
   },
-})
+});
 
-const router = useRouter()
-const appStore = useAppStore()
-const { mutateAsync: createChannel, isPending } = useCreateChannelMutation()
+const router = useRouter();
+const appStore = useAppStore();
+const { mutateAsync: createChannel, isPending } = useCreateChannelMutation();
 
 const formData = ref({
-  name: '',
-  environment: 'staging' as const,
+  name: "",
+  environment: "staging" as const,
   ios_enabled: true,
   android_enabled: true,
   is_public: false,
-})
+});
 
 const handleSubmit = async () => {
   if (!appStore.activeApp?.app_id) {
-    toast.error('No active app selected')
-    return
+    toast.error("No active app selected");
+    return;
   }
 
   try {
     const res = await createChannel({
       ...formData.value,
       app_id: appStore.activeApp.app_id,
-    })
-    toast.success('Channel created successfully')
-    router.push(`/channels/${res.id}`)
+    });
+    toast.success("Channel created successfully");
+    router.push(`/channels/${res.id}`);
   } catch (error: any) {
-    toast.error(error.message || 'Failed to create channel')
+    toast.error(error.message || "Failed to create channel");
   }
-}
+};
 </script>

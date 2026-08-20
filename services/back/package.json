@@ -1,7 +1,18 @@
 {
   "name": "@capucho/back",
   "version": "1.0.0",
+  "private": true,
   "description": "Capucho update server - apps, channels, bundles, native releases",
+  "keywords": [
+    "app",
+    "capacitor",
+    "capgo",
+    "mobile",
+    "self-hosted",
+    "updates"
+  ],
+  "license": "MIT",
+  "author": "aybinv7",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -10,19 +21,6 @@
     "dev:debug": "nodemon --inspect --exec ts-node-dev -r tsconfig-paths/register src/server.ts",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": [
-    "capacitor",
-    "capgo",
-    "updates",
-    "self-hosted",
-    "mobile",
-    "app"
-  ],
-  "_moduleAliases": {
-    "@": "dist"
-  },
-  "author": "aybinv7",
-  "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",
     "axios": "^1.13.2",
@@ -49,5 +47,7 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.6"
   },
-  "private": true
+  "_moduleAliases": {
+    "@": "dist"
+  }
 }

@@ -16,5 +16,5 @@
 <script setup lang="ts">
 const mode = useColorMode({
   disableTransition: false,
-})
+});
 </script>

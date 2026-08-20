@@ -13,8 +13,7 @@ import { ENVIRONMENTS, normaliseProjectConfig } from "@capucho/core";
 import { BaseCommand } from "../../base-command.js";
 
 export default class ConfigList extends BaseCommand {
-  static override description =
-    "Show the resolved configuration, and which build tools were found";
+  static override description = "Show the resolved configuration, and which build tools were found";
 
   static override flags = {
     json: Flags.boolean({ default: false, description: "Machine-readable output" }),
@@ -105,9 +104,7 @@ export default class ConfigList extends BaseCommand {
       this.log(`    web dir     ${report.project.webDir}`);
       this.log(
         `    schema      v${report.project.configVersion}` +
-          (report.project.configVersion < 2
-            ? chalk.dim(" (defaults applied for the rest)")
-            : ""),
+          (report.project.configVersion < 2 ? chalk.dim(" (defaults applied for the rest)") : ""),
       );
     }
 

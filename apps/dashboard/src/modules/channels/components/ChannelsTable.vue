@@ -21,24 +21,24 @@
 </template>
 
 <script setup lang="ts">
-import { channelsColumns } from './ChannelsTable/channels.columns'
-import ChannelsDeleteDialog from './ChannelsTable/ChannelsDeleteDialog.vue'
-import type { Channel } from '../types/channels.types'
+import { channelsColumns } from "./ChannelsTable/channels.columns";
+import ChannelsDeleteDialog from "./ChannelsTable/ChannelsDeleteDialog.vue";
+import type { Channel } from "../types/channels.types";
 
 const { items, isLoading } = defineProps<{
-  items: Channel[]
-  isLoading?: boolean
-}>()
+  items: Channel[];
+  isLoading?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'deleteItem', id: string): void
-  (e: 'refresh'): void
-}>()
+  (e: "deleteItem", id: string): void;
+  (e: "refresh"): void;
+}>();
 
-const selectedItems = ref<Channel[]>([])
-const deleteDialogOpen = ref(false)
-const itemToDelete = ref<string | null>(null)
-const isDeleting = ref(false)
+const selectedItems = ref<Channel[]>([]);
+const deleteDialogOpen = ref(false);
+const itemToDelete = ref<string | null>(null);
+const isDeleting = ref(false);
 
 const tableConfig: DataTableConfig = {
   features: {
@@ -59,36 +59,36 @@ const tableConfig: DataTableConfig = {
   },
   defaults: {
     pageSize: 10,
-    density: 'normal',
+    density: "normal",
   },
-}
+};
 
 const tableFilters = computed<DataTableFilterDef[]>(() => [
   {
-    columnId: 'platform',
-    title: 'Platform',
+    columnId: "platform",
+    title: "Platform",
     options: [
-      { label: 'Android', value: 'android' },
-      { label: 'iOS', value: 'ios' },
-      { label: 'Web', value: 'web' },
+      { label: "Android", value: "android" },
+      { label: "iOS", value: "ios" },
+      { label: "Web", value: "web" },
     ],
   },
-])
+]);
 
 const handleDeleteConfirm = async () => {
   // Logic to handle delete
   if (itemToDelete.value) {
-    emit('deleteItem', itemToDelete.value)
+    emit("deleteItem", itemToDelete.value);
   }
-  deleteDialogOpen.value = false
-  itemToDelete.value = null
-}
+  deleteDialogOpen.value = false;
+  itemToDelete.value = null;
+};
 
-import { useRouter } from 'vue-router'
+import { useRouter } from "vue-router";
 
-const router = useRouter()
+const router = useRouter();
 
 const handleRowClick = (item: Channel) => {
-  router.push(`/channels/${item.id}`)
-}
+  router.push(`/channels/${item.id}`);
+};
 </script>

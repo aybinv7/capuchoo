@@ -70,7 +70,7 @@
         <Button variant="ghost" @click="emit('back')">Back</Button>
         <Button @click="handleFinish" :disabled="isSubmitting">
           <ILucideLoader2 v-if="isSubmitting" class="mr-2 h-4 w-4 animate-spin" />
-          {{ isSubmitting ? 'Finishing...' : 'Finish Setup' }}
+          {{ isSubmitting ? "Finishing..." : "Finish Setup" }}
         </Button>
       </div>
     </div>
@@ -78,53 +78,53 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
+import { toast } from "vue-sonner";
 
 const emit = defineEmits<{
-  (e: 'next'): void
-  (e: 'back'): void
-}>()
+  (e: "next"): void;
+  (e: "back"): void;
+}>();
 
-const store = useOnboardingStore()
-const newMemberEmail = ref('')
-const newMemberRole = ref<'viewer' | 'editor' | 'admin'>('viewer')
-const isSubmitting = ref(false)
+const store = useOnboardingStore();
+const newMemberEmail = ref("");
+const newMemberRole = ref<"viewer" | "editor" | "admin">("viewer");
+const isSubmitting = ref(false);
 
 const addMember = () => {
-  const email = newMemberEmail.value.trim()
-  if (!email) return
+  const email = newMemberEmail.value.trim();
+  if (!email) return;
   // Basic validation
-  if (!email.includes('@')) {
-    toast.error('Invalid email address')
-    return
+  if (!email.includes("@")) {
+    toast.error("Invalid email address");
+    return;
   }
   if (store.members.find((m) => m.email === email)) {
-    toast.error('Member already added')
-    return
+    toast.error("Member already added");
+    return;
   }
 
   store.members.push({
     email,
     role: newMemberRole.value,
-  })
-  newMemberEmail.value = ''
-  newMemberRole.value = 'viewer'
-}
+  });
+  newMemberEmail.value = "";
+  newMemberRole.value = "viewer";
+};
 
 const removeMember = (idx: number) => {
-  store.members.splice(idx, 1)
-}
+  store.members.splice(idx, 1);
+};
 
 const handleFinish = async () => {
   try {
-    isSubmitting.value = true
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    toast.success('Setup complete!')
-    emit('next')
+    isSubmitting.value = true;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    toast.success("Setup complete!");
+    emit("next");
   } catch (e: any) {
-    toast.error(e.message || 'Failed to send invites')
+    toast.error(e.message || "Failed to send invites");
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
-}
+};
 </script>

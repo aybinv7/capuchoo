@@ -35,9 +35,7 @@ class StatsController {
 
       // Validation - require at minimum deviceId, appId, platform
       if (!normalized.deviceId || !normalized.appId || !normalized.platform) {
-        throw new ValidationError(
-          "Missing required parameters: device_id, app_id, platform"
-        );
+        throw new ValidationError("Missing required parameters: device_id, app_id, platform");
       }
 
       await this.updateService.logStats({

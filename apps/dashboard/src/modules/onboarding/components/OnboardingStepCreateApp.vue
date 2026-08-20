@@ -1,16 +1,16 @@
 ```
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { ref, computed } from "vue";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -18,39 +18,39 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { toast } from 'vue-sonner'
+} from "@/components/ui/card";
+import { toast } from "vue-sonner";
 
 const emit = defineEmits<{
-  (e: 'next'): void
-  (e: 'back'): void
-}>()
+  (e: "next"): void;
+  (e: "back"): void;
+}>();
 
-const onboardingStore = useOnboardingStore()
+const onboardingStore = useOnboardingStore();
 // Use store loading state
-const isLoading = computed(() => onboardingStore.loading)
+const isLoading = computed(() => onboardingStore.loading);
 
 const form = ref({
-  appName: onboardingStore.appData.name || '',
-  platform: 'capacitor',
-})
+  appName: onboardingStore.appData.name || "",
+  platform: "capacitor",
+});
 
 async function handleCreateApp() {
   if (!form.value.appName) {
-    toast.error('Please enter an app name')
-    return
+    toast.error("Please enter an app name");
+    return;
   }
 
-  onboardingStore.setAppDraft(form.value.appName, form.value.platform)
+  onboardingStore.setAppDraft(form.value.appName, form.value.platform);
 
   try {
     // Trigger the final submission
-    await onboardingStore.submitOnboarding()
-    toast.success('Onboarding completed successfully!')
-    emit('next')
+    await onboardingStore.submitOnboarding();
+    toast.success("Onboarding completed successfully!");
+    emit("next");
   } catch (error: any) {
-    console.error('Onboarding submission error:', error)
-    toast.error(error.message || 'Failed to complete onboarding')
+    console.error("Onboarding submission error:", error);
+    toast.error(error.message || "Failed to complete onboarding");
   }
 }
 </script>

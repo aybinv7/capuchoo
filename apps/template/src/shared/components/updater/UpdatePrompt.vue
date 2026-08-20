@@ -41,10 +41,7 @@
           </div>
         </f7-block>
 
-        <div
-          v-if="showProgress"
-          class="width-100 padding-horizontal margin-vertical"
-        >
+        <div v-if="showProgress" class="width-100 padding-horizontal margin-vertical">
           <f7-progressbar
             :progress="progress.percent"
             class="height-8 rounded-full"
@@ -54,9 +51,7 @@
           </div>
         </div>
 
-        <div
-          class="width-100 padding margin-top auto-margin-top buttons-container"
-        >
+        <div class="width-100 padding margin-top auto-margin-top buttons-container">
           <f7-button
             large
             fill
@@ -145,10 +140,7 @@ onBeforeUnmount(async () => {
 }
 
 .icon-wrapper {
-  background: var(
-    --f7-theme-color-opacity-10,
-    rgba(var(--f7-theme-color-rgb), 0.1)
-  );
+  background: var(--f7-theme-color-opacity-10, rgba(var(--f7-theme-color-rgb), 0.1));
   padding: 24px;
   border-radius: 50%;
   animation: bounce 2s infinite;

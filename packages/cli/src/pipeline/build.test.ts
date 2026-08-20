@@ -3,12 +3,7 @@ import { tokenize } from "./build.js";
 
 describe("tokenize", () => {
   it("splits on whitespace", () => {
-    expect(tokenize("vite build --mode staging")).toEqual([
-      "vite",
-      "build",
-      "--mode",
-      "staging",
-    ]);
+    expect(tokenize("vite build --mode staging")).toEqual(["vite", "build", "--mode", "staging"]);
   });
 
   it("keeps a quoted path with spaces as one argument", () => {

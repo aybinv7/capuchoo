@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { Loader2 } from 'lucide-vue-next'
-import { useOnboardingCheck } from '@/composables/useOnboardingCheck'
+import { Loader2 } from "lucide-vue-next";
+import { useOnboardingCheck } from "@/composables/useOnboardingCheck";
 
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
 
-const { needsOnboarding, isCheckingOnboarding } = useOnboardingCheck()
-const { isAuthenticated } = storeToRefs(authStore)
+const { needsOnboarding, isCheckingOnboarding } = useOnboardingCheck();
+const { isAuthenticated } = storeToRefs(authStore);
 
 watch(
   [isAuthenticated, needsOnboarding, isCheckingOnboarding],
   ([authenticated, needs, checking]) => {
-    if (!authenticated) return
-    if (checking) return
-    if (needs === null) return
+    if (!authenticated) return;
+    if (checking) return;
+    if (needs === null) return;
 
-    if (needs && !route.path.startsWith('/onboarding')) {
-      router.replace('/onboarding')
+    if (needs && !route.path.startsWith("/onboarding")) {
+      router.replace("/onboarding");
     }
   },
   { immediate: true },
-)
+);
 </script>
 
 <template>

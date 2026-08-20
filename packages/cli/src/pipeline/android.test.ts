@@ -93,9 +93,7 @@ describe("collectAndroidArtifact", () => {
     // The old findApk accepted this file and uploaded it as a release.
     makeApk("app/build/outputs/apk/release/app-release-unsigned.apk");
 
-    expect(() => collectAndroidArtifact(workDir, "release", false)).toThrow(
-      /is not signed/,
-    );
+    expect(() => collectAndroidArtifact(workDir, "release", false)).toThrow(/is not signed/);
   });
 
   it("allows an unsigned release when asked explicitly", () => {

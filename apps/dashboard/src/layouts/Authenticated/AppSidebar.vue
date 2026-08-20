@@ -16,11 +16,11 @@
   </Sidebar>
 </template>
 <script setup lang="ts">
-import SidebarHeader from '@/components/ui/sidebar/SidebarHeader.vue'
-import NavMain from './NavMain.vue'
-import AppSwitcher from './AppSwitcher.vue'
+import SidebarHeader from "@/components/ui/sidebar/SidebarHeader.vue";
+import NavMain from "./NavMain.vue";
+import AppSwitcher from "./AppSwitcher.vue";
 
-import type { SidebarProps } from '@/components/ui/sidebar'
+import type { SidebarProps } from "@/components/ui/sidebar";
 import {
   Home,
   BarChart3,
@@ -30,81 +30,81 @@ import {
   ScrollText,
   Settings2,
   Workflow,
-} from 'lucide-vue-next'
-import NavUser from './NavUser.vue'
+} from "lucide-vue-next";
+import NavUser from "./NavUser.vue";
 
 const props = withDefaults(defineProps<SidebarProps>(), {
-  variant: 'inset',
-})
+  variant: "inset",
+});
 
-const authStore = useAuthStore()
-const { user } = storeToRefs(authStore)
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
 const navUser = computed(() => ({
-  name: user.value?.email?.split('@')[0] ?? '',
-  email: user.value?.email ?? '',
-  avatar: user.value?.user_metadata?.avatar_url ?? '/palceholder.png',
-}))
+  name: user.value?.email?.split("@")[0] ?? "",
+  email: user.value?.email ?? "",
+  avatar: user.value?.user_metadata?.avatar_url ?? "/palceholder.png",
+}));
 
 const appDashboard = [
   {
-    title: 'Dashboard',
-    url: '/dashboard',
+    title: "Dashboard",
+    url: "/dashboard",
     icon: Home,
   },
   {
-    title: 'Statistics',
-    url: '/statistics',
+    title: "Statistics",
+    url: "/statistics",
     icon: BarChart3,
   },
   {
-    title: 'Canvas',
-    url: '/canvas',
+    title: "Canvas",
+    url: "/canvas",
     icon: Workflow,
   },
-]
+];
 
 const appEssentials = [
   {
-    title: 'Updates & Bundles',
-    url: '/updates-bundles',
+    title: "Updates & Bundles",
+    url: "/updates-bundles",
     icon: GitBranch,
     items: [
-      { title: 'All Updates', url: '/updates-bundles' },
-      { title: 'Upload Bundle', url: '/updates-bundles/upload' },
+      { title: "All Updates", url: "/updates-bundles" },
+      { title: "Upload Bundle", url: "/updates-bundles/upload" },
     ],
   },
   {
-    title: 'Channels',
-    url: '/channels',
+    title: "Channels",
+    url: "/channels",
     icon: Radio,
     items: [
-      { title: 'All Channels', url: '/channels' },
-      { title: 'Create Channel', url: '/channels/create' },
+      { title: "All Channels", url: "/channels" },
+      { title: "Create Channel", url: "/channels/create" },
     ],
   },
   {
-    title: 'Devices',
-    url: '/devices',
+    title: "Devices",
+    url: "/devices",
     icon: Smartphone,
     items: [
-      { title: 'All Devices', url: '/devices' },
-      { title: 'Device Map', url: '/devices/map' },
+      { title: "All Devices", url: "/devices" },
+      { title: "Device Map", url: "/devices/map" },
     ],
   },
   {
-    title: 'Update Logs',
-    url: '/update-logs',
+    title: "Update Logs",
+    url: "/update-logs",
     icon: ScrollText,
-    items: [{ title: 'Activity Feed', url: '/update-logs' }],
+    items: [{ title: "Activity Feed", url: "/update-logs" }],
   },
-]
+];
 
 const appSettings = [
   {
-    title: 'Settings',
-    url: '/settings',
+    title: "Settings",
+    url: "/settings",
     icon: Settings2,
   },
-]
+];
 </script>

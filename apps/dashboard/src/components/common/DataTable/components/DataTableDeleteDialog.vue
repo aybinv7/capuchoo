@@ -2,11 +2,11 @@
   <Dialog :open="open" @update:open="(val) => $emit('update:open', val)">
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{{ title || 'Are you absolutely sure?' }}</DialogTitle>
+        <DialogTitle>{{ title || "Are you absolutely sure?" }}</DialogTitle>
         <DialogDescription>
           {{
             description ||
-            'This action cannot be undone. This will permanently delete the selected items.'
+            "This action cannot be undone. This will permanently delete the selected items."
           }}
         </DialogDescription>
       </DialogHeader>
@@ -26,18 +26,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 defineProps<{
-  open: boolean
-  title?: string
-  description?: string
-}>()
+  open: boolean;
+  title?: string;
+  description?: string;
+}>();
 
 defineEmits<{
-  (e: 'confirm'): void
-  (e: 'cancel'): void
-  (e: 'update:open', value: boolean): void
-}>()
+  (e: "confirm"): void;
+  (e: "cancel"): void;
+  (e: "update:open", value: boolean): void;
+}>();
 </script>

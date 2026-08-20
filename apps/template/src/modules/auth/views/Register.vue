@@ -7,9 +7,7 @@
     login-screen
     class="login-screen-transparent"
   >
-    <div
-      class="relative flex h-full flex-col items-center justify-center overflow-hidden"
-    >
+    <div class="relative flex h-full flex-col items-center justify-center overflow-hidden">
       <!-- 🔹 Shader background -->
       <ShaderLines class="absolute inset-0 z-0" />
 
@@ -21,13 +19,9 @@
         class="relative z-20 flex flex-col items-center justify-center w-full px-4 safe-area-padding"
       >
         <!-- Header -->
-        <div
-          class="flex flex-col items-center justify-center mb-8 w-full text-white"
-        >
+        <div class="flex flex-col items-center justify-center mb-8 w-full text-white">
           <h1 class="text-3xl font-bold tracking-tight">Create Account</h1>
-          <p class="text-gray-300 mt-1 opacity-80">
-            Join the Capucho Tester Program
-          </p>
+          <p class="text-gray-300 mt-1 opacity-80">Join the Capucho Tester Program</p>
         </div>
 
         <!-- Register Card -->
@@ -97,8 +91,7 @@
           >
             <!-- <i-lucide-info class="text-blue-400 size-5 shrink-0 mt-0.5" /> -->
             <p class="text-xs text-blue-200 leading-snug">
-              Registration is currently in closed beta. Please contact an admin
-              for an invitation.
+              Registration is currently in closed beta. Please contact an admin for an invitation.
             </p>
           </div>
         </div>

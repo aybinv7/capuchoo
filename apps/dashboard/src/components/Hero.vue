@@ -146,20 +146,20 @@
 </template>
 
 <script setup lang="ts">
-import capgoLogo from '@/assets/images/capucho.png'
-const router = useRouter()
-const pillars = [92, 84, 78, 70, 62, 54, 46, 34, 18, 34, 46, 54, 62, 70, 78, 84, 92]
-const isMounted = ref(false)
+import capgoLogo from "@/assets/images/capucho.png";
+const router = useRouter();
+const pillars = [92, 84, 78, 70, 62, 54, 46, 34, 18, 34, 46, 54, 62, 70, 78, 84, 92];
+const isMounted = ref(false);
 
-let timer: number | undefined
+let timer: number | undefined;
 
 onMounted(() => {
-  timer = window.setTimeout(() => (isMounted.value = true), 100)
-})
+  timer = window.setTimeout(() => (isMounted.value = true), 100);
+});
 
 onUnmounted(() => {
-  if (timer) clearTimeout(timer)
-})
+  if (timer) clearTimeout(timer);
+});
 </script>
 
 <style scoped>

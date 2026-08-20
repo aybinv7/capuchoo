@@ -8,89 +8,89 @@ import {
   Clock,
   Smartphone,
   ChevronRight,
-} from 'lucide-vue-next'
-import { cn } from '@/lib/utils'
-import type { UpdateLog } from '@/modules/update-logs/types/update-logs.types'
+} from "lucide-vue-next";
+import { cn } from "@/lib/utils";
+import type { UpdateLog } from "@/modules/update-logs/types/update-logs.types";
 
 defineProps<{
-  logs: UpdateLog[]
-  hasMore: boolean
-  isLoadingMore?: boolean
-}>()
+  logs: UpdateLog[];
+  hasMore: boolean;
+  isLoadingMore?: boolean;
+}>();
 
 defineEmits<{
-  (e: 'loadMore'): void
-  (e: 'selectLog', log: UpdateLog): void
-}>()
+  (e: "loadMore"): void;
+  (e: "selectLog", log: UpdateLog): void;
+}>();
 
 // Action config for styling
 const actionConfig: Record<
   string,
   {
-    icon: any
-    bg: string
-    text: string
-    variant: 'default' | 'secondary' | 'destructive' | 'outline'
+    icon: any;
+    bg: string;
+    text: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
   }
 > = {
-  download: { icon: Download, bg: 'bg-blue-500/10', text: 'text-blue-500', variant: 'secondary' },
-  install: { icon: CheckCircle, bg: 'bg-green-500/10', text: 'text-green-500', variant: 'default' },
+  download: { icon: Download, bg: "bg-blue-500/10", text: "text-blue-500", variant: "secondary" },
+  install: { icon: CheckCircle, bg: "bg-green-500/10", text: "text-green-500", variant: "default" },
   download_fail: {
     icon: XCircle,
-    bg: 'bg-red-500/10',
-    text: 'text-red-500',
-    variant: 'destructive',
+    bg: "bg-red-500/10",
+    text: "text-red-500",
+    variant: "destructive",
   },
   install_fail: {
     icon: XCircle,
-    bg: 'bg-red-500/10',
-    text: 'text-red-500',
-    variant: 'destructive',
+    bg: "bg-red-500/10",
+    text: "text-red-500",
+    variant: "destructive",
   },
-  get: { icon: Activity, bg: 'bg-gray-500/10', text: 'text-gray-500', variant: 'outline' },
-  set: { icon: CheckCircle, bg: 'bg-purple-500/10', text: 'text-purple-500', variant: 'secondary' },
+  get: { icon: Activity, bg: "bg-gray-500/10", text: "text-gray-500", variant: "outline" },
+  set: { icon: CheckCircle, bg: "bg-purple-500/10", text: "text-purple-500", variant: "secondary" },
   first_open: {
     icon: Activity,
-    bg: 'bg-yellow-500/10',
-    text: 'text-yellow-500',
-    variant: 'secondary',
+    bg: "bg-yellow-500/10",
+    text: "text-yellow-500",
+    variant: "secondary",
   },
-}
+};
 
 // Format helpers
 const formatAction = (action: string) =>
-  action.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 const formatRelativeTime = (timestamp: string) => {
-  const date = new Date(timestamp)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString()
-}
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+};
 
 const formatDateTime = (timestamp: string) => {
-  return new Date(timestamp).toLocaleString()
-}
+  return new Date(timestamp).toLocaleString();
+};
 
 const getActionConfig = (action: string) => {
-  const config = actionConfig[action]
-  if (config) return config
+  const config = actionConfig[action];
+  if (config) return config;
   // Fallback config
   return {
     icon: Activity,
-    bg: 'bg-gray-500/10',
-    text: 'text-gray-500',
-    variant: 'outline' as const,
-  }
-}
+    bg: "bg-gray-500/10",
+    text: "text-gray-500",
+    variant: "outline" as const,
+  };
+};
 </script>
 
 <template>

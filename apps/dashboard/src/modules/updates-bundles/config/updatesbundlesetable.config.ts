@@ -39,7 +39,7 @@ export const updatesBundlesTableConfig = {
   defaults: {
     pageSize: 10,
     pageSizeOptions: [10, 20, 30, 40, 50, 100, 200],
-    density: 'normal' as 'compact' | 'normal' | 'comfortable',
+    density: "normal" as "compact" | "normal" | "comfortable",
     enableMultiSort: true,
     enableSortingRemoval: true,
     manualPagination: false, // Set to true for server-side pagination
@@ -55,8 +55,8 @@ export const updatesBundlesTableConfig = {
   // Aggregation settings (not used in this table)
   aggregation: {
     enable: false,
-    defaultFunction: 'sum', // Default aggregation function for numeric columns
-    allowedFunctions: ['sum', 'min', 'max', 'mean', 'count', 'unique', 'uniqueCount', 'original'],
+    defaultFunction: "sum", // Default aggregation function for numeric columns
+    allowedFunctions: ["sum", "min", "max", "mean", "count", "unique", "uniqueCount", "original"],
   },
 
   // Virtualization settings
@@ -65,6 +65,6 @@ export const updatesBundlesTableConfig = {
     overscan: 10, // Number of items to render outside visible area
     itemSize: 56, // Default item size for estimation
   },
-}
+};
 
-export type TableConfig = typeof updatesBundlesTableConfig
+export type TableConfig = typeof updatesBundlesTableConfig;

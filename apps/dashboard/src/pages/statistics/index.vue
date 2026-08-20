@@ -41,7 +41,7 @@
                 v-if="stat.change"
                 :class="['text-xs', stat.change > 0 ? 'text-green-600' : 'text-red-600']"
               >
-                {{ stat.change > 0 ? '+' : '' }}{{ stat.change }}% from last period
+                {{ stat.change > 0 ? "+" : "" }}{{ stat.change }}% from last period
               </p>
             </div>
             <div :class="['p-3 rounded-full', stat.bgColor]">
@@ -78,74 +78,74 @@
 </template>
 
 <script setup lang="ts">
-import { Package, Smartphone, Download, TrendingUp } from 'lucide-vue-next'
+import { Package, Smartphone, Download, TrendingUp } from "lucide-vue-next";
 
 definePage({
   meta: {
-    title: 'Statistics - CapGO Updater',
-    description: 'Analytics and metrics for your apps',
-    category: 'statistics',
+    title: "Statistics - CapGO Updater",
+    description: "Analytics and metrics for your apps",
+    category: "statistics",
   },
-})
+});
 
-const timeRange = ref('30d')
+const timeRange = ref("30d");
 
-const { data: statsData, isLoading } = useDashboardStatsQuery()
+const { data: statsData, isLoading } = useDashboardStatsQuery();
 
 const statsCards = computed(() => [
   {
-    title: 'Total Updates',
+    title: "Total Updates",
     value: statsData.value?.bundles_count ?? 0,
     change: 12,
     icon: Package,
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-600',
+    bgColor: "bg-blue-100",
+    textColor: "text-blue-600",
   },
   {
-    title: 'Active Devices',
+    title: "Active Devices",
     value: statsData.value?.devices_count ?? 0,
     change: 8,
     icon: Smartphone,
-    bgColor: 'bg-green-100',
-    textColor: 'text-green-600',
+    bgColor: "bg-green-100",
+    textColor: "text-green-600",
   },
   {
-    title: 'Downloads',
+    title: "Downloads",
     value: statsData.value?.downloads_count ?? 0,
     change: 24,
     icon: Download,
-    bgColor: 'bg-purple-100',
-    textColor: 'text-purple-600',
+    bgColor: "bg-purple-100",
+    textColor: "text-purple-600",
   },
   {
-    title: 'Success Rate',
-    value: '98.5%',
+    title: "Success Rate",
+    value: "98.5%",
     change: 2.1,
     icon: TrendingUp,
-    bgColor: 'bg-orange-100',
-    textColor: 'text-orange-600',
+    bgColor: "bg-orange-100",
+    textColor: "text-orange-600",
   },
-])
+]);
 
 // Chart data - would come from API
 const downloadChartData = computed(() => [
-  { date: new Date('2024-04-01'), desktop: 222, mobile: 150 },
-  { date: new Date('2024-04-02'), desktop: 97, mobile: 180 },
-  { date: new Date('2024-04-03'), desktop: 167, mobile: 120 },
-  { date: new Date('2024-04-04'), desktop: 242, mobile: 260 },
-  { date: new Date('2024-04-05'), desktop: 373, mobile: 290 },
-  { date: new Date('2024-04-06'), desktop: 301, mobile: 340 },
-  { date: new Date('2024-04-07'), desktop: 245, mobile: 180 },
-])
+  { date: new Date("2024-04-01"), desktop: 222, mobile: 150 },
+  { date: new Date("2024-04-02"), desktop: 97, mobile: 180 },
+  { date: new Date("2024-04-03"), desktop: 167, mobile: 120 },
+  { date: new Date("2024-04-04"), desktop: 242, mobile: 260 },
+  { date: new Date("2024-04-05"), desktop: 373, mobile: 290 },
+  { date: new Date("2024-04-06"), desktop: 301, mobile: 340 },
+  { date: new Date("2024-04-07"), desktop: 245, mobile: 180 },
+]);
 
 const deviceDistributionData = computed(() => [
-  { platform: 'android', downloads: 350 },
-  { platform: 'ios', downloads: 280 },
-])
+  { platform: "android", downloads: 350 },
+  { platform: "ios", downloads: 280 },
+]);
 
 const channelDistributionData = computed(() => [
-  { channel: 'staging', count: 450, fill: 'var(--color-chart-1)' },
-  { channel: 'prod', count: 300, fill: 'var(--color-chart-2)' },
-  { channel: 'dev', count: 180, fill: 'var(--color-chart-3)' },
-])
+  { channel: "staging", count: 450, fill: "var(--color-chart-1)" },
+  { channel: "prod", count: 300, fill: "var(--color-chart-2)" },
+  { channel: "dev", count: 180, fill: "var(--color-chart-3)" },
+]);
 </script>

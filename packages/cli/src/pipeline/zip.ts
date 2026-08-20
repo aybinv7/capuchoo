@@ -35,12 +35,7 @@ const DEFLATED = 8;
 const MAX_ZIP_SIZE = 0xff_ff_ff_ff; // 4 GiB - beyond this ZIP64 is required.
 
 /** Files that must never reach a device. */
-const EXCLUDED = new Set([
-  ".DS_Store",
-  "Thumbs.db",
-  ".gitkeep",
-  "capucho-deploy.log",
-]);
+const EXCLUDED = new Set([".DS_Store", "Thumbs.db", ".gitkeep", "capucho-deploy.log"]);
 
 const CRC_TABLE = buildCrcTable();
 
@@ -93,9 +88,9 @@ interface Entry {
 function collect(root: string, prefix = ""): Entry[] {
   const entries: Entry[] = [];
 
-  for (const item of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) =>
-    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
-  )) {
+  for (const item of fs
+    .readdirSync(root, { withFileTypes: true })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
     if (EXCLUDED.has(item.name)) continue;
 
     const absolute = path.join(root, item.name);
@@ -208,9 +203,7 @@ export function createBundleZip(options: BundleOptions): BundleResult {
 
     offset += local.length + nameBytes.length + compressed.length;
     if (offset > MAX_ZIP_SIZE) {
-      throw new Error(
-        "The web bundle exceeds 4 GiB, which needs ZIP64. Reduce the bundle size.",
-      );
+      throw new Error("The web bundle exceeds 4 GiB, which needs ZIP64. Reduce the bundle size.");
     }
   }
 
@@ -225,11 +218,7 @@ export function createBundleZip(options: BundleOptions): BundleResult {
   end.writeUInt32LE(offset, 16);
   end.writeUInt16LE(0, 20); // comment length
 
-  const archive = Buffer.concat([
-    ...localParts,
-    centralDirectory,
-    end,
-  ]);
+  const archive = Buffer.concat([...localParts, centralDirectory, end]);
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, archive);

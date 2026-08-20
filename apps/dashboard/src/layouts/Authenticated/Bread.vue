@@ -6,31 +6,31 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
-import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+} from "@/components/ui/breadcrumb";
+import { computed } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 
-const route = useRoute()
+const route = useRoute();
 
 const breadcrumbs = computed(() => {
-  const matchedRoutes = route.matched
+  const matchedRoutes = route.matched;
   const crumbs: {
-    text: string
-    to: string
-    isCurrent: boolean
-  }[] = []
+    text: string;
+    to: string;
+    isCurrent: boolean;
+  }[] = [];
 
   matchedRoutes.forEach((matchedRoute) => {
     if (matchedRoute.meta && matchedRoute.meta.breadcrumb) {
-      const breadcrumb = matchedRoute.meta.breadcrumb
-      let breadcrumbText = ''
+      const breadcrumb = matchedRoute.meta.breadcrumb;
+      let breadcrumbText = "";
 
-      if (typeof breadcrumb === 'function') {
-        breadcrumbText = breadcrumb(route)
-      } else if (typeof breadcrumb === 'string') {
-        breadcrumbText = breadcrumb
+      if (typeof breadcrumb === "function") {
+        breadcrumbText = breadcrumb(route);
+      } else if (typeof breadcrumb === "string") {
+        breadcrumbText = breadcrumb;
       } else {
-        breadcrumbText = String(breadcrumb) || getBreadcrumbFromPath(matchedRoute.path)
+        breadcrumbText = String(breadcrumb) || getBreadcrumbFromPath(matchedRoute.path);
       }
 
       if (!crumbs.some((c) => c.to === matchedRoute.path)) {
@@ -38,36 +38,36 @@ const breadcrumbs = computed(() => {
           text: breadcrumbText,
           to: matchedRoute.path,
           isCurrent: matchedRoute.path === route.path,
-        })
+        });
       }
     } else {
-      const pathBreadcrumb = getBreadcrumbFromPath(matchedRoute.path)
+      const pathBreadcrumb = getBreadcrumbFromPath(matchedRoute.path);
       if (pathBreadcrumb && !crumbs.some((c) => c.to === matchedRoute.path)) {
         crumbs.push({
           text: pathBreadcrumb,
           to: matchedRoute.path,
           isCurrent: matchedRoute.path === route.path,
-        })
+        });
       }
     }
-  })
+  });
 
-  if (crumbs.length === 0 && route.path !== '/') {
-    const pathParts = route.path.split('/').filter((part) => part)
-    let currentPath = ''
+  if (crumbs.length === 0 && route.path !== "/") {
+    const pathParts = route.path.split("/").filter((part) => part);
+    let currentPath = "";
 
     pathParts.forEach((part) => {
-      currentPath += '/' + part
-      const breadcrumbText = getBreadcrumbFromPath(currentPath)
+      currentPath += "/" + part;
+      const breadcrumbText = getBreadcrumbFromPath(currentPath);
 
       if (!crumbs.some((c) => c.to === currentPath)) {
         crumbs.push({
           text: breadcrumbText,
           to: currentPath,
           isCurrent: currentPath === route.path,
-        })
+        });
       }
-    })
+    });
   }
 
   // if (!crumbs.some((c) => c.to === '/') && route.path !== '/') {
@@ -86,25 +86,25 @@ const breadcrumbs = computed(() => {
   //   })
   // }
 
-  return crumbs
-})
+  return crumbs;
+});
 
 const getBreadcrumbFromPath = (path: string) => {
-  if (!path || path === '/') return 'Home'
+  if (!path || path === "/") return "Home";
 
-  const segments = path.split('/').filter((segment) => segment)
-  if (segments.length === 0) return 'Home'
+  const segments = path.split("/").filter((segment) => segment);
+  if (segments.length === 0) return "Home";
 
-  const lastSegment = segments[segments.length - 1]
+  const lastSegment = segments[segments.length - 1];
 
   return lastSegment
     ? lastSegment
-        .replace(/[-_]/g, ' ')
-        .split(' ')
+        .replace(/[-_]/g, " ")
+        .split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
-    : 'Page'
-}
+        .join(" ")
+    : "Page";
+};
 </script>
 
 <template>

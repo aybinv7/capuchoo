@@ -55,9 +55,7 @@ export interface CapacitorUpdaterPluginConfig {
   allowModifyUrl: boolean;
 }
 
-export function capuchoUpdaterConfig(
-  options: UpdaterPluginOptions,
-): CapacitorUpdaterPluginConfig {
+export function capuchoUpdaterConfig(options: UpdaterPluginOptions): CapacitorUpdaterPluginConfig {
   const apiUrl = options.apiUrl.replace(/\/+$/, "");
 
   if (!apiUrl) {

@@ -80,8 +80,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import type { Column } from '@tanstack/vue-table'
-import { computed } from 'vue'
+import type { Column } from "@tanstack/vue-table";
+import { computed } from "vue";
 import {
   ArrowDown,
   ArrowUp,
@@ -92,25 +92,25 @@ import {
   Ungroup,
   Pin,
   PinOff,
-} from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
+} from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 
 interface DataTableColumnHeaderProps {
-  column: Column<any, any>
-  title: string
+  column: Column<any, any>;
+  title: string;
 }
 
-const props = defineProps<DataTableColumnHeaderProps>()
+const props = defineProps<DataTableColumnHeaderProps>();
 
-const sortable = computed(() => props.column.getCanSort())
-const filterable = computed(() => props.column.getCanFilter())
-const groupable = computed(() => props.column.getCanGroup())
-const pinnable = computed(() => props.column.getCanPin())
+const sortable = computed(() => props.column.getCanSort());
+const filterable = computed(() => props.column.getCanFilter());
+const groupable = computed(() => props.column.getCanGroup());
+const pinnable = computed(() => props.column.getCanPin());
 </script>

@@ -22,10 +22,7 @@ export const organizationService = {
   },
 
   async update(id: string, data: Partial<CreateOrganizationDto>) {
-    const response = await apiClient.put<Organization>(
-      `/organizations/${id}`,
-      data,
-    );
+    const response = await apiClient.put<Organization>(`/organizations/${id}`, data);
     return response.data;
   },
 
@@ -35,9 +32,7 @@ export const organizationService = {
   },
 
   async getMembers(id: string) {
-    const response = await apiClient.get<OrganizationMember[]>(
-      `/organizations/${id}/members`,
-    );
+    const response = await apiClient.get<OrganizationMember[]>(`/organizations/${id}/members`);
     return response.data;
   },
 };

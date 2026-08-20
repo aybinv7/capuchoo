@@ -122,7 +122,7 @@
         class="gap-2"
       >
         {{ table.getColumn(filter.id)?.columnDef.id || filter.id }}:
-        {{ Array.isArray(filter.value) ? filter.value.join(', ') : filter.value }}
+        {{ Array.isArray(filter.value) ? filter.value.join(", ") : filter.value }}
         <button
           @click="table.getColumn(filter.id)?.setFilterValue(undefined)"
           class="hover:bg-secondary-foreground/20 rounded-full p-0.5"
@@ -135,72 +135,72 @@
 </template>
 
 <script setup lang="ts">
-import type { Table } from '@tanstack/vue-table'
-import { computed } from 'vue'
-import { Search, X, Columns, Download, FileText, FileJson } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import type { Table } from "@tanstack/vue-table";
+import { computed } from "vue";
+import { Search, X, Columns, Download, FileText, FileJson } from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from '@/components/ui/dropdown-menu'
-import DataTableViewOptions from '@/components/common/DataTable/components/DataTableViewOptions.vue'
-import DataTableFacetedFilter from '@/components/common/DataTable/components/DataTableFacetedFilter.vue'
-import { exportToCSV, exportToJSON } from '@/utils/tables.utils'
+} from "@/components/ui/dropdown-menu";
+import DataTableViewOptions from "@/components/common/DataTable/components/DataTableViewOptions.vue";
+import DataTableFacetedFilter from "@/components/common/DataTable/components/DataTableFacetedFilter.vue";
+import { exportToCSV, exportToJSON } from "@/utils/tables.utils";
 
 interface DataTableToolbarProps<TData> {
-  table: Table<TData>
-  state: any
-  isLoading?: boolean
+  table: Table<TData>;
+  state: any;
+  isLoading?: boolean;
 }
 
-const props = defineProps<DataTableToolbarProps<any>>()
+const props = defineProps<DataTableToolbarProps<any>>();
 
 defineEmits<{
-  (e: 'click:refresh'): void
-}>()
+  (e: "click:refresh"): void;
+}>();
 
 // Check if any filters are applied
 const isFiltered = computed(() => {
-  return props.state.columnFilters.value.length > 0 || props.state.globalFilter.value !== ''
-})
+  return props.state.columnFilters.value.length > 0 || props.state.globalFilter.value !== "";
+});
 
 // Get grouped columns
 const groupedColumns = computed(() => {
-  return props.table.getState().grouping
-})
+  return props.table.getState().grouping;
+});
 
 // Platform options
 const platformOptions = computed(() => {
-  const facets = props.table.getColumn('platform')?.getFacetedUniqueValues()
+  const facets = props.table.getColumn("platform")?.getFacetedUniqueValues();
   return Array.from(facets?.entries() || []).map(([value, count]) => ({
     label: value.charAt(0).toUpperCase() + value.slice(1),
     value: value,
     count,
-  }))
-})
+  }));
+});
 
 // Channel options
 const channelOptions = computed(() => {
-  const facets = props.table.getColumn('channel')?.getFacetedUniqueValues()
+  const facets = props.table.getColumn("channel")?.getFacetedUniqueValues();
   return Array.from(facets?.entries() || []).map(([value, count]) => ({
     label: value,
     value: value,
     count,
-  }))
-})
+  }));
+});
 
 // Export functions
 const exportCSV = () => {
-  const data = props.table.getFilteredRowModel().rows.map((row) => row.original)
-  exportToCSV(data, 'devices.csv')
-}
+  const data = props.table.getFilteredRowModel().rows.map((row) => row.original);
+  exportToCSV(data, "devices.csv");
+};
 
 const exportJSON = () => {
-  const data = props.table.getFilteredRowModel().rows.map((row) => row.original)
-  exportToJSON(data, 'devices.json')
-}
+  const data = props.table.getFilteredRowModel().rows.map((row) => row.original);
+  exportToJSON(data, "devices.json");
+};
 </script>

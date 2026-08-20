@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DateRange } from 'reka-ui'
-import { getLocalTimeZone, today, CalendarDate } from '@internationalized/date'
-import { RangeCalendar } from '@/components/ui/range-calendar'
+import type { DateRange } from "reka-ui";
+import { getLocalTimeZone, today, CalendarDate } from "@internationalized/date";
+import { RangeCalendar } from "@/components/ui/range-calendar";
 import {
   CalendarIcon,
   Search,
@@ -10,118 +10,118 @@ import {
   RefreshCw,
   ChevronDown,
   Download as DownloadIcon,
-} from 'lucide-vue-next'
-import { cn } from '@/lib/utils'
+} from "lucide-vue-next";
+import { cn } from "@/lib/utils";
 
 //TODO: remove the any type on date range
 // Props & Emits
 const props = defineProps<{
-  searchQuery: string
-  selectedActions: string[]
-  selectedPlatforms: string[]
-  dateRange: any
-  isLoading?: boolean
-}>()
+  searchQuery: string;
+  selectedActions: string[];
+  selectedPlatforms: string[];
+  dateRange: any;
+  isLoading?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:searchQuery', value: string): void
-  (e: 'update:selectedActions', value: string[]): void
-  (e: 'update:selectedPlatforms', value: string[]): void
-  (e: 'update:dateRange', value: DateRange): void
-  (e: 'refresh'): void
-  (e: 'clear'): void
-  (e: 'export'): void
-}>()
+  (e: "update:searchQuery", value: string): void;
+  (e: "update:selectedActions", value: string[]): void;
+  (e: "update:selectedPlatforms", value: string[]): void;
+  (e: "update:dateRange", value: DateRange): void;
+  (e: "refresh"): void;
+  (e: "clear"): void;
+  (e: "export"): void;
+}>();
 
 // Action options with colors
 const actionOptions = [
-  { value: 'download', label: 'Download', color: 'bg-blue-500' },
-  { value: 'install', label: 'Install', color: 'bg-green-500' },
-  { value: 'download_fail', label: 'Download Failed', color: 'bg-red-500' },
-  { value: 'install_fail', label: 'Install Failed', color: 'bg-red-500' },
-  { value: 'get', label: 'Get Update', color: 'bg-gray-500' },
-  { value: 'set', label: 'Set Version', color: 'bg-purple-500' },
-  { value: 'first_open', label: 'First Open', color: 'bg-yellow-500' },
-]
+  { value: "download", label: "Download", color: "bg-blue-500" },
+  { value: "install", label: "Install", color: "bg-green-500" },
+  { value: "download_fail", label: "Download Failed", color: "bg-red-500" },
+  { value: "install_fail", label: "Install Failed", color: "bg-red-500" },
+  { value: "get", label: "Get Update", color: "bg-gray-500" },
+  { value: "set", label: "Set Version", color: "bg-purple-500" },
+  { value: "first_open", label: "First Open", color: "bg-yellow-500" },
+];
 
 // Platform options
 const platformOptions = [
-  { value: 'android', label: 'Android' },
-  { value: 'ios', label: 'iOS' },
-]
+  { value: "android", label: "Android" },
+  { value: "ios", label: "iOS" },
+];
 
 // Active filter count
 const activeFilterCount = computed(() => {
-  let count = 0
-  if (props.searchQuery) count++
-  if (props.selectedActions.length > 0) count++
-  if (props.selectedPlatforms.length > 0) count++
-  if (props.dateRange.start) count++
-  return count
-})
+  let count = 0;
+  if (props.searchQuery) count++;
+  if (props.selectedActions.length > 0) count++;
+  if (props.selectedPlatforms.length > 0) count++;
+  if (props.dateRange.start) count++;
+  return count;
+});
 
 // Toggle action
 const toggleAction = (action: string) => {
-  const current = [...props.selectedActions]
-  const idx = current.indexOf(action)
+  const current = [...props.selectedActions];
+  const idx = current.indexOf(action);
   if (idx >= 0) {
-    current.splice(idx, 1)
+    current.splice(idx, 1);
   } else {
-    current.push(action)
+    current.push(action);
   }
-  emit('update:selectedActions', current)
-}
+  emit("update:selectedActions", current);
+};
 
 // Toggle platform
 const togglePlatform = (platform: string) => {
-  const current = [...props.selectedPlatforms]
-  const idx = current.indexOf(platform)
+  const current = [...props.selectedPlatforms];
+  const idx = current.indexOf(platform);
   if (idx >= 0) {
-    current.splice(idx, 1)
+    current.splice(idx, 1);
   } else {
-    current.push(platform)
+    current.push(platform);
   }
-  emit('update:selectedPlatforms', current)
-}
+  emit("update:selectedPlatforms", current);
+};
 
 // Date display text
 const dateDisplayText = computed(() => {
-  if (!props.dateRange.start) return 'Select date range'
-  const start = props.dateRange.start
-  const end = props.dateRange.end
+  if (!props.dateRange.start) return "Select date range";
+  const start = props.dateRange.start;
+  const end = props.dateRange.end;
   if (end) {
-    return `${start.month}/${start.day}/${start.year} - ${end.month}/${end.day}/${end.year}`
+    return `${start.month}/${start.day}/${start.year} - ${end.month}/${end.day}/${end.year}`;
   }
-  return `${start.month}/${start.day}/${start.year}`
-})
+  return `${start.month}/${start.day}/${start.year}`;
+});
 
 // Quick preset handlers
-const setPreset = (preset: 'today' | 'yesterday' | 'last7' | 'last30') => {
-  const tz = getLocalTimeZone()
-  const now = today(tz)
-  let start: CalendarDate
-  let end: CalendarDate = now
+const setPreset = (preset: "today" | "yesterday" | "last7" | "last30") => {
+  const tz = getLocalTimeZone();
+  const now = today(tz);
+  let start: CalendarDate;
+  let end: CalendarDate = now;
 
   switch (preset) {
-    case 'today':
-      start = now
-      break
-    case 'yesterday':
-      start = now.subtract({ days: 1 })
-      end = start
-      break
-    case 'last7':
-      start = now.subtract({ days: 7 })
-      break
-    case 'last30':
-      start = now.subtract({ days: 30 })
-      break
+    case "today":
+      start = now;
+      break;
+    case "yesterday":
+      start = now.subtract({ days: 1 });
+      end = start;
+      break;
+    case "last7":
+      start = now.subtract({ days: 7 });
+      break;
+    case "last30":
+      start = now.subtract({ days: 30 });
+      break;
     default:
-      start = now
+      start = now;
   }
 
-  emit('update:dateRange', { start, end })
-}
+  emit("update:dateRange", { start, end });
+};
 </script>
 
 <template>

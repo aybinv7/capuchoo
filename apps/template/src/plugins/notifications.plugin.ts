@@ -10,19 +10,13 @@ export const notificationsPlugin = async (app: App) => {
   if (hasPermissions) {
     await notificationService.registerPushNotifications();
 
-    await LocalNotifications.addListener(
-      "localNotificationActionPerformed",
-      (notification) => {
-        console.log("Local Notification Action:", notification);
-      },
-    );
+    await LocalNotifications.addListener("localNotificationActionPerformed", (notification) => {
+      console.log("Local Notification Action:", notification);
+    });
 
-    await FirebaseMessaging.addListener(
-      "notificationActionPerformed",
-      (event) => {
-        console.log("Push Notification Action:", event);
-      },
-    );
+    await FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
+      console.log("Push Notification Action:", event);
+    });
 
     await FirebaseMessaging.addListener("notificationReceived", (event) => {
       f7.notification

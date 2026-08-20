@@ -46,7 +46,7 @@ const logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss:ms" }),
     winston.format.colorize({ all: true }),
-    customFormat
+    customFormat,
   ),
   transports: [
     new winston.transports.Console(),
@@ -57,14 +57,14 @@ const logger = winston.createLogger({
             level: "error",
             format: winston.format.combine(
               winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss:ms" }),
-              winston.format.json()
+              winston.format.json(),
             ),
           }),
           new winston.transports.File({
             filename: "logs/all.log",
             format: winston.format.combine(
               winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss:ms" }),
-              winston.format.json()
+              winston.format.json(),
             ),
           }),
         ]
@@ -90,16 +90,13 @@ export const requestLogger = (req: any, res: any, next: any) => {
   const originalEnd = res.end;
   res.end = function (chunk: any, encoding: any, callback: any) {
     const duration = Date.now() - startTime;
-    logger.http(
-      `[RESPONSE] ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`,
-      {
-        status: res.statusCode,
-        duration,
-        ...(res.statusCode >= 400 && {
-          response: chunk ? chunk.toString() : undefined,
-        }),
-      }
-    );
+    logger.http(`[RESPONSE] ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`, {
+      status: res.statusCode,
+      duration,
+      ...(res.statusCode >= 400 && {
+        response: chunk ? chunk.toString() : undefined,
+      }),
+    });
     originalEnd.call(this, chunk, encoding, callback);
   };
 

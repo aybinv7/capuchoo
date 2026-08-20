@@ -8,10 +8,7 @@
       title="Updates & Bundles"
       :sliding="false"
     >
-      <F7Subnavbar
-        :bg-color="!isNavbarCollapsed ? 'transparent' : ''"
-        :inner="false"
-      >
+      <F7Subnavbar :bg-color="!isNavbarCollapsed ? 'transparent' : ''" :inner="false">
         <F7Searchbar
           class="search-updates"
           :custom-search="true"
@@ -53,10 +50,9 @@
               :color="getPlatformColor(item.platform)"
               size="24"
             />
-            <span
-              class="text-[9px] uppercase font-bold opacity-40 leading-none"
-              >{{ item.platform }}</span
-            >
+            <span class="text-[9px] uppercase font-bold opacity-40 leading-none">{{
+              item.platform
+            }}</span>
           </div>
         </template>
         <template #after-title>
@@ -149,9 +145,7 @@ const handleRefresh = async (done: () => void) => {
 };
 
 const createUpdate = () => {
-  (f7.toast as any)
-    .create({ text: "Creation coming soon!", closeTimeout: 2000 })
-    .open();
+  (f7.toast as any).create({ text: "Creation coming soon!", closeTimeout: 2000 }).open();
 };
 </script>
 

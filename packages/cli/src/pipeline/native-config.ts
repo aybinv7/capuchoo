@@ -41,19 +41,17 @@ export interface NativeConfigInput {
   runOptions: Omit<RunOptions, "cwd" | "env">;
 }
 
-export async function applyNativeConfig(
-  input: NativeConfigInput,
-): Promise<NativeConfigResult> {
+export async function applyNativeConfig(input: NativeConfigInput): Promise<NativeConfigResult> {
   const trapezeBin = resolveBin("trapeze", input.appDir);
 
   if (trapezeBin && input.flavour.trapezeConfig) {
     // `-y` accepts the diff Trapeze prints; without it the command waits for
     // input forever in CI.
-    await run(
-      trapezeBin,
-      ["run", input.flavour.trapezeConfig, "-y"],
-      { ...input.runOptions, cwd: input.appDir, env: input.env },
-    );
+    await run(trapezeBin, ["run", input.flavour.trapezeConfig, "-y"], {
+      ...input.runOptions,
+      cwd: input.appDir,
+      env: input.env,
+    });
     return { method: "trapeze", changed: [] };
   }
 
@@ -64,9 +62,7 @@ export async function applyNativeConfig(
   return { ...applyBuiltinConfig(input), reason };
 }
 
-function applyBuiltinConfig(
-  input: NativeConfigInput,
-): Omit<NativeConfigResult, "reason"> {
+function applyBuiltinConfig(input: NativeConfigInput): Omit<NativeConfigResult, "reason"> {
   const changed: string[] = [];
 
   if (input.platform === "android") {
@@ -101,20 +97,11 @@ function patchAndroid(input: NativeConfigInput): string[] {
     if (appId) {
       // Both forms appear in a Capacitor project: `namespace = "..."` and
       // `applicationId "..."`. Quote style varies, so match either.
-      gradle = gradle.replace(
-        /(\bnamespace\s*=\s*)["'][^"']*["']/,
-        `$1"${appId}"`,
-      );
-      gradle = gradle.replace(
-        /(\bapplicationId\s*=?\s*)["'][^"']*["']/,
-        `$1"${appId}"`,
-      );
+      gradle = gradle.replace(/(\bnamespace\s*=\s*)["'][^"']*["']/, `$1"${appId}"`);
+      gradle = gradle.replace(/(\bapplicationId\s*=?\s*)["'][^"']*["']/, `$1"${appId}"`);
     }
     if (version) {
-      gradle = gradle.replace(
-        /(\bversionName\s*=?\s*)["'][^"']*["']/,
-        `$1"${version}"`,
-      );
+      gradle = gradle.replace(/(\bversionName\s*=?\s*)["'][^"']*["']/, `$1"${version}"`);
     }
     if (versionCode) {
       gradle = gradle.replace(/(\bversionCode\s*=?\s*)\d+/, `$1${versionCode}`);
@@ -126,15 +113,7 @@ function patchAndroid(input: NativeConfigInput): string[] {
     }
   }
 
-  const stringsFile = path.join(
-    androidRoot,
-    "app",
-    "src",
-    "main",
-    "res",
-    "values",
-    "strings.xml",
-  );
+  const stringsFile = path.join(androidRoot, "app", "src", "main", "res", "values", "strings.xml");
   if (fs.existsSync(stringsFile)) {
     let strings = fs.readFileSync(stringsFile, "utf8");
     const before = strings;
@@ -158,19 +137,10 @@ function patchAndroid(input: NativeConfigInput): string[] {
 }
 
 /** Replaces one `<string name="x">…</string>` value, escaping XML metacharacters. */
-function replaceStringResource(
-  xml: string,
-  name: string,
-  value: string,
-): string {
-  const escaped = value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+function replaceStringResource(xml: string, name: string, value: string): string {
+  const escaped = value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
-  const pattern = new RegExp(
-    `(<string\\s+name=(?:"|')${name}(?:"|')\\s*>)([\\s\\S]*?)(</string>)`,
-  );
+  const pattern = new RegExp(`(<string\\s+name=(?:"|')${name}(?:"|')\\s*>)([\\s\\S]*?)(</string>)`);
   return xml.replace(pattern, `$1${escaped}$3`);
 }
 
@@ -197,9 +167,7 @@ function patchIos(input: NativeConfigInput): string[] {
 }
 
 function replacePlistString(xml: string, key: string, value: string): string {
-  const pattern = new RegExp(
-    `(<key>${key}</key>\\s*<string>)([\\s\\S]*?)(</string>)`,
-  );
+  const pattern = new RegExp(`(<key>${key}</key>\\s*<string>)([\\s\\S]*?)(</string>)`);
   return xml.replace(pattern, `$1${value}$3`);
 }
 
@@ -208,15 +176,9 @@ function replacePlistString(xml: string, key: string, value: string): string {
  * not safely editable with a regex. Trapeze does it properly, so the built-in
  * path reports the limitation instead of pretending to have handled it.
  */
-export function builtinConfigLimitations(
-  platform: "android" | "ios",
-): string[] {
+export function builtinConfigLimitations(platform: "android" | "ios"): string[] {
   if (platform === "ios") {
-    return [
-      "the iOS bundle identifier in project.pbxproj is not changed without Trapeze",
-    ];
+    return ["the iOS bundle identifier in project.pbxproj is not changed without Trapeze"];
   }
-  return [
-    "AndroidManifest permissions declared only in a Trapeze config are not applied",
-  ];
+  return ["AndroidManifest permissions declared only in a Trapeze config are not applied"];
 }

@@ -1,13 +1,8 @@
-import type {
-  AxiosInstance,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
+import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 import { authService } from "./auth.service";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://api.capucho.inv/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.capucho.inv/api";
 
 class ApiClient {
   private client: AxiosInstance;

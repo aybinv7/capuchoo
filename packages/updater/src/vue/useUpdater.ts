@@ -10,11 +10,7 @@ import {
 } from "../api.service.js";
 import { getUpdaterConfig } from "../config.js";
 import { isNative } from "../device.js";
-import {
-  cleanApkCache,
-  downloadNativeUpdate,
-  type DownloadProgress,
-} from "../download.service.js";
+import { cleanApkCache, downloadNativeUpdate, type DownloadProgress } from "../download.service.js";
 import { openNativeInstaller } from "../install.service.js";
 import { applyOtaUpdate, getCurrentBundle, notifyAppReady } from "../ota.service.js";
 

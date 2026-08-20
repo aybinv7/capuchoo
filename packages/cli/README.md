@@ -1,25 +1,34 @@
 capucho-cli
 =================
 
-Capucho CLI bundles and uploads your application to the cloud. It packages builds as native artifacts or ZIP files, then publishes them using user-defined parameters such as channels and custom release options. Built for simple, repeatable deployments, it integrates cleanly into local workflows and CI pipelines to ship updates quickly and reliably.
+Capucho CLI bundles and uploads your application to the cloud. It packages builds as native
+artifacts or ZIP files, then publishes them using user-defined parameters such as channels and
+custom release options. Built for simple, repeatable deployments, it integrates cleanly into local
+workflows and CI pipelines to ship updates quickly and reliably.
 
-For team release operations, version ownership, GitHub Actions integration, and ecosystem boundaries, see [CI releases](docs/ci-releases.md).
-
+For team release operations, version ownership, GitHub Actions integration, and ecosystem
+boundaries, see [CI releases](docs/ci-releases.md).
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/capucho-cli.svg)](https://npmjs.org/package/capucho-cli)
 [![Downloads/week](https://img.shields.io/npm/dw/capucho-cli.svg)](https://npmjs.org/package/capucho-cli)
 
-
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [Usage](#usage)
+- [Commands](#commands)
+
 <!-- tocstop -->
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [Usage](#usage)
+- [Commands](#commands)
+
 <!-- tocstop -->
+
 # Usage
+
 <!-- usage -->
+
 ```sh-session
 $ npm install -g capucho-cli
 $ capucho-cli COMMAND
@@ -31,7 +40,9 @@ USAGE
   $ capucho-cli COMMAND
 ...
 ```
+
 <!-- usagestop -->
+
 ```sh-session
 $ npm install -g capucho-cli
 $ capucho-cli COMMAND
@@ -43,37 +54,41 @@ USAGE
   $ capucho-cli COMMAND
 ...
 ```
+
 <!-- usagestop -->
+
 # Commands
+
 <!-- commands -->
-* [`capucho-cli auth login`](#capucho-cli-auth-login)
-* [`capucho-cli auth logout`](#capucho-cli-auth-logout)
-* [`capucho-cli auth whoami`](#capucho-cli-auth-whoami)
-* [`capucho-cli channel create`](#capucho-cli-channel-create)
-* [`capucho-cli channel list`](#capucho-cli-channel-list)
-* [`capucho-cli channel promote`](#capucho-cli-channel-promote)
-* [`capucho-cli config init`](#capucho-cli-config-init)
-* [`capucho-cli config list`](#capucho-cli-config-list)
-* [`capucho-cli config set KEY VALUE`](#capucho-cli-config-set-key-value)
-* [`capucho-cli deploy native`](#capucho-cli-deploy-native)
-* [`capucho-cli deploy ota`](#capucho-cli-deploy-ota)
-* [`capucho-cli deploy rollback`](#capucho-cli-deploy-rollback)
-* [`capucho-cli hello PERSON`](#capucho-cli-hello-person)
-* [`capucho-cli hello world`](#capucho-cli-hello-world)
-* [`capucho-cli help [COMMAND]`](#capucho-cli-help-command)
-* [`capucho-cli init`](#capucho-cli-init)
-* [`capucho-cli plugins`](#capucho-cli-plugins)
-* [`capucho-cli plugins add PLUGIN`](#capucho-cli-plugins-add-plugin)
-* [`capucho-cli plugins:inspect PLUGIN...`](#capucho-cli-pluginsinspect-plugin)
-* [`capucho-cli plugins install PLUGIN`](#capucho-cli-plugins-install-plugin)
-* [`capucho-cli plugins link PATH`](#capucho-cli-plugins-link-path)
-* [`capucho-cli plugins remove [PLUGIN]`](#capucho-cli-plugins-remove-plugin)
-* [`capucho-cli plugins reset`](#capucho-cli-plugins-reset)
-* [`capucho-cli plugins uninstall [PLUGIN]`](#capucho-cli-plugins-uninstall-plugin)
-* [`capucho-cli plugins unlink [PLUGIN]`](#capucho-cli-plugins-unlink-plugin)
-* [`capucho-cli plugins update`](#capucho-cli-plugins-update)
-* [`capucho-cli version bump TYPE`](#capucho-cli-version-bump-type)
-* [`capucho-cli version sync`](#capucho-cli-version-sync)
+
+- [`capucho-cli auth login`](#capucho-cli-auth-login)
+- [`capucho-cli auth logout`](#capucho-cli-auth-logout)
+- [`capucho-cli auth whoami`](#capucho-cli-auth-whoami)
+- [`capucho-cli channel create`](#capucho-cli-channel-create)
+- [`capucho-cli channel list`](#capucho-cli-channel-list)
+- [`capucho-cli channel promote`](#capucho-cli-channel-promote)
+- [`capucho-cli config init`](#capucho-cli-config-init)
+- [`capucho-cli config list`](#capucho-cli-config-list)
+- [`capucho-cli config set KEY VALUE`](#capucho-cli-config-set-key-value)
+- [`capucho-cli deploy native`](#capucho-cli-deploy-native)
+- [`capucho-cli deploy ota`](#capucho-cli-deploy-ota)
+- [`capucho-cli deploy rollback`](#capucho-cli-deploy-rollback)
+- [`capucho-cli hello PERSON`](#capucho-cli-hello-person)
+- [`capucho-cli hello world`](#capucho-cli-hello-world)
+- [`capucho-cli help [COMMAND]`](#capucho-cli-help-command)
+- [`capucho-cli init`](#capucho-cli-init)
+- [`capucho-cli plugins`](#capucho-cli-plugins)
+- [`capucho-cli plugins add PLUGIN`](#capucho-cli-plugins-add-plugin)
+- [`capucho-cli plugins:inspect PLUGIN...`](#capucho-cli-pluginsinspect-plugin)
+- [`capucho-cli plugins install PLUGIN`](#capucho-cli-plugins-install-plugin)
+- [`capucho-cli plugins link PATH`](#capucho-cli-plugins-link-path)
+- [`capucho-cli plugins remove [PLUGIN]`](#capucho-cli-plugins-remove-plugin)
+- [`capucho-cli plugins reset`](#capucho-cli-plugins-reset)
+- [`capucho-cli plugins uninstall [PLUGIN]`](#capucho-cli-plugins-uninstall-plugin)
+- [`capucho-cli plugins unlink [PLUGIN]`](#capucho-cli-plugins-unlink-plugin)
+- [`capucho-cli plugins update`](#capucho-cli-plugins-update)
+- [`capucho-cli version bump TYPE`](#capucho-cli-version-bump-type)
+- [`capucho-cli version sync`](#capucho-cli-version-sync)
 
 ## `capucho-cli auth login`
 
@@ -98,7 +113,8 @@ EXAMPLES
   $ capucho-cli auth login --endpoint https://your-server.com
 ```
 
-_See code: [src/commands/auth/login.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/login.ts)_
+_See code:
+[src/commands/auth/login.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/login.ts)_
 
 ## `capucho-cli auth logout`
 
@@ -112,7 +128,8 @@ DESCRIPTION
   Log out and clear credentials
 ```
 
-_See code: [src/commands/auth/logout.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/logout.ts)_
+_See code:
+[src/commands/auth/logout.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/logout.ts)_
 
 ## `capucho-cli auth whoami`
 
@@ -126,7 +143,8 @@ DESCRIPTION
   Show current logged in user and available apps
 ```
 
-_See code: [src/commands/auth/whoami.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/whoami.ts)_
+_See code:
+[src/commands/auth/whoami.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/whoami.ts)_
 
 ## `capucho-cli channel create`
 
@@ -140,7 +158,8 @@ DESCRIPTION
   Create a new channel
 ```
 
-_See code: [src/commands/channel/create.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/create.ts)_
+_See code:
+[src/commands/channel/create.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/create.ts)_
 
 ## `capucho-cli channel list`
 
@@ -154,7 +173,8 @@ DESCRIPTION
   List available channels
 ```
 
-_See code: [src/commands/channel/list.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/list.ts)_
+_See code:
+[src/commands/channel/list.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/list.ts)_
 
 ## `capucho-cli channel promote`
 
@@ -168,7 +188,8 @@ DESCRIPTION
   Promote a release to another channel
 ```
 
-_See code: [src/commands/channel/promote.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/promote.ts)_
+_See code:
+[src/commands/channel/promote.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/promote.ts)_
 
 ## `capucho-cli config init`
 
@@ -185,7 +206,8 @@ EXAMPLES
   $ capucho-cli config init
 ```
 
-_See code: [src/commands/config/init.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/init.ts)_
+_See code:
+[src/commands/config/init.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/init.ts)_
 
 ## `capucho-cli config list`
 
@@ -199,7 +221,8 @@ DESCRIPTION
   List current configuration
 ```
 
-_See code: [src/commands/config/list.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/list.ts)_
+_See code:
+[src/commands/config/list.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/list.ts)_
 
 ## `capucho-cli config set KEY VALUE`
 
@@ -220,7 +243,8 @@ DESCRIPTION
   Set a configuration value
 ```
 
-_See code: [src/commands/config/set.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/set.ts)_
+_See code:
+[src/commands/config/set.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/set.ts)_
 
 ## `capucho-cli deploy native`
 
@@ -252,7 +276,8 @@ DESCRIPTION
   Deploy a native update (APK/IPA) to your project
 ```
 
-_See code: [src/commands/deploy/native.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/native.ts)_
+_See code:
+[src/commands/deploy/native.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/native.ts)_
 
 ## `capucho-cli deploy ota`
 
@@ -285,7 +310,8 @@ EXAMPLES
   $ capucho-cli deploy ota --note "Critical fix"
 ```
 
-_See code: [src/commands/deploy/ota.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/ota.ts)_
+_See code:
+[src/commands/deploy/ota.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/ota.ts)_
 
 ## `capucho-cli deploy rollback`
 
@@ -299,7 +325,8 @@ DESCRIPTION
   Rollback to a previous version
 ```
 
-_See code: [src/commands/deploy/rollback.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/rollback.ts)_
+_See code:
+[src/commands/deploy/rollback.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/rollback.ts)_
 
 ## `capucho-cli hello PERSON`
 
@@ -323,7 +350,8 @@ EXAMPLES
   hello friend from oclif! (./src/commands/hello/index.ts)
 ```
 
-_See code: [src/commands/hello/index.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/hello/index.ts)_
+_See code:
+[src/commands/hello/index.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/hello/index.ts)_
 
 ## `capucho-cli hello world`
 
@@ -341,7 +369,8 @@ EXAMPLES
   hello world! (./src/commands/hello/world.ts)
 ```
 
-_See code: [src/commands/hello/world.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/hello/world.ts)_
+_See code:
+[src/commands/hello/world.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/hello/world.ts)_
 
 ## `capucho-cli help [COMMAND]`
 
@@ -361,7 +390,8 @@ DESCRIPTION
   Display help for capucho-cli.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
+_See code:
+[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
 
 ## `capucho-cli init`
 
@@ -378,7 +408,8 @@ DESCRIPTION
   Initialize Capucho in this project
 ```
 
-_See code: [src/commands/init.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/init.ts)_
+_See code:
+[src/commands/init.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/init.ts)_
 
 ## `capucho-cli plugins`
 
@@ -401,7 +432,8 @@ EXAMPLES
   $ capucho-cli plugins
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/index.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/index.ts)_
 
 ## `capucho-cli plugins add PLUGIN`
 
@@ -475,7 +507,8 @@ EXAMPLES
   $ capucho-cli plugins inspect myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/inspect.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/inspect.ts)_
 
 ## `capucho-cli plugins install PLUGIN`
 
@@ -524,7 +557,8 @@ EXAMPLES
     $ capucho-cli plugins install someuser/someplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/install.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/install.ts)_
 
 ## `capucho-cli plugins link PATH`
 
@@ -555,7 +589,8 @@ EXAMPLES
   $ capucho-cli plugins link myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/link.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/link.ts)_
 
 ## `capucho-cli plugins remove [PLUGIN]`
 
@@ -596,7 +631,8 @@ FLAGS
   --reinstall  Reinstall all plugins after uninstalling.
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/reset.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/reset.ts)_
 
 ## `capucho-cli plugins uninstall [PLUGIN]`
 
@@ -624,7 +660,8 @@ EXAMPLES
   $ capucho-cli plugins uninstall myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/uninstall.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/uninstall.ts)_
 
 ## `capucho-cli plugins unlink [PLUGIN]`
 
@@ -668,7 +705,8 @@ DESCRIPTION
   Update installed plugins.
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/update.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/update.ts)_
 
 ## `capucho-cli version bump TYPE`
 
@@ -690,7 +728,8 @@ DESCRIPTION
   Bump version and sync to env files
 ```
 
-_See code: [src/commands/version/bump.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/version/bump.ts)_
+_See code:
+[src/commands/version/bump.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/version/bump.ts)_
 
 ## `capucho-cli version sync`
 
@@ -708,21 +747,23 @@ DESCRIPTION
   Sync version from package.json to environment files
 ```
 
-_See code: [src/commands/version/sync.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/version/sync.ts)_
+_See code:
+[src/commands/version/sync.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->
-* [`capucho-cli hello PERSON`](#capucho-cli-hello-person)
-* [`capucho-cli hello world`](#capucho-cli-hello-world)
-* [`capucho-cli help [COMMAND]`](#capucho-cli-help-command)
-* [`capucho-cli plugins`](#capucho-cli-plugins)
-* [`capucho-cli plugins add PLUGIN`](#capucho-cli-plugins-add-plugin)
-* [`capucho-cli plugins:inspect PLUGIN...`](#capucho-cli-pluginsinspect-plugin)
-* [`capucho-cli plugins install PLUGIN`](#capucho-cli-plugins-install-plugin)
-* [`capucho-cli plugins link PATH`](#capucho-cli-plugins-link-path)
-* [`capucho-cli plugins remove [PLUGIN]`](#capucho-cli-plugins-remove-plugin)
-* [`capucho-cli plugins reset`](#capucho-cli-plugins-reset)
-* [`capucho-cli plugins uninstall [PLUGIN]`](#capucho-cli-plugins-uninstall-plugin)
-* [`capucho-cli plugins unlink [PLUGIN]`](#capucho-cli-plugins-unlink-plugin)
-* [`capucho-cli plugins update`](#capucho-cli-plugins-update)
+
+- [`capucho-cli hello PERSON`](#capucho-cli-hello-person)
+- [`capucho-cli hello world`](#capucho-cli-hello-world)
+- [`capucho-cli help [COMMAND]`](#capucho-cli-help-command)
+- [`capucho-cli plugins`](#capucho-cli-plugins)
+- [`capucho-cli plugins add PLUGIN`](#capucho-cli-plugins-add-plugin)
+- [`capucho-cli plugins:inspect PLUGIN...`](#capucho-cli-pluginsinspect-plugin)
+- [`capucho-cli plugins install PLUGIN`](#capucho-cli-plugins-install-plugin)
+- [`capucho-cli plugins link PATH`](#capucho-cli-plugins-link-path)
+- [`capucho-cli plugins remove [PLUGIN]`](#capucho-cli-plugins-remove-plugin)
+- [`capucho-cli plugins reset`](#capucho-cli-plugins-reset)
+- [`capucho-cli plugins uninstall [PLUGIN]`](#capucho-cli-plugins-uninstall-plugin)
+- [`capucho-cli plugins unlink [PLUGIN]`](#capucho-cli-plugins-unlink-plugin)
+- [`capucho-cli plugins update`](#capucho-cli-plugins-update)
 
 ## `capucho-cli hello PERSON`
 
@@ -746,7 +787,8 @@ EXAMPLES
   hello friend from oclif! (./src/commands/hello/index.ts)
 ```
 
-_See code: [src/commands/hello/index.ts](https://github.com/inventor7/capucho-cli/blob/v0.0.0/src/commands/hello/index.ts)_
+_See code:
+[src/commands/hello/index.ts](https://github.com/inventor7/capucho-cli/blob/v0.0.0/src/commands/hello/index.ts)_
 
 ## `capucho-cli hello world`
 
@@ -764,7 +806,8 @@ EXAMPLES
   hello world! (./src/commands/hello/world.ts)
 ```
 
-_See code: [src/commands/hello/world.ts](https://github.com/inventor7/capucho-cli/blob/v0.0.0/src/commands/hello/world.ts)_
+_See code:
+[src/commands/hello/world.ts](https://github.com/inventor7/capucho-cli/blob/v0.0.0/src/commands/hello/world.ts)_
 
 ## `capucho-cli help [COMMAND]`
 
@@ -784,7 +827,8 @@ DESCRIPTION
   Display help for capucho-cli.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
+_See code:
+[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
 
 ## `capucho-cli plugins`
 
@@ -807,7 +851,8 @@ EXAMPLES
   $ capucho-cli plugins
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/index.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/index.ts)_
 
 ## `capucho-cli plugins add PLUGIN`
 
@@ -881,7 +926,8 @@ EXAMPLES
   $ capucho-cli plugins inspect myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/inspect.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/inspect.ts)_
 
 ## `capucho-cli plugins install PLUGIN`
 
@@ -930,7 +976,8 @@ EXAMPLES
     $ capucho-cli plugins install someuser/someplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/install.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/install.ts)_
 
 ## `capucho-cli plugins link PATH`
 
@@ -961,7 +1008,8 @@ EXAMPLES
   $ capucho-cli plugins link myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/link.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/link.ts)_
 
 ## `capucho-cli plugins remove [PLUGIN]`
 
@@ -1002,7 +1050,8 @@ FLAGS
   --reinstall  Reinstall all plugins after uninstalling.
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/reset.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/reset.ts)_
 
 ## `capucho-cli plugins uninstall [PLUGIN]`
 
@@ -1030,7 +1079,8 @@ EXAMPLES
   $ capucho-cli plugins uninstall myplugin
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/uninstall.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/uninstall.ts)_
 
 ## `capucho-cli plugins unlink [PLUGIN]`
 
@@ -1074,5 +1124,6 @@ DESCRIPTION
   Update installed plugins.
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/update.ts)_
+_See code:
+[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/update.ts)_
 <!-- commandsstop -->

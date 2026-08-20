@@ -6,9 +6,7 @@ export const languageStore = defineStore("language", () => {
   const { locale } = useI18n();
 
   const language = ref(
-    localStorage.getItem("user-lang") ||
-      navigator.languages[0]?.split("-")[0] ||
-      "en",
+    localStorage.getItem("user-lang") || navigator.languages[0]?.split("-")[0] || "en",
   );
 
   document.documentElement.dir = language.value === "ar" ? "rtl" : "ltr";

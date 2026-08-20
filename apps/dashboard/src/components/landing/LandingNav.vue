@@ -1,45 +1,45 @@
 <script setup lang="ts">
-import { Menu, X, Moon, Sun } from 'lucide-vue-next'
+import { Menu, X, Moon, Sun } from "lucide-vue-next";
 
-const router = useRouter()
-const isScrolled = ref(false)
-const isMobileMenuOpen = ref(false)
-const isDark = ref(false)
+const router = useRouter();
+const isScrolled = ref(false);
+const isMobileMenuOpen = ref(false);
+const isDark = ref(false);
 
 const navLinks = [
-  { label: 'Features', href: '#features' },
-  { label: 'Integrations', href: '#integrations' },
-  { label: 'Code', href: '#code' },
+  { label: "Features", href: "#features" },
+  { label: "Integrations", href: "#integrations" },
+  { label: "Code", href: "#code" },
   // { label: 'Workflow', href: '#workflow' },
-  { label: 'Dashboard', href: '#dashboard' },
-  { label: 'Platforms', href: '#platforms' },
-]
+  { label: "Dashboard", href: "#dashboard" },
+  { label: "Platforms", href: "#platforms" },
+];
 
 onMounted(() => {
   const handleScroll = () => {
-    isScrolled.value = window.scrollY > 20
-  }
-  window.addEventListener('scroll', handleScroll)
-  onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+    isScrolled.value = window.scrollY > 20;
+  };
+  window.addEventListener("scroll", handleScroll);
+  onUnmounted(() => window.removeEventListener("scroll", handleScroll));
 
   // Check initial dark mode
-  isDark.value = document.documentElement.classList.contains('dark')
-})
+  isDark.value = document.documentElement.classList.contains("dark");
+});
 
 const toggleDarkMode = () => {
-  document.documentElement.classList.toggle('dark')
-  isDark.value = !isDark.value
-}
+  document.documentElement.classList.toggle("dark");
+  isDark.value = !isDark.value;
+};
 
 const scrollToSection = (href: string) => {
-  if (href.startsWith('#')) {
-    const element = document.querySelector(href)
-    element?.scrollIntoView({ behavior: 'smooth' })
+  if (href.startsWith("#")) {
+    const element = document.querySelector(href);
+    element?.scrollIntoView({ behavior: "smooth" });
   } else {
-    router.push(href)
+    router.push(href);
   }
-  isMobileMenuOpen.value = false
-}
+  isMobileMenuOpen.value = false;
+};
 </script>
 
 <template>

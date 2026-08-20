@@ -117,41 +117,41 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from '@/composables/useToast'
-import { Separator } from '@/components/ui/separator'
+import { useToast } from "@/composables/useToast";
+import { Separator } from "@/components/ui/separator";
 
-const { showSuccess, showError } = useToast()
+const { showSuccess, showError } = useToast();
 
 const profile = ref({
-  name: 'Ahmed Benali',
-  email: 'ahmed@example.com',
-  avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=Ahmed+Benali',
-})
+  name: "Ahmed Benali",
+  email: "ahmed@example.com",
+  avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Ahmed+Benali",
+});
 
 const password = ref({
-  current: '',
-  new: '',
-  confirm: '',
-})
+  current: "",
+  new: "",
+  confirm: "",
+});
 
 const getInitials = (name: string) =>
   name
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
-    .substring(0, 2)
+    .substring(0, 2);
 
 const saveProfile = () => {
-  showSuccess('Profile updated')
-}
+  showSuccess("Profile updated");
+};
 
 const changePassword = () => {
   if (password.value.new !== password.value.confirm) {
-    showError('Passwords do not match')
-    return
+    showError("Passwords do not match");
+    return;
   }
-  showSuccess('Password updated')
-  password.value = { current: '', new: '', confirm: '' }
-}
+  showSuccess("Password updated");
+  password.value = { current: "", new: "", confirm: "" };
+};
 </script>

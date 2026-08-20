@@ -7,11 +7,7 @@ class AuthController {
    * Login user
    * POST /api/auth/login
    */
-  public async login(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email, password } = req.body;
 
@@ -19,12 +15,10 @@ class AuthController {
         throw new AppError("Email and password are required", 400);
       }
 
-      const { data, error } = await supabaseService
-        .getClient()
-        .auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { data, error } = await supabaseService.getClient().auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
         throw new AppError(error.message, 401);
@@ -47,11 +41,7 @@ class AuthController {
    * Register new user
    * POST /api/auth/register
    */
-  public async register(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email, password } = req.body;
 
@@ -91,11 +81,7 @@ class AuthController {
    * Get current user profile with organizations and apps
    * GET /api/auth/me
    */
-  public async me(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async me(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = (req as any).user;
 
@@ -115,7 +101,7 @@ class AuthController {
             name,
             slug
           )
-        `
+        `,
         )
         .eq("user_id", user.id);
 
@@ -149,7 +135,7 @@ class AuthController {
             icon_url,
             organization_id
           )
-        `
+        `,
         )
         .eq("user_id", user.id);
 
@@ -162,7 +148,7 @@ class AuthController {
             icon_url: ap.apps?.icon_url,
             organization_id: ap.apps?.organization_id,
             role: ap.role,
-          }))
+          })),
         );
       }
 

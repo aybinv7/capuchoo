@@ -272,10 +272,7 @@ export interface QueryResult<T = any> {
   count?: number | null;
 }
 export interface ISupabaseService {
-  query<T = any>(
-    table: string,
-    options?: QueryOptions
-  ): Promise<QueryResult<T>>;
+  query<T = any>(table: string, options?: QueryOptions): Promise<QueryResult<T>>;
   insert(table: string, data: any): Promise<any>;
   update(table: string, data: any, filter: any): Promise<any>;
   delete(table: string, filter: any): Promise<any>;
@@ -298,10 +295,7 @@ export interface IUpdateService {
     appId: string;
     platform: string;
   }): Promise<ChannelResponse>;
-  getAvailableChannels(query: {
-    appId: string;
-    platform: string;
-  }): Promise<ChannelsResponse>;
+  getAvailableChannels(query: { appId: string; platform: string }): Promise<ChannelsResponse>;
 }
 
 export interface IFileService {
@@ -339,11 +333,7 @@ export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
 
-  constructor(
-    message: string,
-    statusCode: number = 500,
-    isOperational: boolean = true
-  ) {
+  constructor(message: string, statusCode: number = 500, isOperational: boolean = true) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;

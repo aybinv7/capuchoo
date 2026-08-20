@@ -11,10 +11,7 @@ interface ApiResponse<T> {
 export function useApiQuery<TData = unknown>(
   queryKey: any,
   url: MaybeRef<string>,
-  options?: Omit<
-    UseQueryOptions<TData, Error, TData, any>,
-    "queryKey" | "queryFn"
-  >,
+  options?: Omit<UseQueryOptions<TData, Error, TData, any>, "queryKey" | "queryFn">,
 ) {
   return useQuery<TData, Error>({
     queryKey: queryKey as any,

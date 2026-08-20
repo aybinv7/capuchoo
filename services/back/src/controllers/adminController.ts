@@ -88,15 +88,11 @@ class AdminController {
       }
 
       if (["android", "ios", "web"].indexOf(platform) === -1) {
-        throw new ValidationError(
-          "Invalid platform. Must be: android, ios, web",
-        );
+        throw new ValidationError("Invalid platform. Must be: android, ios, web");
       }
 
       // Resolve the app UUID from bundle identifier if provided
-      const appUuid = app_id
-        ? await this.resolveAppUuid(app_id as string)
-        : null;
+      const appUuid = app_id ? await this.resolveAppUuid(app_id as string) : null;
 
       if (!appUuid) {
         throw new ValidationError("Valid App ID is required");
@@ -137,9 +133,7 @@ class AdminController {
         release_notes: release_notes || null,
       };
 
-      const insertedRecord = await this.supabaseService.insert("app_versions", [
-        updateRecord,
-      ]);
+      const insertedRecord = await this.supabaseService.insert("app_versions", [updateRecord]);
 
       logger.info("Bundle uploaded successfully", {
         version,
@@ -195,9 +189,7 @@ class AdminController {
       const keyAppId = (req as any).appId;
       if (keyAppId) {
         if (appUuid && keyAppId !== appUuid) {
-          res
-            .status(403)
-            .json({ error: "Forbidden: API key restricted to another app" });
+          res.status(403).json({ error: "Forbidden: API key restricted to another app" });
           return;
         }
         appUuid = keyAppId;
@@ -229,9 +221,7 @@ class AdminController {
         .select("device_id");
       if (appUuid) devicesQuery = devicesQuery.eq("app_id", appUuid);
       const { data: devicesData } = await devicesQuery;
-      const devicesCount = devicesData
-        ? new Set(devicesData.map((d: any) => d.device_id)).size
-        : 0;
+      const devicesCount = devicesData ? new Set(devicesData.map((d: any) => d.device_id)).size : 0;
 
       // 3. Total Downloads
       let downloadsQuery = this.supabaseService
@@ -285,9 +275,7 @@ class AdminController {
       const keyAppId = (req as any).appId;
       if (keyAppId) {
         if (appUuid && keyAppId !== appUuid) {
-          res
-            .status(403)
-            .json({ error: "Forbidden: API key restricted to another app" });
+          res.status(403).json({ error: "Forbidden: API key restricted to another app" });
           return;
         }
         appUuid = keyAppId;
@@ -349,9 +337,7 @@ class AdminController {
   async createBundle(req: Request, res: Response): Promise<void> {
     try {
       const bundleData = req.body;
-      const result = await this.supabaseService.insert("app_versions", [
-        bundleData,
-      ]);
+      const result = await this.supabaseService.insert("app_versions", [bundleData]);
       res.status(201).json(result[0]);
     } catch (error) {
       logger.error("Bundle creation failed", { error });
@@ -368,13 +354,9 @@ class AdminController {
       const { id } = req.params;
       const updateData = req.body;
 
-      const result = await this.supabaseService.update(
-        "app_versions",
-        updateData,
-        {
-          id: id,
-        },
-      );
+      const result = await this.supabaseService.update("app_versions", updateData, {
+        id: id,
+      });
 
       if (result.length === 0) {
         throw new ValidationError("Bundle not found");
@@ -424,9 +406,7 @@ class AdminController {
       const keyAppId = (req as any).appId;
       if (keyAppId) {
         if (appUuid && keyAppId !== appUuid) {
-          res
-            .status(403)
-            .json({ error: "Forbidden: API key restricted to another app" });
+          res.status(403).json({ error: "Forbidden: API key restricted to another app" });
           return;
         }
         appUuid = keyAppId;
@@ -466,8 +446,7 @@ class AdminController {
           .in("channel_id", channelIds);
 
         (devices || []).forEach((d: any) => {
-          deviceCountsMap[d.channel_id] =
-            (deviceCountsMap[d.channel_id] || 0) + 1;
+          deviceCountsMap[d.channel_id] = (deviceCountsMap[d.channel_id] || 0) + 1;
         });
 
         // Bundle counts per channel name
@@ -480,8 +459,7 @@ class AdminController {
 
         (bundles || []).forEach((b: any) => {
           const channelName = b.channel || "prod";
-          bundleCountsMap[channelName] =
-            (bundleCountsMap[channelName] || 0) + 1;
+          bundleCountsMap[channelName] = (bundleCountsMap[channelName] || 0) + 1;
         });
       }
 
@@ -517,9 +495,7 @@ class AdminController {
       const keyAppId = (req as any).appId;
       if (keyAppId) {
         if (appUuid && keyAppId !== appUuid) {
-          res
-            .status(403)
-            .json({ error: "Forbidden: API key restricted to another app" });
+          res.status(403).json({ error: "Forbidden: API key restricted to another app" });
           return;
         }
         appUuid = keyAppId;
@@ -579,9 +555,7 @@ class AdminController {
       const keyAppId = (req as any).appId;
       if (keyAppId) {
         if (appUuid && keyAppId !== appUuid) {
-          res
-            .status(403)
-            .json({ error: "Forbidden: API key restricted to another app" });
+          res.status(403).json({ error: "Forbidden: API key restricted to another app" });
           return;
         }
         appUuid = keyAppId;
@@ -706,9 +680,7 @@ class AdminController {
       const { app_id } = req.query;
 
       // Resolve the app UUID if app_id provided
-      const appUuid = app_id
-        ? await this.resolveAppUuid(app_id as string)
-        : null;
+      const appUuid = app_id ? await this.resolveAppUuid(app_id as string) : null;
 
       const filter: any = { id };
       if (appUuid) filter.app_id = appUuid;
@@ -807,9 +779,7 @@ class AdminController {
       const { target_app_id, target_channel, password } = req.body;
 
       if (!target_app_id || !target_channel) {
-        throw new ValidationError(
-          "target_app_id and target_channel are required",
-        );
+        throw new ValidationError("target_app_id and target_channel are required");
       }
 
       // 1. Password Verification for Security
@@ -818,12 +788,10 @@ class AdminController {
         throw new ValidationError("Password is required for promotion");
       }
 
-      const { error: authError } = await this.supabaseService
-        .getClient()
-        .auth.signInWithPassword({
-          email: user.email,
-          password,
-        });
+      const { error: authError } = await this.supabaseService.getClient().auth.signInWithPassword({
+        email: user.email,
+        password,
+      });
 
       if (authError) {
         logger.warn("Promotion denied: Invalid password", {
@@ -869,15 +837,9 @@ class AdminController {
         throw new ValidationError("Target app not found");
       }
 
-      const {
-        id: _,
-        created_at: __,
-        updated_at: ___,
-        ...itemData
-      } = sourceData;
+      const { id: _, created_at: __, updated_at: ___, ...itemData } = sourceData;
 
-      const targetTable =
-        promoteType === "bundle" ? "app_versions" : "native_updates";
+      const targetTable = promoteType === "bundle" ? "app_versions" : "native_updates";
 
       const insertData = {
         ...itemData,
@@ -1012,14 +974,8 @@ class AdminController {
    */
   async createChannel(req: Request, res: Response): Promise<void> {
     try {
-      const {
-        app_id,
-        name,
-        is_public,
-        allow_device_self_set,
-        ios_enabled,
-        android_enabled,
-      } = req.body;
+      const { app_id, name, is_public, allow_device_self_set, ios_enabled, android_enabled } =
+        req.body;
 
       if (!app_id || !name) {
         throw new ValidationError("app_id and name are required");
@@ -1105,9 +1061,7 @@ class AdminController {
       const { app_id, device_id, limit = 100 } = req.query;
 
       // Resolve the app UUID from bundle identifier if provided
-      const appUuid = app_id
-        ? await this.resolveAppUuid(app_id as string)
-        : null;
+      const appUuid = app_id ? await this.resolveAppUuid(app_id as string) : null;
 
       const queryOptions: any = {
         select: "*",
@@ -1121,10 +1075,7 @@ class AdminController {
         if (device_id) queryOptions.match.device_id = device_id;
       }
 
-      const result = await this.supabaseService.query(
-        "update_logs",
-        queryOptions,
-      );
+      const result = await this.supabaseService.query("update_logs", queryOptions);
       res.json(result.data || []);
     } catch (error) {
       logger.error("Update logs fetch failed", { error });

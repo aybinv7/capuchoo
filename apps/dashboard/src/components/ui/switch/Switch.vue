@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { useVModel } from '@vueuse/core'
-import { cn } from '@/lib/utils'
+import { useVModel } from "@vueuse/core";
+import { cn } from "@/lib/utils";
 
 interface Props {
-  modelValue?: boolean
-  class?: string
+  modelValue?: boolean;
+  class?: string;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-}>()
+  (e: "update:modelValue", value: boolean): void;
+}>();
 
-const modelValue = useVModel(props, 'modelValue', emit, { passive: true })
+const modelValue = useVModel(props, "modelValue", emit, { passive: true });
 </script>
 
 <template>
