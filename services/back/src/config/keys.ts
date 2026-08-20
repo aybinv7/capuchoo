@@ -109,6 +109,22 @@ export function keyWarnings(resolved: ResolvedSupabaseKeys): string[] {
     );
   }
 
+  // Renaming the variable is not rotating the key. If the value under the new
+  // name is still a legacy JWT, the old credential - the one that leaked - is
+  // what this server is using.
+  if (isLegacyJwtKey(resolved.secretKey) && !resolved.legacy.includes("secret")) {
+    warnings.push(
+      "SUPABASE_SECRET_KEY holds a legacy JWT, not an sb_secret_... key. Renaming the " +
+        "variable does not rotate the credential: whatever leaked is still in use.",
+    );
+  }
+
+  if (isLegacyJwtKey(resolved.publishableKey) && !resolved.legacy.includes("publishable")) {
+    warnings.push(
+      "SUPABASE_PUBLISHABLE_KEY holds a legacy anon JWT rather than an sb_publishable_... key.",
+    );
+  }
+
   // A publishable key in the secret slot is the failure this module exists to
   // prevent: it validates, connects, and then silently writes nothing.
   if (isPublishableKey(resolved.secretKey)) {

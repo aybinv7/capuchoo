@@ -110,3 +110,23 @@ describe("keyWarnings", () => {
     expect(warnings.join(" ")).toContain("Never expose");
   });
 });
+
+describe("keyWarnings: renaming is not rotating", () => {
+  it("flags a legacy JWT configured under the new secret name", () => {
+    const warnings = keyWarnings({
+      publishableKey: undefined,
+      secretKey: LEGACY_JWT,
+      legacy: [],
+    });
+
+    expect(warnings.join(" ")).toContain("does not rotate the credential");
+  });
+
+  it("does not repeat itself when the deprecated name is the source", () => {
+    const warnings = keyWarnings(
+      resolveSupabaseKeys({ SUPABASE_KEY: LEGACY_JWT, SUPABASE_SERVICE_KEY: LEGACY_JWT }),
+    );
+
+    expect(warnings.filter((w) => w.includes("sb_publishable_"))).toHaveLength(0);
+  });
+});
