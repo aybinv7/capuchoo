@@ -103,7 +103,10 @@ breaks every subsequent pnpm command.
 3. For a library, add a `vite.config.ts` with a `pack` block and `"build": "vp pack"`. Use
    `platform: "neutral"` unless it genuinely needs Node.
 4. Use `"catalog:"` for anything already in the catalog.
-5. `vp install`.
+5. Add `"vite-plus": "catalog:"` to devDependencies. It ships the test runner, so **do not add
+   `vitest`** - tests import from `vite-plus/test`. This is the convention in
+   `sig/presalio-monorepo` and `ayb/capubridge`.
+6. `vp install`.
 
 Do not add a `check` script - `vp check` covers the workspace in one pass, and a per-package one
 would run the linter N times over the same files.
