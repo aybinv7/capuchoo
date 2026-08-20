@@ -89,7 +89,12 @@
                   </SelectContent>
                 </Select>
                 <p class="text-xs text-muted-foreground">
-                  The CLI will use the corresponding .env file when deploying to this channel.
+                  The CLI will use the corresponding .env file when deploying to this channel, and
+                  the server serves this environment's bundles to every device on the channel. The
+                  channel name does not decide this.
+                </p>
+                <p v-if="mismatchWarning" class="text-xs text-destructive">
+                  {{ mismatchWarning }}
                 </p>
               </div>
 
@@ -420,6 +425,10 @@ import {
 } from "@/modules/channels/composables/useChannelsQuery";
 import { useUpdatesBundlesQuery } from "@/modules/updates-bundles/composables/useUpdatesBundlesQuery";
 import { useDevicesQuery } from "@/modules/devices/composables/useDevicesQuery";
+import {
+  environmentMismatchWarning,
+  type ChannelEnvironmentSelection,
+} from "@/modules/channels/utils/environment";
 
 const route = useRoute();
 const router = useRouter();
@@ -438,7 +447,9 @@ const { mutateAsync: deleteChannel, isPending: isDeleting } = useDeleteChannelMu
 const isDeleteDialogOpen = ref(false);
 const editForm = ref({
   name: "",
-  environment: "staging" as "prod" | "staging" | "dev",
+  // Not defaulted: an unset environment has to be chosen, not assumed. See
+  // modules/channels/utils/environment.ts.
+  environment: "" as ChannelEnvironmentSelection,
   ios_enabled: true,
   android_enabled: true,
   is_public: false,
@@ -497,7 +508,7 @@ watch(
     if (newChannel) {
       editForm.value = {
         name: newChannel.name,
-        environment: newChannel.environment || "staging",
+        environment: newChannel.environment || "",
         ios_enabled: newChannel.ios_enabled ?? true,
         android_enabled: newChannel.android_enabled ?? true,
         is_public: newChannel.is_public ?? false,
@@ -514,9 +525,21 @@ watch(
   { immediate: true },
 );
 
+const mismatchWarning = computed(() =>
+  environmentMismatchWarning(editForm.value.name, editForm.value.environment),
+);
+
 const handleUpdate = async () => {
   try {
-    const payload = { ...editForm.value };
+    const environment = editForm.value.environment;
+    if (!environment) {
+      toast.error("Choose an environment for this channel");
+      return;
+    }
+
+    // Narrowed: the guard above rules out the "not chosen" case, which the
+    // Channel type does not model.
+    const payload = { ...editForm.value, environment };
     if (payload.current_version_id === "none") {
       payload.current_version_id = null as any;
     }

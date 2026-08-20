@@ -13,7 +13,8 @@
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
     "lint:eslint": "eslint . --fix --cache",
     "lint": "vp run lint:oxlint && vp run lint:eslint",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "test": "vp test --run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
