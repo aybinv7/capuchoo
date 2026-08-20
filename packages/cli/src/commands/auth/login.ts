@@ -1,13 +1,14 @@
 import { input, password } from "@inquirer/prompts";
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import ora from "ora";
 import { CloudClient } from "../../services/cloud.js";
 import { readGlobalConfig, updateGlobalConfig } from "../../utils/config.js";
+import { BaseCommand } from "../../base-command.js";
 
 const DEFAULT_ENDPOINT = "https://capucho-back.onrender.com";
 
-export default class AuthLogin extends Command {
+export default class AuthLogin extends BaseCommand {
   static override description = "Store an API key for the Capucho backend";
 
   static override examples = [

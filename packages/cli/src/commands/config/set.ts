@@ -1,6 +1,7 @@
 import { Args, Command } from "@oclif/core";
 import chalk from "chalk";
 import { updateGlobalConfig, type GlobalConfig } from "../../utils/config.js";
+import { BaseCommand } from "../../base-command.js";
 
 /**
  * Only the keys that are genuinely a user preference.
@@ -16,7 +17,7 @@ const SETTABLE = {
 
 type SettableKey = keyof typeof SETTABLE;
 
-export default class ConfigSet extends Command {
+export default class ConfigSet extends BaseCommand {
   static override description = "Set a user preference in ~/.capucho/config.json";
 
   static override examples = [

@@ -7,24 +7,19 @@ packages:
 # package that forgets to write "catalog:" still lands on the pinned version.
 catalogMode: prefer
 
-# pnpm requires dependency build scripts to be approved explicitly. Every
-# entry here runs arbitrary install-time code, so each one is a decision.
-# `false` is meaningful: it records that the package was reviewed and refused,
-# and stops pnpm asking again.
+# pnpm requires dependency build scripts to be approved explicitly. Every entry
+# here runs arbitrary install-time code, so each one is a decision. `false` is
+# meaningful: it records that the package was reviewed and refused, and stops
+# pnpm from asking again.
 allowBuilds:
   # Native binaries these packages download or compile for the host platform.
   '@capacitor/cli': true
-  '@firebase/util': set this to true or false
   '@parcel/watcher': true
   '@swc/core': true
   esbuild: true
-  maplibre-gl: set this to true or false
-  protobufjs: set this to true or false
   sharp: true
-  swiftlint: set this to true or false
   unrs-resolver: true
-  vue-demi: set this to true or false
-  # vue-demi's postinstall picks the Vue 2 or Vue 3 shim. Without it, every
+  # vue-demi's postinstall picks the Vue 2 or Vue 3 shim. Without it every
   # library built on vue-demi (@vueuse, pinia plugins) resolves to a stub.
   vue-demi: true
   # protobufjs generates its runtime helpers in postinstall.

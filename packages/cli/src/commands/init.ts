@@ -10,7 +10,7 @@ import {
   type FlavourConfig,
   type ProjectConfig,
 } from "@capucho/core";
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";
 import path from "node:path";
@@ -23,8 +23,9 @@ import {
   writeProjectConfig,
 } from "../utils/config.js";
 import AuthLogin from "./auth/login.js";
+import { BaseCommand } from "../base-command.js";
 
-export default class Init extends Command {
+export default class Init extends BaseCommand {
   static override description =
     "Link this directory to a Capucho app and write .capucho/project.json";
 

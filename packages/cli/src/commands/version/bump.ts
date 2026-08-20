@@ -5,8 +5,9 @@ import {
   type BumpType,
   type Environment,
 } from "@capucho/core";
-import { Args, Command, Flags } from "@oclif/core";
+import { Args, Flags } from "@oclif/core";
 import chalk from "chalk";
+import { BaseCommand } from "../../base-command.js";
 import { readVersionCodes, writeVersionCodes } from "../../pipeline/flavour.js";
 import {
   readAppVersion,
@@ -14,7 +15,7 @@ import {
   writeAppVersion,
 } from "../../utils/config.js";
 
-export default class VersionBump extends Command {
+export default class VersionBump extends BaseCommand {
   static override description =
     "Raise the app's semantic version, and optionally an environment's build number";
 

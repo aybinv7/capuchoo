@@ -822,12 +822,18 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@24.13.3)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@24.13.3)(jiti@2.7.0)(less@4.9.0(supports-color@8.1.1))(typescript@5.9.3)(yaml@2.9.0))
 
   packages/core:
     devDependencies:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@24.13.3)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@24.13.3)(jiti@2.7.0)(less@4.9.0(supports-color@8.1.1))(typescript@5.9.3)(yaml@2.9.0))
 
   packages/updater:
     dependencies:

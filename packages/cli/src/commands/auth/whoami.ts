@@ -1,9 +1,10 @@
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import { CloudClient } from "../../services/cloud.js";
 import { resolveCredentials } from "../../utils/config.js";
+import { BaseCommand } from "../../base-command.js";
 
-export default class AuthWhoami extends Command {
+export default class AuthWhoami extends BaseCommand {
   static override description =
     "Show the signed-in account, and the organizations and apps it can reach";
 

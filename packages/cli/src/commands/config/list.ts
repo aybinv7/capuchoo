@@ -1,4 +1,4 @@
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import {
   globalConfigPath,
@@ -10,8 +10,9 @@ import {
 import { detectToolchain, lookupTools } from "../../pipeline/toolchain.js";
 import { resolveFlavour } from "../../pipeline/flavour.js";
 import { ENVIRONMENTS, normaliseProjectConfig } from "@capucho/core";
+import { BaseCommand } from "../../base-command.js";
 
-export default class ConfigList extends Command {
+export default class ConfigList extends BaseCommand {
   static override description =
     "Show the resolved configuration, and which build tools were found";
 

@@ -1,8 +1,8 @@
-import { Command } from "@oclif/core";
 import chalk from "chalk";
 import { readGlobalConfig, writeGlobalConfig } from "../../utils/config.js";
+import { BaseCommand } from "../../base-command.js";
 
-export default class AuthLogout extends Command {
+export default class AuthLogout extends BaseCommand {
   static override description = "Remove the stored API key";
 
   async run(): Promise<void> {

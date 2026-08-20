@@ -73,10 +73,49 @@ function appendLog(logFile: string | undefined, chunk: string): void {
 }
 
 /**
+ * Windows cannot execute a `.cmd` or `.bat` directly - and almost every
+ * `node_modules/.bin` entry is one - so those need `cmd.exe`.
+ *
+ * `spawn(..., { shell: true })` is the usual shortcut, but Node 26 deprecates
+ * passing an args array with it (DEP0190): the arguments are concatenated
+ * rather than escaped, so anything containing a space or a shell
+ * metacharacter changes the command. This builds the `cmd.exe` invocation
+ * explicitly and does its own quoting, which is both warning-free and
+ * predictable.
+ *
+ * Everything else - real executables, and every POSIX case - is spawned
+ * directly with no shell at all.
+ */
+function windowsSafeSpawn(
+  file: string,
+  args: string[],
+): { file: string; args: string[]; options: { windowsVerbatimArguments?: boolean } } {
+  const needsShell =
+    process.platform === "win32" && /\.(cmd|bat)$/i.test(file);
+
+  if (!needsShell) return { file, args, options: {} };
+
+  const command = [file, ...args].map(quoteForCmd).join(" ");
+  return {
+    file: process.env.ComSpec ?? "cmd.exe",
+    // /d skips AutoRun scripts, /s treats the rest as one command, /c runs it.
+    args: ["/d", "/s", "/c", `"${command}"`],
+    // We have already quoted; stop Node quoting again on top.
+    options: { windowsVerbatimArguments: true },
+  };
+}
+
+function quoteForCmd(value: string): string {
+  // Bare tokens are left alone so the command stays readable in the log.
+  if (/^[\w.:\\/=@-]+$/.test(value)) return value;
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+/**
  * Runs a command, streaming its output to the log file.
  *
- * `file` and `args` are passed to the OS separately - there is no shell, so
- * nothing in `args` can be reinterpreted as shell syntax.
+ * `file` and `args` are passed to the OS separately - there is no shell on
+ * POSIX, so nothing in `args` can be reinterpreted as shell syntax.
  */
 export async function run(
   file: string,
@@ -90,15 +129,14 @@ export async function run(
     `\n$ ${printable}\n  cwd: ${options.cwd}\n${"-".repeat(60)}\n`,
   );
 
+  const spawned = windowsSafeSpawn(file, args);
+
   return new Promise<RunResult>((resolve, reject) => {
-    const child = spawn(file, args, {
+    const child = spawn(spawned.file, spawned.args, {
       cwd: options.cwd,
       env: { ...process.env, ...options.env },
-      // Windows resolves .cmd/.bat shims only through a shell. The argv array
-      // is still passed as an array, so arguments stay individually quoted by
-      // Node rather than being concatenated into one string.
-      shell: process.platform === "win32",
       windowsHide: true,
+      ...spawned.options,
     });
 
     let stdout = "";

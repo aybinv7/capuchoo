@@ -1,5 +1,5 @@
 import { ENVIRONMENTS, versionEnv, type Environment } from "@capucho/core";
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import {
   readVersionCodes,
@@ -8,8 +8,9 @@ import {
 } from "../../pipeline/flavour.js";
 import { readAppVersion, requireProjectConfig } from "../../utils/config.js";
 import { nextVersionCode } from "@capucho/core";
+import { BaseCommand } from "../../base-command.js";
 
-export default class VersionSync extends Command {
+export default class VersionSync extends BaseCommand {
   static override description =
     "Show, or advance, the version and build number used for each flavour";
 

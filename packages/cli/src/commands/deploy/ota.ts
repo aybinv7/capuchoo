@@ -1,7 +1,7 @@
-import { Command } from "@oclif/core";
 import { commonDeployFlags, executeDeploy, type DeployFlags } from "../../deploy/execute.js";
+import { BaseCommand } from "../../base-command.js";
 
-export default class DeployOta extends Command {
+export default class DeployOta extends BaseCommand {
   static override description =
     "Publish a web bundle over the air. Does not change the installed binary.";
 

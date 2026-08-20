@@ -1,7 +1,8 @@
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import { commonDeployFlags, executeDeploy, type DeployFlags } from "../../deploy/execute.js";
+import { BaseCommand } from "../../base-command.js";
 
-export default class DeployNative extends Command {
+export default class DeployNative extends BaseCommand {
   static override description =
     "Build and publish a native binary (APK). Users install it through the OS.";
 

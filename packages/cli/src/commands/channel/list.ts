@@ -1,9 +1,10 @@
-import { Command, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import { CloudClient } from "../../services/cloud.js";
 import { requireProjectConfig, resolveCredentials } from "../../utils/config.js";
+import { BaseCommand } from "../../base-command.js";
 
-export default class ChannelList extends Command {
+export default class ChannelList extends BaseCommand {
   static override description = "List this app's channels and what they serve";
 
   static override flags = {
