@@ -1,11 +1,11 @@
-# capucho-apps-manager
+# @capuchoo/apps-manager
 
 capacitor plugin to list and get info abotu the installed app in ur device
 
 ## Install
 
 ```bash
-npm install capucho-apps-manager
+npm install @capuchoo/apps-manager
 npx cap sync
 ```
 

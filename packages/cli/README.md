@@ -1,5 +1,5 @@
-capucho-cli
-=================
+@capuchoo/cli
+=============
 
 Capucho CLI bundles and uploads your application to the cloud. It packages builds as native
 artifacts or ZIP files, then publishes them using user-defined parameters such as channels and
@@ -10,15 +10,10 @@ For team release operations, version ownership, GitHub Actions integration, and 
 boundaries, see [CI releases](docs/ci-releases.md).
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/capucho-cli.svg)](https://npmjs.org/package/capucho-cli)
-[![Downloads/week](https://img.shields.io/npm/dw/capucho-cli.svg)](https://npmjs.org/package/capucho-cli)
+[![Version](https://img.shields.io/npm/v/%40capuchoo%2Fcli.svg)](https://npmjs.org/package/@capuchoo/cli)
+[![Downloads/week](https://img.shields.io/npm/dw/%40capuchoo%2Fcli.svg)](https://npmjs.org/package/@capuchoo/cli)
 
 <!-- toc -->
-
-- [Usage](#usage)
-- [Commands](#commands)
-
-<!-- tocstop -->
 
 - [Usage](#usage)
 - [Commands](#commands)
@@ -30,28 +25,14 @@ boundaries, see [CI releases](docs/ci-releases.md).
 <!-- usage -->
 
 ```sh-session
-$ npm install -g capucho-cli
-$ capucho-cli COMMAND
+$ npm install -g @capuchoo/cli
+$ capucho COMMAND
 running command...
-$ capucho-cli (--version)
-capucho-cli/0.1.0 win32-x64 node-v26.4.0
-$ capucho-cli --help [COMMAND]
+$ capucho (--version)
+@capuchoo/cli/0.2.0 win32-x64 node-v26.4.0
+$ capucho --help [COMMAND]
 USAGE
-  $ capucho-cli COMMAND
-...
-```
-
-<!-- usagestop -->
-
-```sh-session
-$ npm install -g capucho-cli
-$ capucho-cli COMMAND
-running command...
-$ capucho-cli (--version)
-capucho-cli/0.0.0 win32-x64 node-v24.1.0
-$ capucho-cli --help [COMMAND]
-USAGE
-  $ capucho-cli COMMAND
+  $ capucho COMMAND
 ...
 ```
 
@@ -61,324 +42,222 @@ USAGE
 
 <!-- commands -->
 
-- [`capucho-cli auth login`](#capucho-cli-auth-login)
-- [`capucho-cli auth logout`](#capucho-cli-auth-logout)
-- [`capucho-cli auth whoami`](#capucho-cli-auth-whoami)
-- [`capucho-cli channel create`](#capucho-cli-channel-create)
-- [`capucho-cli channel list`](#capucho-cli-channel-list)
-- [`capucho-cli channel promote`](#capucho-cli-channel-promote)
-- [`capucho-cli config init`](#capucho-cli-config-init)
-- [`capucho-cli config list`](#capucho-cli-config-list)
-- [`capucho-cli config set KEY VALUE`](#capucho-cli-config-set-key-value)
-- [`capucho-cli deploy native`](#capucho-cli-deploy-native)
-- [`capucho-cli deploy ota`](#capucho-cli-deploy-ota)
-- [`capucho-cli deploy rollback`](#capucho-cli-deploy-rollback)
-- [`capucho-cli hello PERSON`](#capucho-cli-hello-person)
-- [`capucho-cli hello world`](#capucho-cli-hello-world)
-- [`capucho-cli help [COMMAND]`](#capucho-cli-help-command)
-- [`capucho-cli init`](#capucho-cli-init)
-- [`capucho-cli plugins`](#capucho-cli-plugins)
-- [`capucho-cli plugins add PLUGIN`](#capucho-cli-plugins-add-plugin)
-- [`capucho-cli plugins:inspect PLUGIN...`](#capucho-cli-pluginsinspect-plugin)
-- [`capucho-cli plugins install PLUGIN`](#capucho-cli-plugins-install-plugin)
-- [`capucho-cli plugins link PATH`](#capucho-cli-plugins-link-path)
-- [`capucho-cli plugins remove [PLUGIN]`](#capucho-cli-plugins-remove-plugin)
-- [`capucho-cli plugins reset`](#capucho-cli-plugins-reset)
-- [`capucho-cli plugins uninstall [PLUGIN]`](#capucho-cli-plugins-uninstall-plugin)
-- [`capucho-cli plugins unlink [PLUGIN]`](#capucho-cli-plugins-unlink-plugin)
-- [`capucho-cli plugins update`](#capucho-cli-plugins-update)
-- [`capucho-cli version bump TYPE`](#capucho-cli-version-bump-type)
-- [`capucho-cli version sync`](#capucho-cli-version-sync)
+- [`capucho auth login`](#capucho-auth-login)
+- [`capucho auth logout`](#capucho-auth-logout)
+- [`capucho auth whoami`](#capucho-auth-whoami)
+- [`capucho channel list`](#capucho-channel-list)
+- [`capucho config list`](#capucho-config-list)
+- [`capucho config set KEY VALUE`](#capucho-config-set-key-value)
+- [`capucho deploy native`](#capucho-deploy-native)
+- [`capucho deploy ota`](#capucho-deploy-ota)
+- [`capucho help [COMMAND]`](#capucho-help-command)
+- [`capucho init`](#capucho-init)
+- [`capucho version bump TYPE`](#capucho-version-bump-type)
+- [`capucho version sync`](#capucho-version-sync)
 
-## `capucho-cli auth login`
+## `capucho auth login`
 
-Authenticate with Capucho platform using an API key
+Store an API key for the Capucho backend
 
 ```
 USAGE
-  $ capucho-cli auth login [-k <value>] [-e <value>]
+  $ capucho auth login [-k <value>] [-e <value>]
 
 FLAGS
-  -e, --endpoint=<value>  API endpoint
-  -k, --api-key=<value>   API key (get from Settings > API Keys in dashboard)
+  -e, --endpoint=<value>  Backend base URL
+  -k, --api-key=<value>   API key from Settings > API Keys in the dashboard
 
 DESCRIPTION
-  Authenticate with Capucho platform using an API key
+  Store an API key for the Capucho backend
 
 EXAMPLES
-  $ capucho-cli auth login
+  $ capucho auth login
 
-  $ capucho-cli auth login --api-key cap_xxxx
-
-  $ capucho-cli auth login --endpoint https://your-server.com
+  $ capucho auth login --endpoint https://capucho.internal --api-key cap_...
 ```
 
 _See code:
-[src/commands/auth/login.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/login.ts)_
+[src/commands/auth/login.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/login.ts)_
 
-## `capucho-cli auth logout`
+## `capucho auth logout`
 
-Log out and clear credentials
+Remove the stored API key
 
 ```
 USAGE
-  $ capucho-cli auth logout
+  $ capucho auth logout
 
 DESCRIPTION
-  Log out and clear credentials
+  Remove the stored API key
 ```
 
 _See code:
-[src/commands/auth/logout.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/logout.ts)_
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/logout.ts)_
 
-## `capucho-cli auth whoami`
+## `capucho auth whoami`
 
-Show current logged in user and available apps
+Show the signed-in account, and the organizations and apps it can reach
 
 ```
 USAGE
-  $ capucho-cli auth whoami
+  $ capucho auth whoami [--json]
+
+FLAGS
+  --json  Machine-readable output
 
 DESCRIPTION
-  Show current logged in user and available apps
+  Show the signed-in account, and the organizations and apps it can reach
 ```
 
 _See code:
-[src/commands/auth/whoami.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/auth/whoami.ts)_
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/whoami.ts)_
 
-## `capucho-cli channel create`
+## `capucho channel list`
 
-Create a new channel
+List this app's channels and what they serve
 
 ```
 USAGE
-  $ capucho-cli channel create
+  $ capucho channel list [--json]
+
+FLAGS
+  --json  Machine-readable output
 
 DESCRIPTION
-  Create a new channel
+  List this app's channels and what they serve
 ```
 
 _See code:
-[src/commands/channel/create.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/create.ts)_
+[src/commands/channel/list.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/channel/list.ts)_
 
-## `capucho-cli channel list`
+## `capucho config list`
 
-List available channels
+Show the resolved configuration, and which build tools were found
 
 ```
 USAGE
-  $ capucho-cli channel list
+  $ capucho config list [--json]
+
+FLAGS
+  --json  Machine-readable output
 
 DESCRIPTION
-  List available channels
+  Show the resolved configuration, and which build tools were found
 ```
 
 _See code:
-[src/commands/channel/list.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/list.ts)_
+[src/commands/config/list.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/config/list.ts)_
 
-## `capucho-cli channel promote`
+## `capucho config set KEY VALUE`
 
-Promote a release to another channel
-
-```
-USAGE
-  $ capucho-cli channel promote
-
-DESCRIPTION
-  Promote a release to another channel
-```
-
-_See code:
-[src/commands/channel/promote.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/channel/promote.ts)_
-
-## `capucho-cli config init`
-
-Initialize Capucho CLI configuration in your project
+Set a user preference in ~/.capucho/config.json
 
 ```
 USAGE
-  $ capucho-cli config init
-
-DESCRIPTION
-  Initialize Capucho CLI configuration in your project
-
-EXAMPLES
-  $ capucho-cli config init
-```
-
-_See code:
-[src/commands/config/init.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/init.ts)_
-
-## `capucho-cli config list`
-
-List current configuration
-
-```
-USAGE
-  $ capucho-cli config list
-
-DESCRIPTION
-  List current configuration
-```
-
-_See code:
-[src/commands/config/list.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/list.ts)_
-
-## `capucho-cli config set KEY VALUE`
-
-Set a configuration value
-
-```
-USAGE
-  $ capucho-cli config set KEY VALUE [-g]
+  $ capucho config set KEY VALUE
 
 ARGUMENTS
-  KEY    Config key (e.g. apiKey, defaultEnvironment)
-  VALUE  Config value
-
-FLAGS
-  -g, --global  Set in global config
+  KEY    (endpoint|defaultChannel) Preference to set
+  VALUE  New value
 
 DESCRIPTION
-  Set a configuration value
+  Set a user preference in ~/.capucho/config.json
+
+EXAMPLES
+  $ capucho config set endpoint https://capucho.internal
+
+  $ capucho config set defaultChannel staging
 ```
 
 _See code:
-[src/commands/config/set.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/config/set.ts)_
+[src/commands/config/set.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/config/set.ts)_
 
-## `capucho-cli deploy native`
+## `capucho deploy native`
 
-Deploy a native update (APK/IPA) to your project
+Build and publish a native binary (APK). Users install it through the OS.
 
 ```
 USAGE
-  $ capucho-cli deploy native [-a] [-c <value>] [-n <value>] [-p android|ios] [-t debug|release] [-r] [-s]
-    [--skipBuild] [--githubPages] [-v major|minor|patch] [--verbose] [-y]
+  $ capucho deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
+    [--dry-run] [--json] [--verbose] [-y] [-p android|ios] [-t debug|release] [--allow-unsigned]
 
 FLAGS
-  -a, --[no-]active        Activate update immediately
-  -c, --channel=<value>    Release channel
-  -n, --note=<value>       Release notes
+  -a, --[no-]active        Serve this release immediately
+  -c, --channel=<value>    Channel to publish to. Its environment selects the flavour.
+  -n, --note=<value>       Release notes shown to users
   -p, --platform=<option>  [default: android] Target platform
                            <options: android|ios>
-  -r, --[no-]required      Mark as required update
-  -s, --skipAsset          Skip asset generation
-  -t, --type=<option>      Build type (debug for unsigned, release for signed)
+  -r, --[no-]required      Users cannot postpone this release
+  -t, --type=<option>      [default: release] Gradle variant to assemble
                            <options: debug|release>
-  -v, --version=<option>   Version bump type
+  -v, --version=<option>   Bump the app version before publishing
                            <options: major|minor|patch>
-  -y, --yes                Skip confirmation prompts
-      --githubPages        Publish generated assets to the configured GitHub Pages repository
-      --skipBuild          Skip build step
-      --verbose            Show detailed output from build steps
+  -y, --yes                Accept every prompt - required in CI
+      --allow-unsigned     Publish a release build with no signature. Android will refuse to install it.
+      --dry-run            Build and package, but upload nothing
+      --json               Emit a machine-readable result on stdout
+      --skip-assets        Do not regenerate launcher icons
+      --skip-build         Publish the existing build output as-is
+      --verbose            Stream build output to the terminal
 
 DESCRIPTION
-  Deploy a native update (APK/IPA) to your project
+  Build and publish a native binary (APK). Users install it through the OS.
+
+EXAMPLES
+  $ capucho deploy native --channel staging
+
+  $ capucho deploy native -c production -v minor --type release
+
+  $ capucho deploy native -c staging --type debug -y
 ```
 
 _See code:
-[src/commands/deploy/native.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/native.ts)_
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/deploy/native.ts)_
 
-## `capucho-cli deploy ota`
+## `capucho deploy ota`
 
-Deploy an OTA update to your project
+Publish a web bundle over the air. Does not change the installed binary.
 
 ```
 USAGE
-  $ capucho-cli deploy ota [-a] [-c <value>] [-n <value>] [-r] [-s] [--skipBuild] [--githubPages] [-v
-    major|minor|patch] [--verbose] [-y]
+  $ capucho deploy ota [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
+    [--dry-run] [--json] [--verbose] [-y]
 
 FLAGS
-  -a, --[no-]active       Activate update immediately
-  -c, --channel=<value>   Release channel
-  -n, --note=<value>      Release notes
-  -r, --[no-]required     Mark as required update
-  -s, --skipAsset         Skip asset generation
-  -v, --version=<option>  Version bump type
+  -a, --[no-]active       Serve this release immediately
+  -c, --channel=<value>   Channel to publish to. Its environment selects the flavour.
+  -n, --note=<value>      Release notes shown to users
+  -r, --[no-]required     Users cannot postpone this release
+  -v, --version=<option>  Bump the app version before publishing
                           <options: major|minor|patch>
-  -y, --yes               Skip confirmation prompts
-      --githubPages       Publish generated assets to the configured GitHub Pages repository
-      --skipBuild         Skip build step
-      --verbose           Show detailed output from build steps
+  -y, --yes               Accept every prompt - required in CI
+      --dry-run           Build and package, but upload nothing
+      --json              Emit a machine-readable result on stdout
+      --skip-assets       Do not regenerate launcher icons
+      --skip-build        Publish the existing build output as-is
+      --verbose           Stream build output to the terminal
 
 DESCRIPTION
-  Deploy an OTA update to your project
+  Publish a web bundle over the air. Does not change the installed binary.
 
 EXAMPLES
-  $ capucho-cli deploy ota -c staging -v patch
+  $ capucho deploy ota --channel staging
 
-  $ capucho-cli deploy ota --note "Critical fix"
+  $ capucho deploy ota -c production -v patch -n 'Fixes the invoice total'
+
+  $ capucho deploy ota -c staging --dry-run
 ```
 
 _See code:
-[src/commands/deploy/ota.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/ota.ts)_
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/deploy/ota.ts)_
 
-## `capucho-cli deploy rollback`
+## `capucho help [COMMAND]`
 
-Rollback to a previous version
-
-```
-USAGE
-  $ capucho-cli deploy rollback
-
-DESCRIPTION
-  Rollback to a previous version
-```
-
-_See code:
-[src/commands/deploy/rollback.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/deploy/rollback.ts)_
-
-## `capucho-cli hello PERSON`
-
-Say hello
+Display help for capucho.
 
 ```
 USAGE
-  $ capucho-cli hello PERSON -f <value>
-
-ARGUMENTS
-  PERSON  Person to say hello to
-
-FLAGS
-  -f, --from=<value>  (required) Who is saying hello
-
-DESCRIPTION
-  Say hello
-
-EXAMPLES
-  $ capucho-cli hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
-```
-
-_See code:
-[src/commands/hello/index.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/hello/index.ts)_
-
-## `capucho-cli hello world`
-
-Say hello world
-
-```
-USAGE
-  $ capucho-cli hello world
-
-DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ capucho-cli hello world
-  hello world! (./src/commands/hello/world.ts)
-```
-
-_See code:
-[src/commands/hello/world.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/hello/world.ts)_
-
-## `capucho-cli help [COMMAND]`
-
-Display help for capucho-cli.
-
-```
-USAGE
-  $ capucho-cli help [COMMAND...] [-n]
+  $ capucho help [COMMAND...] [-n]
 
 ARGUMENTS
   [COMMAND...]  Command to show help for.
@@ -387,743 +266,86 @@ FLAGS
   -n, --nested-commands  Include all nested commands in the output.
 
 DESCRIPTION
-  Display help for capucho-cli.
+  Display help for capucho.
 ```
 
 _See code:
-[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
+[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.58/src/commands/help.ts)_
 
-## `capucho-cli init`
+## `capucho init`
 
-Initialize Capucho in this project
-
-```
-USAGE
-  $ capucho-cli init [-l]
-
-FLAGS
-  -l, --link  Link to existing app instead of creating new one
-
-DESCRIPTION
-  Initialize Capucho in this project
-```
-
-_See code:
-[src/commands/init.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/init.ts)_
-
-## `capucho-cli plugins`
-
-List installed plugins.
+Link this directory to a Capucho app and write .capucho/project.json
 
 ```
 USAGE
-  $ capucho-cli plugins [--json] [--core]
+  $ capucho init [-l] [-f]
 
 FLAGS
-  --core  Show core plugins.
-
-GLOBAL FLAGS
-  --json  Format output as json.
+  -f, --force  Overwrite an existing project.json
+  -l, --link   Link an existing app instead of creating one
 
 DESCRIPTION
-  List installed plugins.
+  Link this directory to a Capucho app and write .capucho/project.json
 
 EXAMPLES
-  $ capucho-cli plugins
+  $ capucho init
+
+  $ capucho init --link
 ```
 
 _See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/index.ts)_
+[src/commands/init.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/init.ts)_
 
-## `capucho-cli plugins add PLUGIN`
+## `capucho version bump TYPE`
 
-Installs a plugin into capucho-cli.
+Raise the app's semantic version, and optionally an environment's build number
 
 ```
 USAGE
-  $ capucho-cli plugins add PLUGIN... [--json] [-f] [-h] [-s | -v]
+  $ capucho version bump TYPE [-e dev|staging|prod]
 
 ARGUMENTS
-  PLUGIN...  Plugin to install.
+  TYPE  (major|minor|patch) Which part of the version to raise
 
 FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into capucho-cli.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the CAPUCHO_CLI_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the CAPUCHO_CLI_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ capucho-cli plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ capucho-cli plugins add myplugin
-
-  Install a plugin from a github url.
-
-    $ capucho-cli plugins add https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ capucho-cli plugins add someuser/someplugin
-```
-
-## `capucho-cli plugins:inspect PLUGIN...`
-
-Displays installation properties of a plugin.
-
-```
-USAGE
-  $ capucho-cli plugins inspect PLUGIN...
-
-ARGUMENTS
-  PLUGIN...  [default: .] Plugin to inspect.
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Displays installation properties of a plugin.
-
-EXAMPLES
-  $ capucho-cli plugins inspect myplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/inspect.ts)_
-
-## `capucho-cli plugins install PLUGIN`
-
-Installs a plugin into capucho-cli.
-
-```
-USAGE
-  $ capucho-cli plugins install PLUGIN... [--json] [-f] [-h] [-s | -v]
-
-ARGUMENTS
-  PLUGIN...  Plugin to install.
-
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into capucho-cli.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the CAPUCHO_CLI_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the CAPUCHO_CLI_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ capucho-cli plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ capucho-cli plugins install myplugin
-
-  Install a plugin from a github url.
-
-    $ capucho-cli plugins install https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ capucho-cli plugins install someuser/someplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/install.ts)_
-
-## `capucho-cli plugins link PATH`
-
-Links a plugin into the CLI for development.
-
-```
-USAGE
-  $ capucho-cli plugins link PATH [-h] [--install] [-v]
-
-ARGUMENTS
-  PATH  [default: .] path to plugin
-
-FLAGS
-  -h, --help          Show CLI help.
-  -v, --verbose
-      --[no-]install  Install dependencies after linking the plugin.
-
-DESCRIPTION
-  Links a plugin into the CLI for development.
-
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
-
-EXAMPLES
-  $ capucho-cli plugins link myplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/link.ts)_
-
-## `capucho-cli plugins remove [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ capucho-cli plugins remove [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ capucho-cli plugins unlink
-  $ capucho-cli plugins remove
-
-EXAMPLES
-  $ capucho-cli plugins remove myplugin
-```
-
-## `capucho-cli plugins reset`
-
-Remove all user-installed and linked plugins.
-
-```
-USAGE
-  $ capucho-cli plugins reset [--hard] [--reinstall]
-
-FLAGS
-  --hard       Delete node_modules and package manager related files in addition to uninstalling plugins.
-  --reinstall  Reinstall all plugins after uninstalling.
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/reset.ts)_
-
-## `capucho-cli plugins uninstall [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ capucho-cli plugins uninstall [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ capucho-cli plugins unlink
-  $ capucho-cli plugins remove
-
-EXAMPLES
-  $ capucho-cli plugins uninstall myplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/uninstall.ts)_
-
-## `capucho-cli plugins unlink [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ capucho-cli plugins unlink [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ capucho-cli plugins unlink
-  $ capucho-cli plugins remove
-
-EXAMPLES
-  $ capucho-cli plugins unlink myplugin
-```
-
-## `capucho-cli plugins update`
-
-Update installed plugins.
-
-```
-USAGE
-  $ capucho-cli plugins update [-h] [-v]
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Update installed plugins.
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/update.ts)_
-
-## `capucho-cli version bump TYPE`
-
-Bump version and sync to env files
-
-```
-USAGE
-  $ capucho-cli version bump TYPE [-e dev|staging|prod] [--git-tag-version]
-
-ARGUMENTS
-  TYPE  (major|minor|patch) Version bump type (major, minor, patch)
-
-FLAGS
-  -e, --environment=<option>  Environment whose version code is incremented
+  -e, --environment=<option>  Also increment this environment's native build number
                               <options: dev|staging|prod>
-      --[no-]git-tag-version  Create a git tag
 
 DESCRIPTION
-  Bump version and sync to env files
-```
-
-_See code:
-[src/commands/version/bump.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/version/bump.ts)_
-
-## `capucho-cli version sync`
-
-Sync version from package.json to environment files
-
-```
-USAGE
-  $ capucho-cli version sync [-b] [-e <value>]
-
-FLAGS
-  -b, --bump                 Bump version code
-  -e, --environment=<value>  Target environment (dev, staging, prod)
-
-DESCRIPTION
-  Sync version from package.json to environment files
-```
-
-_See code:
-[src/commands/version/sync.ts](https://github.com/inventor7/capucho-cli/blob/v0.1.0/src/commands/version/sync.ts)_
-<!-- commandsstop -->
-
-- [`capucho-cli hello PERSON`](#capucho-cli-hello-person)
-- [`capucho-cli hello world`](#capucho-cli-hello-world)
-- [`capucho-cli help [COMMAND]`](#capucho-cli-help-command)
-- [`capucho-cli plugins`](#capucho-cli-plugins)
-- [`capucho-cli plugins add PLUGIN`](#capucho-cli-plugins-add-plugin)
-- [`capucho-cli plugins:inspect PLUGIN...`](#capucho-cli-pluginsinspect-plugin)
-- [`capucho-cli plugins install PLUGIN`](#capucho-cli-plugins-install-plugin)
-- [`capucho-cli plugins link PATH`](#capucho-cli-plugins-link-path)
-- [`capucho-cli plugins remove [PLUGIN]`](#capucho-cli-plugins-remove-plugin)
-- [`capucho-cli plugins reset`](#capucho-cli-plugins-reset)
-- [`capucho-cli plugins uninstall [PLUGIN]`](#capucho-cli-plugins-uninstall-plugin)
-- [`capucho-cli plugins unlink [PLUGIN]`](#capucho-cli-plugins-unlink-plugin)
-- [`capucho-cli plugins update`](#capucho-cli-plugins-update)
-
-## `capucho-cli hello PERSON`
-
-Say hello
-
-```
-USAGE
-  $ capucho-cli hello PERSON -f <value>
-
-ARGUMENTS
-  PERSON  Person to say hello to
-
-FLAGS
-  -f, --from=<value>  (required) Who is saying hello
-
-DESCRIPTION
-  Say hello
+  Raise the app's semantic version, and optionally an environment's build number
 
 EXAMPLES
-  $ capucho-cli hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+  $ capucho version bump patch
+
+  $ capucho version bump minor --environment staging
 ```
 
 _See code:
-[src/commands/hello/index.ts](https://github.com/inventor7/capucho-cli/blob/v0.0.0/src/commands/hello/index.ts)_
+[src/commands/version/bump.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/version/bump.ts)_
 
-## `capucho-cli hello world`
+## `capucho version sync`
 
-Say hello world
+Show, or advance, the version and build number used for each flavour
 
 ```
 USAGE
-  $ capucho-cli hello world
+  $ capucho version sync [-b] [-e dev|staging|prod] [--json]
+
+FLAGS
+  -b, --bump                  Increment the build number for the selected environments
+  -e, --environment=<option>  Limit to one environment
+                              <options: dev|staging|prod>
+      --json                  Machine-readable output
 
 DESCRIPTION
-  Say hello world
+  Show, or advance, the version and build number used for each flavour
 
 EXAMPLES
-  $ capucho-cli hello world
-  hello world! (./src/commands/hello/world.ts)
+  $ capucho version sync
+
+  $ capucho version sync --bump --environment staging
 ```
 
 _See code:
-[src/commands/hello/world.ts](https://github.com/inventor7/capucho-cli/blob/v0.0.0/src/commands/hello/world.ts)_
-
-## `capucho-cli help [COMMAND]`
-
-Display help for capucho-cli.
-
-```
-USAGE
-  $ capucho-cli help [COMMAND...] [-n]
-
-ARGUMENTS
-  [COMMAND...]  Command to show help for.
-
-FLAGS
-  -n, --nested-commands  Include all nested commands in the output.
-
-DESCRIPTION
-  Display help for capucho-cli.
-```
-
-_See code:
-[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
-
-## `capucho-cli plugins`
-
-List installed plugins.
-
-```
-USAGE
-  $ capucho-cli plugins [--json] [--core]
-
-FLAGS
-  --core  Show core plugins.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  List installed plugins.
-
-EXAMPLES
-  $ capucho-cli plugins
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/index.ts)_
-
-## `capucho-cli plugins add PLUGIN`
-
-Installs a plugin into capucho-cli.
-
-```
-USAGE
-  $ capucho-cli plugins add PLUGIN... [--json] [-f] [-h] [-s | -v]
-
-ARGUMENTS
-  PLUGIN...  Plugin to install.
-
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into capucho-cli.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the CAPUCHO_CLI_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the CAPUCHO_CLI_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ capucho-cli plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ capucho-cli plugins add myplugin
-
-  Install a plugin from a github url.
-
-    $ capucho-cli plugins add https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ capucho-cli plugins add someuser/someplugin
-```
-
-## `capucho-cli plugins:inspect PLUGIN...`
-
-Displays installation properties of a plugin.
-
-```
-USAGE
-  $ capucho-cli plugins inspect PLUGIN...
-
-ARGUMENTS
-  PLUGIN...  [default: .] Plugin to inspect.
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Displays installation properties of a plugin.
-
-EXAMPLES
-  $ capucho-cli plugins inspect myplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/inspect.ts)_
-
-## `capucho-cli plugins install PLUGIN`
-
-Installs a plugin into capucho-cli.
-
-```
-USAGE
-  $ capucho-cli plugins install PLUGIN... [--json] [-f] [-h] [-s | -v]
-
-ARGUMENTS
-  PLUGIN...  Plugin to install.
-
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Installs a plugin into capucho-cli.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the CAPUCHO_CLI_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the CAPUCHO_CLI_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ capucho-cli plugins add
-
-EXAMPLES
-  Install a plugin from npm registry.
-
-    $ capucho-cli plugins install myplugin
-
-  Install a plugin from a github url.
-
-    $ capucho-cli plugins install https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ capucho-cli plugins install someuser/someplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/install.ts)_
-
-## `capucho-cli plugins link PATH`
-
-Links a plugin into the CLI for development.
-
-```
-USAGE
-  $ capucho-cli plugins link PATH [-h] [--install] [-v]
-
-ARGUMENTS
-  PATH  [default: .] path to plugin
-
-FLAGS
-  -h, --help          Show CLI help.
-  -v, --verbose
-      --[no-]install  Install dependencies after linking the plugin.
-
-DESCRIPTION
-  Links a plugin into the CLI for development.
-
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
-
-EXAMPLES
-  $ capucho-cli plugins link myplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/link.ts)_
-
-## `capucho-cli plugins remove [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ capucho-cli plugins remove [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ capucho-cli plugins unlink
-  $ capucho-cli plugins remove
-
-EXAMPLES
-  $ capucho-cli plugins remove myplugin
-```
-
-## `capucho-cli plugins reset`
-
-Remove all user-installed and linked plugins.
-
-```
-USAGE
-  $ capucho-cli plugins reset [--hard] [--reinstall]
-
-FLAGS
-  --hard       Delete node_modules and package manager related files in addition to uninstalling plugins.
-  --reinstall  Reinstall all plugins after uninstalling.
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/reset.ts)_
-
-## `capucho-cli plugins uninstall [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ capucho-cli plugins uninstall [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ capucho-cli plugins unlink
-  $ capucho-cli plugins remove
-
-EXAMPLES
-  $ capucho-cli plugins uninstall myplugin
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/uninstall.ts)_
-
-## `capucho-cli plugins unlink [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ capucho-cli plugins unlink [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  [PLUGIN...]  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ capucho-cli plugins unlink
-  $ capucho-cli plugins remove
-
-EXAMPLES
-  $ capucho-cli plugins unlink myplugin
-```
-
-## `capucho-cli plugins update`
-
-Update installed plugins.
-
-```
-USAGE
-  $ capucho-cli plugins update [-h] [-v]
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Update installed plugins.
-```
-
-_See code:
-[@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.54/src/commands/plugins/update.ts)_
+[src/commands/version/sync.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->

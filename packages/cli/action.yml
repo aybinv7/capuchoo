@@ -24,7 +24,7 @@ inputs:
     required: false
     default: ""
   cli-version:
-    description: Version of capucho-cli to run. Pin this in production.
+    description: Version of @capuchoo/cli to run. Pin this in production.
     required: false
     default: latest
 
@@ -58,7 +58,7 @@ runs:
           args+=(--type "${{ inputs.build-type }}")
         fi
 
-        npx --yes "capucho-cli@${{ inputs.cli-version }}" "${args[@]}" | tee capucho-deploy.json
+        npx --yes "@capuchoo/cli@${{ inputs.cli-version }}" "${args[@]}" | tee capucho-deploy.json
 
         version="$(node -p "JSON.parse(require('node:fs').readFileSync('capucho-deploy.json','utf8')).version ?? ''")"
         echo "version=$version" >> "$GITHUB_OUTPUT"

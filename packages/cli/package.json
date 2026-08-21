@@ -1,5 +1,5 @@
 {
-  "name": "capucho-cli",
+  "name": "@capuchoo/cli",
   "version": "0.2.0",
   "description": "Builds and publishes OTA and native releases for Capacitor applications through Capucho.",
   "keywords": [

@@ -668,6 +668,9 @@ importers:
       '@capacitor/cli':
         specifier: 'catalog:'
         version: 8.5.0(supports-color@8.1.1)
+      '@capuchoo/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@iconify-json/f7':
         specifier: ^1.2.2
         version: 1.2.2
@@ -692,9 +695,6 @@ importers:
       '@vue/compiler-sfc':
         specifier: ^3.5.25
         version: 3.5.41
-      capucho-cli:
-        specifier: workspace:*
-        version: link:../../packages/cli
       cpy-cli:
         specifier: ^6.0.0
         version: 6.0.0

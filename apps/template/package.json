@@ -1,5 +1,5 @@
 {
-  "name": "@capucho/template",
+  "name": "@capuchoo/template",
   "version": "19.0.0",
   "private": true,
   "description": "Reference Capacitor application wired to Capucho updates",
@@ -75,6 +75,7 @@
   "devDependencies": {
     "@capacitor/assets": "catalog:",
     "@capacitor/cli": "catalog:",
+    "@capuchoo/cli": "workspace:*",
     "@iconify-json/f7": "^1.2.2",
     "@iconify-json/lucide": "^1.2.80",
     "@intlify/unplugin-vue-i18n": "^11.0.1",
@@ -83,7 +84,6 @@
     "@types/three": "^0.182.0",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vue/compiler-sfc": "^3.5.25",
-    "capucho-cli": "workspace:*",
     "cpy-cli": "^6.0.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",

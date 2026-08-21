@@ -10,13 +10,13 @@ capucho/
 ├── packages/
 │   ├── core/           @capuchoo/core          contract shared by everything
 │   ├── updater/        @capuchoo/updater       app-side runtime
-│   ├── cli/            capucho-cli            build and publish releases
-│   └── apps-manager/   capucho-apps-manager   Capacitor plugin, device app info
+│   ├── cli/            @capuchoo/cli          build and publish releases
+│   └── apps-manager/   @capuchoo/apps-manager   Capacitor plugin, device app info
 ├── apps/
-│   ├── dashboard/      @capucho/dashboard     orgs, apps, channels, releases
-│   └── template/       @capucho/template      reference Capacitor application
+│   ├── dashboard/      @capuchoo/dashboard     orgs, apps, channels, releases
+│   └── template/       @capuchoo/template      reference Capacitor application
 ├── services/
-│   └── back/           @capucho/back          update server
+│   └── back/           @capuchoo/back          update server
 ├── vite.config.ts      lint, format, and the fan-out tasks
 ├── pnpm-workspace.yaml membership, catalog, build-script approvals
 └── tsconfig.base.json  compiler options packages extend
@@ -67,10 +67,10 @@ Full docs are vendored at `node_modules/vite-plus/docs`.
 { "dependencies": { "@capacitor/core": "catalog:" } }
 ```
 
-This matters most for Capacitor. `@capuchoo/updater`, `capucho-apps-manager` and the apps must agree
-_exactly_, or the native bridge loads two copies of the runtime and plugin calls resolve against the
-wrong one. `catalogMode: prefer` means a package that forgets `catalog:` still lands on the pinned
-version.
+This matters most for Capacitor. `@capuchoo/updater`, `@capuchoo/apps-manager` and the apps must
+agree _exactly_, or the native bridge loads two copies of the runtime and plugin calls resolve
+against the wrong one. `catalogMode: prefer` means a package that forgets `catalog:` still lands on
+the pinned version.
 
 `overrides.vite` and `peerDependencyRules.allowAny: [vite]` come from the Vite+ scaffold and are not
 optional: without them every package that peer-depends on upstream `vite` pulls in a second, real
@@ -175,8 +175,8 @@ Or run `vp pack --watch` in `packages/updater` alongside the app's dev server.
 ## The old repositories
 
 The five originals are still at `capucho/capucho-cli`, `capucho-back`, `capucho-front`,
-`capucho-app` and `capucho-apps-manager`, untouched, with their GitHub remotes intact. Nothing here
-writes to them.
+`capucho-app` and `@capuchoo/apps-manager`, untouched, with their GitHub remotes intact. Nothing
+here writes to them.
 
 Their full history came across via `git subtree`, so this repository has six roots and every past
 commit is reachable:
@@ -194,7 +194,7 @@ Once you are satisfied, the originals can go:
 
 ```sh
 cd C:/Users/aybin/code/ayb/capucho
-rm -rf capucho-cli capucho-back capucho-front capucho-app capucho-apps-manager
+rm -rf capucho-cli capucho-back capucho-front capucho-app @capuchoo/apps-manager
 ```
 
 They are outside this repository's `pnpm-workspace.yaml`, so they are inert until then - they just

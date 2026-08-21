@@ -44,4 +44,4 @@ directory and would bump the wrong one inside a workspace.
 ## Stability
 
 Pre-1.0: the surface may change between minor versions. It is published because `@capuchoo/updater`
-and `capucho-cli` depend on it, not as a general-purpose library.
+and `@capuchoo/cli` depend on it, not as a general-purpose library.

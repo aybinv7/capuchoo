@@ -59,7 +59,7 @@ jobs:
       # The app imports @capuchoo/updater from dist, and the CLI itself is a
       # workspace package, so both have to be built before the deploy runs.
       - run: vp run libs
-      - run: vp run -t capucho-cli#build
+      - run: vp run -t @capuchoo/cli#build
 
       - uses: actions/setup-java@v5
         if: inputs.type == 'native'

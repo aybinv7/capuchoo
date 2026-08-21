@@ -6,15 +6,15 @@ dashboard to manage it.
 
 ## What is in here
 
-| Path                    | Package                | What it does                                                     |
-| ----------------------- | ---------------------- | ---------------------------------------------------------------- |
-| `packages/core`         | `@capuchoo/core`       | The update contract, shared by every other package. No deps.     |
-| `packages/updater`      | `@capuchoo/updater`    | App-side runtime: checks, downloads, applies, prompts.           |
-| `packages/cli`          | `capucho-cli`          | Builds and publishes OTA and native releases.                    |
-| `packages/apps-manager` | `capucho-apps-manager` | Capacitor plugin for installed-app information on the device.    |
-| `apps/dashboard`        | `@capucho/dashboard`   | Organizations, apps, channels, releases.                         |
-| `apps/template`         | `@capucho/template`    | Reference Capacitor application, wired end to end.               |
-| `services/back`         | `@capucho/back`        | Update server. Owns channels, artefacts and the update decision. |
+| Path                    | Package                  | What it does                                                     |
+| ----------------------- | ------------------------ | ---------------------------------------------------------------- |
+| `packages/core`         | `@capuchoo/core`         | The update contract, shared by every other package. No deps.     |
+| `packages/updater`      | `@capuchoo/updater`      | App-side runtime: checks, downloads, applies, prompts.           |
+| `packages/cli`          | `@capuchoo/cli`          | Builds and publishes OTA and native releases.                    |
+| `packages/apps-manager` | `@capuchoo/apps-manager` | Capacitor plugin for installed-app information on the device.    |
+| `apps/dashboard`        | `@capuchoo/dashboard`    | Organizations, apps, channels, releases.                         |
+| `apps/template`         | `@capuchoo/template`     | Reference Capacitor application, wired end to end.               |
+| `services/back`         | `@capuchoo/back`         | Update server. Owns channels, artefacts and the update decision. |
 
 ## Getting started
 

@@ -3,12 +3,12 @@
 Four packages publish to npm. The apps and the backend do not - they are `private: true`, and
 `pnpm publish -r` skips them.
 
-| Package                | What it is                                        |
-| ---------------------- | ------------------------------------------------- |
-| `@capuchoo/core`       | The shared contract. Dependency-free.             |
-| `@capuchoo/updater`    | App-side runtime.                                 |
-| `capucho-cli`          | The deploy pipeline.                              |
-| `capucho-apps-manager` | Capacitor plugin: lists apps installed on device. |
+| Package                  | What it is                                        |
+| ------------------------ | ------------------------------------------------- |
+| `@capuchoo/core`         | The shared contract. Dependency-free.             |
+| `@capuchoo/updater`      | App-side runtime.                                 |
+| `@capuchoo/cli`          | The deploy pipeline.                              |
+| `@capuchoo/apps-manager` | Capacitor plugin: lists apps installed on device. |
 
 ## How a release happens
 
@@ -90,7 +90,7 @@ Applications like Lowmaro should depend on the published versions:
     "@capuchoo/updater": "^0.1.0"
   },
   "devDependencies": {
-    "capucho-cli": "^0.2.0"
+    "@capuchoo/cli": "^0.2.0"
   }
 }
 ```

@@ -1,5 +1,5 @@
 {
-  "name": "capucho-apps-manager",
+  "name": "@capuchoo/apps-manager",
   "version": "0.0.1",
   "description": "Capacitor plugin that lists and inspects apps installed on the device",
   "keywords": [
@@ -9,7 +9,7 @@
   ],
   "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/apps-manager",
   "bugs": {
-    "url": "https://github.com/inventor7/capucho-apps-manager/issues"
+    "url": "https://github.com/inventor7/@capuchoo/apps-manager/issues"
   },
   "license": "MIT",
   "author": "aybinv7",

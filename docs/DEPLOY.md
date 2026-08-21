@@ -11,12 +11,12 @@ the two that already exist are configured by hand with the same values, listed b
 
 ## capucho-back — web service, Node
 
-| Field             | Value                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------- |
-| Root Directory    | _empty_ (repository root)                                                                    |
-| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @capucho/back run build` |
-| Start Command     | `pnpm --filter @capucho/back run start`                                                      |
-| Health Check Path | `/health`                                                                                    |
+| Field             | Value                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| Root Directory    | _empty_ (repository root)                                                                      |
+| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter ./services/back run build` |
+| Start Command     | `pnpm --filter ./services/back run start`                                                      |
+| Health Check Path | `/health`                                                                                      |
 
 Environment:
 
@@ -34,12 +34,12 @@ nothing in `src/` reads it.
 
 ## capucho-front — static site
 
-| Field             | Value                                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------- |
-| Root Directory    | _empty_ (repository root)                                                                         |
-| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @capucho/dashboard run build` |
-| Publish Directory | `apps/dashboard/dist`                                                                             |
-| Rewrite rule      | `/*` → `/index.html`                                                                              |
+| Field             | Value                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| Root Directory    | _empty_ (repository root)                                                                       |
+| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter ./apps/dashboard run build` |
+| Publish Directory | `apps/dashboard/dist`                                                                           |
+| Rewrite rule      | `/*` → `/index.html`                                                                            |
 
 Environment:
 
@@ -92,5 +92,5 @@ and a successful deploy can coexist - CI is a signal, not a gate.
 six repository secrets before it can run: `CAPUCHO_ENDPOINT`, `CAPUCHO_API_KEY`,
 `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
 
-`release-cli.yml` publishes `capucho-cli` to npm on a `cli-v*` tag, and verifies the tag matches
-`packages/cli/package.json`.
+`release.yml` publishes the four packages to npm through trusted publishing - see
+[RELEASING.md](./RELEASING.md).
