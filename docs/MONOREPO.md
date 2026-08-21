@@ -119,6 +119,9 @@ back.
 Do not add a `check` script - `vp check` covers the workspace in one pass, and a per-package one
 would run the linter N times over the same files.
 
+Publishing is described in [RELEASING.md](./RELEASING.md): four packages go to npm, the apps and the
+backend are `private: true`, and one workflow covers all of them.
+
 Ordering is automatic: `vp run -r build` walks the graph built from `package.json` dependencies.
 Declare the dependency and the order follows; there is no separate task graph to maintain.
 

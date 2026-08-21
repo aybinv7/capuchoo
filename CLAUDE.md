@@ -42,7 +42,8 @@ Capucho delivers over-the-air and native updates to Capacitor applications. Read
 [docs/MONOREPO.md](./docs/MONOREPO.md) for the layout and [docs/AUDIT.md](./docs/AUDIT.md) for why
 things are shaped the way they are - most of the non-obvious decisions are answers to a specific bug
 recorded there. [docs/DEPLOY.md](./docs/DEPLOY.md) covers hosting the backend and dashboard,
-[docs/SUPABASE-KEYS.md](./docs/SUPABASE-KEYS.md) which Supabase key belongs where.
+[docs/SUPABASE-KEYS.md](./docs/SUPABASE-KEYS.md) which Supabase key belongs where, and
+[docs/RELEASING.md](./docs/RELEASING.md) how the packages reach npm.
 
 ## Boundaries that matter
 

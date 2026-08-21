@@ -2,8 +2,20 @@
   "name": "@capucho/core",
   "version": "0.1.0",
   "description": "Shared contract between the Capucho CLI, backend, dashboard and app runtime",
+  "keywords": [
+    "capacitor",
+    "capucho",
+    "ota",
+    "updates"
+  ],
+  "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/core",
   "license": "MIT",
   "author": "aybinv7",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aybinv7/capucho.git",
+    "directory": "packages/core"
+  },
   "files": [
     "dist"
   ],

@@ -2,8 +2,21 @@
   "name": "@capucho/updater",
   "version": "0.1.0",
   "description": "App-side runtime for Capucho OTA and native updates in Capacitor apps",
+  "keywords": [
+    "capacitor",
+    "capucho",
+    "live-update",
+    "ota",
+    "vue"
+  ],
+  "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/updater",
   "license": "MIT",
   "author": "aybinv7",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aybinv7/capucho.git",
+    "directory": "packages/updater"
+  },
   "files": [
     "dist"
   ],

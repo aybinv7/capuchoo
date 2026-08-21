@@ -1,0 +1,93 @@
+name: release
+
+# Publishes every publishable workspace package to npm.
+#
+# `pnpm publish -r` is idempotent: it skips any package whose version is already
+# on the registry, so running this twice does nothing the second time. That makes
+# package.json the single source of truth for what gets released - bump a version,
+# run this, done. Nothing writes back to the repository, so there is no bot commit
+# racing a developer push.
+#
+# This replaces release-cli.yml, which only handled the CLI. Two release paths for
+# one workspace is how they drift.
+#
+# Before the first run, two things have to exist:
+#   1. The `capucho` organisation on npmjs.com - @capucho/* is a scoped name and
+#      the scope has to be owned before anything can be published under it.
+#   2. An NPM_TOKEN repository secret. Use an automation (or granular) token:
+#      those bypass 2FA, which an interactive login cannot do from CI.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Pack and validate without publishing"
+        type: boolean
+        default: true
+      provenance:
+        description: "Attach npm provenance (requires a public repository)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: voidzero-dev/setup-vp@07d0b0e993009eb3b908ea06e49e88e933b728a2 # v1.17.0
+        with:
+          node-version: "24"
+          cache: true
+
+      - run: vp install --frozen-lockfile
+
+      # A broken package is worse than a late one, and npm has no useful undo:
+      # unpublishing is restricted to 72 hours and forbidden once anything
+      # depends on the version.
+      - run: vp check
+      - run: vp run -r build
+      - run: vp run -r test
+
+      - name: Authenticate with npm
+        if: ${{ !inputs.dry-run }}
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # --no-git-checks: the tree is a fresh checkout, and the branch/tag state
+      # is decided by whoever dispatched this, not by pnpm.
+      #
+      # pnpm rewrites `catalog:` and `workspace:*` into concrete ranges in the
+      # published manifest; npm cannot resolve either.
+      - name: Publish
+        run: |
+          pnpm publish -r --access public --no-git-checks \
+            ${{ inputs.dry-run && '--dry-run' || '' }} \
+            ${{ inputs.provenance && '--provenance' || '' }}
+
+      # `pnpm list` does not report the private flag, so read the manifests -
+      # otherwise the summary advertises the apps and the backend as releases.
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### Publishable packages at their current versions"
+            echo
+            echo '| package | version |'
+            echo '| --- | --- |'
+            node -e '
+              const fs = require("fs");
+              for (const file of fs.globSync("{packages,apps,services}/*/package.json")) {
+                const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+                if (!pkg.private) console.log(`| ${pkg.name} | ${pkg.version} |`);
+              }'
+          } >> "$GITHUB_STEP_SUMMARY"
