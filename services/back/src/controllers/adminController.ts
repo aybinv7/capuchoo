@@ -134,18 +134,61 @@ class AdminController {
       };
 
       const insertedRecord = await this.supabaseService.insert("app_versions", [updateRecord]);
+      const versionId = insertedRecord[0]?.id;
+
+      // Point the channel at what was just uploaded.
+      //
+      // Without this an upload was never served: /api/update reads
+      // `channels.current_version_id`, and nothing ever set it. `deploy ota`
+      // reported success, the row landed in app_versions with active: true, and
+      // every device kept being told there was no update. `active` on the version
+      // row means "this artefact may be served"; the channel pointer is what
+      // decides which one *is*.
+      let servingChannel: string | null = null;
+      const isActive = active === "true" || active === true;
+
+      if (isActive && versionId) {
+        const { data: channelRow } = await this.supabaseService
+          .getClient()
+          .from("channels")
+          .select("id, name")
+          .eq("app_id", appUuid)
+          .eq("name", channel || "prod")
+          .maybeSingle();
+
+        if (channelRow) {
+          await this.supabaseService.update(
+            "channels",
+            { current_version_id: versionId, updated_at: new Date().toISOString() },
+            { id: channelRow.id },
+          );
+          servingChannel = channelRow.name;
+        } else {
+          // Uploading to a channel that does not exist is a configuration
+          // mistake worth surfacing, not a silent no-op.
+          logger.warn("Uploaded bundle is not being served: channel not found", {
+            appUuid,
+            channel,
+            versionId,
+          });
+        }
+      }
 
       logger.info("Bundle uploaded successfully", {
         version,
         platform,
-        recordId: insertedRecord[0]?.id,
+        recordId: versionId,
+        serving: servingChannel,
       });
 
       res.json({
         success: true,
-        message: `Version ${finalVersion} uploaded successfully`,
+        message: servingChannel
+          ? `Version ${finalVersion} uploaded and now served on "${servingChannel}"`
+          : `Version ${finalVersion} uploaded`,
         downloadUrl,
         fileName,
+        serving: servingChannel,
         record: insertedRecord[0],
       });
     } catch (error) {
