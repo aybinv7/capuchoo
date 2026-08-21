@@ -367,6 +367,7 @@ class UpdateService implements IUpdateService {
         pluginVersion: request.pluginVersion,
         isProd: request.isProd,
         isEmulator: request.isEmulator,
+        customId: request.customId,
       });
 
       if (device) {

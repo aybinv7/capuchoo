@@ -111,3 +111,24 @@ describe("buildDeviceRow", () => {
     expect(row.is_prod).toBe(false);
   });
 });
+
+describe("buildDeviceRow: fields that arrive under snake_case names", () => {
+  it("stores the OS version and custom id when the caller reports them", () => {
+    const row = buildDeviceRow(
+      {
+        appUuid: "a",
+        deviceId: "d",
+        platform: "android",
+        versionOs: "14",
+        customId: "tester-1",
+      },
+      NOW,
+    );
+
+    // These were silently dropped: /api/update reads request.versionOs, and the
+    // field normalizer had no version_os -> versionOs mapping, so a plugin
+    // sending snake_case lost them between the wire and the row.
+    expect(row.version_os).toBe("14");
+    expect(row.custom_id).toBe("tester-1");
+  });
+});

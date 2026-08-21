@@ -15,6 +15,13 @@ const FIELD_MAPPINGS: Record<string, string> = {
   is_emulator: "isEmulator",
   is_prod: "isProd",
   plugin_version: "pluginVersion",
+  // Without these, /api/update reads request.versionOs and request.versionCode
+  // as undefined whenever a caller uses the snake_case spelling - so the OS
+  // version was never stored, and the native comparison silently fell back to
+  // version_build.
+  version_os: "versionOs",
+  version_code: "versionCode",
+  custom_id: "customId",
 
   // Channel fields
   default_channel: "defaultChannel",
@@ -124,6 +131,9 @@ export function extractUpdateRequest(body: Record<string, any>) {
     isEmulator: body.isEmulator ?? body.is_emulator ?? false,
     isProd: body.isProd ?? body.is_prod ?? true,
     pluginVersion: body.pluginVersion || body.plugin_version,
+    versionOs: body.versionOs || body.version_os,
+    versionCode: body.versionCode || body.version_code,
+    customId: body.customId || body.custom_id,
   };
 }
 
