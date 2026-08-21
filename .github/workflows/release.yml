@@ -71,6 +71,14 @@ jobs:
 
       # `pnpm pack` writes a publishable tarball per package: `files` is
       # honoured, and `catalog:` / `workspace:*` become concrete ranges.
+      # setup-vp provides `vp`, which has no package-manager passthrough - and
+      # `pnpm pack` is what rewrites catalog:/workspace:^ into the tarball. Corepack
+      # resolves the version from the root `packageManager` field.
+      - name: Provide pnpm
+        run: |
+          corepack enable pnpm
+          pnpm --version
+
       - name: Pack
         run: |
           mkdir -p "$RUNNER_TEMP/tarballs"
