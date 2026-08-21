@@ -117,11 +117,30 @@ jobs:
           # Absolute paths only. Given `tarballs/x.tgz`, npm treats the argument
           # as a package spec rather than a file and tries to git-clone
           # ssh://git@github.com/tarballs/x.tgz.git.
+          #
+          # A version already on the registry is a *skip*, not a failure: this
+          # workflow packs every publishable package, so a release that bumped one
+          # of them would otherwise fail on the other three. Anything else is a
+          # real error, and `set -e` would have stopped at the first one - so the
+          # loop collects the status and reports it at the end.
+          status=0
           for tarball in "$RUNNER_TEMP"/tarballs/*.tgz; do
-            echo "::group::$(basename "$tarball")"
-            npm publish "$tarball" $flags
+            name=$(basename "$tarball")
+            echo "::group::$name"
+            if output=$(npm publish "$tarball" $flags 2>&1); then
+              echo "$output"
+            else
+              echo "$output"
+              if grep -qiE "cannot publish over|previously published|EPUBLISHCONFLICT" <<<"$output"; then
+                echo "::notice title=Skipped::$name is already on the registry at this version"
+              else
+                echo "::error title=Publish failed::$name"
+                status=1
+              fi
+            fi
             echo "::endgroup::"
           done
+          exit $status
 
       # `pnpm list` does not report the private flag, so read the manifests -
       # otherwise the summary advertises the apps and the backend as releases.
