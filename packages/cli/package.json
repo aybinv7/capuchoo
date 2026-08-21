@@ -1,6 +1,6 @@
 {
   "name": "@capuchoo/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Builds and publishes OTA and native releases for Capacitor applications through Capucho.",
   "keywords": [
     "capacitor",
@@ -35,7 +35,7 @@
     "postpack": "node -e \"require('node:fs').rmSync('oclif.manifest.json',{force:true})\""
   },
   "dependencies": {
-    "@capuchoo/core": "workspace:*",
+    "@capuchoo/core": "workspace:^",
     "@inquirer/prompts": "^8.1.0",
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",

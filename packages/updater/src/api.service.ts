@@ -8,7 +8,15 @@ import {
   type UpdateEventPayload,
 } from "@capuchoo/core";
 import { getUpdaterConfig, describeConfigProblems } from "./config.js";
-import { getBundleVersion, getDeviceId, getPlatform, getVersionCode, isNative } from "./device.js";
+import {
+  getBundleVersion,
+  getDeviceId,
+  getOsFacts,
+  getPlatform,
+  getPluginVersion,
+  getVersionCode,
+  isNative,
+} from "./device.js";
 
 /** Raised when the updater is misconfigured, rather than reporting "up to date". */
 export class UpdaterConfigError extends Error {
@@ -64,6 +72,53 @@ async function postJson<T>(url: string, body: unknown, timeoutMs: number): Promi
  * `min_update_version` gate, so a device could be told to install an OTA
  * bundle its binary was too old to run.
  */
+export interface DeviceFacts {
+  appId: string;
+  platform: ReturnType<typeof getPlatform>;
+  channel?: string | undefined;
+  isProd: boolean;
+  versionCode: number;
+  versionName: string;
+  deviceId: string;
+  pluginVersion?: string | undefined;
+  versionOs?: string | undefined;
+  isEmulator?: boolean | undefined;
+  customId?: string | undefined;
+}
+
+/**
+ * Assemble the check payload.
+ *
+ * Pure, and separate from the plugin calls that gather the facts, so the shape
+ * of what goes on the wire can be tested without a device. Fields the app could
+ * not determine are *omitted* rather than sent empty: the server writes only the
+ * keys it receives, so a placeholder would overwrite a better value that an
+ * earlier, better-informed check had already stored.
+ */
+export function buildCheckRequest(facts: DeviceFacts): UpdateCheckRequest {
+  const request: UpdateCheckRequest = {
+    appId: facts.appId,
+    platform: facts.platform,
+    versionCode: String(facts.versionCode),
+    // Historical alias. The server accepts either and prefers versionCode.
+    versionBuild: String(facts.versionCode),
+    version_name: facts.versionName,
+    deviceId: facts.deviceId,
+    isProd: facts.isProd,
+  };
+
+  if (facts.channel) {
+    request.channel = facts.channel;
+    request.defaultChannel = facts.channel;
+  }
+  if (facts.pluginVersion) request.pluginVersion = facts.pluginVersion;
+  if (facts.versionOs) request.versionOs = facts.versionOs;
+  if (typeof facts.isEmulator === "boolean") request.isEmulator = facts.isEmulator;
+  if (facts.customId) request.customId = facts.customId;
+
+  return request;
+}
+
 export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
   if (!isNative()) return null;
 
@@ -71,23 +126,25 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
   const problems = describeConfigProblems(config);
   if (problems.length > 0) throw new UpdaterConfigError(problems);
 
-  const [versionCode, versionName, deviceId] = await Promise.all([
+  const [versionCode, versionName, deviceId, pluginVersion, osFacts] = await Promise.all([
     getVersionCode(),
     getBundleVersion(),
     getDeviceId(),
+    getPluginVersion(),
+    getOsFacts(),
   ]);
 
-  const request: UpdateCheckRequest = {
+  const request = buildCheckRequest({
     appId: config.appId,
     platform: getPlatform(),
     channel: config.channel,
-    defaultChannel: config.channel,
-    versionCode: String(versionCode),
-    versionBuild: String(versionCode),
-    version_name: versionName,
-    deviceId,
     isProd: config.environment === "prod",
-  };
+    versionCode,
+    versionName,
+    deviceId,
+    pluginVersion,
+    ...osFacts,
+  });
 
   const response = await postJson<UpdateCheckResponse>(
     `${config.apiUrl}/api/update`,

@@ -789,7 +789,7 @@ importers:
   packages/cli:
     dependencies:
       '@capuchoo/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@inquirer/prompts':
         specifier: ^8.1.0
@@ -831,8 +831,11 @@ importers:
 
   packages/updater:
     dependencies:
+      '@capacitor/device':
+        specifier: ^8.0.0
+        version: 8.0.3(@capacitor/core@8.5.0)
       '@capuchoo/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
     devDependencies:
       '@capacitor/app':

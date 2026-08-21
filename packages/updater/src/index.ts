@@ -19,8 +19,10 @@
 export {
   UpdateCheckBlockedError,
   UpdaterConfigError,
+  buildCheckRequest,
   checkForUpdate,
   logUpdateEvent,
+  type DeviceFacts,
 } from "./api.service.js";
 
 export {
@@ -30,7 +32,15 @@ export {
   type UpdaterConfig,
 } from "./config.js";
 
-export { getBundleVersion, getDeviceId, getPlatform, getVersionCode, isNative } from "./device.js";
+export {
+  getBundleVersion,
+  getDeviceId,
+  getOsFacts,
+  getPlatform,
+  getPluginVersion,
+  getVersionCode,
+  isNative,
+} from "./device.js";
 
 export { cleanApkCache, downloadNativeUpdate, type DownloadProgress } from "./download.service.js";
 

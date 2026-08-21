@@ -1,6 +1,6 @@
 {
   "name": "@capuchoo/updater",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "App-side runtime for Capucho OTA and native updates in Capacitor apps",
   "keywords": [
     "capacitor",
@@ -46,7 +46,7 @@
     "test": "vp test --run"
   },
   "dependencies": {
-    "@capuchoo/core": "workspace:*"
+    "@capuchoo/core": "workspace:^"
   },
   "devDependencies": {
     "@capacitor/app": "catalog:",
@@ -63,6 +63,7 @@
   "peerDependencies": {
     "@capacitor/app": "catalog:",
     "@capacitor/core": "catalog:",
+    "@capacitor/device": "^8.0.0",
     "@capacitor/file-transfer": "catalog:",
     "@capacitor/filesystem": "catalog:",
     "@capacitor/network": "catalog:",
@@ -72,6 +73,9 @@
   },
   "peerDependenciesMeta": {
     "vue": {
+      "optional": true
+    },
+    "@capacitor/device": {
       "optional": true
     }
   }

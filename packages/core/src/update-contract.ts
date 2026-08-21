@@ -63,6 +63,17 @@ export interface UpdateCheckRequest {
   /** Stable per-install identifier, used for channel overrides and stats. */
   deviceId?: string;
   isProd?: boolean;
+  /**
+   * Device facts the server stores but does not decide with. All optional: an
+   * app that cannot determine one should omit it rather than send a placeholder,
+   * because the server writes only the keys it receives and a placeholder would
+   * overwrite a better value recorded earlier.
+   */
+  versionOs?: string;
+  pluginVersion?: string;
+  isEmulator?: boolean;
+  /** Caller-supplied label for this install, shown in the dashboard. */
+  customId?: string;
 }
 
 /** A native binary (APK/IPA) the device should install. */

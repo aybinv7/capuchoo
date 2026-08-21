@@ -69,3 +69,43 @@ export function getPlatform(): "android" | "ios" | "web" {
 export function isNative(): boolean {
   return Capacitor.isNativePlatform();
 }
+
+/**
+ * Version of the OTA plugin the app is running.
+ *
+ * Useful when a device misbehaves: plugin version explains more failures than
+ * app version does.
+ */
+export async function getPluginVersion(): Promise<string | undefined> {
+  if (!Capacitor.isNativePlatform()) return undefined;
+
+  try {
+    const { version } = await CapacitorUpdater.getPluginVersion();
+    return version || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * OS version and emulator flag, from `@capacitor/device`.
+ *
+ * That package is an *optional* peer: it is a separate install, and an app that
+ * does not have it should still be able to check for updates. So it is imported
+ * dynamically and every failure - not installed, not registered, throwing on an
+ * odd platform - resolves to `undefined`, which the request builder omits.
+ */
+export async function getOsFacts(): Promise<{ versionOs?: string; isEmulator?: boolean }> {
+  if (!Capacitor.isNativePlatform()) return {};
+
+  try {
+    const { Device } = await import("@capacitor/device");
+    const info = await Device.getInfo();
+    return {
+      ...(info.osVersion ? { versionOs: info.osVersion } : {}),
+      ...(typeof info.isVirtual === "boolean" ? { isEmulator: info.isVirtual } : {}),
+    };
+  } catch {
+    return {};
+  }
+}
