@@ -129,7 +129,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     fail(
       command,
       "Not authenticated. Run " +
-        chalk.cyan("capucho auth login") +
+        chalk.cyan("capuchoo auth login") +
         ", or set CAPUCHO_ENDPOINT and CAPUCHO_API_KEY.",
     );
   }
@@ -142,7 +142,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       `The credentials for ${credentials.endpoint} were rejected. ` +
         (credentials.source === "environment"
           ? "Check CAPUCHO_API_KEY."
-          : `Run ${chalk.cyan("capucho auth login")} again.`),
+          : `Run ${chalk.cyan("capuchoo auth login")} again.`),
     );
   }
 

@@ -34,7 +34,7 @@ function entryNames(zipPath: string): string[] {
 }
 
 beforeEach(() => {
-  workDir = fs.mkdtempSync(path.join(os.tmpdir(), "capucho-zip-"));
+  workDir = fs.mkdtempSync(path.join(os.tmpdir(), "capuchoo-zip-"));
 });
 
 afterEach(() => {
@@ -157,13 +157,13 @@ describe("createBundleZip", () => {
 describe("bundleFileName", () => {
   it("identifies the app and version, and stays filesystem safe", () => {
     expect(bundleFileName("com.ayb.lowmaro", "1.2.3")).toBe(
-      "capucho-bundle-com.ayb.lowmaro-1.2.3.zip",
+      "capuchoo-bundle-com.ayb.lowmaro-1.2.3.zip",
     );
   });
 
   it("replaces characters that are not safe in a file name", () => {
     expect(bundleFileName("com/ayb:app", "1.0.0-beta+1")).toBe(
-      "capucho-bundle-com-ayb-app-1.0.0-beta-1.zip",
+      "capuchoo-bundle-com-ayb-app-1.0.0-beta-1.zip",
     );
   });
 });

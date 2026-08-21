@@ -135,6 +135,6 @@ export async function logUpdateEvent(
   try {
     await postJson(`${config.apiUrl}/api/native-updates/log`, payload, config.timeoutMs);
   } catch (error) {
-    console.warn("[capucho] could not record update event", error);
+    console.warn("[capuchoo] could not record update event", error);
   }
 }

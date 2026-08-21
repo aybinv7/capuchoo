@@ -1,4 +1,4 @@
-# Capucho CLI
+# Capuchooo CLI
 
 Builds and publishes releases. Release operations: [docs/ci-releases.md](docs/ci-releases.md).
 

@@ -6,8 +6,8 @@ This file provides guidance to agents when working with code in this repository.
 
 ### Misleading Project Name
 
-- The project is named "Capucho" in the README and framework7.json, but the actual project directory
-  is "Capucho"
+- The project is named "Capuchooo" in the README and framework7.json, but the actual project
+  directory is "Capuchooo"
 - This discrepancy could cause confusion when referencing documentation or project-specific
   information
 

@@ -73,7 +73,7 @@ export interface DeployOutcome {
   skipped: Array<{ step: string; reason: string }>;
 }
 
-const LOG_FILE = "capucho-deploy.log";
+const LOG_FILE = "capuchoo-deploy.log";
 
 /**
  * Builds the step list for a request.

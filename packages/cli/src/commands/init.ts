@@ -166,7 +166,7 @@ export default class Init extends BaseCommand {
       this.log("");
       this.log(
         chalk.dim("  Deploy with: ") +
-          chalk.cyan(`capucho deploy ota --channel ${deployable[0]!.name}`),
+          chalk.cyan(`capuchoo deploy ota --channel ${deployable[0]!.name}`),
       );
     } else {
       this.log(chalk.yellow("  This app has no channel with an environment set yet."));

@@ -1,10 +1,10 @@
 import { registerPlugin } from "@capacitor/core";
 
-import type { capuchoappsmanagerPlugin } from "./definitions";
+import type { CapuchooAppsManagerPlugin } from "./definitions";
 
-const capuchoappsmanager = registerPlugin<capuchoappsmanagerPlugin>("capuchoappsmanager", {
-  web: () => import("./web").then((m) => new m.capuchoappsmanagerWeb()),
+const CapuchooAppsManager = registerPlugin<CapuchooAppsManagerPlugin>("CapuchooAppsManager", {
+  web: () => import("./web").then((m) => new m.CapuchooAppsManagerWeb()),
 });
 
 export * from "./definitions";
-export { capuchoappsmanager };
+export { CapuchooAppsManager };

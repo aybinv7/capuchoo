@@ -18,7 +18,7 @@ const SETTABLE = {
 type SettableKey = keyof typeof SETTABLE;
 
 export default class ConfigSet extends BaseCommand {
-  static override description = "Set a user preference in ~/.capucho/config.json";
+  static override description = "Set a user preference in ~/.capuchoo/config.json";
 
   static override examples = [
     "<%= config.bin %> config set endpoint https://capucho.internal",

@@ -18,7 +18,7 @@ buildscript {
 apply plugin: 'com.android.library'
 
 android {
-    namespace = "capucho.capucho.apps.manager.inv"
+    namespace = "dev.capuchoo.appsmanager"
     compileSdk = project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 36
     defaultConfig {
         minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 24

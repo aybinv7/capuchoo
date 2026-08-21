@@ -1,15 +1,15 @@
 import { WebPlugin } from "@capacitor/core";
 
-import type { capuchoappsmanagerPlugin, AppInfo } from "./definitions";
+import type { CapuchooAppsManagerPlugin, AppInfo } from "./definitions";
 
-export class capuchoappsmanagerWeb extends WebPlugin implements capuchoappsmanagerPlugin {
+export class CapuchooAppsManagerWeb extends WebPlugin implements CapuchooAppsManagerPlugin {
   async echo(options: { value: string }): Promise<{ value: string }> {
     console.log("ECHO", options);
     return options;
   }
 
   async getAppInfo(options: { bundleId: string }): Promise<AppInfo> {
-    console.warn("capuchoappsmanager is not available on web", options);
+    console.warn("CapuchooAppsManager is not available on web", options);
     return {
       bundleId: options.bundleId,
       isInstalled: false,
@@ -17,12 +17,12 @@ export class capuchoappsmanagerWeb extends WebPlugin implements capuchoappsmanag
   }
 
   async openApp(options: { bundleId: string }): Promise<{ completed: boolean }> {
-    console.warn("capuchoappsmanager is not available on web", options);
+    console.warn("CapuchooAppsManager is not available on web", options);
     return { completed: false };
   }
 
   async getInstalledApps(): Promise<{ apps: AppInfo[] }> {
-    console.warn("capuchoappsmanager is not available on web");
+    console.warn("CapuchooAppsManager is not available on web");
     return { apps: [] };
   }
 }

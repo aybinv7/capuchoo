@@ -41,10 +41,10 @@ function describeStatus(status: number): string | null {
   switch (status) {
     case 401:
     case 403: {
-      return "The API key was rejected, or it is not scoped to this app. Check `capucho auth whoami`.";
+      return "The API key was rejected, or it is not scoped to this app. Check `capuchoo auth whoami`.";
     }
     case 404: {
-      return "The server has no record with that id. If this app was deleted or recreated, re-run `capucho init`.";
+      return "The server has no record with that id. If this app was deleted or recreated, re-run `capuchoo init`.";
     }
     case 409: {
       return "That version already exists on this channel. Bump the version, or deactivate the existing release.";

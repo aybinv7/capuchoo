@@ -35,7 +35,7 @@ const DEFLATED = 8;
 const MAX_ZIP_SIZE = 0xff_ff_ff_ff; // 4 GiB - beyond this ZIP64 is required.
 
 /** Files that must never reach a device. */
-const EXCLUDED = new Set([".DS_Store", "Thumbs.db", ".gitkeep", "capucho-deploy.log"]);
+const EXCLUDED = new Set([".DS_Store", "Thumbs.db", ".gitkeep", "capuchoo-deploy.log"]);
 
 const CRC_TABLE = buildCrcTable();
 
@@ -237,5 +237,5 @@ export function createBundleZip(options: BundleOptions): BundleResult {
  */
 export function bundleFileName(appId: string, version: string): string {
   const safe = `${appId}-${version}`.replaceAll(/[^\w.-]/g, "-");
-  return `capucho-bundle-${safe}.zip`;
+  return `capuchoo-bundle-${safe}.zip`;
 }

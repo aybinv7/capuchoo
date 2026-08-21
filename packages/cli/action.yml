@@ -58,9 +58,9 @@ runs:
           args+=(--type "${{ inputs.build-type }}")
         fi
 
-        npx --yes "@capuchoo/cli@${{ inputs.cli-version }}" "${args[@]}" | tee capucho-deploy.json
+        npx --yes "@capuchoo/cli@${{ inputs.cli-version }}" "${args[@]}" | tee capuchoo-deploy.json
 
-        version="$(node -p "JSON.parse(require('node:fs').readFileSync('capucho-deploy.json','utf8')).version ?? ''")"
+        version="$(node -p "JSON.parse(require('node:fs').readFileSync('capuchoo-deploy.json','utf8')).version ?? ''")"
         echo "version=$version" >> "$GITHUB_OUTPUT"
 
     - name: Surface the deploy log on failure
@@ -68,8 +68,8 @@ runs:
       shell: bash
       working-directory: ${{ inputs.project-directory }}
       run: |
-        if [ -f capucho-deploy.log ]; then
-          echo '::group::capucho-deploy.log'
-          cat capucho-deploy.log
+        if [ -f capuchoo-deploy.log ]; then
+          echo '::group::capuchoo-deploy.log'
+          cat capuchoo-deploy.log
           echo '::endgroup::'
         fi

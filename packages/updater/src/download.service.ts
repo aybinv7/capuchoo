@@ -95,6 +95,6 @@ export async function cleanApkCache(): Promise<void> {
         .map((file) => Filesystem.deleteFile({ directory: Directory.Cache, path: file.name })),
     );
   } catch (error) {
-    console.warn("[capucho] could not clean the APK cache", error);
+    console.warn("[capuchoo] could not clean the APK cache", error);
   }
 }

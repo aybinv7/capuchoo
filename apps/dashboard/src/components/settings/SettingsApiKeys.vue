@@ -52,7 +52,7 @@
               </Button>
             </div>
             <p class="text-xs text-muted-foreground">
-              Run: <code class="bg-muted px-1 rounded">capucho auth login</code> and paste this key
+              Run: <code class="bg-muted px-1 rounded">capuchoo auth login</code> and paste this key
             </p>
           </AlertDescription>
         </Alert>

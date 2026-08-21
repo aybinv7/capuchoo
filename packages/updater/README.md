@@ -1,6 +1,6 @@
 # @capuchoo/updater
 
-The app-side runtime for [Capucho](https://github.com/aybinv7/capucho): it asks your update server
+The app-side runtime for [Capuchooo](https://github.com/aybinv7/capucho): it asks your update server
 what to do, downloads OTA bundles or native binaries, and drives the install. Built on
 `@capgo/capacitor-updater`.
 

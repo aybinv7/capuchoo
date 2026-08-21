@@ -1,6 +1,6 @@
-# Capucho
+# Capuchooo
 
-Capucho is a modern, modular mobile-first application built with Vue 3, Framework7, and Capacitor
+Capuchooo is a modern, modular mobile-first application built with Vue 3, Framework7, and Capacitor
 for cross-platform deployment. This project follows a modular architecture with TypeScript, Pinia
 for state management, Vue I18n for internationalization, and Tailwind CSS for styling.
 
@@ -17,7 +17,7 @@ for state management, Vue I18n for internationalization, and Tailwind CSS for st
 - **Developer Experience**: Zero-boilerplate with auto-imports (API/Components/Icons) and **Turbo
   Console**.
 - **Notifications**: Unified System & In-App notification manager.
-- **Updates**: OTA & Native updates powered by **Capucho Platform**.
+- **Updates**: OTA & Native updates powered by **Capuchooo Platform**.
 - unplugin-vue-components for automatic component imports
 - unplugin-auto-import for automatic imports
 - unplugin-imagemin for image optimization (on build)

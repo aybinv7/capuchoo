@@ -24,7 +24,7 @@ export async function notifyAppReady(): Promise<void> {
   try {
     await CapacitorUpdater.notifyAppReady();
   } catch (error) {
-    console.warn("[capucho] could not mark this bundle as ready", error);
+    console.warn("[capuchoo] could not mark this bundle as ready", error);
   }
 }
 
@@ -35,7 +35,7 @@ export async function getCurrentBundle() {
   try {
     return await CapacitorUpdater.current();
   } catch (error) {
-    console.warn("[capucho] could not read the current bundle", error);
+    console.warn("[capuchoo] could not read the current bundle", error);
     return null;
   }
 }
@@ -80,6 +80,6 @@ export async function discardBundle(bundleId: string): Promise<void> {
   try {
     await CapacitorUpdater.delete({ id: bundleId });
   } catch (error) {
-    console.warn("[capucho] could not delete bundle", bundleId, error);
+    console.warn("[capuchoo] could not delete bundle", bundleId, error);
   }
 }

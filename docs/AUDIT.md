@@ -1,7 +1,7 @@
 # Audit
 
-Everything found while merging the five Capucho repositories into one workspace, what it broke, and
-what replaced it. Ordered by how much damage each item could do, not by where it lived.
+Everything found while merging the five Capuchooo repositories into one workspace, what it broke,
+and what replaced it. Ordered by how much damage each item could do, not by where it lived.
 
 A later pass over the backend and dashboard is in [BACKEND-AUDIT.md](./BACKEND-AUDIT.md) - it covers
 why the dashboard never showed a single device or log row.
@@ -184,7 +184,7 @@ fs.unlinkSync(zipFile.path)
 A deploy could not run offline, depended on a third-party CLI resolved at deploy time, and then
 picked _the newest `.zip` in the project root_ - whatever it was - and deleted it on success.
 
-**Now:** `pipeline/zip.ts` writes the archive itself, named `capucho-bundle-<appId>-<version>.zip`.
+**Now:** `pipeline/zip.ts` writes the archive itself, named `capuchoo-bundle-<appId>-<version>.zip`.
 The format is dictated by the plugin's Android unzip, and two of its rules fail only on a real
 device:
 
@@ -285,7 +285,7 @@ and shadowed the real workspace. Nobody else could install this app. Now `worksp
 `ios-deploy.yml` declared an empty `env:` mapping, which GitHub rejects.
 
 **Now:** `deploy-app.yml` contains no build logic. It installs the toolchain and hands the pipeline
-to `capucho deploy`, so a CI deploy and a local deploy run the same code. `ci.yml` and
+to `capuchoo deploy`, so a CI deploy and a local deploy run the same code. `ci.yml` and
 `release-cli.yml` replace the rest. `release-cli.yml` is triggered by a `cli-v*` tag and verifies
 the tag matches `packages/cli/package.json`; the old workflow committed and pushed to `main` from
 CI, racing developer pushes.
@@ -304,7 +304,7 @@ CI, racing developer pushes.
   `cmd.exe` invocation with our own quoting.
 - `ConfigManager` merged the global and project config into one flat object and read `apiKey` from
   the result, so a committed `project.json` could override the credentials of whoever ran the
-  deploy. The two are separate now, and `~/.capucho/config.json` is chmod 600 where the platform
+  deploy. The two are separate now, and `~/.capuchoo/config.json` is chmod 600 where the platform
   supports it.
 - `auth login` required API keys to start with `cap_` - a server-side format decision the CLI has no
   business enforcing. A rotated prefix would have locked users out.
@@ -332,7 +332,7 @@ CI, racing developer pushes.
 - `version/bump.ts` shipped 15 lines of the author thinking out loud ("Actually, let's just use
   execSync to call our own CLI or just use the sync logic if we exported it?") and two `@ts-ignore`
   comments that disabled the option validation on its own argument.
-- `oclif` bin was `capucho-cli` while every error message told users to run `capucho`. Both names
+- `oclif` bin was `capucho-cli` while every error message told users to run `capuchoo`. Both names
   now work.
 - The `hello` / `hello world` oclif template commands were still shipped.
 
@@ -365,6 +365,6 @@ dropped:
 - **`oclif`'s tsc diagnostics are off in the linter.** Its type checker cannot resolve `.vue` files,
   so enabling them produced ~180 phantom "Cannot find module './Foo.vue'" errors. Each package still
   typechecks with the tool that understands it, in `vp run -r build`.
-- **`apps/template`'s cloud app no longer exists.** `capucho channel list` returns "App not found"
-  for `cloudAppId 572621ed-...`. Run `capucho init` to relink it. This is why the end-to-end
-  verification drove the pipeline directly instead of through `capucho deploy`.
+- **`apps/template`'s cloud app no longer exists.** `capuchoo channel list` returns "App not found"
+  for `cloudAppId 572621ed-...`. Run `capuchoo init` to relink it. This is why the end-to-end
+  verification drove the pipeline directly instead of through `capuchoo deploy`.

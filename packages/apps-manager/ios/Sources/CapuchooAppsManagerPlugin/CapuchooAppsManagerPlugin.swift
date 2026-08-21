@@ -5,14 +5,14 @@ import Capacitor
  * Please read the Capacitor iOS Plugin Development Guide
  * here: https://capacitorjs.com/docs/plugins/ios
  */
-@objc(capuchoappsmanagerPlugin)
-public class capuchoappsmanagerPlugin: CAPPlugin, CAPBridgedPlugin {
-    public let identifier = "capuchoappsmanagerPlugin"
-    public let jsName = "capuchoappsmanager"
+@objc(CapuchooAppsManagerPlugin)
+public class CapuchooAppsManagerPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "CapuchooAppsManagerPlugin"
+    public let jsName = "CapuchooAppsManager"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise)
     ]
-    private let implementation = capuchoappsmanager()
+    private let implementation = CapuchooAppsManager()
 
     @objc func echo(_ call: CAPPluginCall) {
         let value = call.getString("value") ?? ""

@@ -13,8 +13,8 @@ import path from "node:path";
  *
  * Two files, with distinct jobs:
  *
- *   ~/.capucho/config.json        credentials and preferences. Never committed.
- *   <app>/.capucho/project.json   which app this directory publishes.
+ *   ~/.capuchoo/config.json        credentials and preferences. Never committed.
+ *   <app>/.capuchoo/project.json   which app this directory publishes.
  *                                 Committed - it is not a secret.
  *
  * The old `ConfigManager` merged both into one flat object and then read
@@ -24,7 +24,7 @@ import path from "node:path";
  * key any command had ever wanted.
  */
 
-const DIR = ".capucho";
+const DIR = ".capuchoo";
 const GLOBAL_FILE = "config.json";
 const PROJECT_FILE = "project.json";
 
@@ -144,7 +144,7 @@ export function requireProjectConfig(appDir: string): ResolvedProjectConfig {
     const location = path.relative(process.cwd(), projectConfigPath(appDir));
     throw new Error(
       `${location} is not usable:\n  - ${problems.join("\n  - ")}\n\n` +
-        `Run "capucho init" in this directory to create it.`,
+        `Run "capuchoo init" in this directory to create it.`,
     );
   }
 

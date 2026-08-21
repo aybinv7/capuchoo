@@ -4,7 +4,7 @@ export default {
     {
       file: "dist/plugin.js",
       format: "iife",
-      name: "capacitorcapuchoappsmanager",
+      name: "capacitorCapuchooAppsManager",
       globals: {
         "@capacitor/core": "capacitorExports",
       },

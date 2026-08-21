@@ -4,7 +4,7 @@
   "description": "Builds and publishes OTA and native releases for Capacitor applications through Capucho.",
   "keywords": [
     "capacitor",
-    "capucho",
+    "capuchoo",
     "deploy",
     "oclif",
     "ota"
@@ -15,8 +15,7 @@
   "author": "aybinv7",
   "repository": "aybinv7/capucho",
   "bin": {
-    "capucho": "./bin/run.js",
-    "capucho-cli": "./bin/run.js"
+    "capuchoo": "./bin/run.js"
   },
   "files": [
     "./bin",
@@ -50,9 +49,9 @@
     "vite-plus": "catalog:"
   },
   "oclif": {
-    "bin": "capucho",
+    "bin": "capuchoo",
     "commands": "./dist/commands",
-    "dirname": "capucho",
+    "dirname": "capuchoo",
     "plugins": [
       "@oclif/plugin-help"
     ],

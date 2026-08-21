@@ -6,7 +6,7 @@ looking for what was wrong with the five separate repositories, read [AUDIT.md](
 ## Layout
 
 ```
-capucho/
+capuchoo/
 ├── packages/
 │   ├── core/           @capuchoo/core          contract shared by everything
 │   ├── updater/        @capuchoo/updater       app-side runtime
@@ -91,7 +91,7 @@ breaks every subsequent pnpm command.
 
 ## Adding a package
 
-1. `mkdir packages/<name>` with a `package.json` named `@capucho/<name>`.
+1. `mkdir packages/<name>` with a `package.json` named `@capuchoo/<name>`.
 2. Extend the shared compiler options:
    ```json
    {
@@ -154,11 +154,11 @@ on.
 **The CLI** - tag `cli-v<version>` matching `packages/cli/package.json`. The workflow verifies they
 agree, builds, tests, and publishes to npm with provenance. Nothing writes back to the repository.
 
-**An app** - run the `deploy-app` workflow, or `capucho deploy ota` locally. Both take the same path
-through the CLI. Git owns tags and history; Capucho owns channels, activation and rollback.
+**An app** - run the `deploy-app` workflow, or `capuchoo deploy ota` locally. Both take the same
+path through the CLI. Git owns tags and history; Capuchooo owns channels, activation and rollback.
 
 `@capuchoo/core` and `@capuchoo/updater` are not published yet. Apps in this workspace consume them
-through `workspace:*`. Publishing them needs the `@capucho` npm scope; until then an external app
+through `workspace:*`. Publishing them needs the `@capuchoo` npm scope; until then an external app
 links them by path, as Lowmaro does.
 
 ## Working on an app that depends on a library
@@ -194,7 +194,7 @@ Once you are satisfied, the originals can go:
 
 ```sh
 cd C:/Users/aybin/code/ayb/capucho
-rm -rf capucho-cli capucho-back capucho-front capucho-app @capuchoo/apps-manager
+rm -rf capuchoo-cli capuchoo-back capuchoo-front capuchoo-app @capuchoo/apps-manager
 ```
 
 They are outside this repository's `pnpm-workspace.yaml`, so they are inert until then - they just
@@ -206,14 +206,14 @@ Lowmaro still links the old CLI:
 "capucho-cli": "link:../capucho/capucho-cli"
 ```
 
-Point it at `link:../capucho/capucho/packages/cli` to pick up the rewritten one. Its own updater is
-a copy of the code that became `@capuchoo/updater`; it can switch to the package when convenient.
+Point it at `link:../capuchoo/capuchoo/packages/cli` to pick up the rewritten one. Its own updater
+is a copy of the code that became `@capuchoo/updater`; it can switch to the package when convenient.
 
 ## Conventions
 
 - Code, comments, commit messages and PR descriptions in English.
-- `.capucho/project.json` is committed - it identifies the app and is not a secret.
-  `.capucho/config.json` holds the API key and is git-ignored.
+- `.capuchoo/project.json` is committed - it identifies the app and is not a secret.
+  `.capuchoo/config.json` holds the API key and is git-ignored.
 - `build/<env>/.env.<env>` files are committed on purpose: they hold public build configuration (app
   id, display name, update endpoint, channel) that Trapeze and Vite both read. Real secrets go in
   `.env.local`, which is ignored.

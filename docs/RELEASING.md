@@ -95,7 +95,7 @@ Applications like Lowmaro should depend on the published versions:
 }
 ```
 
-A `link:` to `../capucho/capucho/packages/*` works only on the machine where both trees exist: a
+A `link:` to `../capuchoo/capuchoo/packages/*` works only on the machine where both trees exist: a
 fresh clone cannot install, so CI cannot build, and nothing pins a version - a breaking change lands
 silently on the next build. Link only while developing both trees at once, with `pnpm link --global`
 or an override you do not commit.

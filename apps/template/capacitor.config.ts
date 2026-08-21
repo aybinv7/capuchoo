@@ -44,7 +44,7 @@ function required(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(
-      `${name} is not set. Run the build through "capucho deploy", or copy ` +
+      `${name} is not set. Run the build through "capuchoo deploy", or copy ` +
         `.env.example to .env.local for a manual "cap run".`,
     );
   }

@@ -40,7 +40,7 @@ export class CommandError extends Error {
 
   constructor(command: string, result: RunResult, logFile?: string) {
     // Put the last few lines of stderr in the message. The old code told the
-    // user to "see capucho-deploy.log" and nothing else, which meant every
+    // user to "see capuchoo-deploy.log" and nothing else, which meant every
     // failure needed a second round trip to diagnose.
     const tail = (result.stderr || result.stdout).trimEnd().split("\n").slice(-6).join("\n");
 

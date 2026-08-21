@@ -47,7 +47,7 @@ nothing about it changes here.
 
 ## Rotating the leaked key
 
-`capucho-back/.env` was committed with a populated `service_role` key, and the blob is reachable
+`capuchoo-back/.env` was committed with a populated `service_role` key, and the blob is reachable
 from this repository's history too (the `git subtree` import commit). Migrating to the new keys is
 also the rotation, provided the last step is done.
 

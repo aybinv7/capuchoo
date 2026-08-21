@@ -1,4 +1,4 @@
-# capuchoo
+# Capuchoo
 
 Over-the-air and native update delivery for Capacitor applications: a CLI that builds and publishes
 releases, a runtime the app embeds, a server that decides what each device should be running, and a
@@ -8,13 +8,13 @@ dashboard to manage it.
 
 | Path                    | Package                  | What it does                                                     |
 | ----------------------- | ------------------------ | ---------------------------------------------------------------- |
-| `packages/core`         | `@capuchooo/core`         | The update contract, shared by every other package. No deps.     |
-| `packages/updater`      | `@capuchooo/updater`      | App-side runtime: checks, downloads, applies, prompts.           |
-| `packages/cli`          | `@capuchooo/cli`          | Builds and publishes OTA and native releases.                    |
-| `packages/apps-manager` | `@capuchooo/apps-manager` | Capacitor plugin for installed-app information on the device.    |
-| `apps/dashboard`        | `@capuchooo/dashboard`    | Organizations, apps, channels, releases.                         |
-| `apps/template`         | `@capuchooo/template`     | Reference Capacitor application, wired end to end.               |
-| `services/back`         | `@capuchooo/back`         | Update server. Owns channels, artefacts and the update decision. |
+| `packages/core`         | `@capuchoo/core`         | The update contract, shared by every other package. No deps.     |
+| `packages/updater`      | `@capuchoo/updater`      | App-side runtime: checks, downloads, applies, prompts.           |
+| `packages/cli`          | `@capuchoo/cli`          | Builds and publishes OTA and native releases.                    |
+| `packages/apps-manager` | `@capuchoo/apps-manager` | Capacitor plugin for installed-app information on the device.    |
+| `apps/dashboard`        | `@capuchoo/dashboard`    | Organizations, apps, channels, releases.                         |
+| `apps/template`         | `@capuchoo/template`     | Reference Capacitor application, wired end to end.               |
+| `services/back`         | `@capuchoo/back`         | Update server. Owns channels, artefacts and the update decision. |
 
 ## Getting started
 
@@ -51,7 +51,7 @@ Useful flags:
 - `-v patch|minor|major` bumps the app version first.
 - `-y` accepts every prompt, for CI.
 
-In CI, set `capuchoo_ENDPOINT` and `capuchoo_API_KEY`. They take precedence over stored credentials
+In CI, set `CAPUCHO_ENDPOINT` and `CAPUCHO_API_KEY`. They take precedence over stored credentials
 and are never written to disk.
 
 ### What a deploy actually does
@@ -63,7 +63,7 @@ web       Vite build with the flavour's env
 native    Trapeze, or the built-in patcher if Trapeze is not installed
 sync      cap sync
 bundle    OTA archive, or Gradle + signature check for native
-upload    to capuchoo
+upload    to Capuchoo
 ```
 
 Every step is owned by the CLI. It does not call the app's `package.json` scripts, does not require
@@ -75,16 +75,16 @@ and if not the CLI applies the identity and version itself and tells you what th
 ```ts
 // main.ts - first, before anything that can block.
 // The OTA plugin rolls the bundle back if it does not hear this within 10s.
-import { notifyAppReady } from "@capuchooo/updater";
+import { notifyAppReady } from "@capuchoo/updater";
 void notifyAppReady();
 ```
 
 ```ts
 // capacitor.config.ts
-import { capuchooUpdaterConfig } from "@capuchooo/updater/capacitor";
+import { capuchoUpdaterConfig } from "@capuchoo/updater/capacitor";
 
 plugins: {
-  CapacitorUpdater: capuchooUpdaterConfig({
+  CapacitorUpdater: capuchoUpdaterConfig({
     apiUrl: process.env.VITE_UPDATE_API_URL!,
     channel: process.env.VITE_UPDATE_CHANNEL ?? "prod",
     version: packageJson.version,
@@ -94,7 +94,7 @@ plugins: {
 
 ```ts
 // wherever Capacitor is bootstrapped
-import { useUpdater } from "@capuchooo/updater/vue";
+import { useUpdater } from "@capuchoo/updater/vue";
 await useUpdater().init();
 ```
 

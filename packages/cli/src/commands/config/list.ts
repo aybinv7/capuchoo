@@ -97,7 +97,7 @@ export default class ConfigList extends BaseCommand {
     this.log("");
     this.log(chalk.bold("  project"));
     if (!report.project) {
-      this.log(chalk.yellow("    not initialised - run capucho init"));
+      this.log(chalk.yellow("    not initialised - run capuchoo init"));
     } else {
       this.log(`    app         ${report.project.appName}`);
       this.log(`    bundle id   ${report.project.appId}`);

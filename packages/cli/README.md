@@ -1,7 +1,7 @@
 @capuchoo/cli
 =============
 
-Capucho CLI bundles and uploads your application to the cloud. It packages builds as native
+Capuchooo CLI bundles and uploads your application to the cloud. It packages builds as native
 artifacts or ZIP files, then publishes them using user-defined parameters such as channels and
 custom release options. Built for simple, repeatable deployments, it integrates cleanly into local
 workflows and CI pipelines to ship updates quickly and reliably.
@@ -26,13 +26,13 @@ boundaries, see [CI releases](docs/ci-releases.md).
 
 ```sh-session
 $ npm install -g @capuchoo/cli
-$ capucho COMMAND
+$ capuchoo COMMAND
 running command...
-$ capucho (--version)
+$ capuchoo (--version)
 @capuchoo/cli/0.2.0 win32-x64 node-v26.4.0
-$ capucho --help [COMMAND]
+$ capuchoo --help [COMMAND]
 USAGE
-  $ capucho COMMAND
+  $ capuchoo COMMAND
 ...
 ```
 
@@ -42,50 +42,50 @@ USAGE
 
 <!-- commands -->
 
-- [`capucho auth login`](#capucho-auth-login)
-- [`capucho auth logout`](#capucho-auth-logout)
-- [`capucho auth whoami`](#capucho-auth-whoami)
-- [`capucho channel list`](#capucho-channel-list)
-- [`capucho config list`](#capucho-config-list)
-- [`capucho config set KEY VALUE`](#capucho-config-set-key-value)
-- [`capucho deploy native`](#capucho-deploy-native)
-- [`capucho deploy ota`](#capucho-deploy-ota)
-- [`capucho help [COMMAND]`](#capucho-help-command)
-- [`capucho init`](#capucho-init)
-- [`capucho version bump TYPE`](#capucho-version-bump-type)
-- [`capucho version sync`](#capucho-version-sync)
+- [`capuchoo auth login`](#capuchoo-auth-login)
+- [`capuchoo auth logout`](#capuchoo-auth-logout)
+- [`capuchoo auth whoami`](#capuchoo-auth-whoami)
+- [`capuchoo channel list`](#capuchoo-channel-list)
+- [`capuchoo config list`](#capuchoo-config-list)
+- [`capuchoo config set KEY VALUE`](#capuchoo-config-set-key-value)
+- [`capuchoo deploy native`](#capuchoo-deploy-native)
+- [`capuchoo deploy ota`](#capuchoo-deploy-ota)
+- [`capuchoo help [COMMAND]`](#capuchoo-help-command)
+- [`capuchoo init`](#capuchoo-init)
+- [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
+- [`capuchoo version sync`](#capuchoo-version-sync)
 
-## `capucho auth login`
+## `capuchoo auth login`
 
-Store an API key for the Capucho backend
+Store an API key for the Capuchooo backend
 
 ```
 USAGE
-  $ capucho auth login [-k <value>] [-e <value>]
+  $ capuchoo auth login [-k <value>] [-e <value>]
 
 FLAGS
   -e, --endpoint=<value>  Backend base URL
   -k, --api-key=<value>   API key from Settings > API Keys in the dashboard
 
 DESCRIPTION
-  Store an API key for the Capucho backend
+  Store an API key for the Capuchooo backend
 
 EXAMPLES
-  $ capucho auth login
+  $ capuchoo auth login
 
-  $ capucho auth login --endpoint https://capucho.internal --api-key cap_...
+  $ capuchoo auth login --endpoint https://capuchoo.internal --api-key cap_...
 ```
 
 _See code:
 [src/commands/auth/login.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/login.ts)_
 
-## `capucho auth logout`
+## `capuchoo auth logout`
 
 Remove the stored API key
 
 ```
 USAGE
-  $ capucho auth logout
+  $ capuchoo auth logout
 
 DESCRIPTION
   Remove the stored API key
@@ -94,13 +94,13 @@ DESCRIPTION
 _See code:
 [src/commands/auth/logout.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/logout.ts)_
 
-## `capucho auth whoami`
+## `capuchoo auth whoami`
 
 Show the signed-in account, and the organizations and apps it can reach
 
 ```
 USAGE
-  $ capucho auth whoami [--json]
+  $ capuchoo auth whoami [--json]
 
 FLAGS
   --json  Machine-readable output
@@ -112,13 +112,13 @@ DESCRIPTION
 _See code:
 [src/commands/auth/whoami.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/whoami.ts)_
 
-## `capucho channel list`
+## `capuchoo channel list`
 
 List this app's channels and what they serve
 
 ```
 USAGE
-  $ capucho channel list [--json]
+  $ capuchoo channel list [--json]
 
 FLAGS
   --json  Machine-readable output
@@ -130,13 +130,13 @@ DESCRIPTION
 _See code:
 [src/commands/channel/list.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/channel/list.ts)_
 
-## `capucho config list`
+## `capuchoo config list`
 
 Show the resolved configuration, and which build tools were found
 
 ```
 USAGE
-  $ capucho config list [--json]
+  $ capuchoo config list [--json]
 
 FLAGS
   --json  Machine-readable output
@@ -148,37 +148,37 @@ DESCRIPTION
 _See code:
 [src/commands/config/list.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/config/list.ts)_
 
-## `capucho config set KEY VALUE`
+## `capuchoo config set KEY VALUE`
 
-Set a user preference in ~/.capucho/config.json
+Set a user preference in ~/.capuchoo/config.json
 
 ```
 USAGE
-  $ capucho config set KEY VALUE
+  $ capuchoo config set KEY VALUE
 
 ARGUMENTS
   KEY    (endpoint|defaultChannel) Preference to set
   VALUE  New value
 
 DESCRIPTION
-  Set a user preference in ~/.capucho/config.json
+  Set a user preference in ~/.capuchoo/config.json
 
 EXAMPLES
-  $ capucho config set endpoint https://capucho.internal
+  $ capuchoo config set endpoint https://capuchoo.internal
 
-  $ capucho config set defaultChannel staging
+  $ capuchoo config set defaultChannel staging
 ```
 
 _See code:
 [src/commands/config/set.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/config/set.ts)_
 
-## `capucho deploy native`
+## `capuchoo deploy native`
 
 Build and publish a native binary (APK). Users install it through the OS.
 
 ```
 USAGE
-  $ capucho deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
+  $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
     [--dry-run] [--json] [--verbose] [-y] [-p android|ios] [-t debug|release] [--allow-unsigned]
 
 FLAGS
@@ -204,23 +204,23 @@ DESCRIPTION
   Build and publish a native binary (APK). Users install it through the OS.
 
 EXAMPLES
-  $ capucho deploy native --channel staging
+  $ capuchoo deploy native --channel staging
 
-  $ capucho deploy native -c production -v minor --type release
+  $ capuchoo deploy native -c production -v minor --type release
 
-  $ capucho deploy native -c staging --type debug -y
+  $ capuchoo deploy native -c staging --type debug -y
 ```
 
 _See code:
 [src/commands/deploy/native.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/deploy/native.ts)_
 
-## `capucho deploy ota`
+## `capuchoo deploy ota`
 
 Publish a web bundle over the air. Does not change the installed binary.
 
 ```
 USAGE
-  $ capucho deploy ota [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
+  $ capuchoo deploy ota [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
     [--dry-run] [--json] [--verbose] [-y]
 
 FLAGS
@@ -241,23 +241,23 @@ DESCRIPTION
   Publish a web bundle over the air. Does not change the installed binary.
 
 EXAMPLES
-  $ capucho deploy ota --channel staging
+  $ capuchoo deploy ota --channel staging
 
-  $ capucho deploy ota -c production -v patch -n 'Fixes the invoice total'
+  $ capuchoo deploy ota -c production -v patch -n 'Fixes the invoice total'
 
-  $ capucho deploy ota -c staging --dry-run
+  $ capuchoo deploy ota -c staging --dry-run
 ```
 
 _See code:
 [src/commands/deploy/ota.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/deploy/ota.ts)_
 
-## `capucho help [COMMAND]`
+## `capuchoo help [COMMAND]`
 
-Display help for capucho.
+Display help for capuchoo.
 
 ```
 USAGE
-  $ capucho help [COMMAND...] [-n]
+  $ capuchoo help [COMMAND...] [-n]
 
 ARGUMENTS
   [COMMAND...]  Command to show help for.
@@ -266,43 +266,43 @@ FLAGS
   -n, --nested-commands  Include all nested commands in the output.
 
 DESCRIPTION
-  Display help for capucho.
+  Display help for capuchoo.
 ```
 
 _See code:
 [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.58/src/commands/help.ts)_
 
-## `capucho init`
+## `capuchoo init`
 
-Link this directory to a Capucho app and write .capucho/project.json
+Link this directory to a Capuchooo app and write .capuchoo/project.json
 
 ```
 USAGE
-  $ capucho init [-l] [-f]
+  $ capuchoo init [-l] [-f]
 
 FLAGS
   -f, --force  Overwrite an existing project.json
   -l, --link   Link an existing app instead of creating one
 
 DESCRIPTION
-  Link this directory to a Capucho app and write .capucho/project.json
+  Link this directory to a Capuchooo app and write .capuchoo/project.json
 
 EXAMPLES
-  $ capucho init
+  $ capuchoo init
 
-  $ capucho init --link
+  $ capuchoo init --link
 ```
 
 _See code:
 [src/commands/init.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/init.ts)_
 
-## `capucho version bump TYPE`
+## `capuchoo version bump TYPE`
 
 Raise the app's semantic version, and optionally an environment's build number
 
 ```
 USAGE
-  $ capucho version bump TYPE [-e dev|staging|prod]
+  $ capuchoo version bump TYPE [-e dev|staging|prod]
 
 ARGUMENTS
   TYPE  (major|minor|patch) Which part of the version to raise
@@ -315,21 +315,21 @@ DESCRIPTION
   Raise the app's semantic version, and optionally an environment's build number
 
 EXAMPLES
-  $ capucho version bump patch
+  $ capuchoo version bump patch
 
-  $ capucho version bump minor --environment staging
+  $ capuchoo version bump minor --environment staging
 ```
 
 _See code:
 [src/commands/version/bump.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/version/bump.ts)_
 
-## `capucho version sync`
+## `capuchoo version sync`
 
 Show, or advance, the version and build number used for each flavour
 
 ```
 USAGE
-  $ capucho version sync [-b] [-e dev|staging|prod] [--json]
+  $ capuchoo version sync [-b] [-e dev|staging|prod] [--json]
 
 FLAGS
   -b, --bump                  Increment the build number for the selected environments
@@ -341,9 +341,9 @@ DESCRIPTION
   Show, or advance, the version and build number used for each flavour
 
 EXAMPLES
-  $ capucho version sync
+  $ capuchoo version sync
 
-  $ capucho version sync --bump --environment staging
+  $ capuchoo version sync --bump --environment staging
 ```
 
 _See code:

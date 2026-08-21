@@ -25,7 +25,7 @@
     "ios/Sources",
     "ios/Tests",
     "Package.swift",
-    "CapuchoAppsManager.podspec"
+    "CapuchooAppsManager.podspec"
   ],
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -33,7 +33,7 @@
   "unpkg": "dist/plugin.js",
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
-    "verify:ios": "xcodebuild -scheme CapuchoAppsManager -destination generic/platform=iOS",
+    "verify:ios": "xcodebuild -scheme CapuchooAppsManager -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "npm run build",
     "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",
@@ -41,7 +41,7 @@
     "eslint": "eslint . --ext ts",
     "prettier": "prettier \"**/*.{css,html,ts,js,java}\" --plugin=prettier-plugin-java",
     "swiftlint": "node-swiftlint",
-    "docgen": "docgen --api capuchoappsmanagerPlugin --output-readme README.md --output-json dist/docs.json",
+    "docgen": "docgen --api CapuchooAppsManagerPlugin --output-readme README.md --output-json dist/docs.json",
     "build": "npm run clean && npm run docgen && tsc && rollup -c rollup.config.mjs",
     "clean": "rimraf ./dist",
     "watch": "tsc --watch",

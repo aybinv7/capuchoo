@@ -1,4 +1,4 @@
-package capucho.capucho.apps.manager.inv;
+package dev.capuchoo.appsmanager;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -7,10 +7,10 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-@CapacitorPlugin(name = "capuchoappsmanager")
-public class capuchoappsmanagerPlugin extends Plugin {
+@CapacitorPlugin(name = "CapuchooAppsManager")
+public class CapuchooAppsManagerPlugin extends Plugin {
 
-    private capuchoappsmanager implementation = new capuchoappsmanager();
+    private CapuchooAppsManager implementation = new CapuchooAppsManager();
 
     @PluginMethod
     public void getAppInfo(PluginCall call) {

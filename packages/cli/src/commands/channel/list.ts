@@ -17,7 +17,7 @@ export default class ChannelList extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capucho auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
     }
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);

@@ -86,31 +86,27 @@ sequence matters:
 Run `scripts/migrations/004_devices.sql` before or with step 2. Without the unique constraints it
 adds, the device upserts have no `ON CONFLICT` target and telemetry still records nothing.
 
-## Renaming the backend service
+## The hostname is baked into installed apps
 
-Renaming `capucho-back` to `capuchoo-back` on Render changes its hostname, and that is not a
-cosmetic change: **the old hostname is compiled into every app already installed on a device.** It
-reaches them through `capacitor.config.ts` at build time and ends up in
-`android/app/src/main/assets/capacitor.config.json` inside the APK.
+`DEFAULT_ENDPOINT` and every flavour's `VITE_UPDATE_API_URL` now say `capuchoo-back.onrender.com`,
+matching the renamed service. Worth understanding what that implies, because it will bite later even
+though it costs nothing today.
 
-So a device running the current build asks `capucho-back.onrender.com`. Rename the service and that
-host stops answering - which means the device cannot receive the very update that would tell it
-about the new host. There is no recovery over the air; it needs a new APK, installed by hand or
-through the store.
+The update host is compiled in at build time: `capacitor.config.ts` reads it into
+`android/app/src/main/assets/capacitor.config.json`, which ships inside the APK. A device therefore
+asks whatever host its _installed_ build was compiled against. Rename the service after those builds
+are in people's hands and the old host stops answering - so the device cannot receive the very
+update that would point it at the new one. There is no recovery over the air; that device needs a
+new APK.
 
-Two ways to do it safely:
+Right now nothing is in production, so the rename is free. Before it is, put a **custom domain** in
+front of the service (`api.capuchoo.dev` or similar) and point the apps at that instead. The service
+can then be renamed as often as you like, forever, and the apps never notice. Doing that once is
+cheaper than a fleet-wide migration later.
 
-- **Keep the hostname.** Put a custom domain (`api.capuchoo.dev` or similar) in front of the service
-  and point the apps at that. The service can then be renamed freely, forever. This is worth doing
-  before you have users, and it is the reason this document does not simply rename the URL.
-- **Or migrate deliberately.** Stand up the new service alongside the old one, ship an app update
-  pointing at the new hostname, wait until the fleet has taken it (`/dashboard/stats` shows what has
-  checked in), and only then retire the old service.
-
-Until one of those happens, `DEFAULT_ENDPOINT` in `packages/cli/src/commands/auth/login.ts` and the
-`VITE_UPDATE_API_URL` in each flavour's env file deliberately still say
-`capucho-back.onrender.com` - they name a host that exists, not one we would like to exist. Change
-them in the same commit that completes the migration.
+If you ever do need to move hosts with apps in the field: stand up the new service alongside the old
+one, ship an app update pointing at the new hostname, watch `/dashboard/stats` until the fleet has
+checked in on it, and only then retire the old service.
 
 ## What CI does, and does not do
 

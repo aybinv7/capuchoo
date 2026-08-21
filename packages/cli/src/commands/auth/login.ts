@@ -6,7 +6,7 @@ import { CloudClient } from "../../services/cloud.js";
 import { readGlobalConfig, updateGlobalConfig } from "../../utils/config.js";
 import { BaseCommand } from "../../base-command.js";
 
-const DEFAULT_ENDPOINT = "https://capucho-back.onrender.com";
+const DEFAULT_ENDPOINT = "https://capuchoo-back.onrender.com";
 
 export default class AuthLogin extends BaseCommand {
   static override description = "Store an API key for the Capucho backend";
@@ -30,7 +30,7 @@ export default class AuthLogin extends BaseCommand {
   }
 
   /**
-   * Shared with `capucho init`, which offers to log in when it finds no
+   * Shared with `capuchoo init`, which offers to log in when it finds no
    * credentials.
    *
    * Throws on failure rather than calling `this.error`, so the caller decides

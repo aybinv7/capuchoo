@@ -1,4 +1,4 @@
-package capucho.capucho.apps.manager.inv;
+package dev.capuchoo.appsmanager;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +9,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
 import java.util.List;
 
-public class capuchoappsmanager {
+public class CapuchooAppsManager {
 
     public String echo(String value) {
         Logger.info("Echo", value);

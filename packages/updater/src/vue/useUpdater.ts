@@ -139,13 +139,13 @@ async function check(silent = false): Promise<boolean> {
     // user's, but reporting "up to date" would hide them completely.
     if (error instanceof UpdaterConfigError) {
       state.value.error = "Updates are not configured for this build";
-      console.error("[capucho]", error.problems.join("; "));
+      console.error("[capuchoo]", error.problems.join("; "));
     } else if (error instanceof UpdateCheckBlockedError) {
       state.value.error = `The update service rejected this build: ${error.message}`;
-      console.error("[capucho]", error.message, error.response);
+      console.error("[capuchoo]", error.message, error.response);
     } else {
       state.value.error = "Could not reach the update service";
-      if (!silent) console.error("[capucho] update check failed", error);
+      if (!silent) console.error("[capuchoo] update check failed", error);
     }
     return false;
   } finally {

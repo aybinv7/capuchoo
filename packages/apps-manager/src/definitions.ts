@@ -5,7 +5,7 @@ export interface AppInfo {
   versionCode?: number;
 }
 
-export interface capuchoappsmanagerPlugin {
+export interface CapuchooAppsManagerPlugin {
   echo(options: { value: string }): Promise<{ value: string }>;
   /**
    * Get information about an app by its bundle identifier.

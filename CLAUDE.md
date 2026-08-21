@@ -36,9 +36,9 @@ local `vite-plus` package. Use `vp why <package>` to show the package-manager de
 
 <!--CAPUCHO START-->
 
-# Capucho
+# Capuchoo
 
-Capucho delivers over-the-air and native updates to Capacitor applications. Read
+Capuchoo delivers over-the-air and native updates to Capacitor applications. Read
 [docs/MONOREPO.md](./docs/MONOREPO.md) for the layout and [docs/AUDIT.md](./docs/AUDIT.md) for why
 things are shaped the way they are - most of the non-obvious decisions are answers to a specific bug
 recorded there. [docs/DEPLOY.md](./docs/DEPLOY.md) covers hosting the backend and dashboard,
@@ -87,7 +87,7 @@ Do not add per-package `check` scripts - `vp check` covers the workspace once.
 ## Before saying something works
 
 `vp run -r build && vp run -r test && vp check`. For the deploy pipeline, run it against a real
-app - `capucho config list` shows what resolved, and `capucho deploy ota --dry-run` exercises
+app - `capuchoo config list` shows what resolved, and `capuchoo deploy ota --dry-run` exercises
 everything except the upload.
 
 <!--CAPUCHO END-->

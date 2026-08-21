@@ -23,7 +23,7 @@ export default class AuthWhoami extends BaseCommand {
       }
       this.log("");
       this.log(chalk.yellow("  Not signed in."));
-      this.log(`  Run ${chalk.cyan("capucho auth login")}.`);
+      this.log(`  Run ${chalk.cyan("capuchoo auth login")}.`);
       this.log("");
       return;
     }
@@ -42,7 +42,7 @@ export default class AuthWhoami extends BaseCommand {
       }
       this.error(
         `The stored credentials for ${credentials.endpoint} are no longer valid. ` +
-          `Run ${chalk.cyan("capucho auth login")}.`,
+          `Run ${chalk.cyan("capuchoo auth login")}.`,
       );
     }
 
@@ -71,7 +71,7 @@ export default class AuthWhoami extends BaseCommand {
       `  ${chalk.bold("source")}    ${
         credentials.source === "environment"
           ? "CAPUCHO_ENDPOINT / CAPUCHO_API_KEY"
-          : "~/.capucho/config.json"
+          : "~/.capuchoo/config.json"
       }`,
     );
 

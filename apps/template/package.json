@@ -19,8 +19,8 @@
     "build:staging": "dotenv -e build/staging/.env.staging -- vp build --mode staging",
     "build:prod": "dotenv -e build/prod/.env.prod -- vp build --mode prod",
     "build:dev": "dotenv -e build/dev/.env.dev -- vp build --mode dev",
-    "deploy": "capucho deploy ota",
-    "deploy:native": "capucho deploy native"
+    "deploy": "capuchoo deploy ota",
+    "deploy:native": "capuchoo deploy native"
   },
   "dependencies": {
     "@capacitor-firebase/messaging": "^8.0.1",
