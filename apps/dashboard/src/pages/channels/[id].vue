@@ -425,10 +425,7 @@ import {
 } from "@/modules/channels/composables/useChannelsQuery";
 import { useUpdatesBundlesQuery } from "@/modules/updates-bundles/composables/useUpdatesBundlesQuery";
 import { useDevicesQuery } from "@/modules/devices/composables/useDevicesQuery";
-import {
-  environmentMismatchWarning,
-  type ChannelEnvironmentSelection,
-} from "@/modules/channels/utils/environment";
+import { environmentMismatchWarning, type EnvironmentSelection } from "@capuchoo/core";
 
 const route = useRoute();
 const router = useRouter();
@@ -448,8 +445,8 @@ const isDeleteDialogOpen = ref(false);
 const editForm = ref({
   name: "",
   // Not defaulted: an unset environment has to be chosen, not assumed. See
-  // modules/channels/utils/environment.ts.
-  environment: "" as ChannelEnvironmentSelection,
+  // @capuchoo/core.
+  environment: "" as EnvironmentSelection,
   ios_enabled: true,
   android_enabled: true,
   is_public: false,

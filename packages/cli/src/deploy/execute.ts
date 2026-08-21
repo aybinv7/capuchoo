@@ -1,4 +1,4 @@
-import { confirm, input, select } from "@inquirer/prompts";
+import { askText, confirm, isInteractive, selectOne } from "../cli/prompts.js";
 import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
@@ -159,27 +159,39 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
 
   let channelName = flags.channel;
   if (!channelName) {
-    if (flags.yes || json) {
-      fail(command, "--channel is required when running non-interactively.");
-    }
-
     const channels = await cloud.channels(project.cloudAppId);
     const deployable = channels.filter((channel) => channel.environment);
 
     if (deployable.length === 0) {
       fail(
         command,
-        "This app has no channel with an environment set. Create one in the dashboard.",
+        "This app has no channel with an environment set. Run `capuchoo channel list` to see " +
+          "what exists, then set an environment on one - it is what tells the CLI which " +
+          "flavour to build.",
       );
     }
 
-    channelName = await select({
-      message: "Channel",
-      choices: deployable.map((channel) => ({
-        name: `${channel.name} ${chalk.dim(`(${channel.environment})`)}`,
-        value: channel.name,
-      })),
-    });
+    // One channel is not a question, even under --yes or --json: there is
+    // nothing to disambiguate.
+    if (deployable.length === 1) {
+      channelName = deployable[0]!.name;
+    } else if (flags.yes || json || !isInteractive()) {
+      fail(
+        command,
+        `--channel is required here. This app has ${deployable.length}: ` +
+          deployable.map((c) => `${c.name} (${c.environment})`).join(", "),
+      );
+    } else {
+      channelName = await selectOne(
+        "Channel",
+        deployable.map((channel) => ({
+          value: channel.name,
+          label: channel.name,
+          hint: channel.environment,
+        })),
+        "--channel",
+      );
+    }
   }
 
   const channel = await cloud.requireChannel(project.cloudAppId, channelName);
@@ -187,33 +199,41 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
 
   // --- release options -------------------------------------------------------
 
-  const interactive = !flags.yes && !json;
+  // `isInteractive()` matters as much as the flags: without it a piped or CI
+  // shell reaches a prompt nobody can answer and the deploy dies at the
+  // question rather than doing the obvious thing.
+  const interactive = !flags.yes && !json && isInteractive();
 
   const active =
-    flags.active ??
-    (interactive ? await confirm({ message: "Serve immediately?", default: true }) : true);
-
+    flags.active ?? (interactive ? await confirm("Serve immediately?", { default: true }) : true);
   const required =
     flags.required ??
-    (interactive ? await confirm({ message: "Mark as required?", default: false }) : false);
+    (interactive ? await confirm("Mark as required?", { default: false }) : false);
 
   let bump = flags.version as BumpType | undefined;
   if (!bump && interactive) {
-    const answer = await select({
-      message: "Bump the version?",
-      choices: [
-        { name: "No bump", value: "" },
-        { name: "patch", value: "patch" },
-        { name: "minor", value: "minor" },
-        { name: "major", value: "major" },
+    const answer = await selectOne<string>(
+      "Bump the version?",
+      [
+        { value: "", label: "No bump", hint: `stay on ${readAppVersion(appDir)}` },
+        { value: "patch", label: "patch" },
+        { value: "minor", label: "minor" },
+        { value: "major", label: "major" },
       ],
-      default: "",
-    });
+      "--version",
+    );
     bump = answer === "" ? undefined : (answer as BumpType);
   }
 
   const note =
-    flags.note ?? (interactive ? await input({ message: "Release notes (optional)" }) : "");
+    flags.note ??
+    (interactive
+      ? await askText("Release notes", {
+          placeholder: "Shown to users in the update prompt",
+          flag: "--note",
+          optional: true,
+        })
+      : "");
 
   const currentVersion = readAppVersion(appDir);
   const version = bump ? bumpVersion(currentVersion, bump) : currentVersion;
@@ -239,7 +259,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     command.log(chalk.dim("  ─────────────────────────────────────────"));
     command.log("");
 
-    const proceed = await confirm({ message: "Deploy?", default: true });
+    const proceed = await confirm("Deploy?", { default: true });
     if (!proceed) {
       command.log(chalk.dim("Cancelled."));
       return;

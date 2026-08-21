@@ -14,9 +14,10 @@
     "lint:eslint": "eslint . --fix --cache",
     "lint": "vp run lint:oxlint && vp run lint:eslint",
     "format": "prettier --write src/",
-    "test": "vp test --run"
+    "test": "vp test --run --passWithNoTests"
   },
   "dependencies": {
+    "@capuchoo/core": "workspace:^",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

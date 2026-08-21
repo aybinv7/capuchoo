@@ -738,9 +738,6 @@ declare global {
   export type { Channel } from './src/modules/channels/types/channels.types'
   import('./src/modules/channels/types/channels.types')
   // @ts-ignore
-  export type { ChannelEnvironment, ChannelEnvironmentSelection } from './src/modules/channels/utils/environment'
-  import('./src/modules/channels/utils/environment')
-  // @ts-ignore
   export type { Device } from './src/modules/devices/types/devices.types'
   import('./src/modules/devices/types/devices.types')
   // @ts-ignore
@@ -1016,7 +1013,6 @@ declare module 'vue' {
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly emptyMediaVariants: UnwrapRef<typeof import('./src/components/ui/empty/index')['emptyMediaVariants']>
-    readonly environmentMismatchWarning: UnwrapRef<typeof import('./src/modules/channels/utils/environment')['environmentMismatchWarning']>
     readonly exportToCSV: UnwrapRef<typeof import('./src/utils/tables.utils')['exportToCSV']>
     readonly exportToJSON: UnwrapRef<typeof import('./src/utils/tables.utils')['exportToJSON']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
@@ -1033,7 +1029,6 @@ declare module 'vue' {
     readonly getUniqueValues: UnwrapRef<typeof import('./src/utils/tables.utils')['getUniqueValues']>
     readonly groupBy: UnwrapRef<typeof import('./src/utils/tables.utils')['groupBy']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
-    readonly hasEnvironmentMismatch: UnwrapRef<typeof import('./src/modules/channels/utils/environment')['hasEnvironmentMismatch']>
     readonly highlightText: UnwrapRef<typeof import('./src/utils/tables.utils')['highlightText']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -1115,7 +1110,6 @@ declare module 'vue' {
     readonly sm: UnwrapRef<typeof import('./src/components/ui/input-group/index')['sm']>
     readonly sortBy: UnwrapRef<typeof import('./src/utils/tables.utils')['sortBy']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
-    readonly suggestEnvironment: UnwrapRef<typeof import('./src/modules/channels/utils/environment')['suggestEnvironment']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>

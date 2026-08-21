@@ -72,6 +72,7 @@ catalog:
   axios: ^1.19.0
   typescript: ^5.9.3
   vue: ^3.5.25
+  "@clack/prompts": ^1.7.0
 
 overrides:
   vite: "catalog:"

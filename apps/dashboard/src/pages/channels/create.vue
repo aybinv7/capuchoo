@@ -101,8 +101,8 @@ import { useAppStore } from "@/stores/app.store";
 import {
   environmentMismatchWarning,
   suggestEnvironment,
-  type ChannelEnvironmentSelection,
-} from "@/modules/channels/utils/environment";
+  type EnvironmentSelection,
+} from "@capuchoo/core";
 
 definePage({
   meta: {
@@ -120,7 +120,7 @@ const { mutateAsync: createChannel, isPending } = useCreateChannelMutation();
 // serving staging bundles.
 const formData = ref({
   name: "",
-  environment: "" as ChannelEnvironmentSelection,
+  environment: "" as EnvironmentSelection,
   ios_enabled: true,
   android_enabled: true,
   is_public: false,

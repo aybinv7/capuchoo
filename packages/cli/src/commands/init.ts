@@ -1,4 +1,4 @@
-import { confirm, input, select } from "@inquirer/prompts";
+import { askText, confirm, selectOne } from "../cli/prompts.js";
 import {
   ENVIRONMENTS,
   PROJECT_CONFIG_VERSION,
@@ -56,13 +56,14 @@ export default class Init extends BaseCommand {
     const existing = readProjectConfig(appDir);
     if (existing && !flags.force) {
       this.log(chalk.yellow("  Already initialised: ") + `${existing.appName} (${existing.appId})`);
-      const action = await select({
-        message: "What now?",
-        choices: [
-          { name: "Keep it", value: "keep" },
-          { name: "Re-link to a different app", value: "relink" },
+      const action = await selectOne<string>(
+        "What now?",
+        [
+          { value: "keep", label: "Keep it", hint: existing.appId },
+          { value: "relink", label: "Re-link to a different app" },
         ],
-      });
+        "--force",
+      );
       if (action === "keep") return;
     }
 
@@ -93,13 +94,14 @@ export default class Init extends BaseCommand {
 
     const mode = flags.link
       ? "existing"
-      : await select({
-          message: "Link this directory to",
-          choices: [
-            { name: "An app that already exists", value: "existing" },
-            { name: "A new app", value: "new" },
+      : await selectOne<string>(
+          "Link this directory to",
+          [
+            { value: "existing", label: "An app that already exists" },
+            { value: "new", label: "A new app" },
           ],
-        });
+          "--link",
+        );
 
     const app = mode === "existing" ? await this.linkExisting(cloud) : await this.createNew(cloud);
 
@@ -219,13 +221,11 @@ export default class Init extends BaseCommand {
       );
     }
 
-    return select({
-      message: "App",
-      choices: apps.map((app) => ({
-        name: `${app.name} ${chalk.dim(app.app_id)}`,
-        value: app,
-      })),
-    });
+    return selectOne(
+      "App",
+      apps.map((app) => ({ value: app, label: app.name, hint: app.app_id })),
+      "--link with the app selected in the dashboard",
+    );
   }
 
   private async createNew(cloud: CloudClient): Promise<CloudApp> {
@@ -250,32 +250,28 @@ export default class Init extends BaseCommand {
     const organizationId =
       allowed.length === 1
         ? allowed[0]!.id
-        : await select({
-            message: "Organization",
-            choices: allowed.map((org) => ({
-              name: `${org.name} ${chalk.dim(`(${org.role})`)}`,
-              value: org.id,
-            })),
-          });
+        : await selectOne(
+            "Organization",
+            allowed.map((org) => ({ value: org.id, label: org.name, hint: org.role })),
+            "--link",
+          );
 
-    const name = await input({
-      message: "App name",
-      default: path.basename(process.cwd()),
-      validate: (value) => value.trim().length > 0 || "Required",
+    const name = await askText("App name", {
+      initial: path.basename(process.cwd()),
+      flag: "--link",
     });
 
-    const appId = await input({
-      message: "Production bundle identifier",
+    const appId = await askText("Production bundle identifier", {
+      placeholder: "com.company.app",
+      flag: "--link",
       validate: (value) =>
-        isValidBundleId(value.trim()) ||
-        "Expected something like com.company.app - lower case, at least two segments",
+        isValidBundleId(value.trim())
+          ? undefined
+          : "Expected something like com.company.app - lower case, at least two segments",
     });
 
     // Creating an app is the one irreversible thing this command does.
-    const proceed = await confirm({
-      message: `Create "${name}" (${appId})?`,
-      default: true,
-    });
+    const proceed = await confirm(`Create "${name}" (${appId})?`, { default: true });
     if (!proceed) this.error("Cancelled.");
 
     const creating = ora({ text: "Creating app", stream: process.stderr }).start();

@@ -1,4 +1,4 @@
-import { input, password } from "@inquirer/prompts";
+import { askSecret, askText } from "../../cli/prompts.js";
 import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import ora from "ora";
@@ -41,11 +41,11 @@ export default class AuthLogin extends BaseCommand {
 
     const endpoint = (
       flagEndpoint ??
-      (await input({
-        message: "Backend URL",
-        default: existing.endpoint ?? DEFAULT_ENDPOINT,
+      (await askText("Backend URL", {
+        initial: existing.endpoint ?? DEFAULT_ENDPOINT,
+        flag: "--endpoint",
         validate: (value) =>
-          /^https?:\/\/.+/.test(value.trim()) || "Must start with http:// or https://",
+          /^https?:\/\/.+/.test(value.trim()) ? undefined : "Must start with http:// or https://",
       }))
     )
       .trim()
@@ -56,13 +56,10 @@ export default class AuthLogin extends BaseCommand {
       process.stderr.write(
         chalk.dim(`\n  Create a key under Settings > API Keys at ${endpoint}\n\n`),
       );
-      apiKey = await password({
-        message: "API key",
-        // Only a length check. The previous version required the key to start
-        // with "cap_", which is a server-side format decision the CLI has no
-        // business enforcing - a rotated prefix would have locked users out.
-        validate: (value) => value.trim().length >= 16 || "That key looks too short",
-      });
+      // Only a length check. The previous version required the key to start with
+      // "cap_", which is a server-side format decision the CLI has no business
+      // enforcing - a rotated prefix would have locked users out.
+      apiKey = await askSecret("API key");
     }
 
     apiKey = apiKey.trim();

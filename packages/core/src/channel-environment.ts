@@ -1,3 +1,5 @@
+import type { Environment } from "./update-contract.js";
+
 /**
  * A channel's `environment` decides which `.env` flavour the CLI builds and which
  * bundles the backend serves to it. The channel's *name* is only an identifier.
@@ -9,12 +11,10 @@
  * legitimately point at a staging channel for beta testing.
  */
 
-export type ChannelEnvironment = "prod" | "staging" | "dev";
-
 /** Empty means "not chosen yet". A channel must not default into an environment. */
-export type ChannelEnvironmentSelection = ChannelEnvironment | "";
+export type EnvironmentSelection = Environment | "";
 
-const PATTERNS: Array<[ChannelEnvironment, RegExp]> = [
+const PATTERNS: Array<[Environment, RegExp]> = [
   ["prod", /^(prod|production|live|release|stable|main|master)$/],
   ["staging", /^(staging|stage|beta|uat|qa|test|preprod|pre-prod)$/],
   ["dev", /^(dev|develop|development|debug|local|alpha)$/],
@@ -27,7 +27,7 @@ const PATTERNS: Array<[ChannelEnvironment, RegExp]> = [
  * to either, and guessing at substrings would put a warning on names it cannot
  * reason about.
  */
-export function suggestEnvironment(name: string): ChannelEnvironment | null {
+export function suggestEnvironment(name: string): Environment | null {
   const normalized = name.trim().toLowerCase();
   if (!normalized) return null;
 
@@ -39,10 +39,7 @@ export function suggestEnvironment(name: string): ChannelEnvironment | null {
 }
 
 /** True when the name implies one environment and a different one is selected. */
-export function hasEnvironmentMismatch(
-  name: string,
-  environment: ChannelEnvironmentSelection,
-): boolean {
+export function hasEnvironmentMismatch(name: string, environment: EnvironmentSelection): boolean {
   if (!environment) return false;
 
   const suggested = suggestEnvironment(name);
@@ -52,7 +49,7 @@ export function hasEnvironmentMismatch(
 /** The warning to show for a mismatch, or `null` when there is nothing to warn about. */
 export function environmentMismatchWarning(
   name: string,
-  environment: ChannelEnvironmentSelection,
+  environment: EnvironmentSelection,
 ): string | null {
   if (!hasEnvironmentMismatch(name, environment)) return null;
 

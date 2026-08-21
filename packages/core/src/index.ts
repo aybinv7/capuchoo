@@ -8,6 +8,13 @@
  */
 
 export {
+  environmentMismatchWarning,
+  hasEnvironmentMismatch,
+  suggestEnvironment,
+  type EnvironmentSelection,
+} from "./channel-environment.js";
+
+export {
   UpdateMessage,
   resolveUpdate,
   isBlockingResponse,

@@ -3,7 +3,7 @@ import {
   environmentMismatchWarning,
   hasEnvironmentMismatch,
   suggestEnvironment,
-} from "./environment";
+} from "./channel-environment.js";
 
 describe("suggestEnvironment", () => {
   it("recognises the conventional names", () => {

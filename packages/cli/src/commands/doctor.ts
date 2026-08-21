@@ -1,0 +1,318 @@
+import {
+  hasEnvironmentMismatch,
+  normaliseProjectConfig,
+  suggestEnvironment,
+  type Environment,
+} from "@capuchoo/core";
+import chalk from "chalk";
+import fs from "node:fs";
+import path from "node:path";
+import { BaseCommand } from "../base-command.js";
+import { CloudClient } from "../services/cloud.js";
+import { readProjectConfig, resolveCredentials } from "../utils/config.js";
+
+type Level = "ok" | "warn" | "fail";
+
+interface Finding {
+  level: Level;
+  what: string;
+  detail?: string;
+  /** The command or edit that resolves it. Every non-ok finding must have one. */
+  fix?: string;
+}
+
+/**
+ * Explains why a deploy will not work, before you run one.
+ *
+ * Every check here corresponds to something that has silently failed in this
+ * project: an endpoint pointing at a retired backend, a channel whose
+ * environment disagreed with its name, a channel serving nothing because the
+ * upload never moved its pointer, an app whose flavour env file did not exist.
+ * Each finding names the fix, because a diagnosis you cannot act on is just bad
+ * news.
+ */
+export default class Doctor extends BaseCommand {
+  static override description = "Check that this app, its credentials and its channels are usable";
+
+  static override examples = ["<%= config.bin %> doctor"];
+
+  async run(): Promise<void> {
+    const appDir = process.cwd();
+    const findings: Finding[] = [];
+
+    // --- credentials ---------------------------------------------------------
+
+    const credentials = resolveCredentials();
+    if (!credentials) {
+      this.report([{ level: "fail", what: "Not signed in", fix: "capuchoo auth login" }]);
+      return;
+    }
+
+    findings.push({ level: "ok", what: "Endpoint", detail: credentials.endpoint });
+
+    const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
+    const profile = await cloud.whoami().catch(() => null);
+
+    if (!profile) {
+      findings.push({
+        level: "fail",
+        what: "Credentials rejected",
+        detail: `${credentials.endpoint} did not accept the stored API key`,
+        // The endpoint is the likelier culprit: a retired backend answers
+        // /health but validates nothing.
+        fix: `capuchoo config set endpoint <url>   (or capuchoo auth login)`,
+      });
+      this.report(findings);
+      return;
+    }
+
+    findings.push({ level: "ok", what: "Signed in", detail: profile.user.email });
+
+    // --- the link between this directory and a cloud app ---------------------
+
+    // Normalised, not raw: a v1 project.json carries only the cloud identifiers
+    // and every flavour is defaulted at runtime. Reading the raw fields reported
+    // "no flavour configured" for an app that deploys fine.
+    const raw = readProjectConfig(appDir);
+    const project = raw ? normaliseProjectConfig(raw) : null;
+    if (!project) {
+      findings.push({
+        level: "fail",
+        what: "This directory is not linked to an app",
+        fix: "capuchoo init",
+      });
+      this.report(findings);
+      return;
+    }
+
+    findings.push({
+      level: "ok",
+      what: "Linked",
+      detail: `${project.appName} (${project.appId})`,
+    });
+
+    // --- channels ------------------------------------------------------------
+
+    const channels = await cloud.channels(project.cloudAppId).catch(() => null);
+
+    if (!channels) {
+      findings.push({
+        level: "fail",
+        what: "The linked cloud app could not be read",
+        detail: `cloudAppId ${project.cloudAppId} - deleted, or belongs to another account`,
+        fix: "capuchoo init --force",
+      });
+      this.report(findings);
+      return;
+    }
+
+    if (channels.length === 0) {
+      findings.push({
+        level: "fail",
+        what: "No channels",
+        detail: "Nothing can be deployed until a channel exists",
+        fix: "Create one in the dashboard",
+      });
+    }
+
+    for (const channel of channels) {
+      if (!channel.environment) {
+        findings.push({
+          level: "fail",
+          what: `Channel "${channel.name}" has no environment`,
+          detail: "The environment is what tells the CLI which flavour to build",
+          fix: `Set it in the dashboard (suggested: ${suggestEnvironment(channel.name) ?? "prod"})`,
+        });
+        continue;
+      }
+
+      if (hasEnvironmentMismatch(channel.name, channel.environment)) {
+        findings.push({
+          level: "warn",
+          what: `Channel "${channel.name}" is on the ${channel.environment} environment`,
+          detail: `Devices on it receive ${channel.environment} bundles, built from .env.${channel.environment}`,
+          fix: `Set it to ${suggestEnvironment(channel.name)} unless that is deliberate`,
+        });
+      }
+
+      // The pointer that decides what is served. An upload that does not move
+      // it leaves the channel answering "no update" forever.
+      if (!channel.current_version_id) {
+        findings.push({
+          level: "warn",
+          what: `Channel "${channel.name}" is serving no bundle`,
+          detail: "No OTA version is active on it yet",
+          fix: `capuchoo deploy ota --channel ${channel.name}`,
+        });
+      }
+    }
+
+    // --- flavours ------------------------------------------------------------
+
+    const environments = new Set<Environment>(
+      channels.map((channel) => channel.environment).filter(Boolean) as Environment[],
+    );
+
+    for (const environment of environments) {
+      const flavour = project.flavours[environment];
+
+      const envFile = path.join(appDir, flavour.envFile);
+      if (!fs.existsSync(envFile)) {
+        findings.push({
+          level: "fail",
+          what: `Missing ${flavour.envFile}`,
+          detail: `A ${environment} deploy reads it for the app id, version and update URL`,
+          fix: `Create ${flavour.envFile}`,
+        });
+        continue;
+      }
+
+      const contents = fs.readFileSync(envFile, "utf8");
+      const updateUrl = /^VITE_UPDATE_API_URL=(.*)$/m.exec(contents)?.[1]?.trim();
+
+      if (!updateUrl) {
+        findings.push({
+          level: "fail",
+          what: `${flavour.envFile} has no VITE_UPDATE_API_URL`,
+          detail: "The app would ship with updates silently disabled",
+          fix: `Add VITE_UPDATE_API_URL=${credentials.endpoint}`,
+        });
+      } else if (updateUrl.replace(/\/+$/, "") !== credentials.endpoint.replace(/\/+$/, "")) {
+        // Not necessarily wrong - a custom domain in front of the same service
+        // is good practice - but it is the mistake that cost an afternoon.
+        findings.push({
+          level: "warn",
+          what: `${flavour.envFile} points at a different host`,
+          detail: `app: ${updateUrl}   cli: ${credentials.endpoint}`,
+          fix: "Confirm both reach the same backend",
+        });
+      } else {
+        findings.push({ level: "ok", what: `Flavour ${environment}`, detail: flavour.envFile });
+      }
+    }
+
+    // --- the app's own wiring ------------------------------------------------
+
+    const webDir = path.join(appDir, project.webDir ?? "dist");
+    if (!fs.existsSync(webDir)) {
+      findings.push({
+        level: "warn",
+        what: `webDir "${project.webDir}" does not exist yet`,
+        detail: "Fine before the first build; a deploy builds it",
+      });
+    }
+
+    findings.push(...this.checkRuntimeWiring(appDir));
+
+    this.report(findings);
+  }
+
+  /**
+   * Looks for the two calls that decide whether updates work at all.
+   *
+   * Textual, not semantic: this is a hint, not a compiler. Worth doing anyway -
+   * a missing `notifyAppReady()` rolls back working bundles ten seconds after
+   * they install, and that is invisible until it happens on a device.
+   */
+  private checkRuntimeWiring(appDir: string): Finding[] {
+    const findings: Finding[] = [];
+    const pkgPath = path.join(appDir, "package.json");
+
+    if (!fs.existsSync(pkgPath)) return findings;
+
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+    if (!deps["@capuchoo/updater"]) {
+      findings.push({
+        level: "warn",
+        what: "@capuchoo/updater is not a dependency",
+        detail: "Deploys will work; the app will not check for what they publish",
+        fix: "pnpm add @capuchoo/updater",
+      });
+      return findings;
+    }
+
+    const sources = this.sourceFiles(path.join(appDir, "src"));
+    const joined = sources.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+
+    if (!joined.includes("notifyAppReady")) {
+      findings.push({
+        level: "fail",
+        what: "notifyAppReady() is never called",
+        detail:
+          "The plugin rolls back to the previous bundle when it does not hear this " +
+          "within its timeout - so every update would install and then revert",
+        fix: 'Call it early in main.ts: import { notifyAppReady } from "@capuchoo/updater"',
+      });
+    } else {
+      findings.push({ level: "ok", what: "notifyAppReady() present" });
+    }
+
+    const capacitorConfig = ["capacitor.config.ts", "capacitor.config.js"]
+      .map((name) => path.join(appDir, name))
+      .find((file) => fs.existsSync(file));
+
+    if (capacitorConfig) {
+      const config = fs.readFileSync(capacitorConfig, "utf8");
+      if (!config.includes("capuchooUpdaterConfig") && !config.includes("capuchoUpdaterConfig")) {
+        findings.push({
+          level: "warn",
+          what: `${path.basename(capacitorConfig)} does not use capuchooUpdaterConfig()`,
+          detail:
+            "Hand-written plugin config has shipped an empty updateUrl before, which " +
+            "disables updates without failing",
+          fix: "plugins.CapacitorUpdater = capuchooUpdaterConfig({ apiUrl, channel })",
+        });
+      } else {
+        findings.push({ level: "ok", what: "Capacitor plugin config" });
+      }
+    }
+
+    return findings;
+  }
+
+  /** Shallow-ish walk: enough to find an import, cheap enough to run always. */
+  private sourceFiles(dir: string, depth = 0): string[] {
+    if (depth > 3 || !fs.existsSync(dir)) return [];
+
+    const found: string[] = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) found.push(...this.sourceFiles(full, depth + 1));
+      else if (/\.(ts|tsx|js|vue)$/.test(entry.name)) found.push(full);
+    }
+    return found;
+  }
+
+  private report(findings: Finding[]): void {
+    const mark = { ok: chalk.green("✓"), warn: chalk.yellow("!"), fail: chalk.red("✗") };
+
+    this.log("");
+    for (const finding of findings) {
+      this.log(`  ${mark[finding.level]} ${finding.what}`);
+      if (finding.detail) this.log(chalk.dim(`      ${finding.detail}`));
+      if (finding.fix) this.log(chalk.cyan(`      → ${finding.fix}`));
+    }
+
+    const failed = findings.filter((f) => f.level === "fail").length;
+    const warned = findings.filter((f) => f.level === "warn").length;
+
+    this.log("");
+    if (failed === 0 && warned === 0) {
+      this.log(chalk.green("  Ready to deploy."));
+    } else {
+      this.log(
+        `  ${failed} blocking, ${warned} worth a look. ` +
+          chalk.dim("Fix the blocking ones before deploying."),
+      );
+    }
+    this.log("");
+
+    if (failed > 0) process.exitCode = 1;
+  }
+}
