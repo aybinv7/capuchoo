@@ -114,8 +114,11 @@ jobs:
           fi
           echo "npm publish $flags (provenance=${{ inputs.provenance }})"
 
-          for tarball in tarballs/*.tgz; do
-            echo "::group::$tarball"
+          # Absolute paths only. Given `tarballs/x.tgz`, npm treats the argument
+          # as a package spec rather than a file and tries to git-clone
+          # ssh://git@github.com/tarballs/x.tgz.git.
+          for tarball in "$RUNNER_TEMP"/tarballs/*.tgz; do
+            echo "::group::$(basename "$tarball")"
             npm publish "$tarball" $flags
             echo "::endgroup::"
           done
