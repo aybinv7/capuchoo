@@ -27,10 +27,11 @@ browser** with a 401 - a safety net if one ever leaks into a client bundle.
   is exactly the failure documented in [BACKEND-AUDIT.md](./BACKEND-AUDIT.md). It also warns if a
   publishable key was put in the secret slot, or a secret key in the publishable slot.
 
-- **`apps/dashboard` and `apps/template` use the publishable key.** Both read
-  `VITE_SUPABASE_PUBLISHABLE_KEY` and fall back to `VITE_SUPABASE_ANON_KEY`, so an environment that
-  has not migrated keeps working. Never put a secret key in a `VITE_`-prefixed variable: Vite
-  inlines those into the bundle.
+- **`apps/dashboard` and `apps/template` use the publishable key.** The dashboard reads
+  `VITE_SUPABASE_PUBLISHABLE_KEY` only - it deploys from this workspace, where the environment is
+  known. `apps/template` keeps a `VITE_SUPABASE_ANON_KEY` fallback, because an app built from it may
+  be shipped by someone whose environment has not migrated. Never put a secret key in a
+  `VITE_`-prefixed variable: Vite inlines those into the bundle.
 
 Variable names, new and legacy - the legacy ones are accepted so an environment can be migrated
 without a deploy in between:

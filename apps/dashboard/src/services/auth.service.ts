@@ -5,11 +5,13 @@ import { createClient, type Session, type User } from "@supabase/supabase-js";
 // The publishable key (sb_publishable_...) replaces the anon JWT, which Supabase
 // documents as deprecated with removal announced for the end of 2026. Both are
 // low-privilege and subject to row level security, so this is a rename rather
-// than a change in what the browser is trusted with. VITE_SUPABASE_ANON_KEY is
-// still read so an existing build environment keeps working.
+// than a change in what the browser is trusted with.
+//
+// No VITE_SUPABASE_ANON_KEY fallback: this app is deployed from this workspace
+// only, and its environment sets the publishable key. A fallback would just let
+// a half-configured environment build quietly against the deprecated key.
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabasePublishableKey =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 const supabase = createClient(supabaseUrl, supabasePublishableKey);
 
 export interface LoginCredentials {

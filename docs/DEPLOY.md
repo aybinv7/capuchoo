@@ -58,12 +58,12 @@ rebuild, not a restart; and a secret key placed here is published to every visit
 
 ## Order of operations
 
-The backend reads only the current key names (`SUPABASE_SECRET_KEY`), and the dashboard reads
-`VITE_SUPABASE_PUBLISHABLE_KEY` with a fallback to `VITE_SUPABASE_ANON_KEY`. The services deployed
-today are built from the _old_ repositories, which read only the deprecated names -
-`capucho-front/src/services/auth.service.ts` references `VITE_SUPABASE_ANON_KEY` and nothing else,
-and the old backend has `SUPABASE_KEY` as `required()`. So the switch to the new names and the
-switch to this repository are the same event, and the sequence matters:
+The backend reads only the current key names (`SUPABASE_SECRET_KEY`), and the dashboard reads only
+`VITE_SUPABASE_PUBLISHABLE_KEY`. The services deployed today are built from the _old_ repositories,
+which read only the deprecated names - `capucho-front/src/services/auth.service.ts` references
+`VITE_SUPABASE_ANON_KEY` and nothing else, and the old backend has `SUPABASE_KEY` as `required()`.
+So the switch to the new names and the switch to this repository are the same event, and the
+sequence matters:
 
 1. **Create the new Supabase keys** (Settings > API Keys). Do not delete the legacy pair yet - it is
    what the running services still use.
