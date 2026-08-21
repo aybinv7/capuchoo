@@ -175,6 +175,22 @@ of 2026. `config/keys.ts` accepts both namings, refuses to start with no secret 
 booting into a server that records nothing, and warns when a key looks wrong for its slot. See
 [SUPABASE-KEYS.md](./SUPABASE-KEYS.md) for the rotation runbook.
 
+## 12. No OTA bundle was ever served
+
+`POST /api/admin/upload` inserted the row into `app_versions` with `active: true` and returned
+success. `/api/update` decides what to serve from `channels.current_version_id` - and nothing, on
+any path, ever set it. So `capuchoo deploy ota` reported "published to staging", the artefact really
+was in storage, and every device was told there was no update. Every channel in the live database
+had `current_version_id = null`.
+
+`active` on the version row means "this artefact may be served". The channel pointer decides which
+one _is_. Upload now sets it, returns the channel it activated, and warns when the named channel
+does not exist rather than silently doing nothing.
+
+Found by finishing the round trip - deploy for real, then ask as a device on an older version -
+rather than stopping at the CLI's success line. Which is the third time in this audit that the code
+read correctly and the database disagreed.
+
 ---
 
 ## Verified
@@ -199,11 +215,15 @@ then withheld from the dashboard, which would have shown blank version columns a
 1. **The dashboard cannot upload an OTA bundle.** It calls `POST /api/admin/native-upload` (APK) but
    never `POST /api/admin/upload` (web bundle), so web updates are CLI-only while native updates
    have both paths. The `/updates-bundles/upload` page wires only the native mutation.
-2. **Enriching the check payload.** `getPluginVersion()`, `getBuiltinVersion()` and `getChannel()`
-   are all available from the capgo plugin, and OS version / model / emulator flag from
-   `@capacitor/device` - which `apps/template` already depends on, though Lowmaro does not. The
-   backend now persists these the moment they arrive; nothing sends them yet.
-3. **Eleven dead endpoints**, including a full duplicate app-management API (`/api/dashboard/apps*`
-   vs `/api/apps`, plus `/api/apps/:id/channels|releases` duplicating
-   `/dashboard/channels|bundles`). Two parallel APIs over the same tables will drift. Deleting them
-   is a decision about the CLI's compatibility surface, not a fix.
+2. ~~**Enriching the check payload.**~~ **Done in `@capuchoo/updater` 0.1.1.** It sends
+   `pluginVersion` from the OTA plugin, and `versionOs` plus `isEmulator` from `@capacitor/device`,
+   which is an optional peer imported dynamically. `getBuiltinVersion()` is still unsent - the
+   server has no column for it.
+3. **The duplicate app-management API.** `/api/dashboard/apps*` - four routes - looks unused: the
+   dashboard authenticates to Supabase directly for apps, and the CLI uses `/api/apps`. Two parallel
+   APIs over the same tables will drift, so removing one is worthwhile, but it needs a check of the
+   dashboard's Supabase-side reads first.
+
+   **Correction to an earlier claim in this document:** `/api/apps/:id/channels` and
+   `/api/apps/:id/releases` are _not_ dead. `packages/cli/src/services/cloud.ts:58,63` calls both,
+   which is how `capuchoo channel list` works. Deleting them would have broken the CLI.
