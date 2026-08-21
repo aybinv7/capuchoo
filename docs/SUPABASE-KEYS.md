@@ -24,8 +24,8 @@ browser** with a 401 - a safety net if one ever leaks into a client bundle.
 
   `config/keys.ts` resolves the key and **refuses to start** without a secret one. That is
   deliberate: the alternative is a server that boots, connects, and silently records nothing - which
-  is exactly the failure documented in [BACKEND-AUDIT.md](./BACKEND-AUDIT.md). It also warns if a
-  publishable key was put in the secret slot, or a secret key in the publishable slot.
+  is exactly the failure this exists to prevent - the backend recorded nothing for months. It also
+  warns if a publishable key was put in the secret slot, or a secret key in the publishable slot.
 
 - **`apps/dashboard` and `apps/template` use the publishable key.** The dashboard reads
   `VITE_SUPABASE_PUBLISHABLE_KEY` only - it deploys from this workspace, where the environment is

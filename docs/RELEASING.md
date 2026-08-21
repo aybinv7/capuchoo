@@ -23,8 +23,7 @@ bumped and re-running is safe. Nothing writes back to the repository, so no bot 
 developer push.
 
 This replaced `release-cli.yml`, which handled only the CLI and was triggered by a `cli-v*` tag. Two
-release paths over one workspace is how they drift - the same lesson as the two parallel
-app-management APIs in [BACKEND-AUDIT.md](./BACKEND-AUDIT.md).
+release paths over one workspace is how they drift.
 
 ## Trusted publishing, and why the first release is manual
 

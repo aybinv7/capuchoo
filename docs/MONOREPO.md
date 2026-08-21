@@ -1,7 +1,7 @@
 # The monorepo
 
 How this workspace is put together, and why each decision was made the way it was. If you are
-looking for what was wrong with the five separate repositories, read [AUDIT.md](./AUDIT.md).
+looking for how the parts fit together, the invariants below are the ones worth knowing.
 
 ## Layout
 
@@ -172,42 +172,62 @@ vp -C apps/template dev
 
 Or run `vp pack --watch` in `packages/updater` alongside the app's dev server.
 
-## The old repositories
+## Where the history went
 
-The five originals are still at `capucho/capucho-cli`, `capucho-back`, `capucho-front`,
-`capucho-app` and `@capuchoo/apps-manager`, untouched, with their GitHub remotes intact. Nothing
-here writes to them.
+The five original repositories - `capucho-cli`, `capucho-back`, `capucho-front`, `capucho-app`,
+`capucho-apps-manager` - were merged here with `git subtree` and their local checkouts deleted on
+**2026-08-21**. They still exist on GitHub under those names, unchanged, as the archive.
 
-Their full history came across via `git subtree`, so this repository has six roots and every past
-commit is reachable:
-
-```sh
-git log --oneline --graph        # 71 commits, 5 merged histories
-git log <old-sha>               # any pre-migration commit
-```
-
-`git log --follow` will not cross the subtree merge for a moved file - that is inherent to subtree
-imports. Use `git log --all -- '*<filename>'`, or read the file's history in the original
-repository.
-
-Once you are satisfied, the originals can go:
+Every pre-migration commit is reachable from this repository: the subtree imports gave it six roots.
 
 ```sh
-cd C:/Users/aybin/code/ayb/capucho
-rm -rf capuchoo-cli capuchoo-back capuchoo-front capuchoo-app @capuchoo/apps-manager
+git rev-list --max-parents=0 HEAD   # 6 roots
+git log <old-sha>                   # any pre-migration commit
 ```
 
-They are outside this repository's `pnpm-workspace.yaml`, so they are inert until then - they just
-cost disk.
+`git log --follow` will not cross a subtree merge for a moved file - inherent to subtree imports.
+Use `git log --all -- '*<filename>'` instead.
 
-Lowmaro still links the old CLI:
+## Invariants that bite
 
-```json
-"capucho-cli": "link:../capucho/capucho-cli"
-```
+Learned the hard way; each one was a live bug.
 
-Point it at `link:../capuchoo/capuchoo/packages/cli` to pick up the rewritten one. Its own updater
-is a copy of the code that became `@capuchoo/updater`; it can switch to the package when convenient.
+- **`notifyAppReady()` early and unconditional.** It confirms the _running_ bundle booted. If the
+  plugin does not hear it within `appReadyTimeout` it rolls back - so gating it, or awaiting a
+  network call first, reverts working updates. It is not a gate on auto-update.
+- **`autoUpdate: "onlyDownload"`** whenever the app drives updates itself, or the plugin and the UI
+  both apply bundles.
+- **One endpoint decides updates: `POST /api/update`.** It is the only one that consults the
+  channel's native version and an OTA bundle's `min_update_version`. Send the real current bundle
+  version, never a constant.
+- **`channels.current_version_id` decides what is served.** `active` on a version row only means the
+  artefact _may_ be served. An upload that does not move the channel pointer serves nothing.
+- **`devices` is the authoritative device row**, and `device_channels` is only a binding. Read the
+  former for anything a dashboard shows.
+- **The backend needs the Supabase _secret_ key.** Its own writes target tables with row level
+  security whose policies assume an authenticated user; a publishable key is silently rejected. See
+  [SUPABASE-KEYS.md](./SUPABASE-KEYS.md).
+- **OTA archives** need forward-slash entry names and `index.html` at the root; the Android unzip
+  rejects a backslash outright.
+- **An unsigned release APK will not install.** The CLI refuses to publish one without
+  `--allow-unsigned`.
+- **Check the row, not the code.** Three separate defects here read correctly in the source and were
+  only visible in the database: a dashboard endpoint reading the wrong table, missing snake_case
+  field mappings, and the unset channel pointer. Verify against the live system.
+
+## Known gaps
+
+- The dashboard cannot upload an OTA bundle - deploys are CLI-only, and that is fine by design for
+  now.
+- `apps/template`'s cloud app no longer exists; `capuchoo init` relinks it.
+- The four `/api/dashboard/apps*` routes look unused, but the dashboard reads apps through Supabase
+  directly, so confirm that before deleting them. `/api/apps/:id/channels` and `/:id/releases` _are_
+  used - by the CLI.
+- 97 lint warnings in the imported apps: unused imports, floating promises, `console.log`. Visible
+  in `vp lint`, not blocking.
+- `multer@1.x` and `express-rate-limit@6` on the backend both want their own upgrade and their own
+  testing of the upload path.
+- TypeScript stays on 5.x: oclif's typings and `vue-tsc` are not validated on 7.x yet.
 
 ## Conventions
 

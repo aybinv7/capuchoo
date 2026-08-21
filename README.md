@@ -105,9 +105,8 @@ whether it can be dismissed - so each app writes only its own markup.
 ## Documentation
 
 - [docs/MONOREPO.md](./docs/MONOREPO.md) - layout, toolchain, adding a package, releasing.
-- [docs/AUDIT.md](./docs/AUDIT.md) - every problem found in the pre-monorepo code, what it broke,
-  and what replaced it. **Includes two items that need action from you**, starting with rotating the
-  Supabase keys.
+- [docs/MONOREPO.md](./docs/MONOREPO.md) - layout, toolchain, the invariants that bite, and the
+  known gaps.
 - [packages/cli/docs/ci-releases.md](./packages/cli/docs/ci-releases.md) - CI credentials and
   release flow.
 
