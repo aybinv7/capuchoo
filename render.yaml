@@ -20,6 +20,11 @@ services:
     name: capuchoo-back
     runtime: node
     rootDir: .
+    # Explicit: a Blueprint that omits `plan` gets `starter`, which bills. Free
+    # spins down when idle, so the first update check after a quiet period waits
+    # for a cold start - fine while nothing is in production, worth upgrading
+    # before devices depend on it.
+    plan: free
     # `pnpm --filter` puts the workspace root's node_modules/.bin on PATH, so a
     # package script resolves `vp` even though only the root declares it.
     #
