@@ -501,9 +501,15 @@ class AdminController {
         appUuid = keyAppId;
       }
 
+      // Read `devices`, not `device_channels`.
+      //
+      // device_channels holds four columns - device, channel, platform,
+      // timestamps - so a dashboard built on it could only ever show four
+      // fields, which is why every version column was blank. The device row is
+      // the authoritative record and now carries what the app reports.
       let query = this.supabaseService
         .getClient()
-        .from("device_channels")
+        .from("devices")
         .select(
           `
           *,
@@ -513,10 +519,10 @@ class AdminController {
           )
         `,
         )
-        .order("updated_at", { ascending: false });
+        .order("last_seen", { ascending: false });
 
       if (appUuid) {
-        query = query.eq("channels.app_id", appUuid);
+        query = query.eq("app_id", appUuid);
       }
 
       const { data, error } = await query;
@@ -526,11 +532,20 @@ class AdminController {
         (data || []).map((device: any) => ({
           id: device.id,
           device_id: device.device_id,
-          app_id: device.channels?.app_id || app_id,
+          app_id: device.app_id || appUuid || app_id,
           platform: device.platform,
-          channel: device.channels?.name || "prod",
+          channel: device.channels?.name || device.channel_override || "prod",
+          custom_channel: device.channel_override ?? undefined,
+          version_name: device.version_name ?? undefined,
+          version_build: device.version_build ?? undefined,
+          version_os: device.version_os ?? undefined,
+          plugin_version: device.plugin_version ?? undefined,
+          is_emulator: device.is_emulator,
+          is_prod: device.is_prod,
+          custom_id: device.custom_id ?? undefined,
+          last_check: device.last_seen,
+          created_at: device.created_at,
           updated_at: device.updated_at,
-          last_version: "Unknown",
         })) || [];
 
       res.json(processedDevices);

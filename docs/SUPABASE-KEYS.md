@@ -45,11 +45,19 @@ VITE_SUPABASE_PUBLISHABLE_KEY ← VITE_SUPABASE_ANON_KEY   (clients)
 `SUPABASE_URL` is not a credential. It ships in every client bundle and every installed app, and
 nothing about it changes here.
 
-## Rotating the leaked key
+## Rotating the leaked key - done 2026-08-21
 
-`capuchoo-back/.env` was committed with a populated `service_role` key, and the blob is reachable
-from this repository's history too (the `git subtree` import commit). Migrating to the new keys is
-also the rotation, provided the last step is done.
+`capucho-back/.env` was committed with a populated `service_role` key - the repository's old name,
+before the rename - and the blob is reachable from this repository's history too (the `git subtree`
+import commit). Migrating to the new keys was also the rotation, and the step that actually matters
+is done: **the legacy keys are disabled in Supabase.**
+
+Disabling and deleting are equivalent for this purpose. Either way the old JWT is refused, which is
+what makes the value in git history inert - it opens nothing. Deleting is tidier; disabling is
+reversible, so leave them disabled rather than re-enabling if something turns out to still reference
+them.
+
+The sequence that was followed, for the next time:
 
 1. **Settings > API Keys > API Keys tab > Create new API keys.** Copy the secret and publishable
    values.
@@ -64,8 +72,8 @@ also the rotation, provided the last step is done.
    happens, the leaked string is still a valid credential no matter what the environment says.
    Deletion is irreversible.
 
-Only after step 5 is the value in git history inert, and only then is purging that history (or
-making the repository public) a cosmetic question rather than a security one.
+With step 5 done the value in git history is inert, which is why publishing this repository was
+safe. Purging that history is now a tidiness question, not a security one.
 
 ## Verifying the RLS assumption
 

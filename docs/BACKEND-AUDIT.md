@@ -184,11 +184,15 @@ booting into a server that records nothing, and warns when a key looks wrong for
   environment helper. `vp run -r test` is 120 across the workspace.
 - `vp lint services/back apps/dashboard` reports only the pre-existing warnings listed in AUDIT.md.
 
-**Not verified against a live database.** These are the first writes this schema has ever received,
-and one question remains open: whether `schema.sql` was ever applied to the live Supabase, or the
-tables were made by hand. `select count(*) from devices;` in the SQL editor answers it. Run
-`004_devices.sql` before deploying either way - it is idempotent, and if `devices` already exists it
-only adds the constraints the upserts need.
+**Verified against the live database on 2026-08-21.** `scripts/migrations/004_devices.sql` has been
+applied, and a real `POST /api/update` for a device the server had never seen created its `devices`
+row and channel binding - the write that had never once succeeded before. So the foreign-key wall
+and the RLS wall are both cleared.
+
+One thing the same check exposed: `GET /api/dashboard/devices` read `device_channels`, which holds
+four columns, and never touched `devices`. Everything this fix persists was therefore stored and
+then withheld from the dashboard, which would have shown blank version columns anyway. It now reads
+`devices` and returns the version, OS, plugin, emulator and prod fields.
 
 ## Open, needing a decision
 

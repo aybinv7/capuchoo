@@ -29,9 +29,9 @@ on:
         type: boolean
         default: true
       provenance:
-        description: "Attach npm provenance - only works once this repository is public"
+        description: "Attach npm provenance (the repository is public, so this works)"
         type: boolean
-        default: false
+        default: true
 
 concurrency:
   group: release

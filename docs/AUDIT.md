@@ -6,23 +6,22 @@ and what replaced it. Ordered by how much damage each item could do, not by wher
 A later pass over the backend and dashboard is in [BACKEND-AUDIT.md](./BACKEND-AUDIT.md) - it covers
 why the dashboard never showed a single device or log row.
 
-Two things need action from you and are not fixed by any commit here:
+Two things used to need action from you here. Both are done, recorded rather than deleted because
+the reasoning still matters:
 
-1. **Rotate the Supabase keys.** `capucho-back/.env` was committed with seven populated values,
-   `SUPABASE_SERVICE_KEY` among them - a `service_role` key that bypasses row level security
-   entirely. It is untracked here and replaced with `.env.example`, but the value is still in the
-   history of `github.com/aybinv7/capucho-back`, and in this repository's own history via the
-   `git subtree` import. Removing a file does not remove it from a pushed history.
+1. ~~**Rotate the Supabase keys.**~~ **Done 2026-08-21.** `capucho-back/.env` was committed with a
+   populated `service_role` key, and the blob is still reachable from this repository's history via
+   the `git subtree` import - which is now public. The project has since migrated to the current key
+   pair (`sb_publishable_…` / `sb_secret_…`) and **the legacy keys are disabled in Supabase**. That
+   is what ends the exposure: a disabled key is refused by the API, so the value sitting in git
+   history opens nothing. See [SUPABASE-KEYS.md](./SUPABASE-KEYS.md).
 
-   Rotate by migrating to Supabase's current keys, which retires the leaked pair in the same
-   operation. See [SUPABASE-KEYS.md](./SUPABASE-KEYS.md) for the runbook. The step that actually
-   ends the exposure is the last one: **creating new keys does not disable the old ones** - the
-   legacy pair has to be deleted in the dashboard, or the leaked string stays valid.
-
-2. **Delete `~/pnpm-workspace.yaml`, `~/package.json` and `~/node_modules`.** A
-   `pnpm install claumport` was once run from your home directory. Every project under
-   `C:\Users\aybin\` therefore looks like it sits inside a pnpm workspace - which is why `vp create`
-   refused to scaffold anywhere below it.
+2. ~~**Delete `~/pnpm-workspace.yaml`, `~/package.json` and `~/node_modules`.**~~ **Done
+   2026-08-21**, moved to `~/.stray-home-pnpm-backup-2026-08-21/`. A `pnpm install claumport` had
+   been run from the home directory, so every project below it looked like it sat inside a pnpm
+   workspace - which is why `vp create` refused to scaffold there, and why `npm` refused to run at
+   all under the home directory (`EBADDEVENGINES`, from the `devEngines` field in that stray
+   manifest).
 
 ---
 
