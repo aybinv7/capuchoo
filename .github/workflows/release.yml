@@ -1,21 +1,25 @@
 name: release
 
-# Publishes every publishable workspace package to npm.
+# Publishes every publishable workspace package to npm via **trusted publishing**
+# (OIDC). No NPM_TOKEN exists anywhere: the workflow exchanges a short-lived
+# GitHub identity token for a publish credential scoped to this repository and
+# this workflow file.
 #
-# `pnpm publish -r` is idempotent: it skips any package whose version is already
-# on the registry, so running this twice does nothing the second time. That makes
-# package.json the single source of truth for what gets released - bump a version,
-# run this, done. Nothing writes back to the repository, so there is no bot commit
-# racing a developer push.
+# Why the two-step pack-then-publish below, rather than `pnpm publish -r`:
 #
-# This replaces release-cli.yml, which only handled the CLI. Two release paths for
-# one workspace is how they drift.
+#   - The manifests use `catalog:` and `workspace:*`, which npm cannot resolve.
+#     `pnpm pack` rewrites both into concrete ranges inside the tarball while
+#     leaving the repository untouched, so the tarball is npm-publishable.
+#   - The OIDC exchange is implemented by the npm CLI (>= 11.5.1), and pnpm does
+#     not document supporting it. So npm publishes, pnpm packs.
+#   - npm is run from outside the checkout on purpose. The workspace root
+#     declares `devEngines.packageManager: pnpm`, and npm refuses to run at all
+#     inside it (EBADDEVENGINES) - including `npm publish`.
 #
-# Before the first run, two things have to exist:
-#   1. The `capucho` organisation on npmjs.com - @capucho/* is a scoped name and
-#      the scope has to be owned before anything can be published under it.
-#   2. An NPM_TOKEN repository secret. Use an automation (or granular) token:
-#      those bypass 2FA, which an interactive login cannot do from CI.
+# Trusted publishing has to be configured per package on npmjs.com (Settings >
+# Trusted publisher: this repository, workflow `release.yml`), and that requires
+# the package to already exist. The first version of each package is therefore
+# published by hand; see docs/RELEASING.md.
 
 on:
   workflow_dispatch:
@@ -35,7 +39,7 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write # npm provenance
+  id-token: write # the OIDC token trusted publishing exchanges
 
 jobs:
   publish:
@@ -57,22 +61,48 @@ jobs:
       - run: vp run -r build
       - run: vp run -r test
 
-      - name: Authenticate with npm
-        if: ${{ !inputs.dry-run }}
-        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # --no-git-checks: the tree is a fresh checkout, and the branch/tag state
-      # is decided by whoever dispatched this, not by pnpm.
-      #
-      # pnpm rewrites `catalog:` and `workspace:*` into concrete ranges in the
-      # published manifest; npm cannot resolve either.
-      - name: Publish
+      - name: Confirm npm can do the OIDC exchange
         run: |
-          pnpm publish -r --access public --no-git-checks \
-            ${{ inputs.dry-run && '--dry-run' || '' }} \
-            ${{ inputs.provenance && '--provenance' || '' }}
+          echo "npm $(npm --version) / node $(node --version)"
+          npm --version | node -e '
+            const v = require("fs").readFileSync(0, "utf8").trim().split(".").map(Number);
+            const ok = v[0] > 11 || (v[0] === 11 && (v[1] > 5 || (v[1] === 5 && v[2] >= 1)));
+            if (!ok) { console.error("trusted publishing needs npm >= 11.5.1"); process.exit(1); }'
+
+      # `pnpm pack` writes a publishable tarball per package: `files` is
+      # honoured, and `catalog:` / `workspace:*` become concrete ranges.
+      - name: Pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/tarballs"
+          for dir in packages/*/; do
+            if [ "$(node -p "!!require('./$dir/package.json').private")" = "true" ]; then
+              echo "skipping $dir (private)"
+              continue
+            fi
+            echo "::group::pack $dir"
+            (cd "$dir" && pnpm pack --pack-destination "$RUNNER_TEMP/tarballs")
+            echo "::endgroup::"
+          done
+          ls -la "$RUNNER_TEMP/tarballs"
+
+      # Run from $RUNNER_TEMP, not the checkout: npm will not start inside a
+      # workspace that pins pnpm via devEngines.
+      #
+      # --provenance is opt-in because npm can only attest a build from a public
+      # repository; turn it on once this one is public.
+      - name: Publish
+        working-directory: ${{ runner.temp }}
+        run: |
+          flags="--access public"
+          if [ "${{ inputs.dry-run }}" = "true" ]; then flags="$flags --dry-run"; fi
+          if [ "${{ inputs.provenance }}" = "true" ]; then flags="$flags --provenance"; fi
+          echo "npm publish $flags"
+
+          for tarball in tarballs/*.tgz; do
+            echo "::group::$tarball"
+            npm publish "$tarball" $flags
+            echo "::endgroup::"
+          done
 
       # `pnpm list` does not report the private flag, so read the manifests -
       # otherwise the summary advertises the apps and the backend as releases.
@@ -86,7 +116,8 @@ jobs:
             echo '| --- | --- |'
             node -e '
               const fs = require("fs");
-              for (const file of fs.globSync("{packages,apps,services}/*/package.json")) {
+              const files = fs.globSync(["packages/*/package.json", "apps/*/package.json", "services/*/package.json"]);
+              for (const file of files.sort()) {
                 const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
                 if (!pkg.private) console.log(`| ${pkg.name} | ${pkg.version} |`);
               }'

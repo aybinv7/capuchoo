@@ -18,24 +18,45 @@ Four packages publish to npm. The apps and the backend do not - they are `privat
    first time and read the log.
 3. Run it again with `dry-run` unchecked.
 
-`pnpm publish -r` is idempotent: it skips any package whose version already exists on the registry.
-Running the workflow twice publishes nothing the second time, and a release that only bumped one
-package touches only that package. Nothing writes back to the repository, so no bot commit races a
+`npm publish` refuses a version that already exists, so a run only ships the packages you actually
+bumped and re-running is safe. Nothing writes back to the repository, so no bot commit races a
 developer push.
 
 This replaced `release-cli.yml`, which handled only the CLI and was triggered by a `cli-v*` tag. Two
 release paths over one workspace is how they drift - the same lesson as the two parallel
 app-management APIs in [BACKEND-AUDIT.md](./BACKEND-AUDIT.md).
 
-## Prerequisites, once
+## Trusted publishing, and why the first release is manual
 
-- **The `capucho` npm organisation.** `@capucho/*` is a scoped name and the scope has to be owned
-  before anything can be published under it. Free for public packages.
-- **An `NPM_TOKEN` repository secret.** Use an automation or granular token: those bypass 2FA, which
-  an interactive login cannot do from CI. Never a personal login token pasted into a terminal.
+CI authenticates by **trusted publishing**: the workflow exchanges a short-lived GitHub OIDC token
+for a publish credential scoped to this repository and this workflow file. There is no `NPM_TOKEN`
+anywhere - nothing to leak, nothing to rotate, and it satisfies the account's 2FA requirement, which
+a CI job cannot do interactively.
 
-Provenance is a workflow input, defaulting off, because npm requires a public source repository to
-attest a build. Turn it on when this repository goes public.
+The catch: a trusted publisher is configured **per package** in that package's settings on
+npmjs.com, which requires the package to exist. So version one of each package is published by hand,
+once:
+
+```sh
+# from the workspace root, after `npm login` (run that from outside this
+# directory - see the devEngines note below)
+pnpm publish -r --access public --otp=<code-from-your-authenticator>
+```
+
+Then, for each of the four packages on npmjs.com: **Settings > Trusted publisher**, GitHub Actions,
+repository `aybinv7/capucho`, workflow `release.yml`. After that every release runs from CI and the
+manual path is never needed again.
+
+## Two traps worth knowing
+
+**npm will not run inside this workspace.** The root `package.json` declares
+`devEngines.packageManager: pnpm`, so any `npm` command below it fails with `EBADDEVENGINES` -
+including `npm login` and `npm publish`. Run `npm login` from your home directory, and note that the
+workflow publishes from `$RUNNER_TEMP` for exactly this reason.
+
+**npm cannot resolve `catalog:` or `workspace:*`.** pnpm rewrites both into concrete ranges in the
+published manifest, which is why the workflow packs with pnpm and publishes the resulting tarball
+with npm rather than using either tool for both halves.
 
 ## What the workflow checks first
 
