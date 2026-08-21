@@ -17,9 +17,9 @@ export default class AuthLogout extends BaseCommand {
       this.log(chalk.green("Signed out. The stored API key has been removed."));
     }
 
-    if (process.env.CAPUCHO_API_KEY) {
+    if (process.env.CAPUCHOO_API_KEY) {
       this.log(
-        chalk.yellow("! CAPUCHO_API_KEY is set in this environment and still takes precedence."),
+        chalk.yellow("! CAPUCHOO_API_KEY is set in this environment and still takes precedence."),
       );
     }
   }

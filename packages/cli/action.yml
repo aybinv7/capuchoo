@@ -43,8 +43,8 @@ runs:
       run: |
         set -euo pipefail
 
-        if [ -z "${CAPUCHO_ENDPOINT:-}" ] || [ -z "${CAPUCHO_API_KEY:-}" ]; then
-          echo "::error::CAPUCHO_ENDPOINT and CAPUCHO_API_KEY must be passed as env to this step."
+        if [ -z "${CAPUCHOO_ENDPOINT:-}" ] || [ -z "${CAPUCHOO_API_KEY:-}" ]; then
+          echo "::error::CAPUCHOO_ENDPOINT and CAPUCHOO_API_KEY must be passed as env to this step."
           exit 1
         fi
 

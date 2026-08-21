@@ -1,6 +1,6 @@
 import { KeyboardResize } from "@capacitor/keyboard";
 import type { CapacitorConfig } from "@capacitor/cli";
-import { capuchoUpdaterConfig } from "@capuchoo/updater/capacitor";
+import { capuchooUpdaterConfig } from "@capuchoo/updater/capacitor";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
@@ -79,7 +79,7 @@ const config: CapacitorConfig = {
     // schedule at the same time as the UI was managing them. It also allowed an
     // empty updateUrl, which disables update checks silently. The helper uses
     // "onlyDownload" and refuses to build a config with no URL.
-    CapacitorUpdater: capuchoUpdaterConfig({
+    CapacitorUpdater: capuchooUpdaterConfig({
       apiUrl: required("VITE_UPDATE_API_URL"),
       channel: process.env.VITE_UPDATE_CHANNEL ?? "staging",
       version: packageJson.version,

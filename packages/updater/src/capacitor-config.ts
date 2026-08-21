@@ -55,14 +55,14 @@ export interface CapacitorUpdaterPluginConfig {
   allowModifyUrl: boolean;
 }
 
-export function capuchoUpdaterConfig(options: UpdaterPluginOptions): CapacitorUpdaterPluginConfig {
+export function capuchooUpdaterConfig(options: UpdaterPluginOptions): CapacitorUpdaterPluginConfig {
   const apiUrl = options.apiUrl.replace(/\/+$/, "");
 
   if (!apiUrl) {
     // The plugin accepts an empty updateUrl and then silently never checks for
     // updates, which is the worst possible outcome. Fail the build instead.
     throw new Error(
-      "capuchoUpdaterConfig: apiUrl is empty. Set VITE_UPDATE_API_URL for this " +
+      "capuchooUpdaterConfig: apiUrl is empty. Set VITE_UPDATE_API_URL for this " +
         "flavour before building, otherwise the app ships with updates disabled.",
     );
   }

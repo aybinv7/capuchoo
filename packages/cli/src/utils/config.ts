@@ -95,12 +95,12 @@ export function updateGlobalConfig(patch: Partial<GlobalConfig>): GlobalConfig {
  * Resolves credentials.
  *
  * Environment variables win, and are never written to disk. That is what makes
- * a CI run safe: `CAPUCHO_API_KEY` lives in the job for its lifetime and leaves
+ * a CI run safe: `CAPUCHOO_API_KEY` lives in the job for its lifetime and leaves
  * nothing behind on the runner.
  */
 export function resolveCredentials(): Credentials | null {
-  const envEndpoint = process.env.CAPUCHO_ENDPOINT;
-  const envKey = process.env.CAPUCHO_API_KEY;
+  const envEndpoint = process.env.CAPUCHOO_ENDPOINT;
+  const envKey = process.env.CAPUCHOO_API_KEY;
 
   if (envEndpoint && envKey) {
     return {

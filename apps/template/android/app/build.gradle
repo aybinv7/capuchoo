@@ -24,16 +24,16 @@ android {
     // now checks the artefact for a signature and fails the deploy rather than
     // publishing one, but the real fix is having a signing config at all.
     //
-    // Set CAPUCHO_KEYSTORE_FILE (relative to android/), CAPUCHO_KEYSTORE_PASSWORD,
-    // CAPUCHO_KEY_ALIAS and CAPUCHO_KEY_PASSWORD.
+    // Set CAPUCHOO_KEYSTORE_FILE (relative to android/), CAPUCHOO_KEYSTORE_PASSWORD,
+    // CAPUCHOO_KEY_ALIAS and CAPUCHOO_KEY_PASSWORD.
     signingConfigs {
         release {
-            def keystoreFile = System.getenv("CAPUCHO_KEYSTORE_FILE")
+            def keystoreFile = System.getenv("CAPUCHOO_KEYSTORE_FILE")
             if (keystoreFile) {
                 storeFile file("../${keystoreFile}")
-                storePassword System.getenv("CAPUCHO_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("CAPUCHO_KEY_ALIAS")
-                keyPassword System.getenv("CAPUCHO_KEY_PASSWORD")
+                storePassword System.getenv("CAPUCHOO_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CAPUCHOO_KEY_ALIAS")
+                keyPassword System.getenv("CAPUCHOO_KEY_PASSWORD")
             }
         }
     }
@@ -46,7 +46,7 @@ android {
             // Only attach the signing config when a keystore was actually
             // provided. Attaching it unconditionally makes Gradle fail the
             // build for a developer who just wants an unsigned APK to inspect.
-            if (System.getenv("CAPUCHO_KEYSTORE_FILE")) {
+            if (System.getenv("CAPUCHOO_KEYSTORE_FILE")) {
                 signingConfig signingConfigs.release
             }
         }

@@ -70,7 +70,7 @@ export default class AuthWhoami extends BaseCommand {
     this.log(
       `  ${chalk.bold("source")}    ${
         credentials.source === "environment"
-          ? "CAPUCHO_ENDPOINT / CAPUCHO_API_KEY"
+          ? "CAPUCHOO_ENDPOINT / CAPUCHOO_API_KEY"
           : "~/.capuchoo/config.json"
       }`,
     );

@@ -115,7 +115,7 @@ deploy. Render's own auto-deploy on push to `main` is what ships the two service
 and a successful deploy can coexist - CI is a signal, not a gate.
 
 `deploy-app.yml` is `workflow_dispatch` only and ships a _mobile app_, not these services. It needs
-six repository secrets before it can run: `CAPUCHO_ENDPOINT`, `CAPUCHO_API_KEY`,
+six repository secrets before it can run: `CAPUCHOO_ENDPOINT`, `CAPUCHOO_API_KEY`,
 `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
 
 `release.yml` publishes the four packages to npm through trusted publishing - see

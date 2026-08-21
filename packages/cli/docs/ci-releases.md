@@ -7,8 +7,8 @@ activation and rollback. Neither reaches into the other.
 
 Set these as repository or environment secrets:
 
-- `CAPUCHO_ENDPOINT` - the backend base URL.
-- `CAPUCHO_API_KEY` - a key scoped to the target application only.
+- `CAPUCHOO_ENDPOINT` - the backend base URL.
+- `CAPUCHOO_API_KEY` - a key scoped to the target application only.
 
 The CLI prefers them over `~/.capuchoo/config.json` whenever both are present, and never writes them
 to disk. `capuchoo config list` reports which source was used without printing the key, so its
@@ -59,8 +59,8 @@ For an application in its own repository, use the composite action:
     cli-version: 0.2.0 # pin this in production
     release-notes: Presalio v20.0.1
   env:
-    CAPUCHO_ENDPOINT: ${{ secrets.CAPUCHO_ENDPOINT }}
-    CAPUCHO_API_KEY: ${{ secrets.CAPUCHO_API_KEY }}
+    CAPUCHOO_ENDPOINT: ${{ secrets.CAPUCHOO_ENDPOINT }}
+    CAPUCHOO_API_KEY: ${{ secrets.CAPUCHOO_API_KEY }}
 ```
 
 The action runs the **published** CLI via `npx`, so consumers do not need this repository's
@@ -68,20 +68,20 @@ lockfile, Node version or toolchain. The previous version ran `pnpm install && p
 the action directory on every invocation.
 
 Point production deploys at a protected GitHub environment so they need an approval, and scope its
-`CAPUCHO_API_KEY` to that app.
+`CAPUCHOO_API_KEY` to that app.
 
 ## Native builds
 
 `deploy native` refuses to publish an unsigned release APK - Android will not install one. Provide
 signing material through the environment:
 
-- `CAPUCHO_KEYSTORE_FILE` (relative to `android/`)
-- `CAPUCHO_KEYSTORE_PASSWORD`
-- `CAPUCHO_KEY_ALIAS`
-- `CAPUCHO_KEY_PASSWORD`
+- `CAPUCHOO_KEYSTORE_FILE` (relative to `android/`)
+- `CAPUCHOO_KEYSTORE_PASSWORD`
+- `CAPUCHOO_KEY_ALIAS`
+- `CAPUCHOO_KEY_PASSWORD`
 
-`android/app/build.gradle` attaches its release `signingConfig` only when `CAPUCHO_KEYSTORE_FILE` is
-set, so a developer can still build an unsigned APK locally to inspect it.
+`android/app/build.gradle` attaches its release `signingConfig` only when `CAPUCHOO_KEYSTORE_FILE`
+is set, so a developer can still build an unsigned APK locally to inspect it.
 
 Use `--type debug` when you do not need a signed artefact, or `--allow-unsigned` if signing happens
 in a later pipeline stage. The second one has to be asked for explicitly.

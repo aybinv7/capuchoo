@@ -29,14 +29,14 @@ does not hear it within `appReadyTimeout` (10 s), it concludes the bundle crashe
 the previous one — so gating this call behind a condition, or awaiting a network request before it,
 reverts working updates. It is not a gate on auto-update.
 
-### 2. Configure the plugin through `capuchoUpdaterConfig()`
+### 2. Configure the plugin through `capuchooUpdaterConfig()`
 
 ```ts
 // capacitor.config.ts
-import { capuchoUpdaterConfig } from "@capuchoo/updater/capacitor";
+import { capuchooUpdaterConfig } from "@capuchoo/updater/capacitor";
 
 plugins: {
-  CapacitorUpdater: capuchoUpdaterConfig({
+  CapacitorUpdater: capuchooUpdaterConfig({
     apiUrl: process.env.VITE_UPDATE_API_URL,
     channel: process.env.VITE_UPDATE_CHANNEL,
   }),

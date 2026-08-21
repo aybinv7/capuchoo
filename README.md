@@ -51,7 +51,7 @@ Useful flags:
 - `-v patch|minor|major` bumps the app version first.
 - `-y` accepts every prompt, for CI.
 
-In CI, set `CAPUCHO_ENDPOINT` and `CAPUCHO_API_KEY`. They take precedence over stored credentials
+In CI, set `CAPUCHOO_ENDPOINT` and `CAPUCHOO_API_KEY`. They take precedence over stored credentials
 and are never written to disk.
 
 ### What a deploy actually does
@@ -81,10 +81,10 @@ void notifyAppReady();
 
 ```ts
 // capacitor.config.ts
-import { capuchoUpdaterConfig } from "@capuchoo/updater/capacitor";
+import { capuchooUpdaterConfig } from "@capuchoo/updater/capacitor";
 
 plugins: {
-  CapacitorUpdater: capuchoUpdaterConfig({
+  CapacitorUpdater: capuchooUpdaterConfig({
     apiUrl: process.env.VITE_UPDATE_API_URL!,
     channel: process.env.VITE_UPDATE_CHANNEL ?? "prod",
     version: packageJson.version,
@@ -104,6 +104,8 @@ whether it can be dismissed - so each app writes only its own markup.
 
 ## Documentation
 
+- [docs/ADDING-AN-APP.md](./docs/ADDING-AN-APP.md) - putting an existing app onto Capuchoo, end to
+  end.
 - [docs/MONOREPO.md](./docs/MONOREPO.md) - layout, toolchain, adding a package, releasing.
 - [docs/MONOREPO.md](./docs/MONOREPO.md) - layout, toolchain, the invariants that bite, and the
   known gaps.

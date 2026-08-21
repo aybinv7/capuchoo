@@ -43,7 +43,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Scope CAPUCHO_API_KEY to a protected environment so production needs a
+    # Scope CAPUCHOO_API_KEY to a protected environment so production needs a
     # human approval.
     environment: ${{ inputs.channel }}
     steps:
@@ -82,13 +82,13 @@ jobs:
       - name: Deploy
         working-directory: ${{ inputs.app }}
         env:
-          CAPUCHO_ENDPOINT: ${{ secrets.CAPUCHO_ENDPOINT }}
-          CAPUCHO_API_KEY: ${{ secrets.CAPUCHO_API_KEY }}
+          CAPUCHOO_ENDPOINT: ${{ secrets.CAPUCHOO_ENDPOINT }}
+          CAPUCHOO_API_KEY: ${{ secrets.CAPUCHOO_API_KEY }}
           # Consumed by the release signingConfig in android/app/build.gradle.
-          CAPUCHO_KEYSTORE_FILE: release.keystore
-          CAPUCHO_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          CAPUCHO_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          CAPUCHO_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          CAPUCHOO_KEYSTORE_FILE: release.keystore
+          CAPUCHOO_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          CAPUCHOO_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          CAPUCHOO_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           node "$GITHUB_WORKSPACE/packages/cli/bin/run.js" deploy "${{ inputs.type }}" \
             --channel "${{ inputs.channel }}" \

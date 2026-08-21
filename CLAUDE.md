@@ -43,7 +43,8 @@ Capuchoo delivers over-the-air and native updates to Capacitor applications. Rea
 rules that are answers to specific live bugs, and its "Known gaps" for what is deliberately
 unfinished. [docs/DEPLOY.md](./docs/DEPLOY.md) covers hosting the backend and dashboard,
 [docs/SUPABASE-KEYS.md](./docs/SUPABASE-KEYS.md) which Supabase key belongs where, and
-[docs/RELEASING.md](./docs/RELEASING.md) how the packages reach npm.
+[docs/RELEASING.md](./docs/RELEASING.md) how the packages reach npm, and
+[docs/ADDING-AN-APP.md](./docs/ADDING-AN-APP.md) what onboarding an app involves.
 
 ## Boundaries that matter
 

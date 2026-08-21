@@ -258,7 +258,7 @@ export default class Doctor extends BaseCommand {
 
     if (capacitorConfig) {
       const config = fs.readFileSync(capacitorConfig, "utf8");
-      if (!config.includes("capuchooUpdaterConfig") && !config.includes("capuchoUpdaterConfig")) {
+      if (!config.includes("capuchooUpdaterConfig") && !config.includes("capuchooUpdaterConfig")) {
         findings.push({
           level: "warn",
           what: `${path.basename(capacitorConfig)} does not use capuchooUpdaterConfig()`,
