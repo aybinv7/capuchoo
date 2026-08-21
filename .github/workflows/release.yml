@@ -29,7 +29,7 @@ on:
         type: boolean
         default: true
       provenance:
-        description: "Attach npm provenance (requires a public repository)"
+        description: "Attach npm provenance - only works once this repository is public"
         type: boolean
         default: false
 
@@ -95,8 +95,16 @@ jobs:
         run: |
           flags="--access public"
           if [ "${{ inputs.dry-run }}" = "true" ]; then flags="$flags --dry-run"; fi
-          if [ "${{ inputs.provenance }}" = "true" ]; then flags="$flags --provenance"; fi
-          echo "npm publish $flags"
+
+          # Under trusted publishing npm attaches provenance *by default*, and
+          # generating it needs a public source repository - so on a private one
+          # the publish fails unless it is turned off explicitly.
+          if [ "${{ inputs.provenance }}" = "true" ]; then
+            flags="$flags --provenance"
+          else
+            export NPM_CONFIG_PROVENANCE=false
+          fi
+          echo "npm publish $flags (provenance=${{ inputs.provenance }})"
 
           for tarball in tarballs/*.tgz; do
             echo "::group::$tarball"
