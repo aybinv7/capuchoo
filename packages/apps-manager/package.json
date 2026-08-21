@@ -7,7 +7,7 @@
     "native",
     "plugin"
   ],
-  "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/apps-manager",
+  "homepage": "https://github.com/aybinv7/capuchoo/tree/main/packages/apps-manager",
   "bugs": {
     "url": "https://github.com/inventor7/@capuchoo/apps-manager/issues"
   },
@@ -15,7 +15,7 @@
   "author": "aybinv7",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aybinv7/capucho.git",
+    "url": "git+https://github.com/aybinv7/capuchoo.git",
     "directory": "packages/apps-manager"
   },
   "files": [

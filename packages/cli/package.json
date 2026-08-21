@@ -9,11 +9,11 @@
     "oclif",
     "ota"
   ],
-  "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/cli",
-  "bugs": "https://github.com/aybinv7/capucho/issues",
+  "homepage": "https://github.com/aybinv7/capuchoo/tree/main/packages/cli",
+  "bugs": "https://github.com/aybinv7/capuchoo/issues",
   "license": "MIT",
   "author": "aybinv7",
-  "repository": "aybinv7/capucho",
+  "repository": "aybinv7/capuchoo",
   "bin": {
     "capuchoo": "./bin/run.js"
   },

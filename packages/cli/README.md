@@ -77,7 +77,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/login.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/login.ts)_
+[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -92,7 +92,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/logout.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/logout.ts)_
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -110,7 +110,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/whoami.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/auth/whoami.ts)_
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/auth/whoami.ts)_
 
 ## `capuchoo channel list`
 
@@ -128,7 +128,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/channel/list.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/channel/list.ts)_
+[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/channel/list.ts)_
 
 ## `capuchoo config list`
 
@@ -146,7 +146,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/config/list.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/config/list.ts)_
+[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -170,7 +170,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/config/set.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/config/set.ts)_
+[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -212,7 +212,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/native.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/deploy/native.ts)_
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -249,7 +249,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/ota.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/deploy/ota.ts)_
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/deploy/ota.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -294,7 +294,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/init.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/init.ts)_
+[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/init.ts)_
 
 ## `capuchoo version bump TYPE`
 
@@ -321,7 +321,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/bump.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/version/bump.ts)_
+[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -347,5 +347,5 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/sync.ts](https://github.com/aybinv7/capucho/blob/v0.2.0/src/commands/version/sync.ts)_
+[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->

@@ -51,7 +51,7 @@ pipeline to the CLI, so a CI deploy and a local deploy run the same code.
 For an application in its own repository, use the composite action:
 
 ```yaml
-- uses: aybinv7/capucho@main # the action lives in packages/cli
+- uses: aybinv7/capuchoo@main # the action lives in packages/cli
   with:
     project-directory: apps/presalio
     channel: staging

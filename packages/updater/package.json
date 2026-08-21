@@ -9,12 +9,12 @@
     "ota",
     "vue"
   ],
-  "homepage": "https://github.com/aybinv7/capucho/tree/main/packages/updater",
+  "homepage": "https://github.com/aybinv7/capuchoo/tree/main/packages/updater",
   "license": "MIT",
   "author": "aybinv7",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aybinv7/capucho.git",
+    "url": "git+https://github.com/aybinv7/capuchoo.git",
     "directory": "packages/updater"
   },
   "files": [

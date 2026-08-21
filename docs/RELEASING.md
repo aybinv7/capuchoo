@@ -44,7 +44,7 @@ pnpm publish -r --access public --otp=<code-from-your-authenticator>
 ```
 
 Then, for each of the four packages on npmjs.com: **Settings > Trusted publisher**, GitHub Actions,
-repository `aybinv7/capucho`, workflow `release.yml`. After that every release runs from CI and the
+repository `aybinv7/capuchoo`, workflow `release.yml`. After that every release runs from CI and the
 manual path is never needed again.
 
 ## Two traps worth knowing
