@@ -15,7 +15,6 @@
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },
-  "packageManager": "pnpm@11.22.0",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -25,5 +24,6 @@
   },
   "engines": {
     "node": ">=22.18.0"
-  }
+  },
+  "packageManager": "pnpm@11.22.0"
 }
