@@ -56,7 +56,7 @@ jobs:
 
       - run: vp install --frozen-lockfile
 
-      # The app imports @capucho/updater from dist, and the CLI itself is a
+      # The app imports @capuchoo/updater from dist, and the CLI itself is a
       # workspace package, so both have to be built before the deploy runs.
       - run: vp run libs
       - run: vp run -t capucho-cli#build

@@ -3,7 +3,7 @@ import {
   validateProjectConfig,
   type ProjectConfig,
   type ResolvedProjectConfig,
-} from "@capucho/core";
+} from "@capuchoo/core";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

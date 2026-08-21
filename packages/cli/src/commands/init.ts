@@ -9,7 +9,7 @@ import {
   type Environment,
   type FlavourConfig,
   type ProjectConfig,
-} from "@capucho/core";
+} from "@capuchoo/core";
 import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";

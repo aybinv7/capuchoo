@@ -2,7 +2,7 @@ import type { PluginListenerHandle } from "@capacitor/core";
 import { FileTransfer } from "@capacitor/file-transfer";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { Network } from "@capacitor/network";
-import type { ResolvedUpdate } from "@capucho/core";
+import type { ResolvedUpdate } from "@capuchoo/core";
 import { getUpdaterConfig } from "./config.js";
 
 export interface DownloadProgress {

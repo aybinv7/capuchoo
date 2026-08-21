@@ -26,8 +26,8 @@ jobs:
       # Format, lint and type check the whole workspace in one pass.
       - run: vp check
 
-      # `vp run -r` walks the workspace dependency graph, so @capucho/core is
-      # built before @capucho/updater, which is built before the apps.
+      # `vp run -r` walks the workspace dependency graph, so @capuchoo/core is
+      # built before @capuchoo/updater, which is built before the apps.
       - run: vp run -r build
 
       - run: vp run -r test

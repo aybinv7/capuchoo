@@ -1,5 +1,5 @@
 import { confirm, input, select } from "@inquirer/prompts";
-import { bumpVersion, type BumpType, type Environment } from "@capucho/core";
+import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";

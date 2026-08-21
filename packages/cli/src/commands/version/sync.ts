@@ -1,9 +1,9 @@
-import { ENVIRONMENTS, versionEnv, type Environment } from "@capucho/core";
+import { ENVIRONMENTS, versionEnv, type Environment } from "@capuchoo/core";
 import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import { readVersionCodes, resolveFlavour, writeVersionCodes } from "../../pipeline/flavour.js";
 import { readAppVersion, requireProjectConfig } from "../../utils/config.js";
-import { nextVersionCode } from "@capucho/core";
+import { nextVersionCode } from "@capuchoo/core";
 import { BaseCommand } from "../../base-command.js";
 
 export default class VersionSync extends BaseCommand {

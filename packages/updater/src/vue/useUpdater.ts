@@ -1,6 +1,6 @@
 import type { PluginListenerHandle } from "@capacitor/core";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
-import type { ResolvedUpdate } from "@capucho/core";
+import type { ResolvedUpdate } from "@capuchoo/core";
 import { computed, readonly, ref } from "vue";
 import {
   UpdateCheckBlockedError,

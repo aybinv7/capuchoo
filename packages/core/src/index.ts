@@ -1,5 +1,5 @@
 /**
- * @capucho/core - the contract shared by every part of Capucho.
+ * @capuchoo/core - the contract shared by every part of Capucho.
  *
  * Runtime-agnostic and dependency-free on purpose: the CLI imports it in Node,
  * the updater imports it inside a Capacitor WebView, and the backend and

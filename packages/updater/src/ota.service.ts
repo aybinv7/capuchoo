@@ -1,5 +1,5 @@
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
-import type { ResolvedUpdate } from "@capucho/core";
+import type { ResolvedUpdate } from "@capuchoo/core";
 import { isNative } from "./device.js";
 
 /**

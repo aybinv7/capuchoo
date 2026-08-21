@@ -125,11 +125,7 @@ describe("describeEnvironmentMismatch", () => {
   });
 
   it("names the channel, the environment and the bundle id", () => {
-    const message = describeEnvironmentMismatch(
-      "io.capucho.inv.staging",
-      "prod",
-      "production",
-    );
+    const message = describeEnvironmentMismatch("io.capucho.inv.staging", "prod", "production");
     expect(message).toContain("production");
     expect(message).toContain("io.capucho.inv.staging");
   });

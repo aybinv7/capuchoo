@@ -1,5 +1,5 @@
 {
-  "name": "@capucho/core",
+  "name": "@capuchoo/core",
   "version": "0.1.0",
   "description": "Shared contract between the Capucho CLI, backend, dashboard and app runtime",
   "keywords": [

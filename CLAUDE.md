@@ -47,9 +47,9 @@ recorded there. [docs/DEPLOY.md](./docs/DEPLOY.md) covers hosting the backend an
 
 ## Boundaries that matter
 
-- **`@capucho/core` depends on nothing, and must stay that way.** It is imported by the CLI in Node,
-  by the updater inside a WebView, and by the backend and dashboard. A single dependency there leaks
-  into all of them.
+- **`@capuchoo/core` depends on nothing, and must stay that way.** It is imported by the CLI in
+  Node, by the updater inside a WebView, and by the backend and dashboard. A single dependency there
+  leaks into all of them.
 - **The CLI owns the deploy pipeline.** It does not call an application's `package.json` scripts,
   does not assume pnpm, and treats Trapeze, `@capacitor/assets` and `@capacitor/cli` as optional. A
   missing tool is a skip or a substitution with an explanation, never a half-finished deploy.

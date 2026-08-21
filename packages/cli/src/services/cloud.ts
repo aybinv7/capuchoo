@@ -4,7 +4,7 @@ import type {
   CloudOrganization,
   CloudRelease,
   UserProfile,
-} from "@capucho/core";
+} from "@capuchoo/core";
 import { get, post, uploadArtifact, type HttpOptions } from "../utils/http.js";
 
 /**

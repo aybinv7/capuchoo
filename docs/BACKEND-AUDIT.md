@@ -116,7 +116,7 @@ plugin's string. And the `device_channels` insert beside it sent `app_id` and `c
 columns that table does not have.
 
 **Now:** the app UUID is resolved, the device is registered through `deviceService`, and the channel
-binding goes through `linkChannel()`. This endpoint is what `@capucho/updater` calls, so its native
+binding goes through `linkChannel()`. This endpoint is what `@capuchoo/updater` calls, so its native
 telemetry was also landing nowhere.
 
 ## 9. Telemetry could break an update

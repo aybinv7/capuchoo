@@ -4,7 +4,7 @@ import {
   nextVersionCode,
   type BumpType,
   type Environment,
-} from "@capucho/core";
+} from "@capuchoo/core";
 import { Args, Flags } from "@oclif/core";
 import chalk from "chalk";
 import { BaseCommand } from "../../base-command.js";

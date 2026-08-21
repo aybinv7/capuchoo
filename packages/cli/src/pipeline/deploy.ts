@@ -2,7 +2,7 @@ import {
   describeEnvironmentMismatch,
   type Environment,
   type ResolvedProjectConfig,
-} from "@capucho/core";
+} from "@capuchoo/core";
 import fs from "node:fs";
 import path from "node:path";
 import { CommandError, type RunOptions } from "../utils/exec.js";

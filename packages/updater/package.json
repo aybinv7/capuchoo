@@ -1,5 +1,5 @@
 {
-  "name": "@capucho/updater",
+  "name": "@capuchoo/updater",
   "version": "0.1.0",
   "description": "App-side runtime for Capucho OTA and native updates in Capacitor apps",
   "keywords": [
@@ -46,7 +46,7 @@
     "test": "vp test --run"
   },
   "dependencies": {
-    "@capucho/core": "workspace:*"
+    "@capuchoo/core": "workspace:*"
   },
   "devDependencies": {
     "@capacitor/app": "catalog:",

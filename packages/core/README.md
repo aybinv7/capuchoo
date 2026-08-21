@@ -1,15 +1,15 @@
-# @capucho/core
+# @capuchoo/core
 
 The contract shared by every part of [Capucho](https://github.com/aybinv7/capucho): the CLI, the
 app-side runtime, the update server and the dashboard.
 
 **Dependency-free on purpose, and it stays that way.** The CLI imports it in Node,
-`@capucho/updater` imports it inside a Capacitor WebView, and the server imports it in its own
+`@capuchoo/updater` imports it inside a Capacitor WebView, and the server imports it in its own
 process. Nothing here touches the filesystem, the network, or a framework — a single dependency
 would leak into all of them.
 
 ```sh
-npm install @capucho/core
+npm install @capuchoo/core
 ```
 
 ## What it contains
@@ -20,7 +20,7 @@ matters: a channel that does not exist, or a staging build pointed at a producti
 be reported to the user as "you are up to date".
 
 ```ts
-import { resolveUpdate, isBlockingResponse } from "@capucho/core";
+import { resolveUpdate, isBlockingResponse } from "@capuchoo/core";
 
 const resolved = resolveUpdate(response); // native outranks OTA - the server may return both
 if (isBlockingResponse(response)) {
@@ -43,5 +43,5 @@ directory and would bump the wrong one inside a workspace.
 
 ## Stability
 
-Pre-1.0: the surface may change between minor versions. It is published because `@capucho/updater`
+Pre-1.0: the surface may change between minor versions. It is published because `@capuchoo/updater`
 and `capucho-cli` depend on it, not as a general-purpose library.

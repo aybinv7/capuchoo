@@ -6,7 +6,7 @@ import {
   type UpdateCheckResponse,
   type UpdateEvent,
   type UpdateEventPayload,
-} from "@capucho/core";
+} from "@capuchoo/core";
 import { getUpdaterConfig, describeConfigProblems } from "./config.js";
 import { getBundleVersion, getDeviceId, getPlatform, getVersionCode, isNative } from "./device.js";
 

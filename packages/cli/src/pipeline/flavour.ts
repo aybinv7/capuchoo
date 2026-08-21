@@ -6,7 +6,7 @@ import {
   type FlavourConfig,
   type ResolvedProjectConfig,
   type VersionCodes,
-} from "@capucho/core";
+} from "@capuchoo/core";
 import fs from "node:fs";
 import path from "node:path";
 

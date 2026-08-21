@@ -8,8 +8,8 @@ looking for what was wrong with the five separate repositories, read [AUDIT.md](
 ```
 capucho/
 ├── packages/
-│   ├── core/           @capucho/core          contract shared by everything
-│   ├── updater/        @capucho/updater       app-side runtime
+│   ├── core/           @capuchoo/core          contract shared by everything
+│   ├── updater/        @capuchoo/updater       app-side runtime
 │   ├── cli/            capucho-cli            build and publish releases
 │   └── apps-manager/   capucho-apps-manager   Capacitor plugin, device app info
 ├── apps/
@@ -67,7 +67,7 @@ Full docs are vendored at `node_modules/vite-plus/docs`.
 { "dependencies": { "@capacitor/core": "catalog:" } }
 ```
 
-This matters most for Capacitor. `@capucho/updater`, `capucho-apps-manager` and the apps must agree
+This matters most for Capacitor. `@capuchoo/updater`, `capucho-apps-manager` and the apps must agree
 _exactly_, or the native bridge loads two copies of the runtime and plugin calls resolve against the
 wrong one. `catalogMode: prefer` means a package that forgets `catalog:` still lands on the pinned
 version.
@@ -157,13 +157,13 @@ agree, builds, tests, and publishes to npm with provenance. Nothing writes back 
 **An app** - run the `deploy-app` workflow, or `capucho deploy ota` locally. Both take the same path
 through the CLI. Git owns tags and history; Capucho owns channels, activation and rollback.
 
-`@capucho/core` and `@capucho/updater` are not published yet. Apps in this workspace consume them
+`@capuchoo/core` and `@capuchoo/updater` are not published yet. Apps in this workspace consume them
 through `workspace:*`. Publishing them needs the `@capucho` npm scope; until then an external app
 links them by path, as Lowmaro does.
 
 ## Working on an app that depends on a library
 
-The apps import `@capucho/updater` from its `dist`, so build the libraries first:
+The apps import `@capuchoo/updater` from its `dist`, so build the libraries first:
 
 ```sh
 vp run libs
@@ -207,7 +207,7 @@ Lowmaro still links the old CLI:
 ```
 
 Point it at `link:../capucho/capucho/packages/cli` to pick up the rewritten one. Its own updater is
-a copy of the code that became `@capucho/updater`; it can switch to the package when convenient.
+a copy of the code that became `@capuchoo/updater`; it can switch to the package when convenient.
 
 ## Conventions
 

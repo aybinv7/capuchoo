@@ -9,7 +9,7 @@ import {
 } from "../../utils/config.js";
 import { detectToolchain, lookupTools } from "../../pipeline/toolchain.js";
 import { resolveFlavour } from "../../pipeline/flavour.js";
-import { ENVIRONMENTS, normaliseProjectConfig } from "@capucho/core";
+import { ENVIRONMENTS, normaliseProjectConfig } from "@capuchoo/core";
 import { BaseCommand } from "../../base-command.js";
 
 export default class ConfigList extends BaseCommand {

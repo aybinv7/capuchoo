@@ -8,8 +8,8 @@ dashboard to manage it.
 
 | Path                    | Package                | What it does                                                     |
 | ----------------------- | ---------------------- | ---------------------------------------------------------------- |
-| `packages/core`         | `@capucho/core`        | The update contract, shared by every other package. No deps.     |
-| `packages/updater`      | `@capucho/updater`     | App-side runtime: checks, downloads, applies, prompts.           |
+| `packages/core`         | `@capuchoo/core`       | The update contract, shared by every other package. No deps.     |
+| `packages/updater`      | `@capuchoo/updater`    | App-side runtime: checks, downloads, applies, prompts.           |
 | `packages/cli`          | `capucho-cli`          | Builds and publishes OTA and native releases.                    |
 | `packages/apps-manager` | `capucho-apps-manager` | Capacitor plugin for installed-app information on the device.    |
 | `apps/dashboard`        | `@capucho/dashboard`   | Organizations, apps, channels, releases.                         |
@@ -75,13 +75,13 @@ and if not the CLI applies the identity and version itself and tells you what th
 ```ts
 // main.ts - first, before anything that can block.
 // The OTA plugin rolls the bundle back if it does not hear this within 10s.
-import { notifyAppReady } from "@capucho/updater";
+import { notifyAppReady } from "@capuchoo/updater";
 void notifyAppReady();
 ```
 
 ```ts
 // capacitor.config.ts
-import { capuchoUpdaterConfig } from "@capucho/updater/capacitor";
+import { capuchoUpdaterConfig } from "@capuchoo/updater/capacitor";
 
 plugins: {
   CapacitorUpdater: capuchoUpdaterConfig({
@@ -94,7 +94,7 @@ plugins: {
 
 ```ts
 // wherever Capacitor is bootstrapped
-import { useUpdater } from "@capucho/updater/vue";
+import { useUpdater } from "@capuchoo/updater/vue";
 await useUpdater().init();
 ```
 

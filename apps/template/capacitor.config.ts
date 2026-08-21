@@ -1,6 +1,6 @@
 import { KeyboardResize } from "@capacitor/keyboard";
 import type { CapacitorConfig } from "@capacitor/cli";
-import { capuchoUpdaterConfig } from "@capucho/updater/capacitor";
+import { capuchoUpdaterConfig } from "@capuchoo/updater/capacitor";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
@@ -72,7 +72,7 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
 
-    // Built by @capucho/updater rather than spelled out here.
+    // Built by @capuchoo/updater rather than spelled out here.
     //
     // The previous block set `autoUpdate: true` while the app also called
     // download() and set() itself, so the plugin applied bundles on its own

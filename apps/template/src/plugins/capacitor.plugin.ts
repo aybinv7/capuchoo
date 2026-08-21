@@ -1,7 +1,7 @@
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import type { PluginListenerHandle } from "@capacitor/core";
-import { useUpdater } from "@capucho/updater/vue";
+import { useUpdater } from "@capuchoo/updater/vue";
 import type Framework7 from "framework7";
 
 /**

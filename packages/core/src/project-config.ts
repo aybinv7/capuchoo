@@ -195,10 +195,7 @@ export function environmentFromAppId(appId: string): Environment {
  * the server and rejected the exact beta-testing setup Lowmaro uses, where all
  * three channels are bound to staging and the app id carries no suffix.
  */
-export function isEnvironmentAllowed(
-  appId: string,
-  channelEnvironment: Environment,
-): boolean {
+export function isEnvironmentAllowed(appId: string, channelEnvironment: Environment): boolean {
   const expected = environmentFromAppId(appId);
   if (expected === channelEnvironment) return true;
   return expected === "prod" && channelEnvironment === "staging";

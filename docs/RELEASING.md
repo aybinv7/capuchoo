@@ -5,8 +5,8 @@ Four packages publish to npm. The apps and the backend do not - they are `privat
 
 | Package                | What it is                                        |
 | ---------------------- | ------------------------------------------------- |
-| `@capucho/core`        | The shared contract. Dependency-free.             |
-| `@capucho/updater`     | App-side runtime.                                 |
+| `@capuchoo/core`       | The shared contract. Dependency-free.             |
+| `@capuchoo/updater`    | App-side runtime.                                 |
 | `capucho-cli`          | The deploy pipeline.                              |
 | `capucho-apps-manager` | Capacitor plugin: lists apps installed on device. |
 
@@ -51,7 +51,7 @@ leaving the repository unchanged:
 
 ```
 "@capacitor/core": "catalog:"    ->  "^8.0.0"
-"@capucho/core": "workspace:*"   ->  "0.1.0"
+"@capuchoo/core": "workspace:*"   ->  "0.1.0"
 ```
 
 Verify before a release with `pnpm pack` in the package directory, then read the `package.json`
@@ -65,8 +65,8 @@ Applications like Lowmaro should depend on the published versions:
 ```json
 {
   "dependencies": {
-    "@capucho/core": "^0.1.0",
-    "@capucho/updater": "^0.1.0"
+    "@capuchoo/core": "^0.1.0",
+    "@capuchoo/updater": "^0.1.0"
   },
   "devDependencies": {
     "capucho-cli": "^0.2.0"
@@ -81,5 +81,5 @@ or an override you do not commit.
 
 ## Versions are pre-1.0
 
-`@capucho/core` and `@capucho/updater` are `0.1.x`: the surface may change between minor versions.
+`@capuchoo/core` and `@capuchoo/updater` are `0.1.x`: the surface may change between minor versions.
 They are published because the CLI and the apps need them, not as general-purpose libraries.

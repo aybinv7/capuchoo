@@ -12,8 +12,8 @@ import { defineConfig } from "vite-plus";
  * package resolution to pnpm and layers the task runner on top.
  *
  * Ordering note: `vp run -r <task>` walks the workspace dependency graph built
- * from `package.json` dependencies. Because `@capucho/updater` depends on
- * `@capucho/core`, and the apps depend on both, `vp run -r build` already
+ * from `package.json` dependencies. Because `@capuchoo/updater` depends on
+ * `@capuchoo/core`, and the apps depend on both, `vp run -r build` already
  * builds in the correct order without a hand-written task graph.
  */
 export default defineConfig({

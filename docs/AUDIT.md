@@ -63,7 +63,7 @@ updateUrl: process.env.VITE_UPDATE_API_URL
 An empty URL does not fail. The plugin simply never checks for updates - a build shipped with
 updates silently disabled.
 
-**Now:** `capuchoUpdaterConfig()` in `@capucho/updater/capacitor` returns
+**Now:** `capuchoUpdaterConfig()` in `@capuchoo/updater/capacitor` returns
 `autoUpdate: "onlyDownload"` and throws if `apiUrl` is empty. Nine tests pin the behaviour.
 
 ## 3. `deploy native --type release` published unsigned APKs
@@ -101,7 +101,7 @@ version_name: "builtin", // Standard for checking against baseline
 so the server always compared against `0.0.0` and re-served bundles the device already had.
 
 **Now:** one request to `/api/update`, with the real current bundle version. `resolveUpdate()` in
-`@capucho/core` narrows the response, and native outranks OTA because the server can legitimately
+`@capuchoo/core` narrows the response, and native outranks OTA because the server can legitimately
 return both.
 
 ## 5. "Channel not found" was shown to users as "you are up to date"
@@ -294,7 +294,7 @@ CI, racing developer pushes.
 
 - `npm version <type> --no-git-tag-version` for version bumps: in a workspace npm resolves the
   nearest `package.json` from the process directory, so running a deploy from the monorepo root
-  bumped the root package instead of the app. Replaced with `bumpVersion` in `@capucho/core` plus a
+  bumped the root package instead of the app. Replaced with `bumpVersion` in `@capuchoo/core` plus a
   targeted file write that preserves the rest of the file byte-for-byte.
 - `exec` with a concatenated shell string: any path containing a space produced the wrong command,
   and output was buffered in memory - a Gradle build exceeds the default 1 MB `maxBuffer` and used

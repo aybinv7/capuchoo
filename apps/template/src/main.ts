@@ -1,4 +1,4 @@
-import { notifyAppReady } from "@capucho/updater";
+import { notifyAppReady } from "@capuchoo/updater";
 import Framework7 from "framework7/lite-bundle";
 import Framework7Vue from "framework7-vue";
 

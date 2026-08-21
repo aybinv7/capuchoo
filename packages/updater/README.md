@@ -1,11 +1,11 @@
-# @capucho/updater
+# @capuchoo/updater
 
 The app-side runtime for [Capucho](https://github.com/aybinv7/capucho): it asks your update server
 what to do, downloads OTA bundles or native binaries, and drives the install. Built on
 `@capgo/capacitor-updater`.
 
 ```sh
-npm install @capucho/updater @capucho/core
+npm install @capuchoo/updater @capuchoo/core
 ```
 
 Peers you will already have in a Capacitor app: `@capacitor/core`, `@capacitor/app`,
@@ -19,7 +19,7 @@ needed for the `/vue` entry point.
 
 ```ts
 // src/main.ts
-import { notifyAppReady } from "@capucho/updater";
+import { notifyAppReady } from "@capuchoo/updater";
 
 void notifyAppReady();
 ```
@@ -33,7 +33,7 @@ reverts working updates. It is not a gate on auto-update.
 
 ```ts
 // capacitor.config.ts
-import { capuchoUpdaterConfig } from "@capucho/updater/capacitor";
+import { capuchoUpdaterConfig } from "@capuchoo/updater/capacitor";
 
 plugins: {
   CapacitorUpdater: capuchoUpdaterConfig({
@@ -52,7 +52,7 @@ that never checks.
 ### 3. Drive it from your UI
 
 ```ts
-import { useUpdater } from "@capucho/updater/vue";
+import { useUpdater } from "@capuchoo/updater/vue";
 
 const updater = useUpdater();
 await updater.init();

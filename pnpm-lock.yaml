@@ -568,10 +568,10 @@ importers:
       '@capgo/capacitor-updater':
         specifier: 'catalog:'
         version: 8.51.13(@capacitor/core@8.5.0)
-      '@capucho/core':
+      '@capuchoo/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@capucho/updater':
+      '@capuchoo/updater':
         specifier: workspace:*
         version: link:../../packages/updater
       '@openreplay/tracker':
@@ -788,7 +788,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@capucho/core':
+      '@capuchoo/core':
         specifier: workspace:*
         version: link:../core
       '@inquirer/prompts':
@@ -831,7 +831,7 @@ importers:
 
   packages/updater:
     dependencies:
-      '@capucho/core':
+      '@capuchoo/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -6291,6 +6291,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'

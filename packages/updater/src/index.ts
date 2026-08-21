@@ -1,18 +1,18 @@
 /**
- * @capucho/updater - the app-side runtime for Capucho updates.
+ * @capuchoo/updater - the app-side runtime for Capucho updates.
  *
  * Framework-agnostic entry point. Vue applications should import
- * `@capucho/updater/vue` for the composable, and `@capucho/updater/capacitor`
+ * `@capuchoo/updater/vue` for the composable, and `@capuchoo/updater/capacitor`
  * from `capacitor.config.ts` for the plugin block.
  *
  * Minimum wiring for a Capacitor app:
  *
  *   // main.ts - before anything else, or the OTA plugin rolls back
- *   import { notifyAppReady } from "@capucho/updater";
+ *   import { notifyAppReady } from "@capuchoo/updater";
  *   void notifyAppReady();
  *
  *   // capacitor bootstrap
- *   import { useUpdater } from "@capucho/updater/vue";
+ *   import { useUpdater } from "@capuchoo/updater/vue";
  *   await useUpdater().init();
  */
 
@@ -38,7 +38,7 @@ export { openNativeInstaller } from "./install.service.js";
 
 export { applyOtaUpdate, discardBundle, getCurrentBundle, notifyAppReady } from "./ota.service.js";
 
-// Re-exported so an app does not need a direct @capucho/core dependency just
+// Re-exported so an app does not need a direct @capuchoo/core dependency just
 // to type an update.
 export type {
   Environment,
@@ -47,4 +47,4 @@ export type {
   UpdateCheckResponse,
   UpdateEvent,
   UpdateKind,
-} from "@capucho/core";
+} from "@capuchoo/core";

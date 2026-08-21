@@ -91,12 +91,12 @@
 <script setup lang="ts">
 import { App } from "@capacitor/app";
 import type { PluginListenerHandle } from "@capacitor/core";
-import { useUpdatePrompt } from "@capucho/updater/vue";
+import { useUpdatePrompt } from "@capuchoo/updater/vue";
 import { onBeforeUnmount, onMounted } from "vue";
 
 /**
  * All of the state and the decisions come from `useUpdatePrompt` in
- * @capucho/updater. This file is only the Framework7 markup, which is why the
+ * @capuchoo/updater. This file is only the Framework7 markup, which is why the
  * package does not try to ship a component: the next app's design system is
  * not this one.
  */
