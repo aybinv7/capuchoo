@@ -9,7 +9,11 @@ package with a filter**. Setting Render's root directory to `services/back` hide
 [render.yaml](../render.yaml) declares both services. Applying a Blueprint creates new services, so
 the two that already exist are configured by hand with the same values, listed below.
 
-## capucho-back — web service, Node
+The services are named `capuchoo-back` and `capuchoo-front`. **Renaming a Render service changes its
+hostname**, and that hostname is compiled into every app already installed on a device - see
+"Renaming the backend service" below before you do it.
+
+## capuchoo-back — web service, Node
 
 | Field             | Value                                                                                          |
 | ----------------- | ---------------------------------------------------------------------------------------------- |
@@ -32,7 +36,7 @@ ENVIRONMENT=prod
 `PORT` is injected by Render and read by `config/index.ts`. `STORAGE_BASE_URL` is not needed -
 nothing in `src/` reads it.
 
-## capucho-front — static site
+## capuchoo-front — static site
 
 | Field             | Value                                                                                           |
 | ----------------- | ----------------------------------------------------------------------------------------------- |
@@ -81,6 +85,32 @@ sequence matters:
 
 Run `scripts/migrations/004_devices.sql` before or with step 2. Without the unique constraints it
 adds, the device upserts have no `ON CONFLICT` target and telemetry still records nothing.
+
+## Renaming the backend service
+
+Renaming `capucho-back` to `capuchoo-back` on Render changes its hostname, and that is not a
+cosmetic change: **the old hostname is compiled into every app already installed on a device.** It
+reaches them through `capacitor.config.ts` at build time and ends up in
+`android/app/src/main/assets/capacitor.config.json` inside the APK.
+
+So a device running the current build asks `capucho-back.onrender.com`. Rename the service and that
+host stops answering - which means the device cannot receive the very update that would tell it
+about the new host. There is no recovery over the air; it needs a new APK, installed by hand or
+through the store.
+
+Two ways to do it safely:
+
+- **Keep the hostname.** Put a custom domain (`api.capuchoo.dev` or similar) in front of the service
+  and point the apps at that. The service can then be renamed freely, forever. This is worth doing
+  before you have users, and it is the reason this document does not simply rename the URL.
+- **Or migrate deliberately.** Stand up the new service alongside the old one, ship an app update
+  pointing at the new hostname, wait until the fleet has taken it (`/dashboard/stats` shows what has
+  checked in), and only then retire the old service.
+
+Until one of those happens, `DEFAULT_ENDPOINT` in `packages/cli/src/commands/auth/login.ts` and the
+`VITE_UPDATE_API_URL` in each flavour's env file deliberately still say
+`capucho-back.onrender.com` - they name a host that exists, not one we would like to exist. Change
+them in the same commit that completes the migration.
 
 ## What CI does, and does not do
 

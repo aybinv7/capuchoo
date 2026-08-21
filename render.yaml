@@ -12,12 +12,12 @@
 # order to apply them in relative to rotating the Supabase keys.
 #
 # Applying this file creates *new* services. The two that exist today
-# (capucho-back, capucho-front) are configured by hand with the same settings -
+# (capuchoo-back, capuchoo-front) are configured by hand with the same settings -
 # docs/DEPLOY.md lists them field by field.
 
 services:
   - type: web
-    name: capucho-back
+    name: capuchoo-back
     runtime: node
     rootDir: .
     # `pnpm --filter` puts the workspace root's node_modules/.bin on PATH, so a
@@ -50,7 +50,7 @@ services:
         value: prod
 
   - type: web
-    name: capucho-front
+    name: capuchoo-front
     runtime: static
     rootDir: .
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter ./apps/dashboard run build

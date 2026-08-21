@@ -7,7 +7,7 @@ import { capuchoUpdaterConfig } from "./capacitor-config.js";
  */
 
 const base = {
-  apiUrl: "https://capucho-back.example",
+  apiUrl: "https://capuchoo-back.example",
   channel: "staging",
   version: "19.0.0",
 };
@@ -25,9 +25,9 @@ describe("capuchoUpdaterConfig", () => {
 
   it("builds the three endpoints the plugin needs", () => {
     const config = capuchoUpdaterConfig(base);
-    expect(config.updateUrl).toBe("https://capucho-back.example/api/update");
-    expect(config.statsUrl).toBe("https://capucho-back.example/api/stats");
-    expect(config.channelUrl).toBe("https://capucho-back.example/api/channel_self");
+    expect(config.updateUrl).toBe("https://capuchoo-back.example/api/update");
+    expect(config.statsUrl).toBe("https://capuchoo-back.example/api/stats");
+    expect(config.channelUrl).toBe("https://capuchoo-back.example/api/channel_self");
   });
 
   it("tolerates a trailing slash on the base URL", () => {
