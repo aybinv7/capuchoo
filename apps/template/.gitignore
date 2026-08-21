@@ -65,6 +65,11 @@ Qwen.md
 # Logs
 .biomelintrc-auto-import.json
 auto-imports.json
-auto-imports.d.ts
-components.d.ts
+
+# auto-imports.d.ts and components.d.ts are NOT ignored, matching apps/dashboard.
+# unplugin-auto-import and unplugin-vue-components write them during `vite build`
+# or `dev`, but tsconfig lists them as type entry points and `vue-tsc` only reads
+# them - so on a clean clone, `vp check` and the template's own build both fail
+# with "Cannot find type definition file" before anything can generate them.
+# Tracking them is what makes a fresh checkout lint and build.
 tsconfig.tsbuildinfo.json
