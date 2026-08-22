@@ -36,16 +36,7 @@ class AppController {
 
       const orgIds = (orgMembers || []).map((o: any) => o.organization_id);
 
-      // 3. Build dynamic query
-      const filters: string[] = [];
-      if (directAppIds.length > 0) {
-        filters.push(`id.in.(${directAppIds.join(",")})`);
-      }
-      if (orgIds.length > 0) {
-        filters.push(`organization_id.in.(${orgIds.join(",")})`);
-      }
-
-      if (filters.length === 0) {
+      if (directAppIds.length === 0 && orgIds.length === 0) {
         res.json([]);
         return;
       }
@@ -65,14 +56,33 @@ class AppController {
         return;
       }
 
-      const { data, error } = await supabaseService
-        .getClient()
-        .from("apps")
-        .select("*")
-        .or(filters.join(","));
+      // 3. Two queries, merged - not one `.or()` filter.
+      //
+      // PostgREST parses `or=(...)` by splitting on commas, so the commas inside
+      // `id.in.(uuid,uuid)` are ambiguous and the filter mis-parses: this endpoint
+      // silently returned a single app no matter how many the user could see,
+      // which made every newly created app look like it had failed to save.
+      // Asking twice and merging cannot be got wrong by a string.
+      const client = supabaseService.getClient();
 
-      if (error) throw error;
-      res.json(data);
+      const [byPermission, byOrganisation] = await Promise.all([
+        directAppIds.length > 0
+          ? client.from("apps").select("*").in("id", directAppIds)
+          : Promise.resolve({ data: [] as any[], error: null }),
+        orgIds.length > 0
+          ? client.from("apps").select("*").in("organization_id", orgIds)
+          : Promise.resolve({ data: [] as any[], error: null }),
+      ]);
+
+      if (byPermission.error) throw byPermission.error;
+      if (byOrganisation.error) throw byOrganisation.error;
+
+      const unique = new Map<string, any>();
+      for (const app of [...(byPermission.data ?? []), ...(byOrganisation.data ?? [])]) {
+        unique.set(app.id, app);
+      }
+
+      res.json([...unique.values()]);
     } catch (error) {
       logger.error("List apps failed", { error });
       res.status(500).json({ error: "Failed to list apps" });
