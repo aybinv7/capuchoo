@@ -29,7 +29,6 @@ import {
   Smartphone,
   ScrollText,
   Settings2,
-  Workflow,
 } from "lucide-vue-next";
 import NavUser from "./NavUser.vue";
 
@@ -57,11 +56,12 @@ const appDashboard = [
     url: "/statistics",
     icon: BarChart3,
   },
-  {
-    title: "Canvas",
-    url: "/canvas",
-    icon: Workflow,
-  },
+  // Canvas is parked - see the router `exclude` in vite.config.ts.
+  // {
+  //   title: "Canvas",
+  //   url: "/canvas",
+  //   icon: Workflow,
+  // },
 ];
 
 const appEssentials = [

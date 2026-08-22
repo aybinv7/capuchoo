@@ -79,13 +79,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/canvas': RouteRecordInfo<
-      '/canvas',
-      '/canvas',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/channels/': RouteRecordInfo<
       '/channels/',
       '/channels',
@@ -235,12 +228,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/auth/Register/index.vue': {
       routes:
         | '/auth/Register/'
-      views:
-        | never
-    }
-    'src/pages/canvas.vue': {
-      routes:
-        | '/canvas'
       views:
         | never
     }

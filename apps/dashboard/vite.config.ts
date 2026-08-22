@@ -20,7 +20,13 @@ import VueRouter from "unplugin-vue-router/vite";
 export default defineConfig({
   plugins: [
     VueRouter({
-      exclude: ["src/pages/**/components/"],
+      exclude: [
+        "src/pages/**/components/",
+        // Parked, not deleted: the canvas is not part of the product yet, and a
+        // route that exists is a route someone reaches by typing the URL. Drop
+        // this line to bring it back.
+        "src/pages/canvas.vue",
+      ],
     }),
     vue(),
 
