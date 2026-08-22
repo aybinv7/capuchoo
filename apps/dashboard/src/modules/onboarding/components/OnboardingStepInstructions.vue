@@ -3,57 +3,77 @@
     <div class="space-y-2 text-center">
       <h1 class="text-3xl font-bold tracking-tight">Integration Guide</h1>
       <p class="text-muted-foreground">
-        Follow these steps to integrate Capuchoo into your {{ store.currentApp?.name }} app.
+        Three steps to put updates in front of
+        <span class="font-medium">{{ appName }}</span>
+        's users.
       </p>
     </div>
 
     <div class="w-full">
       <Tabs default-value="install" class="w-full">
-        <TabsList class="grid w-full grid-cols-2">
-          <TabsTrigger value="install">1. Install SDK</TabsTrigger>
-          <TabsTrigger value="upload">2. Upload Bundle</TabsTrigger>
+        <TabsList class="grid w-full grid-cols-3">
+          <TabsTrigger value="install">1. Install</TabsTrigger>
+          <TabsTrigger value="wire">2. Wire it up</TabsTrigger>
+          <TabsTrigger value="deploy">3. Deploy</TabsTrigger>
         </TabsList>
 
         <TabsContent value="install" class="space-y-4 border rounded-lg p-4 mt-2 bg-background/50">
           <div class="space-y-2">
-            <h3 class="font-medium">Install the Capacitor Plugin</h3>
-            <p class="text-sm text-muted-foreground">
-              Run the following command in your project root:
+            <h3 class="font-medium">Add the runtime and the CLI</h3>
+            <CodeBlock :code="installCommand" @copy="copy" />
+            <p class="text-xs text-muted-foreground">
+              <code>@capgo/capacitor-updater</code> is the native plugin Capuchoo drives.
+              <code>@capacitor/device</code> is optional - it lets the app report its OS version and
+              whether it is an emulator.
             </p>
-            <div
-              class="bg-black/90 text-white rounded-md p-3 font-mono text-xs relative group text-left"
-            >
-              <code>npm install @capgo/capacitor-updater && npx cap sync</code>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="absolute right-2 top-2 h-6 w-6 text-muted-foreground hover:text-white"
-                @click="copy('npm install @capgo/capacitor-updater && npx cap sync')"
-              >
-                <ILucideCopy class="h-3 w-3" />
-              </Button>
-            </div>
           </div>
-          <div class="bg-blue-50 text-blue-800 text-xs p-3 rounded-md border border-blue-200">
-            Tip: Ensure you have initialized Capacitor in your project before running this.
+          <div class="space-y-2">
+            <h3 class="font-medium">Sync the native projects</h3>
+            <CodeBlock code="npx cap sync" @copy="copy" />
           </div>
         </TabsContent>
 
-        <TabsContent value="upload" class="space-y-4 border rounded-lg p-4 mt-2 bg-background/50">
+        <TabsContent value="wire" class="space-y-4 border rounded-lg p-4 mt-2 bg-background/50">
           <div class="space-y-2">
-            <h3 class="font-medium">Login to CLI</h3>
-            <div class="bg-black/90 text-white rounded-md p-3 font-mono text-xs text-left">
-              <code>npx @capgo/cli login</code>
-            </div>
+            <h3 class="font-medium">Confirm the running bundle booted</h3>
+            <CodeBlock :code="notifySnippet" @copy="copy" />
+            <p class="text-xs text-muted-foreground">
+              First statement in <code>main.ts</code>, before anything that can block. The plugin
+              rolls back to the previous bundle if it does not hear this within ten seconds - so a
+              late or conditional call reverts updates that installed perfectly.
+            </p>
           </div>
           <div class="space-y-2">
-            <h3 class="font-medium">Bundle & Upload</h3>
-            <div class="bg-black/90 text-white rounded-md p-3 font-mono text-xs text-left">
-              <code>npx @capgo/cli upload -a {{ store.currentApp?.name }} -c Production</code>
-            </div>
-            <p class="text-sm text-muted-foreground">
-              This will build your app and upload it to the Production channel.
+            <h3 class="font-medium">Configure the plugin</h3>
+            <CodeBlock :code="configSnippet" @copy="copy" />
+            <p class="text-xs text-muted-foreground">
+              Returns <code>autoUpdate: "onlyDownload"</code>, so your UI decides when to apply, and
+              throws on an empty API URL rather than shipping a build that silently never checks.
             </p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="deploy" class="space-y-4 border rounded-lg p-4 mt-2 bg-background/50">
+          <div class="space-y-2">
+            <h3 class="font-medium">Sign in and link this directory</h3>
+            <CodeBlock :code="loginCommand" @copy="copy" />
+            <p class="text-xs text-muted-foreground">
+              <code>init</code> writes <code>.capuchoo/project.json</code>, which records the bundle
+              identifier <code>{{ bundleId }}</code> and is safe to commit.
+            </p>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-medium">Publish a web bundle</h3>
+            <CodeBlock :code="deployCommand" @copy="copy" />
+            <p class="text-sm text-muted-foreground">
+              Builds the <span class="font-medium">{{ channelEnvironment }}</span> flavour and
+              publishes it to the <span class="font-medium">{{ channelName }}</span> channel. Add
+              <code>--dry-run</code> to build and package without uploading.
+            </p>
+          </div>
+          <div class="bg-blue-50 text-blue-800 text-xs p-3 rounded-md border border-blue-200">
+            A channel's <strong>environment</strong> - not its name - decides which flavour is built
+            and which bundles devices receive.
           </div>
         </TabsContent>
       </Tabs>
@@ -70,7 +90,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { toast } from "vue-sonner";
+import CodeBlock from "./CodeBlock.vue";
 
 const emit = defineEmits<{
   (e: "next"): void;
@@ -79,8 +101,37 @@ const emit = defineEmits<{
 
 const store = useOnboardingStore();
 
+const appName = computed(() => store.currentApp?.name ?? store.appData.name ?? "your app");
+const bundleId = computed(
+  () => store.currentApp?.app_id ?? store.appData.appId ?? "com.company.app",
+);
+
+// Name the channel that actually exists. This guide used to tell people to
+// publish to "Production", which onboarding never created.
+const channelName = computed(() => store.currentChannel?.name ?? "staging");
+const channelEnvironment = computed(() => store.currentChannel?.environment ?? "staging");
+
+const installCommand =
+  "npm install @capuchoo/updater @capuchoo/core @capgo/capacitor-updater @capacitor/device\n" +
+  "npm install --save-dev @capuchoo/cli";
+
+const notifySnippet =
+  'import { notifyAppReady } from "@capuchoo/updater";\n\nvoid notifyAppReady();';
+
+const configSnippet =
+  '// capacitor.config.ts\nimport { capuchooUpdaterConfig } from "@capuchoo/updater/capacitor";\n\n' +
+  "plugins: {\n" +
+  "  CapacitorUpdater: capuchooUpdaterConfig({\n" +
+  "    apiUrl: process.env.VITE_UPDATE_API_URL,\n" +
+  "    channel: process.env.VITE_UPDATE_CHANNEL,\n" +
+  "  }),\n" +
+  "}";
+
+const loginCommand = computed(() => "npx capuchoo auth login\nnpx capuchoo init");
+const deployCommand = computed(() => `npx capuchoo deploy ota --channel ${channelName.value}`);
+
 const copy = (text: string) => {
-  navigator.clipboard.writeText(text);
+  void navigator.clipboard.writeText(text);
   toast.success("Copied to clipboard");
 };
 </script>

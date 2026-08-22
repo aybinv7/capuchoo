@@ -65,7 +65,6 @@ const router = useRouter();
 const steps = [
   { key: "organization", label: "Organization", component: shallowRef(OnboardingStepOrganization) },
   { key: "app", label: "Create App", component: shallowRef(OnboardingStepCreateApp) },
-  // { key: 'channels', label: 'Channels', component: shallowRef(OnboardingStepChannels) }, // Optional? Prompt didn't mention it explicitly but standard flow might need it. Keep it if it fits. User said "create his first org and app". Maybe skip channels/invite for now to keep it strict to request? But "Integration" usually needs channels. I'll keep them but might need to verify they work with new schema.
   { key: "instructions", label: "Integration", component: shallowRef(OnboardingStepInstructions) },
 ];
 

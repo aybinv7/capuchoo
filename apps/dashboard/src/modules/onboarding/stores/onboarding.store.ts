@@ -17,10 +17,13 @@ export const useOnboardingStore = defineStore(
     // RESULT STATE (Populated after successful submission)
     const currentOrganization = ref<Organization | null>(null);
     const currentApp = ref<App | null>(null);
+    // The channel onboarding creates, so the integration guide can name the one
+    // that exists rather than guessing.
+    const currentChannel = ref<{ id: string; name: string; environment: string } | null>(null);
 
     // Additional state for steps (Invite, Channels)
     const members = ref<{ email: string; role: "viewer" | "editor" | "admin" }[]>([]);
-    const channels = ref<string[]>(["Production"]);
+    const channels = ref<string[]>([]);
 
     const loading = ref(false);
     const error = ref<string | null>(null);
@@ -49,6 +52,8 @@ export const useOnboardingStore = defineStore(
         // Update state with created entities
         currentOrganization.value = response.organization;
         currentApp.value = response.app;
+        currentChannel.value = response.channel;
+        if (response.channel) channels.value = [response.channel.name];
 
         return response;
       } catch (err: any) {
@@ -66,6 +71,7 @@ export const useOnboardingStore = defineStore(
       appData.value = { name: "", appId: "", platform: "" };
       currentOrganization.value = null;
       currentApp.value = null;
+      currentChannel.value = null;
       error.value = null;
       loading.value = false;
     }
@@ -76,6 +82,7 @@ export const useOnboardingStore = defineStore(
       appData,
       currentOrganization,
       currentApp,
+      currentChannel,
       members,
       channels,
       loading,
