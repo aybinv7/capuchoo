@@ -11,7 +11,6 @@ capuchoo/
 │   ├── core/           @capuchoo/core          contract shared by everything
 │   ├── updater/        @capuchoo/updater       app-side runtime
 │   ├── cli/            @capuchoo/cli          build and publish releases
-│   └── apps-manager/   @capuchoo/apps-manager   Capacitor plugin, device app info
 ├── apps/
 │   ├── dashboard/      @capuchoo/dashboard     orgs, apps, channels, releases
 │   └── template/       @capuchoo/template      reference Capacitor application
@@ -67,7 +66,6 @@ Full docs are vendored at `node_modules/vite-plus/docs`.
 { "dependencies": { "@capacitor/core": "catalog:" } }
 ```
 
-This matters most for Capacitor. `@capuchoo/updater`, `@capuchoo/apps-manager` and the apps must
 agree _exactly_, or the native bridge loads two copies of the runtime and plugin calls resolve
 against the wrong one. `catalogMode: prefer` means a package that forgets `catalog:` still lands on
 the pinned version.
@@ -136,11 +134,10 @@ is why the shared deploy implementation lives in `src/deploy/execute.ts` - as
 
 Each package is checked by the tool that understands it:
 
-| Package                 | Checked by      |
-| ----------------------- | --------------- |
-| core, updater           | `vp pack --dts` |
-| cli, back, apps-manager | `tsc`           |
-| dashboard, template     | `vue-tsc`       |
+| Package             | Checked by      |
+| ------------------- | --------------- |
+| core, updater       | `vp pack --dts` |
+| dashboard, template | `vue-tsc`       |
 
 All of them run inside `vp run -r build`, so a type error fails the build.
 
@@ -175,7 +172,6 @@ Or run `vp pack --watch` in `packages/updater` alongside the app's dev server.
 ## Where the history went
 
 The five original repositories - `capucho-cli`, `capucho-back`, `capucho-front`, `capucho-app`,
-`capucho-apps-manager` - were merged here with `git subtree` and their local checkouts deleted on
 **2026-08-21**. They still exist on GitHub under those names, unchanged, as the archive.
 
 Every pre-migration commit is reachable from this repository: the subtree imports gave it six roots.
@@ -240,9 +236,8 @@ Verified 2026-08-22.
   by unit tests.
 - The native update flow on a device - `downloadNativeUpdate()`, `openNativeInstaller()`.
 - `POST /api/downloaded`, `/applied`, `/failed`: their action values are fixed but nothing calls
-  them yet, and OTA telemetry still depends on whatever the plugin posts to `statsUrl`.
-- The renamed `@capuchoo/apps-manager` native identifiers: the JS, Java and Swift names agree by
-  inspection, but no Android or iOS build has compiled them.
+  them yet, and OTA telemetry still depends on whatever the plugin posts to `statsUrl`. inspection,
+  but no Android or iOS build has compiled them.
 - `apps/template` has no cloud app - `capuchoo init` relinks it - so it has never been deployed.
 
 **Deliberately not done**

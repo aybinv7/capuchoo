@@ -37,13 +37,4 @@ router.get(
   updateController.getBuiltinVersion.bind(updateController),
 );
 
-/**
- * Update lifecycle tracking endpoints
- */
-router.post("/downloaded", updateController.logDownloadCompleted.bind(updateController));
-
-router.post("/applied", updateController.logUpdateApplied.bind(updateController));
-
-router.post("/failed", updateController.logUpdateFailed.bind(updateController));
-
 export default router;

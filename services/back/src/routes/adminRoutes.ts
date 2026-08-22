@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { adminController, appController, nativeUpdateController } from "@/controllers";
+import { adminController, nativeUpdateController } from "@/controllers";
 import { rateLimiter } from "@/middleware/security";
 import { authenticate } from "@/middleware";
 
@@ -37,14 +37,6 @@ router.post("/dashboard/bundles/:id/promote", adminController.promoteBundle.bind
 // ============================================================
 // Apps Management (NEW - for multi-app support)
 // ============================================================
-
-router.get("/dashboard/apps", appController.list.bind(appController));
-
-router.post("/dashboard/apps", appController.create.bind(appController));
-
-router.put("/dashboard/apps/:id", appController.update.bind(appController));
-
-router.delete("/dashboard/apps/:id", appController.delete.bind(appController));
 
 // ============================================================
 // Channel Management

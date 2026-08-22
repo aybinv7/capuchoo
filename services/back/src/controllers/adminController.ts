@@ -751,86 +751,6 @@ class AdminController {
     }
   }
 
-  // ============================================================
-  // Apps CRUD (NEW)
-  // ============================================================
-
-  /**
-   * Get all apps
-   * GET /api/dashboard/apps
-   */
-  async getApps(req: Request, res: Response): Promise<void> {
-    try {
-      const result = await this.supabaseService.query("apps", {
-        select: "*",
-        order: { column: "created_at", ascending: false },
-      });
-      res.json(result.data || []);
-    } catch (error) {
-      logger.error("Apps fetch failed", { error });
-      // Return empty array if apps table doesn't exist yet
-      res.json([]);
-    }
-  }
-
-  /**
-   * Create a new app
-   * POST /api/dashboard/apps
-   */
-  async createApp(req: Request, res: Response): Promise<void> {
-    try {
-      const { app_id, name } = req.body;
-
-      if (!app_id) {
-        throw new ValidationError("app_id is required");
-      }
-
-      const result = await this.supabaseService.insert("apps", [
-        {
-          app_id,
-          name: name || app_id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ]);
-
-      res.status(201).json(result[0]);
-    } catch (error) {
-      logger.error("App creation failed", { error });
-      res.status(500).json({ error: "Failed to create app" });
-    }
-  }
-
-  /**
-   * Update an app
-   * PUT /api/dashboard/apps/:id
-   */
-  async updateApp(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const updateData = req.body;
-
-      const result = await this.supabaseService.update(
-        "apps",
-        { ...updateData, updated_at: new Date().toISOString() },
-        { id },
-      );
-
-      if (result.length === 0) {
-        throw new ValidationError("App not found");
-      }
-
-      res.json(result[0]);
-    } catch (error) {
-      logger.error("App update failed", { error });
-      if (error instanceof ValidationError) {
-        res.status(error.statusCode).json({ error: error.message });
-      } else {
-        res.status(500).json({ error: "Failed to update app" });
-      }
-    }
-  }
-
   async promoteBundle(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -959,18 +879,6 @@ class AdminController {
       }
     }
   }
-
-  async deleteApp(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      await this.supabaseService.delete("apps", { id });
-      res.status(204).send();
-    } catch (error) {
-      logger.error("App deletion failed", { error });
-      res.status(500).json({ error: "Failed to delete app" });
-    }
-  }
-
   /**
    * Get a single channel by ID
    * GET /api/dashboard/channels/:id

@@ -1,14 +1,13 @@
 # Releasing
 
-Four packages publish to npm. The apps and the backend do not - they are `private: true`, and
+Three packages publish to npm. The apps and the backend do not - they are `private: true`, and
 `pnpm publish -r` skips them.
 
-| Package                  | What it is                                        |
-| ------------------------ | ------------------------------------------------- |
-| `@capuchoo/core`         | The shared contract. Dependency-free.             |
-| `@capuchoo/updater`      | App-side runtime.                                 |
-| `@capuchoo/cli`          | The deploy pipeline.                              |
-| `@capuchoo/apps-manager` | Capacitor plugin: lists apps installed on device. |
+| Package             | What it is                            |
+| ------------------- | ------------------------------------- |
+| `@capuchoo/core`    | The shared contract. Dependency-free. |
+| `@capuchoo/updater` | App-side runtime.                     |
+| `@capuchoo/cli`     | The deploy pipeline.                  |
 
 ## How a release happens
 

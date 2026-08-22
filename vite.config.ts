@@ -21,13 +21,7 @@ export default defineConfig({
     // Generated files. Formatting them is pointless: the generator rewrites
     // them unformatted on the next build, so `vp check` would fail again the
     // moment anyone builds.
-    ignorePatterns: [
-      "**/auto-imports.d.ts",
-      "**/components.d.ts",
-      "**/typed-router.d.ts",
-      // Written by @capacitor/docgen from the plugin's JSDoc.
-      "packages/apps-manager/README.md",
-    ],
+    ignorePatterns: ["**/auto-imports.d.ts", "**/components.d.ts", "**/typed-router.d.ts"],
     overrides: [
       {
         files: ["**/*.md"],
