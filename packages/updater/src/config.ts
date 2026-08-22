@@ -7,7 +7,7 @@
  * a login response rather than at build time.
  */
 export interface UpdaterConfig {
-  /** Base URL of the Capucho backend, with no trailing slash. */
+  /** Base URL of the Capuchoo backend, with no trailing slash. */
   apiUrl: string;
   /** Bundle identifier of this build. Must match what the CLI published. */
   appId: string;

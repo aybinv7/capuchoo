@@ -62,15 +62,18 @@ if your layout differs.
 # build/staging/.env.staging
 VITE_APP_ID=com.company.app
 VITE_APP_NAME=Your App
-VITE_APP_VERSION=1.0.0
 VITE_ENVIRONMENT=staging
 VITE_UPDATE_CHANNEL=staging
 VITE_UPDATE_API_URL=https://your-backend.example.com
-VERSION_CODE=1
-BUILD_NUMBER=1
 ```
 
-Two rules:
+Three rules:
+
+- **The version does not live here.** `package.json`'s `version` is the source of truth and
+  `version-code.json` holds the per-environment build numbers; the CLI computes `VITE_APP_VERSION`,
+  `VERSION_CODE` and `BUILD_NUMBER` for each deploy and passes them to the build itself. Setting
+  them in this file has no effect - the computed values win - so a version written here will look
+  authoritative and be ignored. Use `capuchoo version bump` instead.
 
 - **`VITE_UPDATE_API_URL` must not be empty.** An empty update URL does not fail - it silently
   disables updates, shipping a build that never checks. `capuchooUpdaterConfig()` throws on it

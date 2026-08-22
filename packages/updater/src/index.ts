@@ -1,5 +1,5 @@
 /**
- * @capuchoo/updater - the app-side runtime for Capucho updates.
+ * @capuchoo/updater - the app-side runtime for Capuchoo updates.
  *
  * Framework-agnostic entry point. Vue applications should import
  * `@capuchoo/updater/vue` for the composable, and `@capuchoo/updater/capacitor`

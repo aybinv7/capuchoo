@@ -1,5 +1,5 @@
 /**
- * @capuchoo/core - the contract shared by every part of Capucho.
+ * @capuchoo/core - the contract shared by every part of Capuchoo.
  *
  * Runtime-agnostic and dependency-free on purpose: the CLI imports it in Node,
  * the updater imports it inside a Capacitor WebView, and the backend and
@@ -68,4 +68,6 @@ export {
   type CloudRelease,
   type CloudUser,
   type UserProfile,
+  type CredentialScope,
+  canPublishTo,
 } from "./cloud.js";

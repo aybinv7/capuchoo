@@ -20,7 +20,7 @@
 export type UpdaterMode = "onlyDownload" | "manual";
 
 export interface UpdaterPluginOptions {
-  /** Base URL of the Capucho backend. No trailing slash needed. */
+  /** Base URL of the Capuchoo backend. No trailing slash needed. */
   apiUrl: string;
   /** Channel this build defaults to. */
   channel: string;

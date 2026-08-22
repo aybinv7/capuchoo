@@ -3,6 +3,7 @@ import {
   ENVIRONMENTS,
   PROJECT_CONFIG_VERSION,
   canCreateApps,
+  canPublishTo,
   defaultFlavour,
   isValidBundleId,
   type CloudApp,
@@ -25,17 +26,50 @@ import {
 import AuthLogin from "./auth/login.js";
 import { BaseCommand } from "../base-command.js";
 
+/** The answers --create can supply, so the wizard has nothing left to ask. */
+interface CreateFlags {
+  name?: string | undefined;
+  appId?: string | undefined;
+  org?: string | undefined;
+}
+
 export default class Init extends BaseCommand {
   static override description =
-    "Link this directory to a Capucho app and write .capucho/project.json";
+    "Link this directory to a Capuchoo app and write .capuchoo/project.json";
 
-  static override examples = ["<%= config.bin %> init", "<%= config.bin %> init --link"];
+  static override examples = [
+    "<%= config.bin %> init",
+    "<%= config.bin %> init --link",
+    "<%= config.bin %> init --create",
+  ];
 
   static override flags = {
     link: Flags.boolean({
       char: "l",
       default: false,
-      description: "Link an existing app instead of creating one",
+      description: "Link an existing app instead of asking",
+      exclusive: ["create"],
+    }),
+    // Without this, a non-interactive shell could only ever link: the prompt
+    // named --link as its escape hatch and there was no flag for the other half
+    // of the same question.
+    create: Flags.boolean({
+      char: "c",
+      default: false,
+      description: "Create a new app instead of asking",
+      exclusive: ["link"],
+    }),
+    name: Flags.string({
+      description: "Name of the app to create (default: this directory's name)",
+      dependsOn: ["create"],
+    }),
+    "app-id": Flags.string({
+      description: "Production bundle identifier of the app to create, e.g. com.company.app",
+      dependsOn: ["create"],
+    }),
+    org: Flags.string({
+      description: "Organization to create the app in, by name or id",
+      dependsOn: ["create"],
     }),
     force: Flags.boolean({
       char: "f",
@@ -49,7 +83,7 @@ export default class Init extends BaseCommand {
     const appDir = process.cwd();
 
     this.log("");
-    this.log(chalk.bold("  Initialise Capucho"));
+    this.log(chalk.bold("  Initialise Capuchoo"));
     this.log(chalk.dim(`  ${appDir}`));
     this.log("");
 
@@ -94,16 +128,41 @@ export default class Init extends BaseCommand {
 
     const mode = flags.link
       ? "existing"
-      : await selectOne<string>(
-          "Link this directory to",
-          [
-            { value: "existing", label: "An app that already exists" },
-            { value: "new", label: "A new app" },
-          ],
-          "--link",
-        );
+      : flags.create
+        ? "new"
+        : await selectOne<string>(
+            "Should this directory publish to an existing app, or a new one?",
+            [
+              { value: "existing", label: "An app that already exists" },
+              { value: "new", label: "A new app" },
+            ],
+            "--link or --create",
+          );
 
-    const app = mode === "existing" ? await this.linkExisting(cloud) : await this.createNew(cloud);
+    const app =
+      mode === "existing"
+        ? await this.linkExisting(cloud)
+        : await this.createNew(cloud, {
+            name: flags.name,
+            appId: flags["app-id"],
+            org: flags.org,
+          });
+
+    // The key that just created or linked this app may not be allowed to publish
+    // to it: an app-scoped key can read every app the account owns. Say so here
+    // rather than let the first deploy discover it after a full build.
+    if (!canPublishTo(profile, app.id)) {
+      this.log("");
+      this.log(
+        chalk.yellow(
+          `  The API key in use is restricted to another app, so deploys from here
+` +
+            `  will be refused. Run "capuchoo auth login" with a key for ${app.name}
+` +
+            `  or an unscoped one.`,
+        ),
+      );
+    }
 
     // --- flavours ------------------------------------------------------------
 
@@ -228,7 +287,7 @@ export default class Init extends BaseCommand {
     );
   }
 
-  private async createNew(cloud: CloudClient): Promise<CloudApp> {
+  private async createNew(cloud: CloudClient, given: CreateFlags): Promise<CloudApp> {
     const spinner = ora({
       text: "Fetching organizations",
       stream: process.stderr,
@@ -247,28 +306,51 @@ export default class Init extends BaseCommand {
       );
     }
 
+    const requested = given.org?.trim().toLowerCase();
+    const chosen = requested
+      ? allowed.find((org) => org.id === given.org?.trim() || org.name.toLowerCase() === requested)
+      : undefined;
+    if (requested && !chosen) {
+      this.error(
+        `No organization called "${given.org}" that this account can create apps in. ` +
+          `Available: ${allowed.map((org) => org.name).join(", ")}.`,
+      );
+    }
+
     const organizationId =
-      allowed.length === 1
+      chosen?.id ??
+      (allowed.length === 1
         ? allowed[0]!.id
         : await selectOne(
             "Organization",
             allowed.map((org) => ({ value: org.id, label: org.name, hint: org.role })),
-            "--link",
-          );
+            "--org",
+          ));
 
-    const name = await askText("App name", {
-      initial: path.basename(process.cwd()),
-      flag: "--link",
-    });
+    const name =
+      given.name?.trim() ||
+      (await askText("App name", {
+        initial: path.basename(process.cwd()),
+        flag: "--name",
+      }));
 
-    const appId = await askText("Production bundle identifier", {
-      placeholder: "com.company.app",
-      flag: "--link",
-      validate: (value) =>
-        isValidBundleId(value.trim())
-          ? undefined
-          : "Expected something like com.company.app - lower case, at least two segments",
-    });
+    const appId =
+      given.appId?.trim() ||
+      (await askText("Production bundle identifier", {
+        placeholder: "com.company.app",
+        flag: "--app-id",
+        validate: (value) =>
+          isValidBundleId(value.trim())
+            ? undefined
+            : "Expected something like com.company.app - lower case, at least two segments",
+      }));
+
+    if (!isValidBundleId(appId)) {
+      this.error(
+        `"${appId}" is not a bundle identifier. Expected something like com.company.app - ` +
+          "lower case, at least two segments.",
+      );
+    }
 
     // Creating an app is the one irreversible thing this command does.
     const proceed = await confirm(`Create "${name}" (${appId})?`, { default: true });

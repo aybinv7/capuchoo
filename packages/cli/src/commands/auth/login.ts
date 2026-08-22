@@ -9,7 +9,7 @@ import { BaseCommand } from "../../base-command.js";
 const DEFAULT_ENDPOINT = "https://capuchoo-back.onrender.com";
 
 export default class AuthLogin extends BaseCommand {
-  static override description = "Store an API key for the Capucho backend";
+  static override description = "Store an API key for the Capuchoo backend";
 
   static override examples = [
     "<%= config.bin %> auth login",

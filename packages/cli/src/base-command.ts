@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { HttpError } from "./utils/http.js";
 
 /**
- * Base class for every Capucho command.
+ * Base class for every Capuchoo command.
  *
  * Two jobs, both about failure. oclif's default renderer prints the error class
  * name and a stack-shaped indent, which for a deploy tool buries the one line

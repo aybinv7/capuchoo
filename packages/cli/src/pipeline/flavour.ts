@@ -114,7 +114,7 @@ export function describeFlavourProblems(flavour: ResolvedFlavour): string[] {
   if (!flavour.envFile) {
     problems.push(
       `No env file at "${flavour.config.envFile}" for the ${flavour.environment} flavour. ` +
-        "Create it, or point the flavour at another path in .capucho/project.json.",
+        "Create it, or point the flavour at another path in .capuchoo/project.json.",
     );
     return problems;
   }

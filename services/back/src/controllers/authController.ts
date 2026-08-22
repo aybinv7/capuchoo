@@ -178,6 +178,12 @@ class AuthController {
         }
       }
 
+      // An app-scoped API key can read this endpoint and see every app the
+      // account owns, but can only publish to one. Without reporting the scope
+      // here, the CLI cannot warn: `init` links happily and the deploy fails at
+      // the upload, after a full build.
+      const keyAppId = (req as any).appId ?? null;
+
       res.status(200).json({
         success: true,
         user: {
@@ -186,6 +192,10 @@ class AuthController {
         },
         organizations,
         apps,
+        credential: {
+          type: (req as any).authType === "api_key" ? "api_key" : "session",
+          app_id: keyAppId,
+        },
       });
     } catch (error) {
       next(error);

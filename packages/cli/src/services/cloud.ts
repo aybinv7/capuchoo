@@ -8,7 +8,7 @@ import type {
 import { get, post, uploadArtifact, type HttpOptions } from "../utils/http.js";
 
 /**
- * The Capucho API client.
+ * The Capuchoo API client.
  *
  * Replaces the previous split between `CloudService`, `CloudConfigService`,
  * `ChannelService` and `AuthService`. Those overlapped: two of them fetched

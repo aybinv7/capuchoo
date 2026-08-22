@@ -118,7 +118,7 @@ export async function buildWeb(
   }
 
   throw new Error(
-    "Nothing to build with: no build.command in .capucho/project.json, no " +
+    "Nothing to build with: no build.command in .capuchoo/project.json, no " +
       `"${scriptName}" script, and neither vite nor vp is installed.`,
   );
 }

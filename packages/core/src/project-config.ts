@@ -1,7 +1,7 @@
 import type { Environment } from "./update-contract.js";
 
 /**
- * `.capucho/project.json` - the file that makes an application deployable.
+ * `.capuchoo/project.json` - the file that makes an application deployable.
  *
  * Version 1 held only the cloud identifiers, so the CLI had to *guess* how to
  * build: it shelled out to `pnpm run assets:<env>`, `pnpm build:<env>`,
@@ -49,7 +49,7 @@ export interface ProjectConfig {
 
   /** Bundle identifier of the production flavour. */
   appId: string;
-  /** Primary key of the application in Capucho. */
+  /** Primary key of the application in Capuchoo. */
   cloudAppId: string;
   appName: string;
   createdAt: string;

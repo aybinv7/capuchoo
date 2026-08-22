@@ -100,7 +100,7 @@ export function planSteps(request: DeployRequest): Step[] {
   );
 
   if (!request.dryRun) {
-    steps.push({ id: "upload", label: "Uploading to Capucho" });
+    steps.push({ id: "upload", label: "Uploading to Capuchoo" });
   }
 
   return steps;

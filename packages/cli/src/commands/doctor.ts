@@ -1,4 +1,5 @@
 import {
+  canPublishTo,
   hasEnvironmentMismatch,
   normaliseProjectConfig,
   suggestEnvironment,
@@ -90,6 +91,21 @@ export default class Doctor extends BaseCommand {
       what: "Linked",
       detail: `${project.appName} (${project.appId})`,
     });
+
+    // An app-scoped key lists every app the account owns and is refused only by
+    // the endpoints that publish - so without this check the first sign of a
+    // mismatch is a 403 at step 7 of 7, after a full build and zip.
+    if (!canPublishTo(profile, project.cloudAppId)) {
+      const scoped = profile.apps.find((app) => app.id === profile.credential?.app_id);
+      findings.push({
+        level: "fail",
+        what: "This API key cannot publish to this app",
+        detail: scoped
+          ? `The key is restricted to ${scoped.name} (${scoped.app_id})`
+          : `The key is restricted to app ${profile.credential?.app_id}`,
+        fix: "capuchoo auth login   (with a key for this app, or an unscoped one)",
+      });
+    }
 
     // --- channels ------------------------------------------------------------
 

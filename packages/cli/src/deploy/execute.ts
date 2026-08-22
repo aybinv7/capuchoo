@@ -148,7 +148,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
 
   if (!json) {
     command.log("");
-    command.log(chalk.bold(`Capucho ${kind === "ota" ? "OTA" : "native"} deploy`));
+    command.log(chalk.bold(`Capuchoo ${kind === "ota" ? "OTA" : "native"} deploy`));
     command.log(chalk.dim(`  app       ${project.appName} (${project.appId})`));
     command.log(chalk.dim(`  account   ${profile.user.email}`));
     command.log(chalk.dim(`  endpoint  ${credentials.endpoint}`));

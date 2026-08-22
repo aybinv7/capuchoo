@@ -34,7 +34,7 @@ function variantDir(buildType: string): string {
 }
 
 beforeEach(() => {
-  workDir = fs.mkdtempSync(path.join(os.tmpdir(), "capucho-apk-"));
+  workDir = fs.mkdtempSync(path.join(os.tmpdir(), "capuchoo-apk-"));
 });
 
 afterEach(() => {
