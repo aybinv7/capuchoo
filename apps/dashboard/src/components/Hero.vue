@@ -37,8 +37,8 @@
     <header class="relative z-10">
       <div class="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 md:px-8">
         <div class="flex items-center gap-3">
-          <img :src="capgoLogo" class="aspect-square size-7" alt="capgo Logo" />
-          <span class="text-lg font-semibold tracking-tight">capgo</span>
+          <img :src="capuchooLogo" class="aspect-square size-7" alt="Capuchoo logo" />
+          <span class="text-lg font-semibold tracking-tight">Capuchoo</span>
         </div>
 
         <nav class="hidden items-center gap-8 text-sm/6 text-white/80 md:flex">
@@ -109,7 +109,7 @@
             @click="router.push('/auth/Login')"
             class="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow transition hover:bg-white/90"
           >
-            Try capgo
+            Try Capuchoo
           </a>
           <a
             @click="router.push('/auth/Login')"
@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import capgoLogo from "@/assets/images/capucho.png";
+import capuchooLogo from "@/assets/images/capuchoo.png";
 const router = useRouter();
 const pillars = [92, 84, 78, 70, 62, 54, 46, 34, 18, 34, 46, 54, 62, 70, 78, 84, 92];
 const isMounted = ref(false);

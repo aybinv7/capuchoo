@@ -8,16 +8,16 @@
     <!-- 🔹 Left content (only visible on large screens) -->
     <div class="relative hidden h-full flex-col text-white dark:border-r lg:flex z-10 p-10">
       <div class="relative z-20 flex items-center text-2xl font-semibold">
-        <img src="/assets/capucho.png" class="aspect-square size-10 mr-2" alt="capgo Logo" />
-        capgo Inc
+        <img src="/assets/capuchoo.png" class="aspect-square size-10 mr-2" alt="Capuchoo logo" />
+        Capuchoo
       </div>
 
       <div class="relative z-20 mt-auto">
         <blockquote class="space-y-2">
           <p class="text-lg leading-relaxed max-w-md">
-            &ldquo;Chat with your customers on Telegram and Meta, take orders automatically, get
-            real-time alerts, and watch your conversion rate climb thanks to instant replies and
-            smart product guidance.&rdquo;
+            &ldquo;Ship a fix to every device in minutes, not in a store review queue. Web bundles
+            over the air, signed native builds when you need them, and a rollback that happens on
+            its own if a release will not boot.&rdquo;
           </p>
         </blockquote>
       </div>
@@ -279,7 +279,7 @@ async function handleResendCode() {
 definePage({
   meta: {
     title: "Register",
-    description: "Register to your capgo account",
+    description: "Register to your Capuchoo account",
     category: "authentication",
     hideFromSearch: true,
     requiresAuth: false,

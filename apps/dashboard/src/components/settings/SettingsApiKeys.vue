@@ -17,7 +17,7 @@
     <Card>
       <CardHeader>
         <CardTitle class="text-lg">Create New API Key</CardTitle>
-        <CardDescription> Generate an API key to use with the Capucho CLI. </CardDescription>
+        <CardDescription> Generate an API key to use with the Capuchoo CLI. </CardDescription>
       </CardHeader>
       <CardContent class="space-y-4">
         <div class="flex gap-4">

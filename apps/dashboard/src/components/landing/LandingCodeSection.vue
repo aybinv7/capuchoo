@@ -37,7 +37,7 @@ const terminalLines = [
           First
         </h2>
         <p class="text-stone-400 leading-relaxed text-lg">
-          Capucho integrates directly into your CI/CD pipeline. No drag-and-drop required. Just
+          Capuchoo integrates directly into your CI/CD pipeline. No drag-and-drop required. Just
           standard CLI commands you already know.
         </p>
 

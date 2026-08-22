@@ -32,7 +32,7 @@ const footerLinks = {
             <div class="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
               <Layers class="text-primary-foreground w-3 h-3" />
             </div>
-            <span class="font-sans font-bold text-lg tracking-tight">Capucho</span>
+            <span class="font-sans font-bold text-lg tracking-tight">Capuchoo</span>
           </a>
           <p class="text-sm text-muted-foreground max-w-xs leading-relaxed">
             Redefining how developers ship. Faster iterations, safer deployments, and happier users.
@@ -81,7 +81,7 @@ const footerLinks = {
         class="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4"
       >
         <div class="text-xs text-muted-foreground">
-          © {{ currentYear }} Capucho Inc. All rights reserved.
+          © {{ currentYear }} Capuchoo Inc. All rights reserved.
         </div>
         <div class="flex gap-6 text-xs text-muted-foreground font-medium">
           <a href="/privacy" class="hover:text-foreground">Privacy Policy</a>

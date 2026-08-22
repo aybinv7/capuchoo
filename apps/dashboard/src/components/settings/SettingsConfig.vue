@@ -325,7 +325,7 @@ const editingVar = ref<EnvVar | null>(null);
 const revealedSecrets = ref<Record<string, boolean>>({});
 
 // localStorage-based storage with vueuse
-const envVars = useLocalStorage<EnvVar[]>("capucho-demo-env-vars", []);
+const envVars = useLocalStorage<EnvVar[]>("capuchoo-demo-env-vars", []);
 
 const newVar = ref({
   key: "",

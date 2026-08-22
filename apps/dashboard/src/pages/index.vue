@@ -35,7 +35,7 @@ import ScrollToTop from "@/components/landing/ScrollToTop.vue";
 
 definePage({
   meta: {
-    title: "Capucho - Intelligent Hybrid Deployment",
+    title: "Capuchoo - Intelligent Hybrid Deployment",
     description:
       "The atomic deployment engine for hybrid apps. OTA updates and native releases from a single dashboard.",
     category: "home",

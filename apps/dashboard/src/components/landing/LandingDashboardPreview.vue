@@ -175,7 +175,7 @@ const buttonText = computed(() => {
                 class="flex-1 max-w-md bg-stone-800/50 rounded-md h-8 flex items-center px-3 gap-2"
               >
                 <Lock class="w-3 h-3 text-stone-500" />
-                <span class="text-xs text-stone-400">dashboard.capgo.app</span>
+                <span class="text-xs text-stone-400">capuchoo-front.onrender.com</span>
               </div>
             </div>
 

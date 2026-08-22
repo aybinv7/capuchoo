@@ -5,7 +5,7 @@ const steps = [
   {
     icon: GitCommit,
     title: "Push Code",
-    description: "Git push triggers the CI pipeline. Capucho CLI detects changes.",
+    description: "Git push triggers the CI pipeline. Capuchoo CLI detects changes.",
     code: '> git commit -m "fix: login UI"\n> git push origin main',
     active: false,
   },

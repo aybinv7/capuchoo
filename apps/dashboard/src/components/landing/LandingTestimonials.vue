@@ -5,7 +5,7 @@ import LandingMarquee from "@/components/landing/LandingMarquee.vue";
 const testimonials = [
   {
     content:
-      "Capucho completely transformed our deployment pipeline. We push updates 10x faster now!",
+      "Capuchoo completely transformed our deployment pipeline. We push updates 10x faster now!",
     author: "Sarah Chen",
     role: "CTO, TechFlow",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
@@ -54,7 +54,7 @@ const secondColumn = testimonials.slice(3, 6);
       <div class="text-center mb-16">
         <h2 class="text-3xl md:text-5xl font-bold mb-6">Loved by developers</h2>
         <p class="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Join thousands of developers delivering better apps with Capucho.
+          Join thousands of developers delivering better apps with Capuchoo.
         </p>
       </div>
 

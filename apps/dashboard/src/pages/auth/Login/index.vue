@@ -8,16 +8,16 @@
     <!-- 🔹 Left content (only visible on large screens) -->
     <div class="relative hidden h-full flex-col text-white dark:border-r lg:flex z-10 p-10">
       <div class="relative z-20 flex items-center text-2xl font-semibold">
-        <img :src="capgoLogo" class="aspect-square size-10 mr-2" alt="capgo Logo" />
-        capgo Inc
+        <img :src="capuchooLogo" class="aspect-square size-10 mr-2" alt="Capuchoo logo" />
+        Capuchoo
       </div>
 
       <div class="relative z-20 mt-auto">
         <blockquote class="space-y-2">
           <p class="text-lg leading-relaxed max-w-md">
-            &ldquo;Chat with your customers on Telegram and Meta, take orders automatically, get
-            real-time alerts, and watch your conversion rate climb thanks to instant replies and
-            smart product guidance.&rdquo;
+            &ldquo;Ship a fix to every device in minutes, not in a store review queue. Web bundles
+            over the air, signed native builds when you need them, and a rollback that happens on
+            its own if a release will not boot.&rdquo;
           </p>
         </blockquote>
       </div>
@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import capgoLogo from "@/assets/images/capucho.png";
+import capuchooLogo from "@/assets/images/capuchoo.png";
 import { toast } from "vue-sonner";
 
 const email = ref("");
@@ -133,7 +133,7 @@ const login = async () => {
 definePage({
   meta: {
     title: "Login",
-    description: "Log in to your capgo account",
+    description: "Log in to your Capuchoo account",
     category: "authentication",
     hideFromSearch: true,
     requiresAuth: false,

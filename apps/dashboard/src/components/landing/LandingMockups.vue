@@ -35,7 +35,7 @@ import { Monitor, Smartphone } from "lucide-vue-next";
                   class="flex items-center gap-2 px-4 py-1 rounded-md bg-background/50 text-xs text-muted-foreground"
                 >
                   <Monitor class="h-3 w-3" />
-                  app.capgo.io/dashboard
+                  capuchoo-front.onrender.com/dashboard
                 </div>
               </div>
             </div>

@@ -49,9 +49,7 @@ onMounted(() => {
           />
           <span class="relative inline-flex rounded-full h-2 w-2 bg-primary" />
         </span>
-        <span class="text-xs font-semibold text-primary tracking-wide uppercase">
-          Capucho 2.0 Released
-        </span>
+        <span class="text-xs font-semibold text-primary tracking-wide uppercase"> Now on npm </span>
       </div>
 
       <!-- Headline -->
