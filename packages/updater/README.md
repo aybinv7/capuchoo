@@ -5,13 +5,18 @@ server what to do, downloads OTA bundles or native binaries, and drives the inst
 `@capgo/capacitor-updater`.
 
 ```sh
-npm install @capuchoo/updater @capuchoo/core
+npx @capuchoo/cli setup
 ```
 
-Peers you will already have in a Capacitor app: `@capacitor/core`, `@capacitor/app`,
-`@capacitor/filesystem`, `@capacitor/network`, `@capacitor/file-transfer`,
-`@capawesome-team/capacitor-file-opener`, `@capgo/capacitor-updater`. `vue` is optional and only
-needed for the `/vue` entry point.
+That installs this package, the `@capgo/capacitor-updater` plugin it drives and `@capacitor/app`
+into your app - they must be the _app's_ own dependencies for `cap sync` to wire up their native
+halves - and then runs `cap sync`. Add `--native` if the app installs APKs itself.
+
+Required peers, if you would rather add them yourself: `@capacitor/core`, `@capacitor/app`,
+`@capgo/capacitor-updater`. Optional: `@capacitor/device` (reports OS version and emulator flag),
+`vue` (only for the `/vue` entry point), and `@capacitor/filesystem`, `@capacitor/network`,
+`@capacitor/file-transfer`, `@capawesome-team/capacitor-file-opener` - loaded on demand, and only by
+the native-APK path.
 
 ## Three things, in order
 

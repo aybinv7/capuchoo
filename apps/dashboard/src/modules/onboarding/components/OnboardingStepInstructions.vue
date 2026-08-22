@@ -19,19 +19,21 @@
 
         <TabsContent value="install" class="space-y-4 border rounded-lg p-4 mt-2 bg-background/50">
           <div class="space-y-2">
-            <h3 class="font-medium">Add the runtime and the CLI</h3>
+            <h3 class="font-medium">One command, from your app's root</h3>
             <CodeBlock :code="installCommand" @copy="copy" />
             <p class="text-xs text-muted-foreground">
-              <code>@capgo/capacitor-updater</code> is the native plugin Capuchoo drives; the
-              <code>@capacitor/*</code> packages are its peers, and you may already have some.
-              <code>@capuchoo/core</code> is not in the list - the updater brings it and re-exports
-              the types you need. Add <code>@capacitor/device</code> too if you want the app to
-              report its OS version and whether it is an emulator.
+              Installs the runtime, the native plugin it drives and the CLI, then runs
+              <code>npx cap sync</code> so the plugins reach your Android and iOS projects. It lists
+              what it will add before adding it, and skips whatever you already have.
             </p>
           </div>
           <div class="space-y-2">
-            <h3 class="font-medium">Sync the native projects</h3>
-            <CodeBlock code="npx cap sync" @copy="copy" />
+            <h3 class="font-medium">If the app installs APKs itself</h3>
+            <CodeBlock :code="nativeInstallCommand" @copy="copy" />
+            <p class="text-xs text-muted-foreground">
+              Adds the four plugins the in-app APK download and install needs. OTA web-bundle
+              updates do not use them, so they are left out by default.
+            </p>
           </div>
         </TabsContent>
 
@@ -113,9 +115,11 @@ const bundleId = computed(
 const channelName = computed(() => store.currentChannel?.name ?? "staging");
 const channelEnvironment = computed(() => store.currentChannel?.environment ?? "staging");
 
-const installCommand =
-  "npm install @capuchoo/updater @capuchoo/core @capgo/capacitor-updater @capacitor/device\n" +
-  "npm install --save-dev @capuchoo/cli";
+// One command, not a package list. The list was wrong twice: it named packages
+// the updater already brings, and omitted peers that only fail on a device.
+// `setup` derives it from the runtime itself and runs cap sync afterwards.
+const installCommand = "npx @capuchoo/cli setup";
+const nativeInstallCommand = "npx @capuchoo/cli setup --native";
 
 const notifySnippet =
   'import { notifyAppReady } from "@capuchoo/updater";\n\nvoid notifyAppReady();';

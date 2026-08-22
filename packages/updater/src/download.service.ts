@@ -1,9 +1,7 @@
 import type { PluginListenerHandle } from "@capacitor/core";
-import { FileTransfer } from "@capacitor/file-transfer";
-import { Directory, Filesystem } from "@capacitor/filesystem";
-import { Network } from "@capacitor/network";
 import type { ResolvedUpdate } from "@capuchoo/core";
 import { getUpdaterConfig } from "./config.js";
+import { nativePlugins } from "./optional-plugins.js";
 
 export interface DownloadProgress {
   loaded: number;
@@ -37,6 +35,7 @@ export async function downloadNativeUpdate(
     throw new Error("This update has no download URL");
   }
 
+  const { Network } = await nativePlugins.network();
   const network = await Network.getStatus();
   if (!network.connected) {
     throw new Error("Connect to the internet to download this update");
@@ -47,6 +46,11 @@ export async function downloadNativeUpdate(
   await cleanApkCache();
 
   const fileName = apkFileName(update);
+  const [{ Directory, Filesystem }, { FileTransfer }] = await Promise.all([
+    nativePlugins.filesystem(),
+    nativePlugins.fileTransfer(),
+  ]);
+
   const destination = await Filesystem.getUri({
     directory: Directory.Cache,
     path: fileName,
@@ -84,6 +88,7 @@ export async function cleanApkCache(): Promise<void> {
   const prefix = cachePrefix();
 
   try {
+    const { Directory, Filesystem } = await nativePlugins.filesystem();
     const { files } = await Filesystem.readdir({
       directory: Directory.Cache,
       path: "",

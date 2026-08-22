@@ -1,6 +1,6 @@
 import { Capacitor } from "@capacitor/core";
-import { FileOpener } from "@capawesome-team/capacitor-file-opener";
 import { getUpdaterConfig } from "./config.js";
+import { nativePlugins } from "./optional-plugins.js";
 
 const APK_MIME = "application/vnd.android.package-archive";
 
@@ -19,6 +19,8 @@ export async function openNativeInstaller(path: string): Promise<void> {
         "On iOS the update has to come from the App Store or TestFlight.",
     );
   }
+
+  const { FileOpener } = await nativePlugins.fileOpener();
 
   try {
     await FileOpener.openFile({ path, mimeType: APK_MIME });

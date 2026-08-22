@@ -12,18 +12,25 @@ Run `capuchoo doctor` at any point. It checks all of this and names the fix for 
 ## 1. Install
 
 ```sh
-pnpm add @capuchoo/updater @capgo/capacitor-updater
-pnpm add -D @capuchoo/cli
-pnpm add @capacitor/device        # optional: reports OS version and emulator flag
-npx cap sync
+npx @capuchoo/cli setup
 ```
 
-Not `@capuchoo/core`: the updater depends on it and re-exports the types an app needs, so a direct
-dependency is noise. Install it only if you import it yourself.
+One command: it adds `@capuchoo/updater`, the `@capgo/capacitor-updater` plugin it drives,
+`@capacitor/app` and `@capacitor/device` to your app, adds `@capuchoo/cli` as a dev dependency, and
+runs `npx cap sync`. It prints what it will add first, skips whatever you already have, and
+`--dry-run` reports without changing anything.
 
-`@capuchoo/updater` also needs these Capacitor peers, which an app of this kind normally already
-has - add whichever are missing: `@capacitor/app`, `@capacitor/filesystem`, `@capacitor/network`,
-`@capacitor/file-transfer`, `@capawesome-team/capacitor-file-opener`.
+Add `--native` if the app downloads and installs an APK itself. That needs four more plugins -
+`@capacitor/file-transfer`, `@capacitor/filesystem`, `@capacitor/network`,
+`@capawesome-team/capacitor-file-opener` - and OTA web-bundle updates do not use any of them, so
+they are left out by default. The updater loads them on demand and, if one is missing, says which.
+
+Why a command rather than a list to copy: these have to be the **application's** dependencies.
+`cap sync` finds plugins by reading the app's `dependencies` and `devDependencies` - the
+`getDependencies()` it uses does not recurse - so a plugin the updater pulled in transitively would
+have its JavaScript installed and its native half never added to the Android or iOS project. It
+would look installed and fail on a device. `@capuchoo/core` is deliberately not in the list: the
+updater depends on it and re-exports the types an app needs.
 
 ## 2. Sign in and link
 
