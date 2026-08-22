@@ -217,15 +217,42 @@ Learned the hard way; each one was a live bug.
 
 ## Known gaps
 
-- The dashboard cannot upload an OTA bundle - deploys are CLI-only, and that is fine by design for
-  now.
-- `apps/template`'s cloud app no longer exists; `capuchoo init` relinks it.
+Verified 2026-08-22.
+
+**Needs a decision or a credential**
+
+- `deploy-app.yml` cannot run: the repository has **no secrets configured at all**. It needs
+  `CAPUCHOO_ENDPOINT`, `CAPUCHOO_API_KEY`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+- iOS has no CI path: it needs a macOS runner, a signing certificate and a provisioning profile. The
+  updater's native install path is Android-only by nature - an iOS binary cannot be side-loaded - so
+  iOS gets OTA bundles and store builds, nothing else.
+- The Supabase `updates` bucket is **public**: `uploadFile` hands out `getPublicUrl`, and the
+  `createSignedUrl` path sits unused two lines above. Every bundle and APK URL is downloadable by
+  anyone holding the link.
+- No custom domain in front of the backend, so renaming the Render service again would strand every
+  installed build. See [DEPLOY.md](./DEPLOY.md).
+
+**Never exercised**
+
+- `deploy native --type release`: no app in this workspace has a `signingConfig` driven by
+  `CAPUCHOO_KEYSTORE_*`, so signing, the unsigned-APK refusal and the install have only been tested
+  by unit tests.
+- The native update flow on a device - `downloadNativeUpdate()`, `openNativeInstaller()`.
+- `POST /api/downloaded`, `/applied`, `/failed`: their action values are fixed but nothing calls
+  them yet, and OTA telemetry still depends on whatever the plugin posts to `statsUrl`.
+- The renamed `@capuchoo/apps-manager` native identifiers: the JS, Java and Swift names agree by
+  inspection, but no Android or iOS build has compiled them.
+- `apps/template` has no cloud app - `capuchoo init` relinks it - so it has never been deployed.
+
+**Deliberately not done**
+
+- The dashboard cannot upload an OTA bundle. Deploys are CLI-only by choice.
+- `getBuiltinVersion()` is not reported: the server has no column for it.
 - The four `/api/dashboard/apps*` routes look unused, but the dashboard reads apps through Supabase
   directly, so confirm that before deleting them. `/api/apps/:id/channels` and `/:id/releases` _are_
   used - by the CLI.
-- 97 lint warnings in the imported apps: unused imports, floating promises, `console.log`. Visible
-  in `vp lint`, not blocking.
-- `multer@1.x` and `express-rate-limit@6` on the backend both want their own upgrade and their own
+- `multer@1.x` (end of life) and `express-rate-limit@6` both want their own upgrade and their own
   testing of the upload path.
 - TypeScript stays on 5.x: oclif's typings and `vue-tsc` are not validated on 7.x yet.
 
