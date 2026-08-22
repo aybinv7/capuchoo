@@ -22,7 +22,7 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  businessName: string;
+  fullName: string;
 }
 
 export interface OtpVerifyData {
@@ -52,7 +52,7 @@ export const authService = {
       password: data.password,
       options: {
         data: {
-          full_name: data.businessName,
+          full_name: data.fullName,
         },
         // Don't auto-confirm, require email verification
         emailRedirectTo: undefined,

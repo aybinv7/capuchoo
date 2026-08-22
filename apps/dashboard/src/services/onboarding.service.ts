@@ -4,6 +4,11 @@ export interface OnboardingPayload {
   };
   app: {
     name: string;
+    /**
+     * The real bundle identifier, e.g. com.company.app. The server used to
+     * derive this from the display name, which produced ids no device sends.
+     */
+    appId: string;
     platform: string;
   };
 }

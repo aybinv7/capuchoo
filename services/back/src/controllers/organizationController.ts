@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
+import { uniqueSlug } from "@/utils/slug";
 
 class OrganizationController {
   /**
@@ -95,7 +96,7 @@ class OrganizationController {
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const { name, slug } = req.body;
+      const { name, slug: requestedSlug } = req.body;
       const userId = (req as any).user?.id;
 
       if (!userId) {
@@ -103,10 +104,26 @@ class OrganizationController {
         return;
       }
 
-      if (!name || !slug) {
-        res.status(400).json({ error: "Name and slug are required" });
+      if (!name) {
+        res.status(400).json({ error: "Name is required" });
         return;
       }
+
+      // The slug used to be required, and the dashboard has no field for it -
+      // so creating an organisation from the UI always failed with "Name and
+      // slug are required". A slug is a formatting of the name, not a separate
+      // decision, so it is derived unless one is given.
+      const slug = requestedSlug
+        ? String(requestedSlug)
+        : await uniqueSlug(String(name), async (candidate) => {
+            const { data } = await supabaseService
+              .getClient()
+              .from("organizations")
+              .select("id")
+              .eq("slug", candidate)
+              .maybeSingle();
+            return Boolean(data);
+          });
 
       // 1. Create Org
       const orgResult = await supabaseService.insert("organizations", {

@@ -8,7 +8,11 @@ export const useOnboardingStore = defineStore(
   () => {
     // FORM STATE (Draft data to be submitted)
     const organizationData = ref<{ name: string }>({ name: "" });
-    const appData = ref<{ name: string; platform: string }>({ name: "", platform: "" });
+    const appData = ref<{ name: string; appId: string; platform: string }>({
+      name: "",
+      appId: "",
+      platform: "",
+    });
 
     // RESULT STATE (Populated after successful submission)
     const currentOrganization = ref<Organization | null>(null);
@@ -26,8 +30,8 @@ export const useOnboardingStore = defineStore(
       organizationData.value = { name };
     }
 
-    function setAppDraft(name: string, platform: string) {
-      appData.value = { name, platform };
+    function setAppDraft(name: string, appId: string, platform: string) {
+      appData.value = { name, appId, platform };
     }
 
     async function submitOnboarding() {
@@ -59,7 +63,7 @@ export const useOnboardingStore = defineStore(
     // Reset state
     function reset() {
       organizationData.value = { name: "" };
-      appData.value = { name: "", platform: "" };
+      appData.value = { name: "", appId: "", platform: "" };
       currentOrganization.value = null;
       currentApp.value = null;
       error.value = null;

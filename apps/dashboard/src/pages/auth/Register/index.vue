@@ -51,13 +51,8 @@
               <Input id="email" v-model="form.email" type="email" placeholder="m@example.com" />
             </div>
             <div class="grid gap-2">
-              <Label for="businessName">Full Name</Label>
-              <Input
-                id="businessName"
-                v-model="form.businessName"
-                type="text"
-                placeholder="John Doe"
-              />
+              <Label for="fullName">Full Name</Label>
+              <Input id="fullName" v-model="form.fullName" type="text" placeholder="John Doe" />
             </div>
             <div class="grid gap-2">
               <Label for="password">Password</Label>
@@ -164,7 +159,7 @@ const step = ref<Step>("register");
 const form = ref({
   email: "",
   password: "",
-  businessName: "",
+  fullName: "",
 });
 
 const isLoading = ref(false);
@@ -194,7 +189,7 @@ onUnmounted(() => {
 });
 
 async function handleRegister() {
-  if (!form.value.email || !form.value.password || !form.value.businessName) {
+  if (!form.value.email || !form.value.password || !form.value.fullName) {
     toast.error("Please fill in all fields");
     return;
   }
@@ -204,7 +199,7 @@ async function handleRegister() {
     await authStore.register({
       email: form.value.email,
       password: form.value.password,
-      businessName: form.value.businessName,
+      fullName: form.value.fullName,
     });
 
     toast.success("Verification code sent! Please check your email.");

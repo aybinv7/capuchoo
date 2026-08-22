@@ -39,7 +39,7 @@ export const useAuthStore = defineStore(
       }
     }
 
-    async function register(data: { email: string; password: string; businessName: string }) {
+    async function register(data: { email: string; password: string; fullName: string }) {
       loading.value = true;
       error.value = null;
 
