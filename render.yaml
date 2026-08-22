@@ -29,9 +29,12 @@ services:
     # package script resolves `vp` even though only the root declares it.
     #
     # The filter is a *path*, not a package name: renaming a package must not be
-    # able to break a deploy, and it has been able to once already.
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter ./services/back run build
-    startCommand: pnpm --filter ./services/back run start
+    # able to break a deploy, and it has been able to once already. The trailing
+    # `...` includes the package's workspace dependencies - without it the
+    # backend cannot compile, because @capuchoo/core has no dist in a fresh
+    # checkout.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter "{services/back}..." run build
+    startCommand: pnpm --filter "{services/back}" run start
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -58,7 +61,7 @@ services:
     name: capuchoo-front
     runtime: static
     rootDir: .
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter ./apps/dashboard run build
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter "{apps/dashboard}..." run build
     staticPublishPath: apps/dashboard/dist
     autoDeploy: true
     # vue-router uses history mode: every path has to serve index.html or a

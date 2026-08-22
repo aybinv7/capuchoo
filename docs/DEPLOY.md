@@ -15,12 +15,12 @@ hostname**, and that hostname is compiled into every app already installed on a 
 
 ## capuchoo-back — web service, Node
 
-| Field             | Value                                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------------------- |
-| Root Directory    | _empty_ (repository root)                                                                      |
-| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter ./services/back run build` |
-| Start Command     | `pnpm --filter ./services/back run start`                                                      |
-| Health Check Path | `/health`                                                                                      |
+| Field             | Value                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| Root Directory    | _empty_ (repository root)                                                                           |
+| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter "{services/back}..." run build` |
+| Start Command     | `pnpm --filter "{services/back}" run start`                                                         |
+| Health Check Path | `/health`                                                                                           |
 
 Environment:
 
@@ -38,12 +38,12 @@ nothing in `src/` reads it.
 
 ## capuchoo-front — static site
 
-| Field             | Value                                                                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------- |
-| Root Directory    | _empty_ (repository root)                                                                       |
-| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter ./apps/dashboard run build` |
-| Publish Directory | `apps/dashboard/dist`                                                                           |
-| Rewrite rule      | `/*` → `/index.html`                                                                            |
+| Field             | Value                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| Root Directory    | _empty_ (repository root)                                                                            |
+| Build Command     | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter "{apps/dashboard}..." run build` |
+| Publish Directory | `apps/dashboard/dist`                                                                                |
+| Rewrite rule      | `/*` → `/index.html`                                                                                 |
 
 Environment:
 
@@ -59,6 +59,19 @@ is a 404 from the CDN rather than a route.
 
 `VITE_` variables are **inlined into the bundle at build time**. Two consequences: a change needs a
 rebuild, not a restart; and a secret key placed here is published to every visitor.
+
+## Filters must include dependencies
+
+`--filter "{services/back}..."` - the braces make it a path filter, so renaming a package cannot
+break the deploy, and the trailing `...` includes that package's workspace dependencies.
+
+Both halves are load-bearing. `--filter @capuchoo/back` broke twice when packages were renamed.
+`--filter ./services/back` (no `...`) builds only that package, which was fine until the backend
+gained a dependency on `@capuchoo/core` - after that a fresh checkout has no `packages/core/dist`
+and the build fails with `Cannot find module '@capuchoo/core'`, which is _not_ obviously a
+build-order problem when you read it.
+
+The start command deliberately has no `...`: starting a service should not build anything.
 
 ## Order of operations
 
