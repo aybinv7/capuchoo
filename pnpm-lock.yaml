@@ -841,6 +841,9 @@ importers:
 
   services/back:
     dependencies:
+      '@capuchoo/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       '@supabase/supabase-js':
         specifier: ^2.58.0
         version: 2.112.3

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ENVIRONMENTS, type Environment } from "@capuchoo/core";
 import { ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
 import supabaseService from "@/services/supabaseService";
@@ -9,6 +10,8 @@ import * as fs from "fs";
 /**
  * Controller for handling admin operations including file uploads and dashboard APIs
  */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 class AdminController {
   /**
    * Creates an instance of AdminController
@@ -941,15 +944,37 @@ class AdminController {
    */
   async createChannel(req: Request, res: Response): Promise<void> {
     try {
-      const { app_id, name, is_public, allow_device_self_set, ios_enabled, android_enabled } =
-        req.body;
+      const {
+        app_id,
+        name,
+        environment,
+        is_public,
+        allow_device_self_set,
+        ios_enabled,
+        android_enabled,
+      } = req.body;
 
       if (!app_id || !name) {
         throw new ValidationError("app_id and name are required");
       }
 
-      // Resolve the app UUID from bundle identifier if provided
-      const appUuid = await this.resolveAppUuid(app_id as string);
+      // The environment was silently dropped here. The column defaults to
+      // 'staging', so every channel ever created through this endpoint became a
+      // staging channel no matter what the caller chose - which is how an app
+      // ends up with a channel named "prod" serving staging bundles. It decides
+      // which flavour the CLI builds and which bundles the server serves, so it
+      // is required rather than defaulted.
+      if (!environment || !ENVIRONMENTS.includes(environment as Environment)) {
+        throw new ValidationError(
+          `environment is required and must be one of: ${ENVIRONMENTS.join(", ")}`,
+        );
+      }
+
+      // Accept either the bundle identifier or the app's UUID: callers hold one
+      // or the other depending on where they got it.
+      const appUuid = UUID_PATTERN.test(String(app_id))
+        ? String(app_id)
+        : await this.resolveAppUuid(app_id as string);
 
       if (!appUuid) {
         throw new ValidationError("Valid App ID is required");
@@ -959,6 +984,7 @@ class AdminController {
         {
           app_id: appUuid,
           name,
+          environment,
           is_public: is_public ?? false,
           allow_device_self_set: allow_device_self_set ?? false,
           ios_enabled: ios_enabled ?? true,
