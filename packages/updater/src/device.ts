@@ -88,6 +88,24 @@ export async function getPluginVersion(): Promise<string | undefined> {
 }
 
 /**
+ * Bundle version compiled into the binary.
+ *
+ * Distinct from `getBundleVersion()`, which reports the OTA bundle currently
+ * applied - that one says `"builtin"` when none has been, and this says which
+ * builtin that is.
+ */
+export async function getBuiltinVersion(): Promise<string | undefined> {
+  if (!Capacitor.isNativePlatform()) return undefined;
+
+  try {
+    const { version } = await CapacitorUpdater.getBuiltinVersion();
+    return version || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * OS version and emulator flag, from `@capacitor/device`.
  *
  * That package is an *optional* peer: it is a separate install, and an app that

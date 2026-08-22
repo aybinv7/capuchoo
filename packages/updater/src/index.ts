@@ -33,6 +33,7 @@ export {
 } from "./config.js";
 
 export {
+  getBuiltinVersion,
   getBundleVersion,
   getDeviceId,
   getOsFacts,

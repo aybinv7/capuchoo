@@ -71,6 +71,12 @@ export interface UpdateCheckRequest {
    */
   versionOs?: string;
   pluginVersion?: string;
+  /**
+   * Bundle version compiled into the binary. `version_name` is the *applied*
+   * OTA bundle and is absent until one lands, so the two together are what say
+   * whether a device has ever taken an update.
+   */
+  versionBuiltin?: string;
   isEmulator?: boolean;
   /** Caller-supplied label for this install, shown in the dashboard. */
   customId?: string;

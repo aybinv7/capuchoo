@@ -9,6 +9,7 @@ import {
 } from "@capuchoo/core";
 import { getUpdaterConfig, describeConfigProblems } from "./config.js";
 import {
+  getBuiltinVersion,
   getBundleVersion,
   getDeviceId,
   getOsFacts,
@@ -81,6 +82,7 @@ export interface DeviceFacts {
   versionName: string;
   deviceId: string;
   pluginVersion?: string | undefined;
+  versionBuiltin?: string | undefined;
   versionOs?: string | undefined;
   isEmulator?: boolean | undefined;
   customId?: string | undefined;
@@ -112,6 +114,7 @@ export function buildCheckRequest(facts: DeviceFacts): UpdateCheckRequest {
     request.defaultChannel = facts.channel;
   }
   if (facts.pluginVersion) request.pluginVersion = facts.pluginVersion;
+  if (facts.versionBuiltin) request.versionBuiltin = facts.versionBuiltin;
   if (facts.versionOs) request.versionOs = facts.versionOs;
   if (typeof facts.isEmulator === "boolean") request.isEmulator = facts.isEmulator;
   if (facts.customId) request.customId = facts.customId;
@@ -126,13 +129,15 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
   const problems = describeConfigProblems(config);
   if (problems.length > 0) throw new UpdaterConfigError(problems);
 
-  const [versionCode, versionName, deviceId, pluginVersion, osFacts] = await Promise.all([
-    getVersionCode(),
-    getBundleVersion(),
-    getDeviceId(),
-    getPluginVersion(),
-    getOsFacts(),
-  ]);
+  const [versionCode, versionName, deviceId, pluginVersion, versionBuiltin, osFacts] =
+    await Promise.all([
+      getVersionCode(),
+      getBundleVersion(),
+      getDeviceId(),
+      getPluginVersion(),
+      getBuiltinVersion(),
+      getOsFacts(),
+    ]);
 
   const request = buildCheckRequest({
     appId: config.appId,
@@ -143,6 +148,7 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     versionName,
     deviceId,
     pluginVersion,
+    versionBuiltin,
     ...osFacts,
   });
 

@@ -582,6 +582,7 @@ class AdminController {
           version_name: device.version_name ?? undefined,
           version_build: device.version_build ?? undefined,
           version_os: device.version_os ?? undefined,
+          version_builtin: device.version_builtin ?? undefined,
           plugin_version: device.plugin_version ?? undefined,
           is_emulator: device.is_emulator,
           is_prod: device.is_prod,

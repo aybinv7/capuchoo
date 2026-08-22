@@ -364,6 +364,7 @@ class UpdateService implements IUpdateService {
         versionName: request.version_name,
         versionBuild: request.versionBuild || request.versionCode,
         versionOs: request.versionOs,
+        versionBuiltin: request.versionBuiltin,
         pluginVersion: request.pluginVersion,
         isProd: request.isProd,
         isEmulator: request.isEmulator,

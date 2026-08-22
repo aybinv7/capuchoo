@@ -132,3 +132,32 @@ describe("buildDeviceRow: fields that arrive under snake_case names", () => {
     expect(row.custom_id).toBe("tester-1");
   });
 });
+
+describe("buildDeviceRow: the builtin bundle version", () => {
+  it("records it separately from the applied bundle", () => {
+    const row = buildDeviceRow(
+      {
+        appUuid: "a",
+        deviceId: "d",
+        platform: "android",
+        versionName: "4.0.4",
+        versionBuiltin: "4.0.0",
+      },
+      NOW,
+    );
+
+    // version_name is what is running; version_builtin is what shipped. Both
+    // are needed to answer "has this device ever taken an update".
+    expect(row.version_name).toBe("4.0.4");
+    expect(row.version_builtin).toBe("4.0.0");
+  });
+
+  it("drops the builtin sentinel rather than storing it as a version", () => {
+    const row = buildDeviceRow(
+      { appUuid: "a", deviceId: "d", platform: "android", versionBuiltin: "builtin" },
+      NOW,
+    );
+
+    expect("version_builtin" in row).toBe(false);
+  });
+});

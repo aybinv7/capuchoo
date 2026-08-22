@@ -16,6 +16,7 @@ export interface DeviceObservation {
   versionName?: string | undefined;
   versionBuild?: string | undefined;
   versionOs?: string | undefined;
+  versionBuiltin?: string | undefined;
   pluginVersion?: string | undefined;
   isProd?: boolean | undefined;
   isEmulator?: boolean | undefined;
@@ -75,6 +76,7 @@ export function buildDeviceRow(
     ["version_name", normalizeVersion(observation.versionName)],
     ["version_build", normalizeVersion(observation.versionBuild)],
     ["version_os", observation.versionOs],
+    ["version_builtin", normalizeVersion(observation.versionBuiltin)],
     ["plugin_version", observation.pluginVersion],
     ["is_prod", observation.isProd],
     ["is_emulator", observation.isEmulator],

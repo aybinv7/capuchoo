@@ -20,6 +20,8 @@ export interface UpdateRequest {
   pluginVersion?: string;
   /** OS version, e.g. "14" */
   versionOs?: string;
+  /** Bundle version compiled into the binary, as opposed to the applied one */
+  versionBuiltin?: string;
   /** Caller-supplied device label, shown in the dashboard */
   customId?: string;
 }

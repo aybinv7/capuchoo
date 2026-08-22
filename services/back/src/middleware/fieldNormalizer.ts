@@ -20,6 +20,7 @@ const FIELD_MAPPINGS: Record<string, string> = {
   // version was never stored, and the native comparison silently fell back to
   // version_build.
   version_os: "versionOs",
+  version_builtin: "versionBuiltin",
   version_code: "versionCode",
   custom_id: "customId",
 
@@ -132,6 +133,7 @@ export function extractUpdateRequest(body: Record<string, any>) {
     isProd: body.isProd ?? body.is_prod ?? true,
     pluginVersion: body.pluginVersion || body.plugin_version,
     versionOs: body.versionOs || body.version_os,
+    versionBuiltin: body.versionBuiltin || body.version_builtin,
     versionCode: body.versionCode || body.version_code,
     customId: body.customId || body.custom_id,
   };
