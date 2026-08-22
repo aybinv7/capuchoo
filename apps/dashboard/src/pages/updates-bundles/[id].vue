@@ -379,7 +379,7 @@ const handlePromoted = async () => {
 
 definePage({
   meta: {
-    title: "Update Details - CapGO",
+    title: "Update Details - Capuchoo",
     category: "updates-bundles",
   },
   props: true,

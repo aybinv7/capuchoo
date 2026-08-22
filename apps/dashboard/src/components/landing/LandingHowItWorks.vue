@@ -7,7 +7,7 @@ const steps = [
     icon: Upload,
     title: "Upload Your Bundle",
     description:
-      "Build your app and upload the bundle to CapGO. We support Capacitor, Cordova, and more.",
+      "Build your app and upload the bundle to Capuchoo. We support Capacitor, Cordova, and more.",
     details: ["Automatic versioning", "Bundle diff optimization", "Code signature verification"],
   },
   {

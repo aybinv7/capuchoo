@@ -183,7 +183,7 @@ const formatDate = (dateString?: string, time = false) => {
 
 definePage({
   meta: {
-    title: "Device Details - CapGO",
+    title: "Device Details - Capuchoo",
     category: "devices",
   },
   props: true,

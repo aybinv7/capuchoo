@@ -12,7 +12,7 @@ export interface UpdateRequest {
   deviceId?: string;
   appId: string;
   defaultChannel?: Channel;
-  // Additional fields from official Capgo spec
+  // Additional fields the OTA plugin sends
   versionBuild?: string; // App version string (e.g., "1.0.0")
   versionCode?: string; // Native build number (e.g., "54")
   isEmulator?: boolean;
@@ -27,7 +27,7 @@ export interface UpdateRequest {
 }
 
 /**
- * Official Capgo update response format
+ * Update response shape the plugin expects
  */
 export interface UpdateResponse {
   version_name?: string;
@@ -61,11 +61,11 @@ export interface ManifestEntry {
 }
 
 /**
- * Official Capgo stats request format
+ * Stats request shape the OTA plugin sends
  * Note: Plugin sends 'action', legacy code uses 'status' - both are supported
  */
 export interface StatsRequest {
-  /** Action type (official Capgo field) */
+  /** Action type (the plugin's field) */
   action?: string;
   /** Status (legacy field, same as action) */
   status?: string;
@@ -104,7 +104,7 @@ export interface ChannelAssignmentRequest {
 }
 
 /**
- * Official Capgo channel response format
+ * Channel response shape the plugin expects
  */
 export interface ChannelResponse {
   channel: Channel;

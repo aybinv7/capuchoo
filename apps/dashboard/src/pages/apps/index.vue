@@ -71,7 +71,7 @@ import type { App } from "@/modules/apps/types/apps.types";
 
 definePage({
   meta: {
-    title: "Apps - CapGO Updater",
+    title: "Apps - Capuchoo",
     description: "Manage your applications",
     category: "apps",
   },

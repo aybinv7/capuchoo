@@ -82,7 +82,7 @@ import { Package, Smartphone, Download, TrendingUp } from "lucide-vue-next";
 
 definePage({
   meta: {
-    title: "Statistics - CapGO Updater",
+    title: "Statistics - Capuchoo",
     description: "Analytics and metrics for your apps",
     category: "statistics",
   },

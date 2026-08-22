@@ -11,7 +11,7 @@ router.use(rateLimiter);
 router.use(normalizeRequestFields);
 
 /**
- * Official Capgo plugin channel_self endpoint
+ * Official OTA plugin channel_self endpoint
  * Supports all 4 HTTP methods as per official spec
  */
 

@@ -8,7 +8,7 @@
         <div class="bg-primary text-primary-foreground p-1 rounded">
           <ILucideCpu class="h-6 w-6" />
         </div>
-        CapGO
+        Capuchoo
       </div>
       <div class="text-sm text-muted-foreground">
         Step {{ currentStepIndex + 1 }} of {{ steps.length }}

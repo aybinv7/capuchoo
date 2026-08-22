@@ -60,7 +60,7 @@ import { LayoutList, Map as MapIcon } from "lucide-vue-next";
 
 definePage({
   meta: {
-    title: "Devices - CapGO Admin",
+    title: "Devices - Capuchoo",
     description: "Manage app devices",
   },
 });

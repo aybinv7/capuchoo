@@ -25,7 +25,7 @@ import { toast } from "vue-sonner";
 
 definePage({
   meta: {
-    title: "Channels - CapGO Admin",
+    title: "Channels - Capuchoo",
     description: "Manage app channels",
   },
 });

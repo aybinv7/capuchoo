@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import logger from "@/utils/logger";
 
 /**
- * Field name mappings from Capgo plugin (snake_case) to backend (camelCase)
+ * Field name mappings from the OTA plugin (snake_case) to backend (camelCase)
  */
 const FIELD_MAPPINGS: Record<string, string> = {
   // Core fields
@@ -43,7 +43,7 @@ const REVERSE_MAPPINGS: Record<string, string> = Object.entries(FIELD_MAPPINGS).
 );
 
 /**
- * Normalizes request body fields from snake_case (Capgo plugin) to camelCase (backend)
+ * Normalizes request body fields from snake_case (OTA plugin) to camelCase (backend)
  * Also handles both naming conventions for backwards compatibility
  */
 export function normalizeRequestFields(req: Request, res: Response, next: NextFunction): void {
@@ -65,7 +65,7 @@ export function normalizeRequestFields(req: Request, res: Response, next: NextFu
     }
 
     // Special handling for 'action' vs 'status' in stats
-    // Capgo uses 'action', our legacy code uses 'status'
+    // The plugin uses 'action', our legacy code uses 'status'
     if (normalized.action && !normalized.status) {
       normalized.status = normalized.action;
     }
@@ -98,8 +98,8 @@ export function normalizeRequestFields(req: Request, res: Response, next: NextFu
 }
 
 /**
- * Transforms response body from camelCase (backend) to snake_case (Capgo plugin)
- * Use this if you need strict Capgo compatibility in responses
+ * Transforms response body from camelCase (backend) to snake_case (OTA plugin)
+ * Use this if you need strict plugin compatibility in responses
  */
 export function transformResponseFields(obj: Record<string, any>): Record<string, any> {
   const transformed: Record<string, any> = {};

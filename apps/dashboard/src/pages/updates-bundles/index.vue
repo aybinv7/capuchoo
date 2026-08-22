@@ -15,7 +15,7 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    title: "Updates & Bundles - CapGO Updater",
+    title: "Updates & Bundles - Capuchoo",
     description: "Manage app updates and bundles",
     category: "updates-bundles",
     hideFromSearch: false,

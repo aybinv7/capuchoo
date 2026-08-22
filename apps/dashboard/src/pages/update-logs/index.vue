@@ -9,7 +9,7 @@ import UpdateLogsList from "@/modules/update-logs/components/UpdateLogsList.vue"
 
 definePage({
   meta: {
-    title: "Update Logs - CapGO Updater",
+    title: "Update Logs - Capuchoo",
     description: "Activity feed for update events",
     category: "update-logs",
   },

@@ -8,10 +8,10 @@ class StatsController {
   constructor(private readonly updateService: IUpdateService) {}
 
   /**
-   * Log statistics from the Capgo plugin
+   * Log statistics from the OTA plugin
    * POST /stats
    *
-   * Official Capgo plugin sends:
+   * The plugin sends:
    * - action: 'get', 'set', 'download_fail', 'install', 'fail', etc.
    * - app_id, device_id, version_name, version_build, platform
    * - is_emulator, is_prod
@@ -58,7 +58,7 @@ class StatsController {
         oldVersionName: req.body.old_version_name || req.body.oldVersionName,
       });
 
-      // Official Capgo response format
+      // Response shape the plugin expects
       res.status(200).json({ status: "success" });
     } catch (error) {
       logger.error("Stats logging failed", {

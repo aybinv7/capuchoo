@@ -18,7 +18,7 @@ export interface Device {
   version_code?: string; // Native build number (e.g., "54")
   version_os?: string; // OS version
   // Plugin info
-  plugin_version?: string; // Capgo plugin version
+  plugin_version?: string; // OTA plugin version
   is_emulator?: boolean;
   is_prod?: boolean;
   // Stats

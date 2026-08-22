@@ -255,7 +255,7 @@ interface FormDataState {
 
 definePage({
   meta: {
-    title: "New Release - CapGO",
+    title: "New Release - Capuchoo",
     category: "updates-bundles",
   },
 });

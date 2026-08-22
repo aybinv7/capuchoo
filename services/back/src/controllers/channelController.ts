@@ -9,7 +9,7 @@ class ChannelController {
 
   /**
    * POST /channel_self - Assign device to a channel
-   * Official Capgo plugin method
+   * Called by the OTA plugin (@capgo/capacitor-updater)
    */
   async assignChannel(req: Request, res: Response): Promise<void> {
     try {
@@ -42,7 +42,7 @@ class ChannelController {
         platform: normalized.platform,
       });
 
-      // Official Capgo response format
+      // Response shape the plugin expects
       const response: ChannelResponse = {
         channel: normalized.channel,
         status: "override",
@@ -69,7 +69,7 @@ class ChannelController {
 
   /**
    * PUT /channel_self - Get current device channel
-   * Official Capgo plugin method
+   * Called by the OTA plugin (@capgo/capacitor-updater)
    */
   async getDeviceChannel(req: Request, res: Response): Promise<void> {
     try {
@@ -97,7 +97,7 @@ class ChannelController {
         platform: normalized.platform,
       });
 
-      // Official Capgo response format
+      // Response shape the plugin expects
       const response: ChannelResponse = {
         channel: result.channel || normalized.defaultChannel || "production",
         status: result.channel ? "override" : "default",
@@ -125,7 +125,7 @@ class ChannelController {
 
   /**
    * GET /channel_self - List available channels
-   * Official Capgo plugin method
+   * Called by the OTA plugin (@capgo/capacitor-updater)
    */
   async listChannels(req: Request, res: Response): Promise<void> {
     try {
@@ -147,7 +147,7 @@ class ChannelController {
         platform: normalized.platform,
       });
 
-      // Official Capgo response format
+      // Response shape the plugin expects
       res.json(result);
     } catch (error) {
       logger.error("Get available channels failed", {
@@ -168,7 +168,7 @@ class ChannelController {
 
   /**
    * DELETE /channel_self - Remove device from channel (reset to default)
-   * Official Capgo plugin method
+   * Called by the OTA plugin (@capgo/capacitor-updater)
    */
   async unsetChannel(req: Request, res: Response): Promise<void> {
     try {

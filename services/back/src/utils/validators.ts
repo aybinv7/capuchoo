@@ -75,7 +75,7 @@ export const validateUpdateParams = (req: any, res: any, next: any) => {
       body: req.body,
     });
     return res.status(400).json({
-      error: "Welcome to Capgo! Please provide valid update information.",
+      error: "Welcome to Capuchoo. Please provide valid update information.",
     });
   }
 

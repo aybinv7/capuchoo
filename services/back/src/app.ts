@@ -31,7 +31,7 @@ class App {
         bucketName: config.supabase.bucketName,
       });
 
-      console.log(`🚀 Capgo self-hosted update server running on port ${config.port}`);
+      console.log(`🚀 Capuchoo update server running on port ${config.port}`);
       console.log(`🔗 Admin interface: http://localhost:${config.port}`);
       console.log(`📊 Health check: http://localhost:${config.port}/health`);
     });

@@ -6,11 +6,11 @@ import { normalizeRequestFields } from "@/middleware/fieldNormalizer";
 const router: Router = Router();
 router.use(rateLimiter);
 
-// Apply field normalization to handle snake_case from Capgo plugin
+// Apply field normalization to handle snake_case from OTA plugin
 router.use(normalizeRequestFields);
 
 /**
- * Official Capgo plugin stats endpoint
+ * Stats endpoint the plugin calls
  * POST /stats - Send analytics and events
  *
  * Accepts both 'action' (official) and 'status' (legacy) fields

@@ -110,7 +110,7 @@ import { useQueryClient } from "@tanstack/vue-query";
 
 definePage({
   meta: {
-    title: "Create App - CapGO Updater",
+    title: "Create App - Capuchoo",
     description: "Register a new application",
     category: "apps",
   },

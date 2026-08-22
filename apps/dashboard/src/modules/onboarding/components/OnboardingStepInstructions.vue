@@ -3,7 +3,7 @@
     <div class="space-y-2 text-center">
       <h1 class="text-3xl font-bold tracking-tight">Integration Guide</h1>
       <p class="text-muted-foreground">
-        Follow these steps to integrate Capgo into your {{ store.currentApp?.name }} app.
+        Follow these steps to integrate Capuchoo into your {{ store.currentApp?.name }} app.
       </p>
     </div>
 

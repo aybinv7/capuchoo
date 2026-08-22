@@ -581,7 +581,7 @@ const formatDate = (dateString?: string) => {
 
 definePage({
   meta: {
-    title: "Channel Details - CapGO",
+    title: "Channel Details - Capuchoo",
     category: "channels",
   },
   props: true,

@@ -106,7 +106,7 @@ import {
 
 definePage({
   meta: {
-    title: "Create Channel - CapGO",
+    title: "Create Channel - Capuchoo",
     category: "channels",
   },
 });
