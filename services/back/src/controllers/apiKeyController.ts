@@ -18,6 +18,19 @@ class ApiKeyController {
       // Optional: scope to specific app
       const { name = "CLI Key", app_id } = req.body;
 
+      // A key may never mint a key with more reach than itself. Without this,
+      // the app scope the deploy endpoints enforce is not a boundary: a key
+      // restricted to one app could create an unscoped one and publish anywhere.
+      // A dashboard session is unrestricted and stays that way.
+      const callerScope = (req as any).appId as string | undefined;
+      if (callerScope && app_id !== callerScope) {
+        throw new AppError(
+          "This API key is restricted to one application, so it can only create keys " +
+            "for that same application. Create a broader key from the dashboard.",
+          403,
+        );
+      }
+
       // Generate a random key: cap_<32 random hex chars>
       const randomPart = randomBytes(16).toString("hex");
       const plainKey = `cap_${randomPart}`;
