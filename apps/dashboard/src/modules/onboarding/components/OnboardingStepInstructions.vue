@@ -22,9 +22,11 @@
             <h3 class="font-medium">Add the runtime and the CLI</h3>
             <CodeBlock :code="installCommand" @copy="copy" />
             <p class="text-xs text-muted-foreground">
-              <code>@capgo/capacitor-updater</code> is the native plugin Capuchoo drives.
-              <code>@capacitor/device</code> is optional - it lets the app report its OS version and
-              whether it is an emulator.
+              <code>@capgo/capacitor-updater</code> is the native plugin Capuchoo drives; the
+              <code>@capacitor/*</code> packages are its peers, and you may already have some.
+              <code>@capuchoo/core</code> is not in the list - the updater brings it and re-exports
+              the types you need. Add <code>@capacitor/device</code> too if you want the app to
+              report its OS version and whether it is an emulator.
             </p>
           </div>
           <div class="space-y-2">

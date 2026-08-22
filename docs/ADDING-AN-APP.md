@@ -12,15 +12,18 @@ Run `capuchoo doctor` at any point. It checks all of this and names the fix for 
 ## 1. Install
 
 ```sh
-pnpm add @capuchoo/updater @capuchoo/core @capgo/capacitor-updater
+pnpm add @capuchoo/updater @capgo/capacitor-updater
 pnpm add -D @capuchoo/cli
 pnpm add @capacitor/device        # optional: reports OS version and emulator flag
 npx cap sync
 ```
 
-`@capuchoo/updater` needs these Capacitor peers, which an app of this kind normally already has:
-`@capacitor/app`, `@capacitor/filesystem`, `@capacitor/network`, `@capacitor/file-transfer`,
-`@capawesome-team/capacitor-file-opener`.
+Not `@capuchoo/core`: the updater depends on it and re-exports the types an app needs, so a direct
+dependency is noise. Install it only if you import it yourself.
+
+`@capuchoo/updater` also needs these Capacitor peers, which an app of this kind normally already
+has - add whichever are missing: `@capacitor/app`, `@capacitor/filesystem`, `@capacitor/network`,
+`@capacitor/file-transfer`, `@capawesome-team/capacitor-file-opener`.
 
 ## 2. Sign in and link
 
