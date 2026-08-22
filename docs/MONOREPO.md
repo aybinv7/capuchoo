@@ -247,8 +247,6 @@ Verified 2026-08-22.
 - The four `/api/dashboard/apps*` routes look unused, but the dashboard reads apps through Supabase
   directly, so confirm that before deleting them. `/api/apps/:id/channels` and `/:id/releases` _are_
   used - by the CLI.
-- `multer@1.x` (end of life) and `express-rate-limit@6` both want their own upgrade and their own
-  testing of the upload path.
 - TypeScript stays on 5.x: oclif's typings and `vue-tsc` are not validated on 7.x yet.
 
 ## Conventions

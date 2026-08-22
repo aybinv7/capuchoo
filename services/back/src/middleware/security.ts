@@ -27,7 +27,8 @@ export const corsMiddleware = cors({
 
 export const rateLimiter = rateLimit({
   windowMs: config.security.rateLimit.windowMs,
-  max: config.security.rateLimit.max,
+  // `max` in v6; renamed to `limit` in v7 and removed in v8.
+  limit: config.security.rateLimit.max,
   message: {
     error: "Too many requests from this IP, please try again later.",
   },
