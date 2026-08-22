@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-import { useDirection, useLocale } from "reka-ui";
 
 import { computed, ref, type Component } from "vue";
 import { useI18n } from "vue-i18n";

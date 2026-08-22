@@ -40,7 +40,7 @@ class ApiClient {
       (response: AxiosResponse) => response,
       (error) => {
         if (error.response?.status === 401) {
-          authService.logout();
+          void authService.logout();
           localStorage.removeItem("access_token");
         }
         return Promise.reject(error);

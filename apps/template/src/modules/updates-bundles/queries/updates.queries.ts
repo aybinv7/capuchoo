@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/vue-query";
+import { useQuery } from "@tanstack/vue-query";
 import { type MaybeRefOrGetter, toValue, computed } from "vue";
 import { apiClient } from "@/shared/services/api.client";
 import { queryErrorHandler } from "@/shared/composables/api/error/query-error-handler";

@@ -13,7 +13,7 @@ export const useAndroidBackButton = (f7: Framework7) => {
   }
   const $ = f7.$;
 
-  App.addListener("backButton", () => {
+  void App.addListener("backButton", () => {
     if ($(".actions-modal.modal-in").length) {
       f7.actions.close(".actions-modal.modal-in");
       return;
@@ -84,7 +84,7 @@ export const useAndroidBackButton = (f7: Framework7) => {
       });
       toast.open();
       toast.on("closeButtonClick", () => {
-        App.exitApp();
+        void App.exitApp();
       });
       return;
     }

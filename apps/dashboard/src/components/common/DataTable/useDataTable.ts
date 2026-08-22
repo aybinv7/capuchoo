@@ -19,9 +19,8 @@ import {
   getFacetedUniqueValues,
   getFacetedMinMaxValues,
   useVueTable,
-  type Table,
 } from "@tanstack/vue-table";
-import { ref, type Ref, computed } from "vue";
+import { ref, computed } from "vue";
 import type { DataTableConfig, DataTableProps } from "./types";
 
 const defaultConfig: DataTableConfig = {
@@ -51,7 +50,7 @@ const defaultConfig: DataTableConfig = {
   },
 };
 
-export function useDataTable<TData, TValue>(props: DataTableProps<TData, TValue>, emit: any) {
+export function useDataTable<TData, TValue>(props: DataTableProps<TData, TValue>, _emit: any) {
   // Merge config
   const config = computed(() => ({
     features: { ...defaultConfig.features, ...props.config?.features },
@@ -149,9 +148,7 @@ export function useDataTable<TData, TValue>(props: DataTableProps<TData, TValue>
         ? (columnVisibility.value = updater(columnVisibility.value))
         : (columnVisibility.value = updater),
     onRowSelectionChange: (updater) => {
-      typeof updater === "function"
-        ? (rowSelection.value = updater(rowSelection.value))
-        : (rowSelection.value = updater);
+      rowSelection.value = typeof updater === "function" ? updater(rowSelection.value) : updater;
     },
     onPaginationChange: (updater) =>
       typeof updater === "function"

@@ -5,7 +5,7 @@ import { apiClient } from "@/services/api.client";
 import { queryErrorHandler } from "@/composables/api/error/query-error-handler";
 
 import { useAppStore } from "@/stores/app.store";
-import { computed, unref } from "vue";
+import { computed } from "vue";
 
 interface UpdateLogsFilters {
   app_id?: string;

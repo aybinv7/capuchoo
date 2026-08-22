@@ -66,7 +66,9 @@ export const authenticate = async (
 /**
  * Validate an API key and return user object
  */
-async function validateApiKey(apiKey: string): Promise<any | null> {
+// eslint-disable-next-line typescript/no-explicit-any -- the API key row shape
+// is not modelled yet; `| null` is dropped because `any` already includes it.
+async function validateApiKey(apiKey: string): Promise<any> {
   try {
     const keyHash = createHash("sha256").update(apiKey).digest("hex");
 

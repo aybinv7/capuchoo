@@ -8,6 +8,8 @@ export function useApiFormDataMutation<TData = unknown, TVariables = unknown>(
   method: "post" | "put" | "patch" | "delete" = "post",
   options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">,
 ) {
+  const resolved = typeof options === "function" ? options() : options;
+
   return useMutation<TData, Error, TVariables>({
     mutationFn: async (variables: TVariables) => {
       try {
@@ -30,13 +32,13 @@ export function useApiFormDataMutation<TData = unknown, TVariables = unknown>(
             response = await apiClient.delete(url, config);
             break;
           default:
-            throw new Error(`Unsupported method: ${method}`);
+            throw new Error(`Unsupported method: ${String(method)}`);
         }
         return response.data;
       } catch (error) {
         throw queryErrorHandler(error);
       }
     },
-    ...options,
+    ...resolved,
   });
 }

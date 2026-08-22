@@ -6,6 +6,9 @@ const containerRef = ref<HTMLDivElement | null>(null);
 
 let scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer, uniforms: any;
 let animationId: number | null = null;
+// Held at component scope so unmount can pass the *same* reference to
+// removeEventListener - the handler itself is created inside initThreeJS.
+let onResize: (() => void) | null = null;
 
 const initThreeJS = () => {
   if (!containerRef.value) return;
@@ -99,6 +102,7 @@ const initThreeJS = () => {
     uniforms.resolution.value.y = renderer.domElement.height;
   };
 
+  onResize = onWindowResize;
   window.addEventListener("resize", onWindowResize);
   onWindowResize();
 
@@ -117,7 +121,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (animationId) cancelAnimationFrame(animationId);
   if (renderer) renderer.dispose();
-  window.removeEventListener("resize", () => {});
+  // Removing a fresh arrow removed nothing, so the handler outlived the
+  // component and kept resizing a disposed renderer.
+  if (onResize) window.removeEventListener("resize", onResize);
 });
 </script>
 

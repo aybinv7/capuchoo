@@ -317,7 +317,7 @@ const otherVersionDevices = computed(() => {
 });
 
 const isDeviceOutdated = (_d: Device) => {
-  console.log("isDeviceOutdated", _d);
+  console.warn("isDeviceOutdated", _d);
   if (isLatest.value) return true;
   return false;
 };

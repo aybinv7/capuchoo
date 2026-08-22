@@ -9,7 +9,7 @@ const routes: Router.RouteParameters[] = [
     // beforeEnter: (context) => useAuthGuard(context),
 
     async({ resolve }) {
-      import("@/modules/auth/views/Login.vue").then((vc) => {
+      void import("@/modules/auth/views/Login.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },
@@ -22,7 +22,7 @@ const routes: Router.RouteParameters[] = [
     // beforeEnter: (context) => useAuthGuard(context),
 
     async({ resolve }) {
-      import("@/modules/auth/views/Register.vue").then((vc) => {
+      void import("@/modules/auth/views/Register.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },

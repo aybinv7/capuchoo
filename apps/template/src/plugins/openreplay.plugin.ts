@@ -5,7 +5,6 @@ import { Device } from "@capacitor/device";
 import { Network } from "@capacitor/network";
 import trackerVuex from "@openreplay/tracker-vuex";
 import { trackedStores } from "@/plugins/openreplay/tracked-stores";
-import { useAuthStore } from "@/shared/stores/auth.store";
 import { f7 } from "framework7-vue";
 
 /**
@@ -56,7 +55,7 @@ const openReplay = async function openReplay(
   app: any,
   options: OpenReplayOptions = {},
 ): Promise<void> {
-  const { enabled = false, projectKey = "", ingestPoint, userConsent = true } = options;
+  const { enabled = false, projectKey = "", userConsent = true } = options;
 
   const isEnabled = import.meta.env.VITE_OPENREPLAY_ENABLED || enabled;
   const isNative = Capacitor.isNativePlatform();
@@ -73,8 +72,6 @@ const openReplay = async function openReplay(
     );
     return;
   }
-
-  const finalIngestPoint = import.meta.env.VITE_OPENREPLAY_INGEST_POINT || ingestPoint;
 
   try {
     if (!userConsent) {
@@ -118,7 +115,7 @@ const openReplay = async function openReplay(
         const store = useStore();
         const wrapper = vuexPlugin(name);
         wrapper(store);
-        console.log(`OpenReplay: Tracking store '${name}'`);
+        console.warn(`OpenReplay: tracking store '${name}'`);
       } catch (err) {
         console.warn(
           `OpenReplay: Failed to track store '${name}'. Ensure Pinia is installed.`,
@@ -129,7 +126,6 @@ const openReplay = async function openReplay(
     // ----------------------------------
 
     const deviceInfo = await getDeviceInfo();
-    const authStoreInstance = useAuthStore();
 
     const startOptions: StartOptions = {
       userID: "aybinv7",
@@ -139,7 +135,7 @@ const openReplay = async function openReplay(
       } as StartOptions["metadata"],
     };
 
-    trackerInstance?.start(startOptions);
+    void trackerInstance?.start(startOptions);
 
     trackerInstance.use(trackerAssist());
     app.provide("$openReplay", trackerInstance);

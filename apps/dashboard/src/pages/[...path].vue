@@ -54,7 +54,7 @@ const openCommandPalette = () => {
 
 const contactSupport = () => {
   showToast(t("404.support_contacted", "Support contacted"), "success");
-  console.log("Contact support action triggered");
+  console.warn("Contact support action triggered");
 };
 
 definePage({

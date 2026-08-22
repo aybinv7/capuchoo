@@ -1077,7 +1077,9 @@ class AdminController {
     try {
       const { id } = req.params;
       const updateData = req.body;
-      const { app_id, ...sanitizedData } = updateData;
+      // app_id is pulled out to keep it out of the update: a channel does not
+      // change which app it belongs to.
+      const { app_id: _app_id, ...sanitizedData } = updateData;
 
       // Ensure empty UUID fields are null
       if (sanitizedData.current_version_id === "") {

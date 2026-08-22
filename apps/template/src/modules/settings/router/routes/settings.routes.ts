@@ -4,7 +4,7 @@ const routes: Router.RouteParameters[] = [
   {
     path: "/settings",
     async({ resolve }) {
-      import("@/modules/settings/views/SettingsView.vue").then((vc) => {
+      void import("@/modules/settings/views/SettingsView.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },
@@ -12,7 +12,7 @@ const routes: Router.RouteParameters[] = [
   {
     path: "/settings/account",
     async({ resolve }) {
-      import("@/modules/settings/views/SettingsAccount.vue").then((vc) => {
+      void import("@/modules/settings/views/SettingsAccount.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },
@@ -20,7 +20,7 @@ const routes: Router.RouteParameters[] = [
   {
     path: "/settings/api-keys",
     async({ resolve }) {
-      import("@/modules/settings/views/SettingsApiKeys.vue").then((vc) => {
+      void import("@/modules/settings/views/SettingsApiKeys.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },
@@ -28,7 +28,7 @@ const routes: Router.RouteParameters[] = [
   {
     path: "/settings/app",
     async({ resolve }) {
-      import("@/modules/settings/views/SettingsApp.vue").then((vc) => {
+      void import("@/modules/settings/views/SettingsApp.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },
@@ -36,7 +36,7 @@ const routes: Router.RouteParameters[] = [
   {
     path: "/settings/members",
     async({ resolve }) {
-      import("@/modules/settings/views/SettingsMembers.vue").then((vc) => {
+      void import("@/modules/settings/views/SettingsMembers.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },

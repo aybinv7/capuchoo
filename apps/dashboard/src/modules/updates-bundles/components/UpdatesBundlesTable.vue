@@ -91,7 +91,7 @@ const handleBulkEdit = () => {
 };
 
 const handleBulkEditConfirm = () => {
-  console.log("Bulk editing items:", {
+  console.warn("Bulk editing items:", {
     ids: selectedItems.value.map((p) => p.id),
     changes: bulkEditData.value,
   });
@@ -100,7 +100,7 @@ const handleBulkEditConfirm = () => {
 };
 
 const handleBulkExport = () => {
-  console.log(
+  console.warn(
     "Exporting items:",
     selectedItems.value.map((p) => p.id),
   );

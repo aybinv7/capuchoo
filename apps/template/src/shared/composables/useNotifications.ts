@@ -86,7 +86,7 @@ export function useNotifications() {
     const granted = await notificationService.requestPermissions();
     if (granted) {
       const token = await notificationService.registerPushNotifications();
-      console.log("Notifications enabled. Token:", token);
+      console.warn("Notifications enabled. Token:", token);
       return true;
     }
     return false;

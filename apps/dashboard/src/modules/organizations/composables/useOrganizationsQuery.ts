@@ -29,7 +29,7 @@ export const useCreateOrganizationMutation = () => {
       queryClient.setQueryData<Organization[]>(["organizations"], (old) => {
         return old ? [...old, newItem] : [newItem];
       });
-      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      void queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
   });
 };

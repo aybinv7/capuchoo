@@ -29,7 +29,7 @@ export const useCreateAppMutation = () => {
   return useMutation({
     mutationFn: (data: CreateAppDto) => appService.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["apps"] });
+      void queryClient.invalidateQueries({ queryKey: ["apps"] });
     },
   });
 };
@@ -39,7 +39,7 @@ export const useDeleteAppMutation = () => {
   return useMutation({
     mutationFn: (id: string) => appService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["apps"] });
+      void queryClient.invalidateQueries({ queryKey: ["apps"] });
     },
   });
 };

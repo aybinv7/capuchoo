@@ -23,7 +23,7 @@ export class Auth {
 
       return { success: true };
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return { success: false, error: "Login failed" };
     }
   }

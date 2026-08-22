@@ -11,7 +11,6 @@ import { resolve } from "path";
 import AutoImport from "unplugin-auto-import/vite";
 import IconsResolver from "unplugin-icons/resolver";
 import Icons from "unplugin-icons/vite";
-import Imagemin from "unplugin-imagemin/vite";
 import TurboConsole from "unplugin-turbo-console/vite";
 import Components from "unplugin-vue-components/vite";
 import { VueRouterAutoImports } from "unplugin-vue-router";

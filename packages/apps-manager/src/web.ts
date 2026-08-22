@@ -4,7 +4,7 @@ import type { CapuchooAppsManagerPlugin, AppInfo } from "./definitions";
 
 export class CapuchooAppsManagerWeb extends WebPlugin implements CapuchooAppsManagerPlugin {
   async echo(options: { value: string }): Promise<{ value: string }> {
-    console.log("ECHO", options);
+    console.warn("ECHO", options);
     return options;
   }
 

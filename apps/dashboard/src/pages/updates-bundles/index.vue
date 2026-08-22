@@ -113,12 +113,12 @@ const filteredItems = computed(() => {
 const handleDelete = async (id: string, type: "bundle" | "native") => {
   // In a real implementation, you would call the appropriate delete mutation
   // For now, we'll just trigger a refetch
-  console.log("iddd", id, type);
+  console.warn("iddd", id, type);
   await refetch();
 };
 
 const handleUpdate = async (item: UpdateOrBundle) => {
-  console.log("Update item:", item);
+  console.warn("Update item:", item);
   await refetch();
 };
 </script>

@@ -1,6 +1,6 @@
 import { apiClient } from "@/shared/services/api.client";
 import { useQuery, type UseQueryOptions } from "@tanstack/vue-query";
-import { unref, type MaybeRef, computed } from "vue";
+import { unref, type MaybeRef } from "vue";
 import { queryErrorHandler } from "./error/query-error-handler";
 
 interface ApiResponse<T> {
@@ -13,6 +13,8 @@ export function useApiQuery<TData = unknown>(
   url: MaybeRef<string>,
   options?: Omit<UseQueryOptions<TData, Error, TData, any>, "queryKey" | "queryFn">,
 ) {
+  const resolved = typeof options === "function" ? options() : options;
+
   return useQuery<TData, Error>({
     queryKey: queryKey as any,
     queryFn: async () => {
@@ -33,6 +35,6 @@ export function useApiQuery<TData = unknown>(
         throw queryErrorHandler(error);
       }
     },
-    ...options,
+    ...resolved,
   });
 }

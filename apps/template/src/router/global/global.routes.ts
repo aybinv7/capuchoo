@@ -5,7 +5,7 @@ const globalRoutes: Router.RouteParameters[] = [
     name: "not-found",
     path: "/:pathMatch(.*)*",
     async({ resolve }) {
-      import("@/shared/components/error/404.vue").then((vc) => {
+      void import("@/shared/components/error/404.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },

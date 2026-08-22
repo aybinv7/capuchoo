@@ -14,6 +14,8 @@ export function useApiQuery<TData = unknown>(
   url: MaybeRef<string>,
   options?: Omit<UseQueryOptions<TData, Error, TData, any>, "queryKey" | "queryFn">,
 ) {
+  const resolved = typeof options === "function" ? options() : options;
+
   return useQuery<TData, Error>({
     queryKey: queryKey as any,
     queryFn: async () => {
@@ -32,7 +34,7 @@ export function useApiQuery<TData = unknown>(
         throw queryErrorHandler(error);
       }
     },
-    ...options,
+    ...resolved,
   });
 }
 
@@ -41,6 +43,8 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
   method: "post" | "put" | "patch" | "delete" = "post",
   options?: UseMutationOptions<TData, Error, TVariables>,
 ) {
+  const resolved = typeof options === "function" ? options() : options;
+
   return useMutation<TData, Error, TVariables>({
     mutationFn: async (variables: TVariables) => {
       try {
@@ -59,14 +63,14 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
             response = await apiClient.delete(url);
             break;
           default:
-            throw new Error(`Unsupported method: ${method}`);
+            throw new Error(`Unsupported method: ${String(method)}`);
         }
         return response.data;
       } catch (error) {
         throw queryErrorHandler(error);
       }
     },
-    ...options,
+    ...resolved,
   });
 }
 
@@ -75,6 +79,8 @@ export function useAuthenticatedQuery<TData = unknown>(
   url: MaybeRef<string>,
   options?: Omit<UseQueryOptions<TData, Error, TData, any>, "queryKey" | "queryFn">,
 ) {
+  const resolved = typeof options === "function" ? options() : options;
+
   return useQuery<TData, Error>({
     queryKey: queryKey as any,
     queryFn: async () => {
@@ -96,6 +102,6 @@ export function useAuthenticatedQuery<TData = unknown>(
         throw queryErrorHandler(error);
       }
     },
-    ...options,
+    ...resolved,
   });
 }

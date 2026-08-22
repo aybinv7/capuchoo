@@ -13,7 +13,7 @@ import deviceService from "@/services/deviceService";
 import updateService from "@/services/updateService";
 import logger from "@/utils/logger";
 import semver from "semver";
-import multer, { FileFilterCallback } from "multer";
+import multer from "multer";
 import * as fs from "fs";
 
 /**
@@ -479,11 +479,6 @@ class NativeUpdateController {
         fileSize: 200 * 1024 * 1024, // 200MB limit for native files
       },
       fileFilter: (req, file, cb) => {
-        const allowedMimes = [
-          "application/vnd.android.package-archive", // APK
-          "application/octet-stream", // IPA (often served as this)
-          "application/x-ios-app", // IPA alternative
-        ];
         const allowedExts = [".apk", ".ipa"];
         const ext = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf("."));
 

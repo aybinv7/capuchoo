@@ -57,7 +57,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
   {
     accessorKey: "type",
     header: ({ column }) => h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Type" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const type = row.original.type;
       return h(
         Badge,
@@ -79,7 +79,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     accessorKey: "app_bundle_id",
     header: ({ column }) =>
       h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Bundle ID" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const appId = (row.original as any).app_bundle_id;
       return h(
         "div",
@@ -96,7 +96,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     accessorKey: "version_name",
     header: ({ column }) =>
       h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Version" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const type = row.original.type;
       return h("div", { class: "flex items-center" }, [
         h(type === "native" ? Smartphone : Globe, {
@@ -142,7 +142,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
   {
     accessorKey: "version_code",
     header: ({ column }) => h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Code" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const versionCode = row.original.version_code;
       return h("div", { class: "font-mono" }, versionCode ? versionCode.toString() : "—");
     },
@@ -161,7 +161,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     accessorKey: "min_native_version",
     header: ({ column }) =>
       h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Min Native" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const minNative = row.original.min_native_version;
       if (!minNative || row.original.type === "native") {
         return h("div", { class: "text-muted-foreground" }, "—");
@@ -182,7 +182,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     accessorKey: "platform",
     header: ({ column }) =>
       h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Platform" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const platform = row.getValue("platform") as string;
       const platfroms: Record<string, any> = {
         android: StreamlineLogosAndroidLogoBlock,
@@ -216,7 +216,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     accessorKey: "channel",
     header: ({ column }) =>
       h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Channel" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const channel = row.original.channel;
       const variantMap: Record<"prod" | "staging" | "dev", "default" | "secondary" | "outline"> = {
         prod: "default",
@@ -249,7 +249,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
   {
     accessorKey: "file_size_bytes",
     header: ({ column }) => h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Size" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const fileSize = row.original.file_size_bytes;
       if (!fileSize) return h("div", "—");
 
@@ -280,7 +280,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
   {
     accessorKey: "created_at",
     header: ({ column }) => h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Date" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const date = new Date(row.original.created_at);
       return h("div", {}, date.toLocaleDateString());
     },
@@ -295,7 +295,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     accessorKey: "active",
     header: ({ column }) =>
       h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Status" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const active = row.original.active;
       return h(
         Badge,
@@ -323,7 +323,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     accessorKey: "required",
     header: ({ column }) =>
       h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Required" }),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const required = row.original.required;
       return h(
         Badge,
@@ -437,7 +437,7 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
                       DropdownMenuItem,
                       {
                         onClick: () => {
-                          navigator.clipboard.writeText(item.id.toString());
+                          void navigator.clipboard.writeText(item.id.toString());
                         },
                       },
                       () => [h(Copy, { class: "h-4 w-4 mr-2" }), "Copy ID"],
@@ -461,8 +461,8 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
                       {
                         class: "text-red-600",
                         onClick: () => {
-                          // Emit delete event
-                          console.log("Delete item:", item.id);
+                          // TODO: emit a delete event; nothing is wired to this yet.
+                          console.warn("Delete requested for", item.id);
                         },
                       },
                       () => [h(Trash2, { class: "h-4 w-4 mr-2" }), "Delete"],

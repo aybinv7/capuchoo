@@ -129,7 +129,7 @@ const handleExport = () => {
 
 const handleSelectLog = (log: UpdateLog) => {
   // TODO: Open detail drawer/modal
-  console.log("Selected log:", log);
+  console.warn("Selected log:", log);
 };
 </script>
 

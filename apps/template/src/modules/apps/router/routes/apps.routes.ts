@@ -7,7 +7,7 @@ const appsRoutes: Router.RouteParameters[] = [
     routes: [],
 
     async({ resolve }) {
-      import("@/modules/apps/views/AppsList.vue").then((vc) => {
+      void import("@/modules/apps/views/AppsList.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },
@@ -16,7 +16,7 @@ const appsRoutes: Router.RouteParameters[] = [
     name: "app-details",
     path: "/apps/:id",
     async({ resolve, to }) {
-      import("@/modules/apps/views/AppDetails.vue").then((vc) => {
+      void import("@/modules/apps/views/AppDetails.vue").then((vc) => {
         resolve({
           component: vc.default,
           props: { id: to.params.id },

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { f7 } from "framework7-vue";
 
 export const useSettingsStore = defineStore(

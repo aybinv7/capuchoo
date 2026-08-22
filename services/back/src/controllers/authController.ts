@@ -117,7 +117,6 @@ class AuthController {
       }));
 
       // Get user's accessible apps (via app_permissions OR org admin)
-      const orgIds = organizations.map((o: any) => o.id).filter(Boolean);
 
       let apps: any[] = [];
 

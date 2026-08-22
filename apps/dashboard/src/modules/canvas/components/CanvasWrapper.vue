@@ -715,7 +715,7 @@ const saveGraph = () => {
     })),
   };
   localStorage.setItem(`canvas-layout-${activeApp.value?.id}`, JSON.stringify(layout));
-  console.log("Layout saved to LocalStorage");
+  console.warn("Layout saved to LocalStorage");
 };
 
 const formatFleetCount = (num: number) => {

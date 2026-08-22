@@ -221,10 +221,6 @@ const formatDate = (dateString?: string) => {
 const openDeviceDetail = (device: Device) => {
   router.push(`/devices/${device.id}`);
 };
-
-onMounted(() => {
-  console.log(items);
-});
 </script>
 
 <style>

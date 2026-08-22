@@ -191,7 +191,7 @@ export const saveTableState = (key: string, state: any) => {
 /**
  * Load table state from localStorage
  */
-export const loadTableState = (key: string): any | null => {
+export const loadTableState = (key: string): any => {
   try {
     const state = localStorage.getItem(key);
     return state ? JSON.parse(state) : null;

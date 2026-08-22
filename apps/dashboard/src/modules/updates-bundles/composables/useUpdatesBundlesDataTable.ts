@@ -27,7 +27,7 @@ export interface UpdatesBundlesDataTableConfig {
   enableVirtualization?: boolean;
 }
 
-export const useUpdatesBundlesDataTable = <TData>(config: UpdatesBundlesDataTableConfig = {}) => {
+export const useUpdatesBundlesDataTable = (config: UpdatesBundlesDataTableConfig = {}) => {
   // Core state
   const sorting = ref<SortingState>([{ id: "created_at", desc: true }]);
   const columnFilters = ref<ColumnFiltersState>([]);
@@ -50,13 +50,6 @@ export const useUpdatesBundlesDataTable = <TData>(config: UpdatesBundlesDataTabl
     top: [],
     bottom: [],
   });
-
-  // Initialize column order with provided columns if available
-  const initializeColumnOrder = (columns: any[]) => {
-    if (columns && columns.length > 0 && columnOrder.value.length === 0) {
-      columnOrder.value = columns.map((col: any) => col.id || col.accessorKey);
-    }
-  };
 
   // Merge with default config
   const features = {

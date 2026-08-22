@@ -1,6 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications, type LocalNotificationSchema } from "@capacitor/local-notifications";
-import { FirebaseMessaging, type GetTokenOptions } from "@capacitor-firebase/messaging";
+import { FirebaseMessaging } from "@capacitor-firebase/messaging";
 
 export class NotificationService {
   private static instance: NotificationService;

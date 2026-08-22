@@ -67,11 +67,11 @@ const handleRowClick = (item: Device) => {
 };
 
 const handleBulkEdit = () => {
-  console.log("Bulk edit requested");
+  console.warn("Bulk edit requested");
 };
 
 const handleBulkExport = () => {
-  console.log("Bulk export requested");
+  console.warn("Bulk export requested");
 };
 
 const handleBulkDelete = () => {

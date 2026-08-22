@@ -4,18 +4,18 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { FirebaseMessaging } from "@capacitor-firebase/messaging";
 import { f7 } from "framework7-vue";
 
-export const notificationsPlugin = async (app: App) => {
+export const notificationsPlugin = async (_app: App) => {
   const hasPermissions = await notificationService.checkPermissions();
 
   if (hasPermissions) {
     await notificationService.registerPushNotifications();
 
     await LocalNotifications.addListener("localNotificationActionPerformed", (notification) => {
-      console.log("Local Notification Action:", notification);
+      console.warn("Local notification action", notification);
     });
 
     await FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
-      console.log("Push Notification Action:", event);
+      console.warn("Push notification action", event);
     });
 
     await FirebaseMessaging.addListener("notificationReceived", (event) => {

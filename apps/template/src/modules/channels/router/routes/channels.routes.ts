@@ -4,7 +4,7 @@ const routes: Router.RouteParameters[] = [
   {
     path: "/channels",
     async({ resolve }) {
-      import("@/modules/channels/views/ChannelsList.vue").then((vc) => {
+      void import("@/modules/channels/views/ChannelsList.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },
@@ -12,7 +12,7 @@ const routes: Router.RouteParameters[] = [
   {
     path: "/channels/:id",
     async({ resolve }) {
-      import("@/modules/channels/views/ChannelDetails.vue").then((vc) => {
+      void import("@/modules/channels/views/ChannelDetails.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },

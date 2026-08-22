@@ -9,7 +9,7 @@ const homeRoutes: Router.RouteParameters[] = [
     // beforeEnter: (context) => useAuthGuard(context),
 
     async({ resolve }) {
-      import("@/modules/home/views/HomeView.vue").then((vc) => {
+      void import("@/modules/home/views/HomeView.vue").then((vc) => {
         resolve({ component: vc.default });
       });
     },

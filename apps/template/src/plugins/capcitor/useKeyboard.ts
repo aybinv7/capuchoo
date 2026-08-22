@@ -15,11 +15,11 @@ export const useKeyboard = (f7: Framework7) => {
   const $ = f7.$;
 
   if (Capacitor.getPlatform() === "ios") {
-    Keyboard.setResizeMode({ mode: KeyboardResize.Native });
-    Keyboard.setScroll({ isDisabled: true });
+    void Keyboard.setResizeMode({ mode: KeyboardResize.Native });
+    void Keyboard.setScroll({ isDisabled: true });
   }
 
-  Keyboard.addListener("keyboardWillShow", () => {
+  void Keyboard.addListener("keyboardWillShow", () => {
     f7.toolbar.hide(".toolbar-main-app", false);
 
     if (document.activeElement) {
@@ -27,26 +27,27 @@ export const useKeyboard = (f7: Framework7) => {
     }
   });
 
-  Keyboard.addListener("keyboardDidShow", () => {
+  void Keyboard.addListener("keyboardDidShow", () => {
     if (document.activeElement) {
       f7.input.scrollIntoView(document.activeElement as HTMLElement, 0, true, true);
     }
   });
 
-  Keyboard.addListener("keyboardWillHide", () => {
+  void Keyboard.addListener("keyboardWillHide", () => {
     if (document.activeElement) {
       f7.input.scrollIntoView(document.activeElement as HTMLElement, 0, true, true);
     }
   });
 
-  Keyboard.addListener("keyboardDidHide", () => {
+  void Keyboard.addListener("keyboardDidHide", () => {
     f7.toolbar.show(".toolbar-main-app", true);
 
     if (document.activeElement && $(document.activeElement).parents(".messagebar").length) {
       return;
     }
 
-    if (Capacitor.getPlatform() === "ios") Keyboard.setAccessoryBarVisible({ isVisible: true });
+    if (Capacitor.getPlatform() === "ios")
+      void Keyboard.setAccessoryBarVisible({ isVisible: true });
   });
 
   $(document).on(
@@ -57,10 +58,11 @@ export const useKeyboard = (f7: Framework7) => {
       var type = e.target.type;
       var showForTypes = ["datetime-local", "time", "date", "datetime"];
       if (nodeName === "select" || showForTypes.indexOf(type) >= 0) {
-        if (Capacitor.getPlatform() === "ios") Keyboard.setAccessoryBarVisible({ isVisible: true });
+        if (Capacitor.getPlatform() === "ios")
+          void Keyboard.setAccessoryBarVisible({ isVisible: true });
       } else {
         if (Capacitor.getPlatform() === "ios")
-          Keyboard.setAccessoryBarVisible({ isVisible: false });
+          void Keyboard.setAccessoryBarVisible({ isVisible: false });
       }
     },
     true,

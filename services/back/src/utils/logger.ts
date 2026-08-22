@@ -1,5 +1,4 @@
 import winston from "winston";
-import config from "@/config";
 
 const levels = {
   error: 0,
@@ -22,7 +21,7 @@ winston.addColors(colors);
 const customFormat = winston.format.printf((info) => {
   const { timestamp, level, message, ...meta } = info;
 
-  let log = `${timestamp} ${level}: ${message}`;
+  let log = `${String(timestamp)} ${level}: ${String(message)}`;
 
   if (Object.keys(meta).length > 0) {
     const cleanMeta = Object.keys(meta)
