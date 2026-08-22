@@ -1000,7 +1000,14 @@ class AdminController {
         error: error instanceof Error ? error.message : String(error),
         body: req.body,
       });
-      res.status(500).json({ error: "Failed to create channel" });
+      // A validation error is the caller's to fix, and its message says how.
+      // Collapsing it into a generic 500 turned "you forgot the environment"
+      // into a twenty-minute investigation.
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: "Failed to create channel" });
+      }
     }
   }
 

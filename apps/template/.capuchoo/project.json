@@ -1,8 +1,8 @@
 {
   "version": 2,
   "appId": "io.capucho.inv",
-  "cloudAppId": "572621ed-3493-4406-8946-0cc58b351a0f",
-  "appName": "capucho-app",
+  "cloudAppId": "b4d43ab3-ac77-438b-a8ea-4f64283fef4e",
+  "appName": "Capuchoo Template",
   "createdAt": "2026-01-31T23:53:21.972Z",
   "webDir": "dist",
   "androidDir": "android",
