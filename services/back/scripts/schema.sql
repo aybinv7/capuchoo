@@ -61,6 +61,8 @@ CREATE TABLE apps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     app_id VARCHAR(255) UNIQUE NOT NULL, -- bundle ID like "com.acme.myapp"
     name VARCHAR(255) NOT NULL,
+    -- Present in the live database but missing from this file until 2026-08-22.
+    platform VARCHAR(20) NOT NULL DEFAULT 'all',
     icon_url TEXT,
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

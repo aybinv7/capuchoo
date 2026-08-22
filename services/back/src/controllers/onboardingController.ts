@@ -129,15 +129,41 @@ class OnboardingController {
         });
       }
 
+      // 6. A staging channel, so onboarding ends with something deployable.
+      //
+      // Without one the app exists but every device check answers "Channel not
+      // found", and the CLI refuses to deploy - the wizard finished on
+      // "registered" rather than "ready". staging is the safe default: the
+      // environment decides which flavour is built and which bundles are served,
+      // and nobody's first deploy should go to production by default.
+      const { data: channelData, error: channelError } = await supabase
+        .from("channels")
+        .insert({
+          app_id: appData.id,
+          name: "staging",
+          environment: "staging",
+        })
+        .select()
+        .single();
+
+      if (channelError) {
+        logger.warn("Onboarding created the app without a default channel", {
+          appId: appData.id,
+          error: channelError.message,
+        });
+      }
+
       logger.info("Onboarding completed successfully", {
         userId: user.id,
         orgId: orgId,
         appId: appData.id,
+        channel: channelData?.name ?? null,
       });
 
       return res.status(201).json({
         organization: orgData,
         app: appData,
+        channel: channelData ?? null,
       });
     } catch (error: any) {
       logger.error("Onboarding failed", { error: error.message });

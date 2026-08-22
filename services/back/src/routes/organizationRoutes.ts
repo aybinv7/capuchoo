@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { organizationController } from "@/controllers";
-import { authenticate, checkOrgMembership, requireOrgAdmin } from "@/middleware";
+import { authenticate, checkOrgMembership, requireOrgAdmin, requireOrgOwner } from "@/middleware";
 
 const router: Router = Router();
 
@@ -15,6 +15,16 @@ router.post("/", organizationController.create.bind(organizationController));
 
 // Get organization details (must be a member)
 router.get("/:id", checkOrgMembership(), organizationController.get.bind(organizationController));
+
+// Update organization (must be admin or owner)
+router.put("/:id", requireOrgAdmin(), organizationController.update.bind(organizationController));
+
+// Delete organization (owner only - it cascades to apps, channels and history)
+router.delete(
+  "/:id",
+  requireOrgOwner(),
+  organizationController.delete.bind(organizationController),
+);
 
 // Get organization members (must be a member)
 router.get(

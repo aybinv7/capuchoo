@@ -147,6 +147,85 @@ class OrganizationController {
   }
 
   /**
+   * Update an organization
+   * PUT /api/organizations/:id
+   *
+   * The dashboard has always had `organizationService.update()`; the route it
+   * calls did not exist, so renaming an organisation from the UI was a 404.
+   */
+  async update(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { name, slug } = req.body;
+
+      const changes: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (name !== undefined) changes.name = name;
+      // A slug is derived from the name on creation, but renaming an
+      // organisation must not silently change its URLs - so it only moves when
+      // asked for explicitly.
+      if (slug !== undefined) changes.slug = slug;
+
+      if (Object.keys(changes).length === 1) {
+        res.status(400).json({ error: "Nothing to update: pass name or slug" });
+        return;
+      }
+
+      const result = await supabaseService.update("organizations", changes, { id });
+
+      if (!result || result.length === 0) {
+        res.status(404).json({ error: "Organization not found" });
+        return;
+      }
+
+      res.json(result[0]);
+    } catch (error) {
+      logger.error("Update organization failed", { error });
+      res.status(500).json({ error: "Failed to update organization" });
+    }
+  }
+
+  /**
+   * Delete an organization
+   * DELETE /api/organizations/:id
+   *
+   * Owner only, and it refuses while the organisation still has apps. Every
+   * foreign key into an app cascades - channels, bundles, devices, update logs -
+   * so an accidental delete here is not recoverable from the API. `?force=true`
+   * says you meant it.
+   */
+  async delete(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const force = req.query.force === "true";
+
+      const apps = await supabaseService.query("apps", {
+        select: "id, app_id, name",
+        eq: { organization_id: id },
+      });
+      const owned = apps.data ?? [];
+
+      if (owned.length > 0 && !force) {
+        res.status(409).json({
+          error:
+            `This organization still has ${owned.length} app(s): ` +
+            `${owned.map((a: any) => a.app_id).join(", ")}. ` +
+            "Deleting it deletes their channels, bundles and device history too. " +
+            "Pass ?force=true if that is what you want.",
+        });
+        return;
+      }
+
+      await supabaseService.delete("organizations", { id });
+
+      logger.info("Organization deleted", { id, appsDeleted: owned.length });
+      res.status(204).send();
+    } catch (error) {
+      logger.error("Delete organization failed", { error });
+      res.status(500).json({ error: "Failed to delete organization" });
+    }
+  }
+
+  /**
    * Get organization members
    * GET /api/organizations/:id/members
    */

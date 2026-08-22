@@ -16,6 +16,8 @@ export interface OnboardingPayload {
 export interface OnboardingResponse {
   organization: Organization;
   app: App;
+  /** A staging channel, created so the app is deployable straight away. */
+  channel: { id: string; name: string; environment: string } | null;
 }
 
 export const onboardingService = {
