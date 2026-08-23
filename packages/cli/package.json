@@ -57,17 +57,23 @@
     ],
     "topicSeparator": " ",
     "topics": {
+      "app": {
+        "description": "List and delete apps"
+      },
       "auth": {
-        "description": "Sign in to a Capucho backend"
+        "description": "Sign in to a Capuchoo backend"
       },
       "channel": {
-        "description": "Inspect an app's channels"
+        "description": "Create and inspect an app's channels"
       },
       "config": {
         "description": "Inspect resolved configuration and detected tools"
       },
       "deploy": {
         "description": "Build and publish a release"
+      },
+      "org": {
+        "description": "Create and list organizations"
       },
       "version": {
         "description": "Manage the app version and native build numbers"

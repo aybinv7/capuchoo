@@ -3,9 +3,10 @@ import type {
   CloudChannel,
   CloudOrganization,
   CloudRelease,
+  Environment,
   UserProfile,
 } from "@capuchoo/core";
-import { get, post, uploadArtifact, type HttpOptions } from "../utils/http.js";
+import { del, get, post, uploadArtifact, type HttpOptions } from "../utils/http.js";
 
 /**
  * The Capuchoo API client.
@@ -54,6 +55,39 @@ export class CloudClient {
     return post<CloudApp>("/api/apps", input, this.options);
   }
 
+  /** Guarded by requireAppAdmin server-side; cascades to channels and bundles. */
+  deleteApp(cloudAppId: string): Promise<void> {
+    return del(`/api/apps/${cloudAppId}`, this.options);
+  }
+
+  createOrganization(input: { name: string }): Promise<CloudOrganization> {
+    return post<CloudOrganization>("/api/organizations", input, this.options);
+  }
+
+  /**
+   * Creates a channel.
+   *
+   * `environment` is required by the server and by us: it is what selects the
+   * build flavour, so a channel without one cannot be deployed to. The route
+   * lives under /api/dashboard because the dashboard was its first caller - it
+   * is a normal authenticated endpoint, not a UI-only one.
+   */
+  createChannel(input: {
+    app_id: string;
+    name: string;
+    environment: Environment;
+  }): Promise<CloudChannel> {
+    return post<CloudChannel>("/api/dashboard/channels", input, this.options);
+  }
+
+  /** Scoped by app as well as id, so a stale id cannot delete another app's channel. */
+  deleteChannel(channelId: string, cloudAppId: string): Promise<void> {
+    return del(
+      `/api/dashboard/channels/${channelId}?app_id=${encodeURIComponent(cloudAppId)}`,
+      this.options,
+    );
+  }
+
   channels(cloudAppId: string): Promise<CloudChannel[]> {
     return get<CloudChannel[]>(`/api/apps/${cloudAppId}/channels`, this.options);
   }
@@ -82,7 +116,8 @@ export class CloudClient {
     if (!channel.environment) {
       throw new Error(
         `Channel "${name}" has no environment set, so the CLI cannot tell which ` +
-          "flavour to build. Set it in the dashboard.",
+          "flavour to build. Set it in the dashboard, or recreate the channel with " +
+          "capuchoo channel create.",
       );
     }
 

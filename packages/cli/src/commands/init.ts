@@ -1,10 +1,12 @@
-import { askText, confirm, selectOne } from "../cli/prompts.js";
+import { askText, confirm, isInteractive, log, selectOne } from "../cli/prompts.js";
 import {
   ENVIRONMENTS,
   PROJECT_CONFIG_VERSION,
   canCreateApps,
   canPublishTo,
   defaultFlavour,
+  environmentMismatchWarning,
+  suggestEnvironment,
   isValidBundleId,
   type CloudApp,
   type Environment,
@@ -41,6 +43,7 @@ export default class Init extends BaseCommand {
     "<%= config.bin %> init",
     "<%= config.bin %> init --link",
     "<%= config.bin %> init --create",
+    '<%= config.bin %> init --create --name "My App" --app-id com.acme.app --channel staging',
   ];
 
   static override flags = {
@@ -63,13 +66,17 @@ export default class Init extends BaseCommand {
       description: "Name of the app to create (default: this directory's name)",
       dependsOn: ["create"],
     }),
+    // Used by both halves: with --create it is the identifier to register, with
+    // --link the identifier to select. Either way it names the app.
     "app-id": Flags.string({
-      description: "Production bundle identifier of the app to create, e.g. com.company.app",
-      dependsOn: ["create"],
+      description: "Bundle identifier of the app, e.g. com.company.app",
     }),
     org: Flags.string({
       description: "Organization to create the app in, by name or id",
       dependsOn: ["create"],
+    }),
+    channel: Flags.string({
+      description: "Create this channel after linking, e.g. staging",
     }),
     force: Flags.boolean({
       char: "f",
@@ -141,7 +148,7 @@ export default class Init extends BaseCommand {
 
     const app =
       mode === "existing"
-        ? await this.linkExisting(cloud)
+        ? await this.linkExisting(cloud, flags["app-id"])
         : await this.createNew(cloud, {
             name: flags.name,
             appId: flags["app-id"],
@@ -155,11 +162,9 @@ export default class Init extends BaseCommand {
       this.log("");
       this.log(
         chalk.yellow(
-          `  The API key in use is restricted to another app, so deploys from here
-` +
-            `  will be refused. Run "capuchoo auth login" with a key for ${app.name}
-` +
-            `  or an unscoped one.`,
+          "  The API key in use is restricted to another app, so deploys from here\n" +
+            `  will be refused. Run "capuchoo auth login" with a key for ${app.name}\n` +
+            "  or an unscoped one.",
         ),
       );
     }
@@ -230,15 +235,84 @@ export default class Init extends BaseCommand {
           chalk.cyan(`capuchoo deploy ota --channel ${deployable[0]!.name}`),
       );
     } else {
-      this.log(chalk.yellow("  This app has no channel with an environment set yet."));
-      this.log(
-        chalk.dim(
-          "  Create one in the dashboard - the environment is what tells the CLI\n" +
-            "  which flavour to build.",
-        ),
-      );
+      // An app with no channel is not deployable, and init already knows it.
+      // Sending people to the dashboard here was the one thing that made setting
+      // an app up a CLI-browser-CLI round trip.
+      await this.offerFirstChannel(cloud, app, flags.channel);
     }
     this.log("");
+  }
+
+  /**
+   * Creates the first channel, because a linked app without one cannot be
+   * deployed to. The environment is chosen explicitly: a channel's name never
+   * decides which flavour it serves.
+   */
+  private async offerFirstChannel(
+    cloud: CloudClient,
+    app: CloudApp,
+    requested: string | undefined,
+  ): Promise<void> {
+    this.log(chalk.yellow("  This app has no channel yet, so nothing can be deployed to it."));
+    this.log(
+      chalk.dim("  A channel's environment is what tells the CLI which flavour to build.\n"),
+    );
+
+    const name = requested?.trim();
+
+    if (!name && !isInteractive()) {
+      this.log(
+        chalk.dim("  Create one with: ") +
+          chalk.cyan("capuchoo channel create staging") +
+          chalk.dim("   (or pass --channel)"),
+      );
+      return;
+    }
+
+    if (!name) {
+      const create = await confirm("Create one now?", { default: true });
+      if (!create) {
+        this.log(chalk.dim("  Later: ") + chalk.cyan("capuchoo channel create staging"));
+        return;
+      }
+    }
+
+    const chosen =
+      name ?? (await askText("Channel name", { initial: "staging", flag: "--channel" })).trim();
+
+    const environment =
+      suggestEnvironment(chosen) ??
+      (await selectOne(
+        `Which flavour should "${chosen}" serve?`,
+        ENVIRONMENTS.map((value) => ({ value, label: value })),
+        "--channel <name> with a name like staging",
+      ));
+
+    const warning = environmentMismatchWarning(chosen, environment);
+    if (warning) log.warn(warning);
+
+    try {
+      const channel = await cloud.createChannel({ app_id: app.id, name: chosen, environment });
+      this.log("");
+      this.log(
+        `  ${chalk.green("Created channel")} ${channel.name} ${chalk.dim(`(${environment})`)}`,
+      );
+      this.log(
+        chalk.dim("  Deploy with: ") + chalk.cyan(`capuchoo deploy ota --channel ${channel.name}`),
+      );
+    } catch (error) {
+      // The app and project.json are already correct, so this is a warning and
+      // not a failure - `capuchoo channel create` retries just this step.
+      this.log("");
+      this.log(
+        chalk.yellow(
+          `  The channel could not be created: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        ),
+      );
+      this.log(chalk.dim(`  Retry with: capuchoo channel create ${chosen}`));
+    }
   }
 
   /** Detects which flavours the project actually has files for. */
@@ -268,22 +342,30 @@ export default class Init extends BaseCommand {
     return "dist";
   }
 
-  private async linkExisting(cloud: CloudClient): Promise<CloudApp> {
+  private async linkExisting(cloud: CloudClient, wanted?: string): Promise<CloudApp> {
     const spinner = ora({ text: "Fetching apps", stream: process.stderr }).start();
     const apps = await cloud.apps();
     spinner.stop();
 
     if (apps.length === 0) {
-      this.error(
-        "This account has no apps yet. Re-run and choose to create one, or " +
-          "create it in the dashboard.",
-      );
+      this.error("This account has no apps yet. Run capuchoo init --create to register one.");
+    }
+
+    if (wanted) {
+      const match = apps.find((app) => app.app_id === wanted || app.id === wanted);
+      if (!match) {
+        this.error(
+          `No app called "${wanted}" on this account. ` +
+            `Available: ${apps.map((app) => app.app_id).join(", ")}.`,
+        );
+      }
+      return match;
     }
 
     return selectOne(
-      "App",
+      "Which app does this directory publish to?",
       apps.map((app) => ({ value: app, label: app.name, hint: app.app_id })),
-      "--link with the app selected in the dashboard",
+      "--app-id",
     );
   }
 

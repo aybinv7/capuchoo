@@ -108,6 +108,11 @@ export function post<T>(pathname: string, body: unknown, options: HttpOptions): 
   return request<T>("POST", `${options.endpoint}${pathname}`, { ...options, body });
 }
 
+/** A 204 is the success case here, so the caller gets nothing back. */
+export async function del(pathname: string, options: HttpOptions): Promise<void> {
+  await request<unknown>("DELETE", `${options.endpoint}${pathname}`, options);
+}
+
 export interface UploadResult {
   status: number;
   body: unknown;

@@ -31,7 +31,7 @@ export default class ChannelList extends BaseCommand {
     if (channels.length === 0) {
       this.log("");
       this.log(chalk.yellow(`  ${project.appName} has no channels yet.`));
-      this.log(chalk.dim("  Create one in the dashboard."));
+      this.log(chalk.dim("  Create one with: capuchoo channel create staging"));
       this.log("");
       return;
     }

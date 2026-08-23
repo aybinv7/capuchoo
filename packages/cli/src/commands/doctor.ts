@@ -127,7 +127,7 @@ export default class Doctor extends BaseCommand {
         level: "fail",
         what: "No channels",
         detail: "Nothing can be deployed until a channel exists",
-        fix: "Create one in the dashboard",
+        fix: "capuchoo channel create staging",
       });
     }
 
@@ -137,7 +137,9 @@ export default class Doctor extends BaseCommand {
           level: "fail",
           what: `Channel "${channel.name}" has no environment`,
           detail: "The environment is what tells the CLI which flavour to build",
-          fix: `Set it in the dashboard (suggested: ${suggestEnvironment(channel.name) ?? "prod"})`,
+          fix:
+            "Recreate it with capuchoo channel create, or set the environment " +
+            `in the dashboard (suggested: ${suggestEnvironment(channel.name) ?? "prod"})`,
         });
         continue;
       }

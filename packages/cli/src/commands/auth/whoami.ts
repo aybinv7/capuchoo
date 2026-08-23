@@ -56,6 +56,7 @@ export default class AuthWhoami extends BaseCommand {
             user: profile.user,
             organizations: profile.organizations,
             apps: profile.apps,
+            credential: profile.credential ?? null,
           },
           null,
           2,
@@ -86,8 +87,26 @@ export default class AuthWhoami extends BaseCommand {
     if (profile.apps.length > 0) {
       this.log("");
       this.log(chalk.bold("  apps"));
+
+      // These are the apps the *account* owns. An app-scoped key can publish to
+      // exactly one of them, so listing all of them unqualified is how "capuchoo
+      // app list shows one app but whoami shows three" happens.
+      const scope = profile.credential?.app_id;
+
       for (const app of profile.apps) {
-        this.log(`    ${app.name} ${chalk.dim(app.app_id)}`);
+        const note = scope && app.id !== scope ? chalk.dim(" - this key cannot publish to it") : "";
+        this.log(`    ${app.name} ${chalk.dim(app.app_id)}${note}`);
+      }
+
+      if (scope) {
+        const scoped = profile.apps.find((app) => app.id === scope);
+        this.log("");
+        this.log(
+          chalk.dim(
+            `  This key is restricted to ${scoped ? scoped.app_id : scope}. ` +
+              "Use an unscoped key to work across apps.",
+          ),
+        );
       }
     } else {
       this.log("");

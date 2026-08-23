@@ -39,19 +39,38 @@ capuchoo auth login          # stores the API key in ~/.capuchoo/config.json
 capuchoo init                # writes .capuchoo/project.json
 ```
 
-`init` asks whether to link an existing cloud app or create one, detects the flavour files you
-already have, and reads `webDir` out of `capacitor.config.*`. Commit `.capuchoo/project.json` - it
-identifies the app and holds no secrets.
+`init` asks whether to link an existing cloud app or create one, offers to create the first channel,
+detects the flavour files you already have, and reads `webDir` out of `capacitor.config.*`. Commit
+`.capuchoo/project.json` - it identifies the app and holds no secrets.
+
+Every answer has a flag, so this runs unattended too:
+
+```sh
+capuchoo init --create --name "Your App" --app-id com.company.app --org "Your Org" --channel staging
+```
+
+If the account has no organization yet, make one first - an app has to belong to one:
+
+```sh
+capuchoo org create "Your Org"     # capuchoo org list shows what you already have
+```
 
 ## 3. Create channels, and set each one's environment
 
-In the dashboard: **Channels > New**. A channel needs a name and an **environment** (`prod`,
-`staging`, `dev`).
+```sh
+capuchoo channel create staging              # a recognised name picks its own environment
+capuchoo channel create beta -e staging      # anything else asks, or takes -e
+capuchoo channel list
+capuchoo channel delete beta --yes
+```
+
+A channel needs a name and an **environment** (`prod`, `staging`, `dev`). `init --channel` covers
+the first one, so this is for the rest.
 
 The environment is not decoration. It decides which `.env` flavour the CLI builds and which bundles
 the server serves. A channel _named_ `prod` sitting on the `staging` environment serves staging
-bundles to production devices, and nothing errors. `capuchoo doctor` warns when a name and an
-environment disagree.
+bundles to production devices, and nothing errors. `channel create` warns when the name and the
+environment disagree and makes you confirm, and `capuchoo doctor` keeps warning afterwards.
 
 ## 4. One env file per flavour
 
