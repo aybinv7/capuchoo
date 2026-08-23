@@ -218,6 +218,7 @@ class NativeUpdateController {
         platform,
         channel = "stable",
         required = false,
+        active = false,
         release_notes,
         app_id,
       } = req.body;
@@ -329,12 +330,51 @@ class NativeUpdateController {
         checksum,
         channel,
         required: required === "true" || required === true,
-        active: false, // Default to inactive logic for manual release
+        // Multipart form fields arrive as strings, so `active` is compared the
+        // same way `required` is. This used to be hardcoded false, which meant
+        // `deploy native --active` uploaded an APK that nothing would ever
+        // serve.
+        active: active === "true" || active === true,
         file_size_bytes: req.file.size,
         release_notes: release_notes || null,
       };
 
       const insertedRecord = await this.supabaseService.insert("native_updates", [updateRecord]);
+
+      // Serving a native update is decided by `channels.current_native_version_id`
+      // and nothing else - `active` on the row alone means "publishable". Without
+      // this the APK uploaded, downloaded fine by URL, and was offered to no
+      // device: exactly the defect the OTA upload had.
+      if (updateRecord.active && insertedRecord[0]?.id) {
+        const { error: pointerError } = await this.supabaseService
+          .getClient()
+          .from("channels")
+          .update({
+            current_native_version_id: insertedRecord[0].id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("app_id", appUuid)
+          .eq("name", channel);
+
+        if (pointerError) {
+          // The artefact is stored and the row exists, so this is recoverable by
+          // re-activating - but it must not be reported as a successful release.
+          logger.error("Native update stored but the channel was not pointed at it", {
+            channel,
+            recordId: insertedRecord[0].id,
+            error: pointerError,
+          });
+          throw new Error(
+            `Uploaded, but channel "${channel}" still serves its previous native version: ` +
+              pointerError.message,
+          );
+        }
+
+        logger.info("Channel now serves this native version", {
+          channel,
+          recordId: insertedRecord[0].id,
+        });
+      }
 
       logger.info("Native update uploaded successfully", {
         version_name: finalVersion,
