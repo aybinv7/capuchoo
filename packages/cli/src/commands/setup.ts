@@ -4,36 +4,40 @@ import fs from "node:fs";
 import path from "node:path";
 import { BaseCommand } from "../base-command.js";
 import { confirm, isInteractive, log, note } from "../cli/prompts.js";
+import {
+  SUPPORTED_MAJORS,
+  detectCapacitor,
+  installSpec,
+  isSupportedMajor,
+  nativePackages,
+  runtimePackages,
+  telemetryPackages,
+  type PackageSpec,
+} from "../pipeline/capacitor-support.js";
 import { detectToolchain, lookupTools, type PackageManager } from "../pipeline/toolchain.js";
 import { run } from "../utils/exec.js";
 
 /**
- * Packages an app needs, and why each one is here.
+ * Installs what an app needs to receive updates, at versions that match the
+ * Capacitor it is already on.
  *
- * They have to be the *application's* own dependencies. `cap sync` finds plugins
- * by reading the app's `dependencies` and `devDependencies` - @capacitor/cli's
- * `getDependencies()` does not recurse - so a Capacitor plugin pulled in
- * transitively by @capuchoo/updater would have its JavaScript installed and its
- * native half never added to the Android or iOS project. That is why this command
- * exists instead of a longer dependency list on the updater.
+ * The packages have to be the *application's* own dependencies. `cap sync` finds
+ * plugins by reading the app's `dependencies` and `devDependencies` -
+ * @capacitor/cli's `getDependencies()` does not recurse - so a Capacitor plugin
+ * pulled in transitively by @capuchoo/updater would have its JavaScript
+ * installed and its native half never added to the Android or iOS project. That
+ * is why this command exists instead of a longer dependency list on the updater.
+ *
+ * Version selection lives in pipeline/capacitor-support.ts: installing bare
+ * names resolves to `latest`, which puts Capacitor 8 plugins into a Capacitor 7
+ * app.
  */
-const RUNTIME = [
-  { name: "@capuchoo/updater", why: "the update runtime" },
-  { name: "@capgo/capacitor-updater", why: "the native plugin it drives" },
-  { name: "@capacitor/app", why: "reads the installed version and build number" },
-];
 
-const TELEMETRY = [{ name: "@capacitor/device", why: "reports OS version and emulator flag" }];
-
-/** Only needed to download and install an APK from inside the app. */
-const NATIVE = [
-  { name: "@capacitor/file-transfer", why: "downloads the APK" },
-  { name: "@capacitor/filesystem", why: "caches it" },
-  { name: "@capacitor/network", why: "checks connectivity first" },
-  { name: "@capawesome-team/capacitor-file-opener", why: "hands it to the installer" },
-];
-
-const CLI = { name: "@capuchoo/cli", why: "this tool, pinned for your team and CI" };
+const CLI: PackageSpec = {
+  name: "@capuchoo/cli",
+  range: null,
+  why: "this tool, pinned for your team and CI",
+};
 
 const INSTALL_ARGS: Record<PackageManager, (dev: boolean) => string[]> = {
   pnpm: (dev) => (dev ? ["add", "-D"] : ["add"]),
@@ -86,10 +90,25 @@ export default class Setup extends BaseCommand {
     };
     const installed = { ...manifest.dependencies, ...manifest.devDependencies };
 
+    // Which Capacitor this app is on decides every version below, so an
+    // unsupported or absent one stops here rather than installing a set of
+    // plugins nobody has run together.
+    const capacitor = detectCapacitor(manifest);
+    if (!isSupportedMajor(capacitor.major)) {
+      this.error(
+        capacitor.major === null
+          ? "No @capacitor/core in this package.json, so this is not a Capacitor app yet. " +
+              "Run npx cap init first, then this command."
+          : `This app is on Capacitor ${capacitor.major}, and Capuchoo installs for ` +
+              `${SUPPORTED_MAJORS.join(" and ")}. Upgrade the app, or open an issue - the ` +
+              "runtime itself is version-agnostic, only the plugin versions are pinned.",
+      );
+    }
+
     const wanted = [
-      ...RUNTIME,
-      ...(flags["skip-telemetry"] ? [] : TELEMETRY),
-      ...(flags.native ? NATIVE : []),
+      ...runtimePackages(capacitor.major),
+      ...(flags["skip-telemetry"] ? [] : telemetryPackages(capacitor.major)),
+      ...(flags.native ? nativePackages(capacitor.major) : []),
     ];
     const missing = wanted.filter((pkg) => !installed[pkg.name]);
     const missingCli = installed[CLI.name] ? null : CLI;
@@ -97,6 +116,7 @@ export default class Setup extends BaseCommand {
     this.log("");
     this.log(chalk.bold("  Capuchoo setup"));
     this.log(chalk.dim(`  ${appDir}`));
+    this.log(chalk.dim(`  Capacitor ${capacitor.major}`));
     this.log("");
 
     if (missing.length === 0 && !missingCli) {
@@ -106,7 +126,8 @@ export default class Setup extends BaseCommand {
     }
 
     for (const pkg of missing) {
-      this.log(`  ${chalk.green("+")} ${pkg.name} ${chalk.dim(`- ${pkg.why}`)}`);
+      const pinned = pkg.range ? chalk.dim(`@${pkg.range}`) : "";
+      this.log(`  ${chalk.green("+")} ${pkg.name}${pinned} ${chalk.dim(`- ${pkg.why}`)}`);
     }
     if (missingCli) {
       this.log(
@@ -141,14 +162,14 @@ export default class Setup extends BaseCommand {
     if (missing.length > 0) {
       await run(
         toolchain.packageManager,
-        [...INSTALL_ARGS[toolchain.packageManager](false), ...missing.map((p) => p.name)],
+        [...INSTALL_ARGS[toolchain.packageManager](false), ...missing.map(installSpec)],
         { cwd: appDir, verbose: true },
       );
     }
     if (missingCli) {
       await run(
         toolchain.packageManager,
-        [...INSTALL_ARGS[toolchain.packageManager](true), missingCli.name],
+        [...INSTALL_ARGS[toolchain.packageManager](true), installSpec(missingCli)],
         { cwd: appDir, verbose: true },
       );
     }
