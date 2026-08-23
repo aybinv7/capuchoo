@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
+import { decideResourceAccess } from "./resource-access";
 
 /**
  * Authorization for the resources addressed by their own id.
@@ -57,49 +58,52 @@ export const checkResourceAccess = (table: "channels" | "app_versions") => {
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
-
+      const userId = (req as any).user?.id as string | undefined;
       const id = req.params.id;
-      if (!id) {
-        res.status(400).json({ error: `${noun} id is required` });
+
+      // Both queries are skipped when the request cannot pass anyway, so an
+      // unauthenticated caller costs nothing.
+      let resourceAppId: string | null = null;
+      let permitted = false;
+
+      if (userId && id) {
+        const { data: row } = await supabaseService
+          .getClient()
+          .from(table)
+          .select("app_id")
+          .eq("id", id)
+          .maybeSingle();
+
+        resourceAppId = row?.app_id ?? null;
+        if (resourceAppId) permitted = await hasAppAccess(userId, resourceAppId);
+      }
+
+      const decision = decideResourceAccess(
+        {
+          userId,
+          resourceId: id,
+          resourceAppId,
+          keyAppId: (req as any).appId as string | undefined,
+          permitted,
+        },
+        noun,
+      );
+
+      if (!decision.allow) {
+        if (decision.status === 403) {
+          logger.warn("Resource access denied", { userId, table, id, reason: decision.reason });
+        }
+        res
+          .status(decision.status)
+          .json(
+            decision.status === 403 && decision.reason.startsWith("This API key")
+              ? { error: "Forbidden", message: decision.reason }
+              : { error: decision.reason },
+          );
         return;
       }
 
-      const { data: row } = await supabaseService
-        .getClient()
-        .from(table)
-        .select("app_id")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (!row?.app_id) {
-        res.status(404).json({ error: `${noun} not found` });
-        return;
-      }
-
-      // An app-scoped API key must not reach another app's resources, the same
-      // rule the upload endpoints enforce.
-      const keyAppId = (req as any).appId as string | undefined;
-      if (keyAppId && keyAppId !== row.app_id) {
-        logger.warn("API key app scope mismatch", { keyAppId, table, id });
-        res.status(403).json({
-          error: "Forbidden",
-          message: "This API key is restricted to another application.",
-        });
-        return;
-      }
-
-      if (!(await hasAppAccess(userId, row.app_id))) {
-        logger.warn("Resource access denied", { userId, table, id });
-        res.status(403).json({ error: `No access to this ${noun.toLowerCase()}` });
-        return;
-      }
-
-      (req as any).resourceAppId = row.app_id;
+      (req as any).resourceAppId = decision.appId;
       next();
     } catch (error) {
       logger.error("Resource access check error", { error, table });
