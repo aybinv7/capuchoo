@@ -152,7 +152,7 @@ on.
 agree, builds, tests, and publishes to npm with provenance. Nothing writes back to the repository.
 
 **An app** - run the `deploy-app` workflow, or `capuchoo deploy ota` locally. Both take the same
-path through the CLI. Git owns tags and history; Capuchooo owns channels, activation and rollback.
+path through the CLI. Git owns tags and history; Capuchoo owns channels, activation and rollback.
 
 `@capuchoo/core` and `@capuchoo/updater` are not published yet. Apps in this workspace consume them
 through `workspace:*`. Publishing them needs the `@capuchoo` npm scope; until then an external app
@@ -210,6 +210,18 @@ Learned the hard way; each one was a live bug.
 - **Check the row, not the code.** Three separate defects here read correctly in the source and were
   only visible in the database: a dashboard endpoint reading the wrong table, missing snake_case
   field mappings, and the unset channel pointer. Verify against the live system.
+- **A route that takes an `:id` needs an ownership check, not just `authenticate`.** The channel and
+  bundle routes filtered by `id` alone, so any authenticated account could read, edit or delete
+  another organization's resource by uuid. `checkResourceAccess` resolves the row's app and applies
+  the same rules as `checkAppAccess`. `createChannel` did check the key scope, which is what made
+  the omission on its siblings easy to miss - consistency is the whole defence here.
+- **A credential may never issue a credential broader than itself.** `POST /api-keys` took `app_id`
+  from the body and ignored the caller's own scope, so an app-scoped key could mint an unscoped one.
+  Any check the deploy endpoints enforce is worthless if the key-minting route does not.
+- **An app-scoped key still reads like an unscoped one.** `/auth/me` lists every app the account
+  owns; only the publishing endpoints refuse. So a scope mismatch is invisible until an upload
+  returns 403 after a full build - `canPublishTo()` is why `init` and `doctor` say it first. This
+  also explains `/api/apps` "losing" apps: it applies the scope and `/auth/me` does not.
 
 ## Known gaps
 
@@ -243,6 +255,11 @@ Verified 2026-08-22.
 **Deliberately not done**
 
 - The dashboard cannot upload an OTA bundle. Deploys are CLI-only by choice.
+- Signup has no CLI path, and will not get one: it needs email verification and a human accepting
+  terms. Everything after it - organizations, apps, channels, deploys - is CLI-only reachable, so
+  the browser is visited once per account rather than once per app.
+- No `bundle` or `key` command group. Capgo has both (listing bundles, encryption keys); we have no
+  bundle encryption at all, so there is nothing for `key` to manage yet.
 - `getBuiltinVersion()` is not reported: the server has no column for it.
 - The four `/api/dashboard/apps*` routes look unused, but the dashboard reads apps through Supabase
   directly, so confirm that before deleting them. `/api/apps/:id/channels` and `/:id/releases` _are_

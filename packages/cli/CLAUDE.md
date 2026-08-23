@@ -1,4 +1,4 @@
-# Capuchooo CLI
+# Capuchoo CLI
 
 Builds and publishes releases. Release operations: [docs/ci-releases.md](docs/ci-releases.md).
 
@@ -21,6 +21,11 @@ explanation - never a deploy that stops halfway.
   server.
 - `services/cloud.ts` - the only place that talks to the API.
 - `utils/` - exec, http, config, reporter.
+
+`README.md` between its `<!-- commands -->` markers is generated: run
+`vp run --filter @capuchoo/cli readme` after adding or changing a command rather than editing it by
+hand. `package.json`'s `oclif.topics` carries each group's one-line description - a new group
+without an entry there borrows the description of its first command.
 
 Built with `tsc`, not `vp pack`: oclif discovers commands by walking `dist/commands`, one module per
 command, and a bundler collapses them.

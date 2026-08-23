@@ -1,6 +1,6 @@
 # @capuchoo/core
 
-The contract shared by every part of [Capuchooo](https://github.com/aybinv7/capuchoo): the CLI, the
+The contract shared by every part of [Capuchoo](https://github.com/aybinv7/capuchoo): the CLI, the
 app-side runtime, the update server and the dashboard.
 
 **Dependency-free on purpose, and it stays that way.** The CLI imports it in Node,

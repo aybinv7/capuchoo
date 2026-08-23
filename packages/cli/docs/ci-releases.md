@@ -1,6 +1,6 @@
 # CI releases
 
-Git owns source history, tags, release notes and approvals. Capuchooo owns channels, artefacts,
+Git owns source history, tags, release notes and approvals. Capuchoo owns channels, artefacts,
 activation and rollback. Neither reaches into the other.
 
 ## Credentials

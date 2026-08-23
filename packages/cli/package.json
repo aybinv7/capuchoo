@@ -31,6 +31,7 @@
   "scripts": {
     "build": "tsc -b --force",
     "test": "vp test --run",
+    "readme": "oclif readme",
     "prepack": "oclif manifest",
     "postpack": "node -e \"require('node:fs').rmSync('oclif.manifest.json',{force:true})\""
   },

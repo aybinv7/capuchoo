@@ -1,7 +1,7 @@
 @capuchoo/cli
 =============
 
-Capuchooo CLI bundles and uploads your application to the cloud. It packages builds as native
+Capuchoo CLI bundles and uploads your application to the cloud. It packages builds as native
 artifacts or ZIP files, then publishes them using user-defined parameters such as channels and
 custom release options. Built for simple, repeatable deployments, it integrates cleanly into local
 workflows and CI pipelines to ship updates quickly and reliably.
@@ -29,7 +29,7 @@ $ npm install -g @capuchoo/cli
 $ capuchoo COMMAND
 running command...
 $ capuchoo (--version)
-@capuchoo/cli/0.2.0 win32-x64 node-v26.4.0
+@capuchoo/cli/0.4.0 win32-x64 node-v26.4.0
 $ capuchoo --help [COMMAND]
 USAGE
   $ capuchoo COMMAND
@@ -42,22 +42,72 @@ USAGE
 
 <!-- commands -->
 
+- [`capuchoo app delete [APPID]`](#capuchoo-app-delete-appid)
+- [`capuchoo app list`](#capuchoo-app-list)
 - [`capuchoo auth login`](#capuchoo-auth-login)
 - [`capuchoo auth logout`](#capuchoo-auth-logout)
 - [`capuchoo auth whoami`](#capuchoo-auth-whoami)
+- [`capuchoo channel create [NAME]`](#capuchoo-channel-create-name)
+- [`capuchoo channel delete [NAME]`](#capuchoo-channel-delete-name)
 - [`capuchoo channel list`](#capuchoo-channel-list)
 - [`capuchoo config list`](#capuchoo-config-list)
 - [`capuchoo config set KEY VALUE`](#capuchoo-config-set-key-value)
 - [`capuchoo deploy native`](#capuchoo-deploy-native)
 - [`capuchoo deploy ota`](#capuchoo-deploy-ota)
+- [`capuchoo doctor`](#capuchoo-doctor)
 - [`capuchoo help [COMMAND]`](#capuchoo-help-command)
 - [`capuchoo init`](#capuchoo-init)
+- [`capuchoo org create [NAME]`](#capuchoo-org-create-name)
+- [`capuchoo org list`](#capuchoo-org-list)
+- [`capuchoo setup`](#capuchoo-setup)
 - [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
 - [`capuchoo version sync`](#capuchoo-version-sync)
 
+## `capuchoo app delete [APPID]`
+
+Delete an app, its channels and its bundles
+
+```
+USAGE
+  $ capuchoo app delete [APPID] [-y]
+
+ARGUMENTS
+  [APPID]  Bundle identifier of the app to delete
+
+FLAGS
+  -y, --yes  Skip the confirmation (scripts and CI)
+
+DESCRIPTION
+  Delete an app, its channels and its bundles
+
+EXAMPLES
+  $ capuchoo app delete com.company.app
+```
+
+_See code:
+[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/app/delete.ts)_
+
+## `capuchoo app list`
+
+List the apps this account can reach
+
+```
+USAGE
+  $ capuchoo app list [--json]
+
+FLAGS
+  --json  Machine-readable output
+
+DESCRIPTION
+  List the apps this account can reach
+```
+
+_See code:
+[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/app/list.ts)_
+
 ## `capuchoo auth login`
 
-Store an API key for the Capuchooo backend
+Store an API key for the Capuchoo backend
 
 ```
 USAGE
@@ -68,16 +118,16 @@ FLAGS
   -k, --api-key=<value>   API key from Settings > API Keys in the dashboard
 
 DESCRIPTION
-  Store an API key for the Capuchooo backend
+  Store an API key for the Capuchoo backend
 
 EXAMPLES
   $ capuchoo auth login
 
-  $ capuchoo auth login --endpoint https://capuchoo.internal --api-key cap_...
+  $ capuchoo auth login --endpoint https://capucho.internal --api-key cap_...
 ```
 
 _See code:
-[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/auth/login.ts)_
+[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -92,7 +142,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/auth/logout.ts)_
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -110,7 +160,64 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/auth/whoami.ts)_
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/auth/whoami.ts)_
+
+## `capuchoo channel create [NAME]`
+
+Create a channel for this app
+
+```
+USAGE
+  $ capuchoo channel create [NAME] [-e dev|staging|prod] [-y] [--json]
+
+ARGUMENTS
+  [NAME]  Name of the channel, e.g. staging
+
+FLAGS
+  -e, --environment=<option>  Which build flavour this channel serves
+                              <options: dev|staging|prod>
+  -y, --yes                   Accept the environment even when it disagrees with the name
+      --json                  Machine-readable output
+
+DESCRIPTION
+  Create a channel for this app
+
+EXAMPLES
+  $ capuchoo channel create staging
+
+  $ capuchoo channel create beta --environment staging
+
+  $ capuchoo channel create prod --environment prod --yes
+```
+
+_See code:
+[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/channel/create.ts)_
+
+## `capuchoo channel delete [NAME]`
+
+Delete one of this app's channels
+
+```
+USAGE
+  $ capuchoo channel delete [NAME] [-y]
+
+ARGUMENTS
+  [NAME]  Name of the channel to delete
+
+FLAGS
+  -y, --yes  Skip the confirmation
+
+DESCRIPTION
+  Delete one of this app's channels
+
+EXAMPLES
+  $ capuchoo channel delete beta
+
+  $ capuchoo channel delete beta --yes
+```
+
+_See code:
+[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/channel/delete.ts)_
 
 ## `capuchoo channel list`
 
@@ -128,7 +235,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/channel/list.ts)_
+[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/channel/list.ts)_
 
 ## `capuchoo config list`
 
@@ -146,7 +253,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/config/list.ts)_
+[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -164,13 +271,13 @@ DESCRIPTION
   Set a user preference in ~/.capuchoo/config.json
 
 EXAMPLES
-  $ capuchoo config set endpoint https://capuchoo.internal
+  $ capuchoo config set endpoint https://capucho.internal
 
   $ capuchoo config set defaultChannel staging
 ```
 
 _See code:
-[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/config/set.ts)_
+[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -178,8 +285,8 @@ Build and publish a native binary (APK). Users install it through the OS.
 
 ```
 USAGE
-  $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
-    [--dry-run] [--json] [--verbose] [-y] [-p android|ios] [-t debug|release] [--allow-unsigned]
+  $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets]
+    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [-p android|ios] [-t debug|release] [--allow-unsigned]
 
 FLAGS
   -a, --[no-]active        Serve this release immediately
@@ -212,7 +319,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/deploy/native.ts)_
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -220,8 +327,8 @@ Publish a web bundle over the air. Does not change the installed binary.
 
 ```
 USAGE
-  $ capuchoo deploy ota [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets] [--skip-build]
-    [--dry-run] [--json] [--verbose] [-y]
+  $ capuchoo deploy ota [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets]
+    [--skip-build] [--dry-run] [--json] [--verbose] [-y]
 
 FLAGS
   -a, --[no-]active       Serve this release immediately
@@ -249,7 +356,25 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/deploy/ota.ts)_
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/deploy/ota.ts)_
+
+## `capuchoo doctor`
+
+Check that this app, its credentials and its channels are usable
+
+```
+USAGE
+  $ capuchoo doctor
+
+DESCRIPTION
+  Check that this app, its credentials and its channels are usable
+
+EXAMPLES
+  $ capuchoo doctor
+```
+
+_See code:
+[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/doctor.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -274,27 +399,109 @@ _See code:
 
 ## `capuchoo init`
 
-Link this directory to a Capuchooo app and write .capuchoo/project.json
+Link this directory to a Capuchoo app and write .capuchoo/project.json
 
 ```
 USAGE
-  $ capuchoo init [-l] [-f]
+  $ capuchoo init [-l | -c] [--name <value> ] [--app-id <value>] [--org <value> ] [--channel <value>] [-f]
 
 FLAGS
-  -f, --force  Overwrite an existing project.json
-  -l, --link   Link an existing app instead of creating one
+  -c, --create           Create a new app instead of asking
+  -f, --force            Overwrite an existing project.json
+  -l, --link             Link an existing app instead of asking
+      --app-id=<value>   Bundle identifier of the app, e.g. com.company.app
+      --channel=<value>  Create this channel after linking, e.g. staging
+      --name=<value>     Name of the app to create (default: this directory's name)
+      --org=<value>      Organization to create the app in, by name or id
 
 DESCRIPTION
-  Link this directory to a Capuchooo app and write .capuchoo/project.json
+  Link this directory to a Capuchoo app and write .capuchoo/project.json
 
 EXAMPLES
   $ capuchoo init
 
   $ capuchoo init --link
+
+  $ capuchoo init --create
+
+  $ capuchoo init --create --name "My App" --app-id com.acme.app --channel staging
 ```
 
 _See code:
-[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/init.ts)_
+[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/init.ts)_
+
+## `capuchoo org create [NAME]`
+
+Create an organization
+
+```
+USAGE
+  $ capuchoo org create [NAME] [--json]
+
+ARGUMENTS
+  [NAME]  Display name of the organization
+
+FLAGS
+  --json  Machine-readable output
+
+DESCRIPTION
+  Create an organization
+
+EXAMPLES
+  $ capuchoo org create "SIG Service"
+
+  $ capuchoo org create Acme --json
+```
+
+_See code:
+[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/org/create.ts)_
+
+## `capuchoo org list`
+
+List the organizations this account belongs to
+
+```
+USAGE
+  $ capuchoo org list [--json]
+
+FLAGS
+  --json  Machine-readable output
+
+DESCRIPTION
+  List the organizations this account belongs to
+```
+
+_See code:
+[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/org/list.ts)_
+
+## `capuchoo setup`
+
+Install everything this app needs to receive updates
+
+```
+USAGE
+  $ capuchoo setup [--native] [--skip-telemetry] [--skip-sync] [--dry-run] [-y]
+
+FLAGS
+  -y, --yes             Accept every prompt
+      --dry-run         Report what would be installed, change nothing
+      --native          Also install what downloading and installing an APK needs
+      --skip-sync       Do not run cap sync afterwards
+      --skip-telemetry  Do not install @capacitor/device
+
+DESCRIPTION
+  Install everything this app needs to receive updates
+
+EXAMPLES
+  $ capuchoo setup
+
+  $ capuchoo setup --native
+
+  $ capuchoo setup --dry-run
+```
+
+_See code:
+[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/setup.ts)_
 
 ## `capuchoo version bump TYPE`
 
@@ -321,7 +528,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/version/bump.ts)_
+[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -347,5 +554,5 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.2.0/src/commands/version/sync.ts)_
+[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.4.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->
