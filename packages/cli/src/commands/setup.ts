@@ -33,11 +33,13 @@ import { run } from "../utils/exec.js";
  * app.
  */
 
-const CLI: PackageSpec = {
-  name: "@capuchoo/cli",
-  range: null,
-  why: "this tool, pinned for your team and CI",
-};
+function cliPackage(version: string): PackageSpec {
+  return {
+    name: "@capuchoo/cli",
+    range: `^${version}`,
+    why: "this tool, pinned for your team and CI",
+  };
+}
 
 const INSTALL_ARGS: Record<PackageManager, (dev: boolean) => string[]> = {
   pnpm: (dev) => (dev ? ["add", "-D"] : ["add"]),
@@ -45,6 +47,24 @@ const INSTALL_ARGS: Record<PackageManager, (dev: boolean) => string[]> = {
   yarn: (dev) => (dev ? ["add", "-D"] : ["add"]),
   bun: (dev) => (dev ? ["add", "-d"] : ["add"]),
 };
+
+/**
+ * `webDir` out of capacitor.config.*, by regex.
+ *
+ * The config is frequently TypeScript, so importing it would mean compiling it.
+ * A miss returns null and the caller simply attempts the sync, which is the old
+ * behaviour.
+ */
+function readWebDir(appDir: string): string | null {
+  for (const name of ["capacitor.config.ts", "capacitor.config.js", "capacitor.config.json"]) {
+    const file = path.join(appDir, name);
+    if (!fs.existsSync(file)) continue;
+
+    const match = /["']?webDir["']?\s*:\s*["']([^"']+)["']/.exec(fs.readFileSync(file, "utf8"));
+    if (match?.[1]) return match[1];
+  }
+  return null;
+}
 
 export default class Setup extends BaseCommand {
   static override description = "Install everything this app needs to receive updates";
@@ -111,7 +131,8 @@ export default class Setup extends BaseCommand {
       ...(flags.native ? nativePackages(capacitor.major) : []),
     ];
     const missing = wanted.filter((pkg) => !installed[pkg.name]);
-    const missingCli = installed[CLI.name] ? null : CLI;
+    const cli = cliPackage(this.config.version);
+    const missingCli = installed[cli.name] ? null : cli;
 
     this.log("");
     this.log(chalk.bold("  Capuchoo setup"));
@@ -178,15 +199,27 @@ export default class Setup extends BaseCommand {
     // an install without it looks successful and fails on a device.
     if (!flags["skip-sync"]) {
       const { capacitor } = lookupTools(appDir);
-      if (capacitor.bin) {
-        log.step("cap sync");
-        await run(capacitor.bin, ["sync"], { cwd: appDir, verbose: true });
-      } else {
+      const webDir = readWebDir(appDir);
+
+      if (!capacitor.bin) {
         log.warn(
           `@capacitor/cli is not installed, so the native projects were not synced. ` +
             `Run "npx cap sync" once it is - without it the new plugins exist in ` +
             `JavaScript only.`,
         );
+      } else if (webDir && !fs.existsSync(path.join(appDir, webDir))) {
+        // cap sync copies the web build, so it fails outright when webDir is
+        // absent - which is the normal state of a fresh checkout. Ending a
+        // successful install on that error reads as "setup failed".
+        log.warn(
+          `Skipped cap sync: "${webDir}" does not exist yet, and cap sync copies it.
+` +
+            `Build the app once, then run "npx cap sync" - until then the new ` +
+            `plugins exist in JavaScript only.`,
+        );
+      } else {
+        log.step("cap sync");
+        await run(capacitor.bin, ["sync"], { cwd: appDir, verbose: true });
       }
     }
 

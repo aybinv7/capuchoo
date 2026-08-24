@@ -13,6 +13,19 @@
  * and 8. So this is packaging, not capability.
  */
 
+/**
+ * The `@capuchoo/updater` line this CLI installs.
+ *
+ * Explicit, and not the CLI's own version: the two are versioned independently,
+ * so `^${cliVersion}` asks for a runtime release that may not exist. Bump this
+ * when the updater is released - `runtimeRange` in the tests pins the shape.
+ *
+ * It must also not be left bare. A bare name resolves to whatever the package
+ * manager believes `latest` is, and pnpm caches registry metadata - so minutes
+ * after a release it installs the previous version and says nothing.
+ */
+export const RUNTIME_VERSION = "0.4.0";
+
 /** Capacitor majors this toolchain installs for. */
 export const SUPPORTED_MAJORS = [7, 8] as const;
 
@@ -70,7 +83,11 @@ export function isSupportedMajor(major: number | null): major is CapacitorMajor 
  */
 export function runtimePackages(major: CapacitorMajor): PackageSpec[] {
   return [
-    { name: "@capuchoo/updater", range: null, why: "the update runtime" },
+    {
+      name: "@capuchoo/updater",
+      range: `^${RUNTIME_VERSION}`,
+      why: "the update runtime",
+    },
     {
       name: "@capgo/capacitor-updater",
       range: `^${major}`,

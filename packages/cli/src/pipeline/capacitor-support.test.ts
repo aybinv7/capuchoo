@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  RUNTIME_VERSION,
   detectCapacitor,
   installSpec,
   isSupportedMajor,
@@ -62,7 +63,7 @@ describe("isSupportedMajor", () => {
 describe("version selection", () => {
   it("pins the capgo plugin to the app's Capacitor major", () => {
     expect(runtimePackages(7).map(installSpec)).toEqual([
-      "@capuchoo/updater",
+      `@capuchoo/updater@^${RUNTIME_VERSION}`,
       "@capgo/capacitor-updater@^7",
       "@capacitor/app@^7",
     ]);
@@ -75,7 +76,13 @@ describe("version selection", () => {
     expect(nativePackages(8).map(installSpec)).toContain("@capacitor/file-transfer@^2");
   });
 
-  it("leaves the runtime unpinned - it is the one package we publish", () => {
-    expect(runtimePackages(8)[0]).toMatchObject({ name: "@capuchoo/updater", range: null });
+  // Bare would resolve to whatever the package manager thinks `latest` is, and
+  // pnpm's cached metadata lags a fresh publish - that installed 0.2.0 hours
+  // after 0.4.0 shipped, silently.
+  it("pins the runtime to an explicit version, never bare", () => {
+    const runtime = runtimePackages(8)[0]!;
+    expect(runtime.name).toBe("@capuchoo/updater");
+    expect(runtime.range).toBe(`^${RUNTIME_VERSION}`);
+    expect(runtime.range).toMatch(/^\^\d+\.\d+\.\d+$/);
   });
 });
