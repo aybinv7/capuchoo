@@ -211,10 +211,16 @@ class UpdateService implements IUpdateService {
           assignedNative.version_code > userNativeVersion &&
           assignedNative.platform === request.platform
         ) {
+          // The top-level `url` belongs to the OTA contract: the Capacitor
+          // plugin auto-downloads whatever is there and unzips it as a web
+          // bundle. Putting a native APK in it made the plugin fetch 45 MB and
+          // fail to unzip it, which surfaced in the app as "the update could
+          // not be downloaded" and hid the real, installable update. A native
+          // binary is offered only through `native_update`, which every client
+          // of ours reads first.
           return {
-            message: "update_available",
+            message: "native_update_available",
             version_name: assignedNative.version_name,
-            url: assignedNative.download_url,
             release_notes: assignedNative.release_notes,
             required: assignedNative.required,
             native_update: { ...assignedNative, type: "native" },

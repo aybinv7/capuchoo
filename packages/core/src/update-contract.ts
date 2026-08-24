@@ -24,6 +24,16 @@ export const UpdateMessage = {
   NATIVE_UPDATE_REQUIRED: "native_update_required",
   /** A newer artefact is available. */
   UPDATE_AVAILABLE: "update_available",
+  /**
+   * A newer native binary is available, but not mandatory.
+   *
+   * Distinct from UPDATE_AVAILABLE because the top-level `url` is deliberately
+   * absent: that field is the Capacitor plugin's OTA contract, and it
+   * auto-downloads whatever is there and unzips it. An APK in `url` made the
+   * plugin download 45 MB and fail, hiding the real update behind a download
+   * error. The binary is in `native_update` instead.
+   */
+  NATIVE_UPDATE_AVAILABLE: "native_update_available",
   /** The device already runs the newest artefact for its channel. */
   NO_UPDATE: "No update available",
   /** The channel name does not exist for this application. */

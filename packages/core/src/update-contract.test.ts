@@ -2,6 +2,51 @@ import { describe, expect, it } from "vite-plus/test";
 import { UpdateMessage, isBlockingResponse, resolveUpdate } from "./update-contract.js";
 
 describe("resolveUpdate", () => {
+  /**
+   * The device caught this and no API test could: with autoUpdate
+   * "onlyDownload" the Capacitor plugin downloads whatever is in the top-level
+   * `url` and unzips it as a web bundle. When the server put a native APK
+   * there, the plugin fetched 45 MB, failed to unzip it, and the app showed
+   * "the update could not be downloaded" while a perfectly installable update
+   * sat in native_update. A native offer must therefore carry no `url`.
+   */
+  it("reads a native offer that carries no top-level url", () => {
+    const resolved = resolveUpdate({
+      message: UpdateMessage.NATIVE_UPDATE_AVAILABLE,
+      version_name: "1.0.53",
+      native_update: {
+        version_name: "1.0.53",
+        version_code: 64,
+        download_url: "https://example.test/v64-1.0.53.apk",
+        platform: "android",
+        required: false,
+      },
+    });
+
+    expect(resolved).toMatchObject({
+      kind: "native",
+      version: "1.0.53",
+      versionCode: 64,
+      downloadUrl: "https://example.test/v64-1.0.53.apk",
+      required: false,
+    });
+  });
+
+  it("still treats a native offer as required when the server says so", () => {
+    const resolved = resolveUpdate({
+      message: UpdateMessage.NATIVE_UPDATE_REQUIRED,
+      native_update: {
+        version_name: "2.0.0",
+        version_code: 90,
+        download_url: "https://example.test/v90.apk",
+        platform: "android",
+        required: false,
+      },
+    });
+
+    expect(resolved).toMatchObject({ kind: "native", required: true });
+  });
+
   it("returns null when there is nothing to install", () => {
     expect(resolveUpdate(null)).toBeNull();
     expect(resolveUpdate({})).toBeNull();
