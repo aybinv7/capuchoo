@@ -51,6 +51,13 @@ unfinished. [docs/DEPLOY.md](./docs/DEPLOY.md) covers hosting the backend and da
 - **`@capuchoo/core` depends on nothing, and must stay that way.** It is imported by the CLI in
   Node, by the updater inside a WebView, and by the backend and dashboard. A single dependency there
   leaks into all of them.
+- **The update decision lives in `packages/core/src/update-decision.ts`, and nowhere else.**
+  `decideUpdate` is pure and total over a closed set of outcomes; `renderUpdateResponse` is the only
+  place a wire response is shaped. The backend gathers facts and calls them - it must never branch
+  on a version, an environment or a platform itself. It used to, alongside its own copies of
+  `compareVersions` and the isolation rule, and every defect that reached a real device came from
+  that duplication. A new outcome means a new member of `UpdateDecision` and a new row in
+  `update-decision.test.ts`, not an `if` in a service.
 - **The CLI owns the deploy pipeline.** It does not call an application's `package.json` scripts,
   does not assume pnpm, and treats Trapeze, `@capacitor/assets` and `@capacitor/cli` as optional. A
   missing tool is a skip or a substitution with an explanation, never a half-finished deploy.
