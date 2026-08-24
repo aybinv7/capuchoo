@@ -94,6 +94,7 @@ export interface DeployFlags {
   platform?: string;
   type?: string;
   "allow-unsigned"?: boolean;
+  flavor?: string;
 }
 
 export interface DeployCommandOptions {
@@ -282,6 +283,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     skipAssets: flags["skip-assets"],
     skipBuild: flags["skip-build"],
     allowUnsigned: flags["allow-unsigned"] ?? false,
+    flavor: flags.flavor,
     dryRun: flags["dry-run"],
     verbose: flags.verbose,
     quiet: json,

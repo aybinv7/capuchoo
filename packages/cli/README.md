@@ -29,7 +29,7 @@ $ npm install -g @capuchoo/cli
 $ capuchoo COMMAND
 running command...
 $ capuchoo (--version)
-@capuchoo/cli/0.5.0 win32-x64 node-v26.4.0
+@capuchoo/cli/0.6.0 win32-x64 node-v26.4.0
 $ capuchoo --help [COMMAND]
 USAGE
   $ capuchoo COMMAND
@@ -85,7 +85,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/app/delete.ts)_
+[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/app/delete.ts)_
 
 ## `capuchoo app list`
 
@@ -103,7 +103,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/app/list.ts)_
+[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/app/list.ts)_
 
 ## `capuchoo auth login`
 
@@ -127,7 +127,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/auth/login.ts)_
+[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -142,7 +142,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/auth/logout.ts)_
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -160,7 +160,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/auth/whoami.ts)_
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/auth/whoami.ts)_
 
 ## `capuchoo channel create [NAME]`
 
@@ -191,7 +191,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/channel/create.ts)_
+[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/channel/create.ts)_
 
 ## `capuchoo channel delete [NAME]`
 
@@ -217,7 +217,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/channel/delete.ts)_
+[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/channel/delete.ts)_
 
 ## `capuchoo channel list`
 
@@ -235,7 +235,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/channel/list.ts)_
+[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/channel/list.ts)_
 
 ## `capuchoo config list`
 
@@ -253,7 +253,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/config/list.ts)_
+[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -277,7 +277,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/config/set.ts)_
+[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -286,7 +286,8 @@ Build and publish a native binary (APK). Users install it through the OS.
 ```
 USAGE
   $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets]
-    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [-p android|ios] [-t debug|release] [--allow-unsigned]
+    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [-p android|ios] [-t debug|release] [--flavor <value>]
+    [--allow-unsigned]
 
 FLAGS
   -a, --[no-]active        Serve this release immediately
@@ -302,6 +303,7 @@ FLAGS
   -y, --yes                Accept every prompt - required in CI
       --allow-unsigned     Publish a release build with no signature. Android will refuse to install it.
       --dry-run            Build and package, but upload nothing
+      --flavor=<value>     Gradle product flavour to build, when the project has more than one
       --json               Emit a machine-readable result on stdout
       --skip-assets        Do not regenerate launcher icons
       --skip-build         Publish the existing build output as-is
@@ -319,7 +321,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/deploy/native.ts)_
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -356,7 +358,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/deploy/ota.ts)_
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/deploy/ota.ts)_
 
 ## `capuchoo doctor`
 
@@ -374,7 +376,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/doctor.ts)_
+[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/doctor.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -428,7 +430,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/init.ts)_
+[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/init.ts)_
 
 ## `capuchoo org create [NAME]`
 
@@ -454,7 +456,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/org/create.ts)_
+[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/org/create.ts)_
 
 ## `capuchoo org list`
 
@@ -472,7 +474,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/org/list.ts)_
+[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/org/list.ts)_
 
 ## `capuchoo setup`
 
@@ -501,7 +503,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/setup.ts)_
+[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/setup.ts)_
 
 ## `capuchoo version bump TYPE`
 
@@ -528,7 +530,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/version/bump.ts)_
+[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -554,5 +556,5 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.5.0/src/commands/version/sync.ts)_
+[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->

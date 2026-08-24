@@ -26,6 +26,9 @@ export default class DeployNative extends BaseCommand {
       options: ["debug", "release"],
       description: "Gradle variant to assemble",
     }),
+    flavor: Flags.string({
+      description: "Gradle product flavour to build, when the project has more than one",
+    }),
     "allow-unsigned": Flags.boolean({
       default: false,
       description: "Publish a release build with no signature. Android will refuse to install it.",

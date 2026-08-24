@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { run, type RunOptions } from "../utils/exec.js";
+import { assembleTask, parseProductFlavors } from "./gradle-variant.js";
 
 /**
  * Android compilation and artefact discovery.
@@ -42,12 +43,25 @@ function gradleWrapper(androidDir: string): string {
   return process.platform === "win32" ? wrapper : `./${name}`;
 }
 
+/** Product flavours declared by app/build.gradle, or none. */
+export function readProductFlavors(androidDir: string): string[] {
+  for (const name of ["build.gradle", "build.gradle.kts"]) {
+    const file = path.join(androidDir, "app", name);
+    if (fs.existsSync(file)) return parseProductFlavors(fs.readFileSync(file, "utf8"));
+  }
+  return [];
+}
+
 export async function assembleAndroid(
   androidDir: string,
   buildType: BuildType,
   options: Omit<RunOptions, "cwd">,
+  flavor?: string,
 ): Promise<void> {
-  const task = buildType === "release" ? "assembleRelease" : "assembleDebug";
+  // With flavours, `assembleDebug` builds every one of them and writes each to
+  // its own directory - slow, and it leaves the pipeline guessing which APK it
+  // meant. Naming the variant builds exactly one.
+  const task = assembleTask(buildType, flavor);
 
   await run(gradleWrapper(androidDir), [task], {
     ...options,
@@ -58,10 +72,23 @@ export async function assembleAndroid(
   });
 }
 
-/** Finds the APK produced for a variant. */
-export function findApk(androidDir: string, buildType: BuildType): string | null {
-  const variantDir = path.join(androidDir, "app", "build", "outputs", "apk", buildType);
-  if (!fs.existsSync(variantDir)) return null;
+/**
+ * Finds the APK produced for a variant.
+ *
+ * Two layouts: `outputs/apk/<buildType>/` without flavours, and
+ * `outputs/apk/<flavour>/<buildType>/` with them. Looking only in the first is
+ * how a successful flavoured build reported "no debug APK exists".
+ */
+export function findApk(androidDir: string, buildType: BuildType, flavor?: string): string | null {
+  const apkRoot = path.join(androidDir, "app", "build", "outputs", "apk");
+
+  const candidates = [
+    ...(flavor ? [path.join(apkRoot, flavor, buildType)] : []),
+    path.join(apkRoot, buildType),
+  ];
+
+  const variantDir = candidates.find((dir) => fs.existsSync(dir));
+  if (!variantDir) return null;
 
   const found: { file: string; mtime: number }[] = [];
 
@@ -115,13 +142,17 @@ export function collectAndroidArtifact(
   androidDir: string,
   buildType: BuildType,
   allowUnsigned: boolean,
+  flavor?: string,
 ): AndroidBuildResult {
-  const apkPath = findApk(androidDir, buildType);
+  const apkPath = findApk(androidDir, buildType, flavor);
 
   if (!apkPath) {
+    const looked = flavor
+      ? `${path.join(androidDir, "app/build/outputs/apk", flavor, buildType)} or `
+      : "";
     throw new Error(
       `Gradle reported success but no ${buildType} APK exists under ` +
-        `${path.join(androidDir, "app/build/outputs/apk", buildType)}.`,
+        `${looked}${path.join(androidDir, "app/build/outputs/apk", buildType)}.`,
     );
   }
 

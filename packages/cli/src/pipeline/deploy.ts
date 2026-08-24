@@ -7,7 +7,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { CommandError, type RunOptions } from "../utils/exec.js";
 import { Reporter, type Step } from "../utils/reporter.js";
-import { assembleAndroid, collectAndroidArtifact, type BuildType } from "./android.js";
+import {
+  assembleAndroid,
+  collectAndroidArtifact,
+  readProductFlavors,
+  type BuildType,
+} from "./android.js";
+import { chooseFlavor, describeAmbiguousFlavor } from "./gradle-variant.js";
 import { buildWeb, generateAssets, syncCapacitor, type StepContext } from "./build.js";
 import {
   buildEnvironment,
@@ -47,6 +53,8 @@ export interface DeployRequest {
   skipAssets: boolean;
   skipBuild: boolean;
   allowUnsigned: boolean;
+  /** Gradle product flavour to build, when the project declares more than one. */
+  flavor?: string | undefined;
   dryRun: boolean;
   verbose: boolean;
   quiet: boolean;
@@ -263,8 +271,32 @@ export async function runDeploy(
   } else {
     reporter.begin("compile");
     const androidDir = path.resolve(request.appDir, request.project.androidDir);
-    await assembleAndroid(androidDir, request.buildType, runOptions);
-    const built = collectAndroidArtifact(androidDir, request.buildType, request.allowUnsigned);
+
+    // Which flavour, decided before Gradle runs: naming it builds one variant
+    // instead of every flavour, and the wrong one would ship a different
+    // applicationId to real devices.
+    const flavors = readProductFlavors(androidDir);
+    const choice = chooseFlavor({
+      flavors,
+      requested: request.flavor,
+      environment: request.environment,
+    });
+
+    if (choice.kind === "ambiguous") {
+      throw new Error(describeAmbiguousFlavor(choice.flavors, request.environment));
+    }
+
+    const flavor = choice.kind === "chosen" ? choice.flavor : undefined;
+    if (flavor)
+      reporter.note(`flavour ${flavor} (${choice.kind === "chosen" ? choice.because : ""})`);
+
+    await assembleAndroid(androidDir, request.buildType, runOptions, flavor);
+    const built = collectAndroidArtifact(
+      androidDir,
+      request.buildType,
+      request.allowUnsigned,
+      flavor,
+    );
     reporter.note(
       `${path.basename(built.apkPath)}, ${formatBytes(built.byteSize)}` +
         (built.signed ? "" : " (unsigned)"),
