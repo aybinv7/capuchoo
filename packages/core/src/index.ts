@@ -31,6 +31,20 @@ export {
 } from "./update-contract.js";
 
 export {
+  decideUpdate,
+  describeDecision,
+  nativePayload,
+  renderUpdateResponse,
+  type ChannelState,
+  type DeviceState,
+  type NativeRelease,
+  type OtaRelease,
+  type RenderContext,
+  type UpdateDecision,
+  type UpdateFacts,
+} from "./update-decision.js";
+
+export {
   ENVIRONMENTS,
   PROJECT_CONFIG_VERSION,
   defaultFlavour,

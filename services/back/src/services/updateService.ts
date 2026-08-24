@@ -1,3 +1,13 @@
+import {
+  decideUpdate,
+  describeDecision,
+  renderUpdateResponse,
+  type NativeRelease,
+  type OtaRelease,
+  type Environment,
+  type Platform,
+  type UpdateDecision,
+} from "@capuchoo/core";
 import { IUpdateService, UpdateRequest, UpdateResponse, UpdateRecord, StatsRequest } from "@/types";
 import supabaseService from "./supabaseService";
 import deviceService from "./deviceService";
@@ -115,243 +125,206 @@ class UpdateService implements IUpdateService {
     }
   }
 
+  /**
+   * Answers `POST /api/update`.
+   *
+   * Fetch, then decide. The rule itself is `decideUpdate` in `@capuchoo/core`:
+   * a pure function over facts, so it can be exercised against a table of cases
+   * instead of a physical phone - which is how every defect in it was found
+   * before. Nothing in this method branches on versions, environments or
+   * platforms. Its only job is to gather what the decision needs, and to
+   * perform the side effects the decision implies.
+   */
   async checkForUpdate(request: UpdateRequest): Promise<UpdateResponse> {
     try {
-      logger.info("Checking for updates", { request });
-
       const appUuid = await this.resolveAppUuid(request.appId);
-      if (!appUuid) {
-        logger.warn("App not found for update check", { appId: request.appId });
-        return { message: "App not found" };
-      }
 
-      // 1. Get channel metadata - plugin sends defaultChannel (camelCase) or default_channel (snake_case)
-      // Priority: explicit channel > defaultChannel > default_channel > fallback to "staging"
-      const channelToUse =
+      // Priority: explicit channel > defaultChannel > default_channel > staging.
+      // The plugin sends camelCase; older builds send snake_case.
+      const channelName =
         request.channel || request.defaultChannel || (request as any).default_channel || "staging";
 
-      const { data: channelData, error: channelError } = await supabaseService
-        .getClient()
-        .from("channels")
-        .select("id, environment, current_version_id, current_native_version_id")
-        .eq("app_id", appUuid)
-        .eq("name", channelToUse)
-        .maybeSingle();
+      const channel = appUuid ? await this.findChannel(appUuid, channelName) : null;
 
-      if (channelError || !channelData) {
-        logger.warn("Channel not found", { channel: channelToUse, appUuid });
-        return { message: "Channel not found" };
-      }
+      // Both need a channel: config is resolved for its environment, and a
+      // device row is bound to it.
+      const [config, device, native, ota] = await Promise.all([
+        appUuid && channel
+          ? this.resolveEnvConfig(appUuid, channel.environment, channelName)
+          : Promise.resolve({}),
+        // Recorded before any of the "nothing to do" outcomes. This used to
+        // happen only on a successful OTA delivery - the rarest outcome of a
+        // check - so a device that was up to date, or on a channel with no
+        // bundle, was never recorded at all.
+        appUuid && channel
+          ? this.recordDeviceActivity({ appUuid, request, channelId: channel.id })
+          : Promise.resolve(null),
+        channel ? this.findAssignedNative(channel.currentNativeVersionId) : Promise.resolve(null),
+        channel ? this.findAssignedBundle(channel.currentVersionId) : Promise.resolve(null),
+      ]);
 
-      const environment = channelData.environment || "staging";
+      const platform = (request.platform || "android") as Platform;
 
-      // 2. Get resolved config from app_env_vars using the channel's environment
-      const appConfig = await this.resolveEnvConfig(appUuid, environment, channelToUse);
-
-      // 1.5. Strict Environment Isolation Check
-      // Ensure that the requesting App ID matches the Channel's environment matches expectations
-      const incomingAppId = request.appId.toLowerCase();
-      let expectedEnv = "prod";
-
-      if (incomingAppId.endsWith(".staging")) {
-        expectedEnv = "staging";
-      } else if (incomingAppId.endsWith(".dev") || incomingAppId.endsWith(".debug")) {
-        expectedEnv = "dev";
-      }
-
-      // If the channel's environment doesn't match the App ID's type, block it.
-      // E.g. Staging App (io.x.staging) -> Should only see Channels with Environment=staging
-      // EXCEPTION: Prod apps (io.x) CAN access Staging channels (e.g. for beta testing)
-      if (environment !== expectedEnv) {
-        // Allow Prod App -> Staging Channel
-        if (expectedEnv === "prod" && environment === "staging") {
-          // Allowed
-        } else {
-          logger.warn("Environment mismatch blocked", {
-            appId: request.appId,
-            channel: channelToUse,
-            channelEnv: environment,
-            expectedEnv,
-          });
-          return {
-            message: "Environment mismatch",
-            config: appConfig,
-          };
-        }
-      }
-
-      // Record the device before any of the "no update" exits below.
-      //
-      // This used to happen only on a successful OTA delivery, which is the
-      // rarest outcome of a check - so a device that was up to date, or on a
-      // channel with no bundle, was never recorded at all.
-      const device = await this.recordDeviceActivity({
-        appUuid,
-        request,
-        channelId: channelData.id,
-      });
-
-      // 3. NATIVE FIRST: Check if there is a newer NATIVE binary available for this channel
-      const userNativeVersion = parseInt(request.versionCode || request.versionBuild || "0") || 0;
-
-      const currentVersion =
-        request.version_name === "builtin" ? "0.0.0" : request.version_name || "0.0.0";
-      // 3. NATIVE FIRST: Check if channel has an explicit NATIVE version assigned
-      if (channelData.current_native_version_id) {
-        const { data: assignedNative } = await supabaseService
-          .getClient()
-          .from("native_updates")
-          .select("*")
-          .eq("id", channelData.current_native_version_id)
-          .maybeSingle();
-
-        // If the assigned native version is newer than what user has, force update
-        if (
-          assignedNative &&
-          assignedNative.version_code > userNativeVersion &&
-          assignedNative.platform === request.platform
-        ) {
-          // The top-level `url` belongs to the OTA contract: the Capacitor
-          // plugin auto-downloads whatever is there and unzips it as a web
-          // bundle. Putting a native APK in it made the plugin fetch 45 MB and
-          // fail to unzip it, which surfaced in the app as "the update could
-          // not be downloaded" and hid the real, installable update. A native
-          // binary is offered only through `native_update`, which every client
-          // of ours reads first.
-          return {
-            message: "native_update_available",
-            version_name: assignedNative.version_name,
-            release_notes: assignedNative.release_notes,
-            required: assignedNative.required,
-            native_update: { ...assignedNative, type: "native" },
-            config: appConfig,
-          };
-        }
-      }
-
-      if (!channelData.current_version_id) {
-        logger.info("No active version ID set for channel", {
-          channel: channelToUse,
-        });
-        return { config: appConfig };
-      }
-
-      // 4. Get the full channel version data for OTA
-      const { data: versionData, error: versionError } = await supabaseService
-        .getClient()
-        .from("app_versions")
-        .select(
-          `
-          version_name,
-          external_url,
-          r2_path,
-          checksum,
-          session_key,
-          min_update_version,
+      const decision = decideUpdate({
+        device: {
+          appId: request.appId,
           platform,
-          required,
-          release_notes
-        `,
-        )
-        .eq("id", channelData.current_version_id)
-        .maybeSingle();
+          versionCode: Number.parseInt(request.versionCode || request.versionBuild || "0", 10) || 0,
+          // The sentinel for "no bundle has ever been applied". It is not a
+          // semantic version, and the decision sorts it behind every release.
+          versionName: request.version_name || "builtin",
+        },
+        app: appUuid ? { id: appUuid } : null,
+        channel: channel ? { name: channel.name, environment: channel.environment } : null,
+        native,
+        ota,
+      });
 
-      if (versionError || !versionData) {
-        logger.info("No active version metadata for channel", {
-          channel: channelToUse,
-          versionId: channelData.current_version_id,
-        });
-        return { config: appConfig };
-      }
-
-      const latestUpdate = versionData as any;
-
-      // Ensure platform matches if specified
-      if (request.platform && latestUpdate.platform !== request.platform) {
-        logger.info("Platform mismatch for latest version", {
-          expected: request.platform,
-          actual: latestUpdate.platform,
-        });
-        return { config: appConfig };
-      }
-
-      // Compare versions - check if latest is actually newer than current
-      const isNewer = this.compareVersions(latestUpdate.version_name, currentVersion) > 0;
-
-      if (!isNewer) {
-        logger.info("No update needed - already on latest version", {
-          currentVersion,
-          latestAvailable: latestUpdate.version_name,
-          channel: channelToUse,
-        });
-        return { message: "No update available", config: appConfig };
-      }
-
-      // Check if user's native version meets the minimum requirement
-      // Note: mapping min_update_version (string) to minNativeRequired
-      const minNativeRequired = parseInt(latestUpdate.min_update_version || "0") || 0;
-
-      if (minNativeRequired > 0 && userNativeVersion < minNativeRequired) {
-        logger.info("OTA update requires newer native version", {
-          userNativeVersion,
-          requiredNativeVersion: minNativeRequired,
-          otaVersion: latestUpdate.version_name,
-          channel: channelToUse,
-        });
-
-        // Try to find the actual native update record to help the app
-        const { data: nativeUpdate } = await supabaseService
-          .getClient()
-          .from("native_updates")
-          .select("*")
-          .eq("platform", request.platform)
-          .eq("app_id", appUuid)
-          .eq("version_code", minNativeRequired)
-          .maybeSingle();
-
-        return {
-          message: "native_update_required",
-          error: `Native version ${minNativeRequired} required. You have ${userNativeVersion}.`,
-          config: appConfig,
-          native_update: nativeUpdate || null,
-        };
-      }
-
-      logger.info("Update found", {
-        version_name: latestUpdate.version_name,
+      // One line per check naming the branch that fired. The previous
+      // implementation logged only some outcomes, and its "no updates
+      // available" line sat after an unconditional return, so it never once
+      // appeared in production.
+      logger.info("Update decision", {
+        appId: request.appId,
+        channel: channelName,
         deviceId: request.deviceId,
-        channel: channelToUse,
+        outcome: decision.kind,
+        detail: describeDecision(decision),
       });
 
-      await this.logUpdateEvent({
-        deviceUuid: device?.id,
-        appUuid,
-        currentVersion,
-        newVersion: latestUpdate.version_name,
-        platform: request.platform,
-        action: "get",
-      });
+      if (decision.kind === "ota" && appUuid) {
+        await this.logUpdateEvent({
+          deviceUuid: device?.id,
+          appUuid,
+          currentVersion: request.version_name,
+          newVersion: decision.release.version_name,
+          platform: request.platform,
+          action: "get",
+        });
+      }
 
-      return {
-        version_name: latestUpdate.version_name,
-        url: await this.generateDownloadUrl(latestUpdate.external_url || latestUpdate.r2_path),
-        checksum: latestUpdate.checksum,
-        sessionKey: latestUpdate.session_key || undefined,
-        // Both were missing, and both are decisions the publisher already made:
-        // an OTA release marked required arrived as optional, so a client's
-        // prompt offered "Later" on an update nobody may postpone, and release
-        // notes were stored and never shown.
-        required: latestUpdate.required ?? false,
-        release_notes: latestUpdate.release_notes ?? undefined,
-        config: appConfig,
-      };
-      // Nothing follows: every "no update" outcome already returned above.
-      // A `logger.info("No updates available")` plus `return {}` used to sit
-      // here, unreachable, which is why that log line never appeared.
+      return renderUpdateResponse(decision, {
+        config,
+        gate: await this.findGateNative(decision, appUuid, platform),
+      });
     } catch (error) {
       logger.error("Update check failed", { request, error });
       throw error;
     }
+  }
+
+  /** The channel a check names, with the two pointers that decide what it serves. */
+  private async findChannel(
+    appUuid: string,
+    name: string,
+  ): Promise<{
+    id: string;
+    name: string;
+    environment: Environment;
+    currentVersionId: string | null;
+    currentNativeVersionId: string | null;
+  } | null> {
+    const { data, error } = await supabaseService
+      .getClient()
+      .from("channels")
+      .select("id, environment, current_version_id, current_native_version_id")
+      .eq("app_id", appUuid)
+      .eq("name", name)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      name,
+      // A channel row without one is a data defect, not a reason to serve
+      // production bundles: staging is the safe reading.
+      environment: (data.environment || "staging") as Environment,
+      currentVersionId: data.current_version_id ?? null,
+      currentNativeVersionId: data.current_native_version_id ?? null,
+    };
+  }
+
+  /**
+   * The native binary a channel points at.
+   *
+   * `channels.current_native_version_id` is what decides this, not the row's
+   * own `active` flag - that only means "publishable". The pointer was never
+   * written on publish, so a native release existed, was marked active, and
+   * nothing ever served it.
+   */
+  private async findAssignedNative(versionId: string | null): Promise<NativeRelease | null> {
+    if (!versionId) return null;
+
+    const { data, error } = await supabaseService
+      .getClient()
+      .from("native_updates")
+      .select(
+        "version_name, version_code, download_url, platform, required, release_notes, file_size_bytes",
+      )
+      .eq("id", versionId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return { ...data, platform: data.platform as Platform } as NativeRelease;
+  }
+
+  /** The OTA bundle a channel points at, with its URL already resolved. */
+  private async findAssignedBundle(versionId: string | null): Promise<OtaRelease | null> {
+    if (!versionId) return null;
+
+    const { data, error } = await supabaseService
+      .getClient()
+      .from("app_versions")
+      .select(
+        "version_name, external_url, r2_path, checksum, session_key, min_update_version, platform, required, release_notes",
+      )
+      .eq("id", versionId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      version_name: data.version_name,
+      url: await this.generateDownloadUrl(data.external_url || data.r2_path),
+      platform: data.platform as Platform,
+      checksum: data.checksum,
+      session_key: data.session_key,
+      min_update_version: data.min_update_version,
+      required: data.required,
+      release_notes: data.release_notes,
+    };
+  }
+
+  /**
+   * The binary that satisfies a bundle's `min_update_version`.
+   *
+   * Only looked up when the decision is that one is needed, and null when the
+   * publisher gated a bundle behind a build they never uploaded - which the
+   * response reports rather than treating as an error.
+   */
+  private async findGateNative(
+    decision: UpdateDecision,
+    appUuid: string | null,
+    platform: Platform,
+  ): Promise<NativeRelease | null> {
+    if (decision.kind !== "native-required" || !appUuid) return null;
+
+    const { data, error } = await supabaseService
+      .getClient()
+      .from("native_updates")
+      .select(
+        "version_name, version_code, download_url, platform, required, release_notes, file_size_bytes",
+      )
+      .eq("app_id", appUuid)
+      .eq("platform", platform)
+      .eq("version_code", decision.minVersionCode)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return { ...data, platform: data.platform as Platform } as NativeRelease;
   }
 
   /**
@@ -677,28 +650,6 @@ class UpdateService implements IUpdateService {
       // If signing fails, return the original URL
       return downloadUrl;
     }
-  }
-
-  /**
-   * Compare two semantic version strings
-   * @returns positive if v1 > v2, negative if v1 < v2, 0 if equal
-   */
-  private compareVersions(v1: string, v2: string): number {
-    const parts1 = v1.split(".").map((p) => parseInt(p) || 0);
-    const parts2 = v2.split(".").map((p) => parseInt(p) || 0);
-
-    // Pad arrays to same length
-    const maxLen = Math.max(parts1.length, parts2.length);
-    while (parts1.length < maxLen) parts1.push(0);
-    while (parts2.length < maxLen) parts2.push(0);
-
-    for (let i = 0; i < maxLen; i++) {
-      const p1 = parts1[i] ?? 0;
-      const p2 = parts2[i] ?? 0;
-      if (p1 > p2) return 1;
-      if (p1 < p2) return -1;
-    }
-    return 0;
   }
 }
 

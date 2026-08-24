@@ -36,6 +36,8 @@ export const UpdateMessage = {
   NATIVE_UPDATE_AVAILABLE: "native_update_available",
   /** The device already runs the newest artefact for its channel. */
   NO_UPDATE: "No update available",
+  /** No application carries the requesting bundle identifier. */
+  APP_NOT_FOUND: "App not found",
   /** The channel name does not exist for this application. */
   CHANNEL_NOT_FOUND: "Channel not found",
   /**
@@ -43,6 +45,19 @@ export const UpdateMessage = {
    * staging build asking a production channel, for example.
    */
   ENVIRONMENT_MISMATCH: "Environment mismatch",
+  /**
+   * The channel exists but points at no bundle, and PLATFORM_MISMATCH means it
+   * points at one built for another platform.
+   *
+   * Neither is actionable by the device, and both used to return a bare
+   * `{ config: {} }` - the same response as "you are up to date". Three
+   * different situations were indistinguishable on the wire, which is why an
+   * iOS device asking an Android-only channel produced silence rather than a
+   * diagnosis. Clients still take no action; the names exist so the answer to
+   * "why did nothing happen" is in the response.
+   */
+  NO_BUNDLE: "No bundle assigned",
+  PLATFORM_MISMATCH: "Platform mismatch",
 } as const;
 
 export type UpdateMessageValue = (typeof UpdateMessage)[keyof typeof UpdateMessage];
@@ -100,6 +115,12 @@ export interface NativeUpdatePayload {
   release_notes?: string;
   required?: boolean;
   platform?: Platform;
+  /**
+   * Size in bytes, so a client can warn before spending someone's mobile data
+   * on 45 MB. The column is `file_size_bytes`; the two were never mapped, so
+   * this was declared here and never once populated until `nativePayload`
+   * translated it.
+   */
   file_size?: number;
 }
 
