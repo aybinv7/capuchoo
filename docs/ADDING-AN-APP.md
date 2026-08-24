@@ -100,6 +100,25 @@ Three rules:
 - **Nothing writes to these files.** The CLI passes build values as environment variables;
   `version-code.json` is the only tracked file a deploy touches.
 
+## 4b. Android build prerequisites
+
+Two things Gradle needs that no tool here can write for you:
+
+- **`android/local.properties`** with `sdk.dir=<path to your Android SDK>`. It is gitignored and
+  machine-specific, so a fresh clone does not have one, and without it Gradle fails with
+  `compileSdkVersion is not specified` - which names neither the file nor the cause. Use forward
+  slashes on Windows: a Java properties file reads `\U` as an escape.
+- **A matching signing key.** `adb install` refuses an APK signed with a different key than the
+  installed copy (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`), and the only remedy is uninstalling first,
+  which erases that app's data. A debug build from a second machine will not install over one built
+  on the first.
+
+**Product flavours.** If `app/build.gradle` declares `productFlavors`, the CLI builds one named
+variant rather than all of them, and looks for the APK under `outputs/apk/<flavour>/<buildType>/`.
+It picks the flavour when there is only one, or when a flavour is named after the channel's
+environment; otherwise pass `--flavor <name>`. It refuses to guess, because the wrong flavour ships
+a different `applicationId` to real devices.
+
 ## 5. Wire the app
 
 Three edits. The first one matters more than it looks.
