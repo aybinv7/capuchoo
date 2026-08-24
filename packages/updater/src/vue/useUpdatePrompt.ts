@@ -19,7 +19,15 @@ export function useUpdatePrompt() {
   return {
     ...updater,
 
-    /** Whether the prompt should be on screen at all. */
+    /**
+     * Whether the prompt should be on screen at all.
+     *
+     * True for errors as well as updates, so a failed check is not silent - but
+     * only useful to a component that renders `title` and `body` from here. A
+     * dialog with its own copy ("New version available") must bind to
+     * `updateAvailable` instead, or an unreachable server is announced to users
+     * as a release with a blank version number. That happened in a real app.
+     */
     visible: computed(() => updater.updateAvailable.value || updater.error.value !== null),
 
     title: computed(() => {
