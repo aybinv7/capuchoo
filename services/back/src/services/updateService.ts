@@ -248,7 +248,9 @@ class UpdateService implements IUpdateService {
           checksum,
           session_key,
           min_update_version,
-          platform
+          platform,
+          required,
+          release_notes
         `,
         )
         .eq("id", channelData.current_version_id)
@@ -335,6 +337,12 @@ class UpdateService implements IUpdateService {
         url: await this.generateDownloadUrl(latestUpdate.external_url || latestUpdate.r2_path),
         checksum: latestUpdate.checksum,
         sessionKey: latestUpdate.session_key || undefined,
+        // Both were missing, and both are decisions the publisher already made:
+        // an OTA release marked required arrived as optional, so a client's
+        // prompt offered "Later" on an update nobody may postpone, and release
+        // notes were stored and never shown.
+        required: latestUpdate.required ?? false,
+        release_notes: latestUpdate.release_notes ?? undefined,
         config: appConfig,
       };
       // Nothing follows: every "no update" outcome already returned above.

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ENVIRONMENTS, type Environment } from "@capuchoo/core";
-import { ValidationError, IFileService, ISupabaseService } from "@/types";
+import { AppError, ConflictError, ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
@@ -136,7 +136,22 @@ class AdminController {
         release_notes: release_notes || null,
       };
 
-      const insertedRecord = await this.supabaseService.insert("app_versions", [updateRecord]);
+      let insertedRecord;
+      try {
+        insertedRecord = await this.supabaseService.insert("app_versions", [updateRecord]);
+      } catch (error) {
+        // Re-publishing a version is a client mistake, not a server fault, and
+        // the caller can act on it - bump the version, or delete the release.
+        // As a 500 with "Upload failed" it read as an outage.
+        const message = error instanceof Error ? error.message : String(error);
+        if (/duplicate key|already exists|unique constraint/i.test(message)) {
+          throw new ConflictError(
+            `Version ${finalVersion} has already been published for this app on ` +
+              `${platform}. Bump the version, or delete that release first.`,
+          );
+        }
+        throw error;
+      }
       const versionId = insertedRecord[0]?.id;
 
       // Point the channel at what was just uploaded.
@@ -204,7 +219,7 @@ class AdminController {
         userAgent: req.get("User-Agent"),
         file: req.file ? req.file.originalname : undefined,
       });
-      if (error instanceof ValidationError) {
+      if (error instanceof AppError) {
         res.status(error.statusCode).json({ error: error.message });
       } else {
         res.status(500).json({

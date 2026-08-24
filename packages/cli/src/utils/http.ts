@@ -45,10 +45,21 @@ function messageFrom(body: unknown, fallback: string): string {
   if (typeof body === "string" && body.length > 0) return body;
   if (body && typeof body === "object") {
     const record = body as Record<string, unknown>;
-    for (const key of ["message", "error", "detail"]) {
-      const value = record[key];
-      if (typeof value === "string" && value.length > 0) return value;
-    }
+
+    // `details` carries the reason on this API's 500s, where `error` is a
+    // category: {"error":"Upload failed","details":"duplicate key ..."}. Reading
+    // only `error` turned every upload problem into the word "Upload failed",
+    // which says nothing a caller can act on. Both are reported when both exist.
+    const category = ["message", "error"]
+      .map((key) => record[key])
+      .find((value): value is string => typeof value === "string" && value.length > 0);
+    const reason = ["details", "detail"]
+      .map((key) => record[key])
+      .find((value): value is string => typeof value === "string" && value.length > 0);
+
+    if (category && reason) return `${category}: ${reason}`;
+    if (category) return category;
+    if (reason) return reason;
   }
   return fallback;
 }

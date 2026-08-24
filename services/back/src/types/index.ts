@@ -366,6 +366,13 @@ export class ValidationError extends AppError {
   }
 }
 
+/** The request is valid but conflicts with existing state - a re-published version. */
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 409);
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(resource: string) {
     super(`${resource} not found`, 404);
