@@ -15,7 +15,9 @@ export {
 } from "./channel-environment.js";
 
 export {
+  UPDATE_EVENT_REQUIRED,
   UpdateMessage,
+  parseUpdateEvent,
   resolveUpdate,
   isBlockingResponse,
   type Environment,

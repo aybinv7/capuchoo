@@ -1,3 +1,4 @@
+import { parseUpdateEvent } from "@capuchoo/core";
 import { Request, Response } from "express";
 import {
   NativeUpdateRecord,
@@ -124,6 +125,16 @@ class NativeUpdateController {
    */
   async logNativeUpdate(req: Request, res: Response): Promise<void> {
     try {
+      // Parsed by the shared contract rather than destructured here. The two
+      // sides had drifted twice over: the runtime never sent an app id at all,
+      // so this endpoint answered 400 to every native event ever posted to it,
+      // and it sent failure detail as `error` while this read `error_message`.
+      const parsed = parseUpdateEvent(req.body as Record<string, unknown>);
+
+      if (!parsed.ok) {
+        throw new ValidationError(`Missing required parameters: ${parsed.missing.join(", ")}`);
+      }
+
       const {
         event,
         platform,
@@ -132,21 +143,16 @@ class NativeUpdateController {
         new_version,
         new_version_code,
         channel,
-        error_message,
-      } = req.body;
-
-      if (!event || !platform) {
-        throw new ValidationError("Missing required parameters: event, platform");
-      }
+        error: error_message,
+      } = parsed.event;
 
       // native_update_logs.app_id is NOT NULL and its device_id is a foreign
       // key into devices(id) - not the plugin's device string. Both were wrong,
       // so every insert on this endpoint was rejected.
-      const appIdString = req.body.appId || req.body.app_id;
-      const appUuid = appIdString ? await updateService.resolveAppUuid(appIdString) : null;
+      const appUuid = await updateService.resolveAppUuid(parsed.event.app_id);
 
       if (!appUuid) {
-        throw new ValidationError("Unknown app_id for native update log");
+        throw new ValidationError(`No app carries the bundle id "${parsed.event.app_id}"`);
       }
 
       const channelId = channel ? await deviceService.resolveChannelId(appUuid, channel) : null;
@@ -167,15 +173,18 @@ class NativeUpdateController {
           })
         : null;
 
+      // Spread rather than assigned: under exactOptionalPropertyTypes an
+      // explicit `undefined` is not the same as an absent key, and the parsed
+      // event reports absence as undefined.
       const logRecord: NativeUpdateLogRecord = {
         app_id: appUuid,
         event,
         platform,
         current_version_code,
-        new_version,
-        new_version_code,
         channel,
-        error_message,
+        ...(new_version === undefined ? {} : { new_version }),
+        ...(new_version_code === undefined ? {} : { new_version_code }),
+        ...(error_message === undefined ? {} : { error_message }),
         ...(device ? { device_id: device.id } : {}),
       };
 

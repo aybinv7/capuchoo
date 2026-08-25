@@ -269,11 +269,65 @@ export type UpdateEvent =
 export interface UpdateEventPayload {
   event: UpdateEvent;
   platform: Platform;
+  /**
+   * Bundle identifier of the running build.
+   *
+   * `native_update_logs.app_id` is NOT NULL and the server cannot resolve a row
+   * without it, so it rejects a payload that omits this with a 400. This field
+   * was missing from the contract and from the app runtime, so **every** native
+   * download, install and error event was rejected - and because the runtime
+   * catches the failure and warns, nothing ever surfaced. It was found by
+   * reading the WebView console on a device mid-install.
+   */
+  app_id: string;
   device_id: string;
   current_version_code: number;
   new_version?: string;
   new_version_code?: number;
   channel: string;
   environment: string;
+  /** Failure detail for an `error` event. Older servers read `error_message`. */
   error?: string;
+}
+
+/** Field names a payload must carry for the server to record it. */
+export const UPDATE_EVENT_REQUIRED = ["event", "platform", "app_id"] as const;
+
+/**
+ * Validates an incoming update event, naming everything that is missing.
+ *
+ * Pure, and shared with the server, so "what the client sends" and "what the
+ * server accepts" cannot drift the way they did here: the client sent `error`
+ * and the server read `error_message`, so even a payload that got past
+ * validation lost its failure detail.
+ */
+export function parseUpdateEvent(
+  body: Record<string, unknown>,
+): { ok: true; event: UpdateEventPayload } | { ok: false; missing: string[] } {
+  // Accepted under either name, so an app built against an older contract still
+  // records rather than having its events silently dropped.
+  const appId = (body.app_id ?? body.appId) as string | undefined;
+
+  const missing: string[] = UPDATE_EVENT_REQUIRED.filter((field) =>
+    field === "app_id" ? !appId : !body[field],
+  );
+
+  if (missing.length > 0) return { ok: false, missing };
+
+  return {
+    ok: true,
+    event: {
+      event: body.event as UpdateEvent,
+      platform: body.platform as Platform,
+      app_id: appId as string,
+      device_id: (body.device_id ?? "") as string,
+      current_version_code: Number(body.current_version_code ?? 0),
+      new_version: body.new_version as string | undefined,
+      new_version_code:
+        body.new_version_code === undefined ? undefined : Number(body.new_version_code),
+      channel: (body.channel ?? "") as string,
+      environment: (body.environment ?? "") as string,
+      error: (body.error ?? body.error_message) as string | undefined,
+    },
+  };
 }

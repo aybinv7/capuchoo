@@ -186,6 +186,9 @@ export async function logUpdateEvent(
   const payload: UpdateEventPayload = {
     event,
     platform: getPlatform(),
+    // Without this the server has no row to attach the event to and answers
+    // 400, which is what it did for every native event ever sent.
+    app_id: config.appId,
     device_id: await getDeviceId(),
     current_version_code: await getVersionCode(),
     new_version: update.version,

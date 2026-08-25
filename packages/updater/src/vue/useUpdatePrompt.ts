@@ -45,6 +45,26 @@ export function useUpdatePrompt() {
     body: computed(() => updater.error.value ?? update.value?.releaseNotes ?? ""),
 
     /**
+     * Where the update is in its lifecycle, for an app that writes its own copy.
+     *
+     * `primaryLabel` below bakes in English, so a localised app cannot use it
+     * and writes a fixed string instead - which is how efficy's dialog ended up
+     * reading "Mettre a jour maintenant" through a 45 MB download and then
+     * again while waiting for a second tap, with nothing on screen changing.
+     * Switch on this and supply your own wording.
+     *
+     * `downloaded` only happens for a native update: the APK is on disk and the
+     * next press hands it to the system installer. An OTA bundle applies itself,
+     * so it never rests here.
+     */
+    phase: computed<"idle" | "downloading" | "downloaded" | "installing">(() => {
+      if (updater.isInstalling.value) return "installing";
+      if (updater.isDownloading.value) return "downloading";
+      if (isNativeUpdate.value && updater.cachedPath.value) return "downloaded";
+      return "idle";
+    }),
+
+    /**
      * Native updates need a download step and then an install step; OTA
      * updates apply themselves once downloaded.
      */
