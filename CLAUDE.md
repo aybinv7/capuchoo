@@ -46,6 +46,12 @@ unfinished. [docs/DEPLOY.md](./docs/DEPLOY.md) covers hosting the backend and da
 [docs/RELEASING.md](./docs/RELEASING.md) how the packages reach npm, and
 [docs/ADDING-AN-APP.md](./docs/ADDING-AN-APP.md) what onboarding an app involves.
 
+[docs/CAPGO-PLUGIN.md](./docs/CAPGO-PLUGIN.md) is the reference for `@capgo/capacitor-updater` -
+what it reads from an update response, what it does with each field, and what it refuses. Read it
+before changing anything the plugin consumes. Every claim in it is cited to a file and line in the
+installed package, which ships its own Android source, so it can be re-verified rather than
+believed.
+
 ## Boundaries that matter
 
 - **`@capuchoo/core` depends on nothing, and must stay that way.** It is imported by the CLI in

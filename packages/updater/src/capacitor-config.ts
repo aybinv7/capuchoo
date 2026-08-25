@@ -43,6 +43,11 @@ export interface UpdaterPluginOptions {
 }
 
 export interface CapacitorUpdaterPluginConfig {
+  /**
+   * 7.50.2 also accepts "always", "off", "atBackground", "atInstall" and
+   * "onLaunch". Only the two this package is written for are exposed - see
+   * docs/CAPGO-PLUGIN.md for what each mode makes the plugin do on its own.
+   */
   autoUpdate: boolean | "onlyDownload";
   updateUrl: string;
   statsUrl: string;

@@ -83,6 +83,15 @@ export default defineConfig({
         plugins: ["vitest"],
         rules: {
           "typescript/no-explicit-any": "off",
+
+          // The rule cannot see through a helper that asserts on the caller's
+          // behalf, and reports the test as having none. Naming ours keeps the
+          // rule useful instead of switching it off - a test that genuinely
+          // asserts nothing is still reported.
+          "vitest/expect-expect": [
+            "warn",
+            { assertFunctionNames: ["expect", "expectAdditiveChange"] },
+          ],
         },
       },
     ],

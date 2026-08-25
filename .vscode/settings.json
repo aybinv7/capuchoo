@@ -1,0 +1,18 @@
+{
+  // Tests live next to the code they test, which is the toolchain's default
+  // (`src/**/*.test.ts`) and keeps a test moving, renaming and dying with its
+  // subject. The cost is a noisier file tree, so the editor folds each test
+  // under the file it covers instead of listing it separately.
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.test.ts, ${capture}.spec.ts, ${capture}.d.ts, ${capture}.js",
+    "*.vue": "${capture}.test.ts, ${capture}.spec.ts",
+    "package.json": "pnpm-lock.yaml, pnpm-workspace.yaml, .npmrc, tsconfig.json, tsconfig.*.json",
+    "README.md": "CHANGELOG.md, LICENSE, CONTRIBUTING.md"
+  },
+  "search.exclude": {
+    "**/dist": true,
+    "**/node_modules": true
+  }
+}
