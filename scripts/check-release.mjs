@@ -85,6 +85,62 @@ function readTarball(gzipped) {
   return files;
 }
 
+/**
+ * Every published type declaration in a package's dist, by its path.
+ *
+ * Not just `index.d.ts`. A package with subpath exports has an entry point per
+ * subpath - `@capuchoo/updater` publishes `dist/capacitor-config.d.ts` for its
+ * `/capacitor` export, which `capacitor.config.ts` imports and nothing else
+ * does. Comparing only the main entry would let that surface change under an
+ * unchanged version number, which is the exact mistake this script exists to
+ * catch.
+ */
+function declarations(root) {
+  const found = new Map();
+
+  const walk = (path, prefix) => {
+    for (const entry of readdirSync(path, { withFileTypes: true })) {
+      const full = join(path, entry.name);
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+
+      if (entry.isDirectory()) {
+        walk(full, relative);
+      } else if (entry.name.endsWith(".d.ts")) {
+        found.set(relative, readFileSync(full, "utf8"));
+      }
+    }
+  };
+
+  try {
+    walk(root, "");
+  } catch {
+    // Reported by the caller as a missing build.
+  }
+
+  return found;
+}
+
+/**
+ * Guarantees that every sibling dependency is declared with `workspace:`.
+ *
+ * That protocol is what makes the rest of this script sound: pnpm rewrites it at
+ * pack time to a caret on the sibling's *current* version, so the range always
+ * points at the version whose surface is checked below. A hand-written range
+ * breaks that link silently - and below 1.0.0 a caret does not cross a minor, so
+ * a stale `^0.1.2` cannot pick up 0.2.0 no matter how long it sits there.
+ *
+ * `@capuchoo/cli@0.5.0` is on npm doing exactly this: it imports `canPublishTo`
+ * and declares `@capuchoo/core: ^0.1.2`, which predates that export. Installing
+ * it fails on first run with "does not provide an export named 'canPublishTo'".
+ */
+function nonWorkspaceSiblings(manifest) {
+  const deps = { ...manifest.dependencies, ...manifest.peerDependencies };
+
+  return Object.entries(deps)
+    .filter(([name, range]) => name.startsWith("@capuchoo/") && !range.startsWith("workspace:"))
+    .map(([name, range]) => `${name}: "${range}"`);
+}
+
 async function publishedMetadata(name) {
   const response = await fetch(`${REGISTRY}/${name.replace("/", "%2F")}`, {
     headers: { accept: "application/vnd.npm.install-v1+json" },
@@ -113,23 +169,37 @@ function publishablePackages() {
     }
 
     if (manifest.private || !manifest.name || !manifest.version) continue;
-    found.push({ dir, name: manifest.name, version: manifest.version });
+    found.push({ dir, name: manifest.name, version: manifest.version, manifest });
   }
 
   return found.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-const DECLARATION = "dist/index.d.ts";
-
 const problems = [];
 const lines = [];
 
+const byName = (a, b) => a.localeCompare(b);
+
 for (const pkg of publishablePackages()) {
-  let local;
-  try {
-    local = readFileSync(join(pkg.dir, DECLARATION), "utf8");
-  } catch {
-    problems.push(`${pkg.name}: no ${DECLARATION}. Run "vp run -r build" before releasing.`);
+  // Checked first, and offline: it is what makes everything below sound. pnpm
+  // rewrites `workspace:` at pack time to a caret on the sibling's current
+  // version, so the range always points at the version whose surface is
+  // compared here. A hand-written range severs that link.
+  const handWritten = nonWorkspaceSiblings(pkg.manifest);
+  if (handWritten.length > 0) {
+    problems.push(
+      `${pkg.name} declares a sibling by version instead of workspace: ` +
+        `${handWritten.join(", ")}.\n` +
+        `    Use "workspace:^" so pack time pins the version actually being released.\n` +
+        `    A fixed range goes stale silently, and below 1.0.0 a caret cannot cross a\n` +
+        `    minor - which is how cli@0.5.0 shipped needing core ^0.1.2 while importing\n` +
+        `    an export added in 0.2.0.`,
+    );
+  }
+
+  const local = declarations(join(pkg.dir, "dist"));
+  if (local.size === 0) {
+    problems.push(`${pkg.name}: no built types. Run "vp run -r build" before releasing.`);
     continue;
   }
 
@@ -148,19 +218,27 @@ for (const pkg of publishablePackages()) {
   }
 
   const files = readTarball(Buffer.from(await tarball.arrayBuffer()));
-  const published = files.get(`package/${DECLARATION}`);
 
-  if (published === undefined) {
-    lines.push(`  skipped  ${pkg.name}@${pkg.version} published without ${DECLARATION}`);
-    continue;
+  // Every entry point, not only index. A package with subpath exports has one
+  // declaration per subpath, and a change in any of them is a change to what a
+  // consumer can import.
+  const entryPoints = new Set([
+    ...local.keys(),
+    ...[...files.keys()]
+      .filter((path) => path.startsWith("package/dist/") && path.endsWith(".d.ts"))
+      .map((path) => path.slice("package/dist/".length)),
+  ]);
+
+  const added = [];
+  const removed = [];
+
+  for (const entry of [...entryPoints].sort(byName)) {
+    const before = exportedNames(files.get(`package/dist/${entry}`) ?? "");
+    const after = exportedNames(local.get(entry) ?? "");
+
+    for (const name of after) if (!before.has(name)) added.push(`${entry}:${name}`);
+    for (const name of before) if (!after.has(name)) removed.push(`${entry}:${name}`);
   }
-
-  const before = exportedNames(published);
-  const after = exportedNames(local);
-
-  const byName = (a, b) => a.localeCompare(b);
-  const added = [...after].filter((name) => !before.has(name)).sort(byName);
-  const removed = [...before].filter((name) => !after.has(name)).sort(byName);
 
   if (added.length === 0 && removed.length === 0) {
     lines.push(`  same     ${pkg.name}@${pkg.version} matches the registry - it will be skipped`);
@@ -168,8 +246,8 @@ for (const pkg of publishablePackages()) {
   }
 
   const changes = [
-    added.length ? `adds ${added.join(", ")}` : null,
-    removed.length ? `removes ${removed.join(", ")}` : null,
+    added.length ? `adds ${added.sort(byName).join(", ")}` : null,
+    removed.length ? `removes ${removed.sort(byName).join(", ")}` : null,
   ]
     .filter(Boolean)
     .join("; ");
