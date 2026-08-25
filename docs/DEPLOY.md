@@ -99,6 +99,22 @@ sequence matters:
 Run `scripts/migrations/004_devices.sql` before or with step 2. Without the unique constraints it
 adds, the device upserts have no `ON CONFLICT` target and telemetry still records nothing.
 
+## Migrations still owed
+
+`scripts/migrations/006_native_update_log_events.sql` — **not applied.** It widens the CHECK
+constraint on `native_update_logs.event` to the six events `@capuchoo/core` defines. The column was
+created allowing `check, download, install, fail, skip` while the contract sends
+`check, download, download_complete, install, cancel, error`, so three of the six are rejected by
+Postgres — including `download_complete`, which a device sends after every native download.
+
+Until it runs, those events are not recorded. Nothing else breaks: the endpoint no longer treats a
+failed write as an error, so it answers 200 with `recorded: false` and logs the reason. Run it in
+the Supabase SQL editor; it is idempotent.
+
+Apply a migration by pasting it into **Supabase → SQL Editor → New query**. There is no migration
+runner in this repository, which is why this section exists — a file in `scripts/migrations/` has
+not necessarily been run against anything.
+
 ## The hostname is baked into installed apps
 
 `DEFAULT_ENDPOINT` and every flavour's `VITE_UPDATE_API_URL` now say `capuchoo-back.onrender.com`,
