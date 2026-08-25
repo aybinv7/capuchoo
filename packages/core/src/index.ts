@@ -15,6 +15,7 @@ export {
 } from "./channel-environment.js";
 
 export {
+  UPDATE_EVENTS,
   UPDATE_EVENT_REQUIRED,
   UpdateMessage,
   parseUpdateEvent,

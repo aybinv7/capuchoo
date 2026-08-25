@@ -188,20 +188,44 @@ class NativeUpdateController {
         ...(device ? { device_id: device.id } : {}),
       };
 
-      await this.supabaseService.insert("native_update_logs", [logRecord]);
+      // Best-effort from here down, and deliberately so.
+      //
+      // This endpoint is bookkeeping. A device calls it after downloading and
+      // after installing, and it can do nothing useful with a failure - so a
+      // failure here must never look like one to the caller. It did: the event
+      // column's CHECK constraint rejected `download_complete`, the insert
+      // threw, and the most common event a device sends answered 500. The same
+      // reasoning already governs recordDeviceActivity in updateService, where
+      // a telemetry error used to surface as a device that could not update.
+      let recorded = true;
 
-      if (device && channelId) {
-        await deviceService.linkChannel(device.id, channelId, platform);
+      try {
+        await this.supabaseService.insert("native_update_logs", [logRecord]);
+
+        if (device && channelId) {
+          await deviceService.linkChannel(device.id, channelId, platform);
+        }
+      } catch (error) {
+        recorded = false;
+        logger.error("Could not record native update event", {
+          event,
+          appId: parsed.event.app_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
 
-      logger.info("Native update event logged", {
+      logger.info("Native update event handled", {
         event,
         platform,
         device_id,
         deviceUuid: device?.id ?? null,
+        recorded,
       });
 
-      res.json({ success: true });
+      // `recorded` is reported rather than hidden: the caller ignores it, but
+      // it is the difference between "we stored this" and "we accepted it" when
+      // someone is reading a response by hand.
+      res.json({ success: true, recorded });
     } catch (error) {
       logger.error("Native update log failed", {
         error: error instanceof Error ? error.message : String(error),

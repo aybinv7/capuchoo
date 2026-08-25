@@ -257,14 +257,28 @@ export function isBlockingResponse(response: UpdateCheckResponse): boolean {
   );
 }
 
-/** Analytics events posted to `POST {endpoint}/api/native-updates/log`. */
-export type UpdateEvent =
-  | "check"
-  | "download"
-  | "download_complete"
-  | "install"
-  | "cancel"
-  | "error";
+/**
+ * Analytics events posted to `POST {endpoint}/api/native-updates/log`.
+ *
+ * A list rather than a bare union because `native_update_logs.event` carries a
+ * CHECK constraint, and the two had drifted: the column allowed `check`,
+ * `download`, `install`, `fail` and `skip` while this declared `check`,
+ * `download`, `download_complete`, `install`, `cancel` and `error`. Three of
+ * the six were rejected by the database, so a device reporting
+ * `download_complete` - which is what one does after every native download -
+ * got a 500. `native-update-events.test.ts` reads the migration and fails if
+ * this list ever moves ahead of it again.
+ */
+export const UPDATE_EVENTS = [
+  "check",
+  "download",
+  "download_complete",
+  "install",
+  "cancel",
+  "error",
+] as const;
+
+export type UpdateEvent = (typeof UPDATE_EVENTS)[number];
 
 export interface UpdateEventPayload {
   event: UpdateEvent;
