@@ -30,14 +30,18 @@
 
 const DEFAULT_API = "https://capuchoo-back.onrender.com";
 
-const args = process.argv.slice(2);
+// A bare `--` is dropped first: `vp run smoke -- com.efficy.app` forwards the
+// separator, and treating it as a flag left the bundle id looking like that
+// flag's value, so the script reported its own usage instead of running.
+const args = process.argv.slice(2).filter((value) => value !== "--");
+
 const flag = (name) => {
   const at = args.indexOf(`--${name}`);
   return at === -1 ? null : args[at + 1];
 };
 
 const appId = args.find(
-  (value) => !value.startsWith("--") && !args[args.indexOf(value) - 1]?.startsWith("--"),
+  (value, index) => !value.startsWith("--") && !args[index - 1]?.startsWith("--"),
 );
 const api = (flag("url") ?? DEFAULT_API).replace(/\/+$/, "");
 const onlyChannel = flag("channel");
