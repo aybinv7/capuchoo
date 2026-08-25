@@ -243,6 +243,125 @@ describe("the min_update_version gate", () => {
   });
 });
 
+/**
+ * Rules read out of `@capgo/capacitor-updater@7.50.2`, whose Android source
+ * ships in the package. They are asserted over every outcome rather than case
+ * by case, because a tenth decision added later must not be able to break them
+ * quietly.
+ *
+ * With `autoUpdate: "onlyDownload"` the plugin runs its own background check
+ * against our endpoint, separate from anything our runtime does. Until these
+ * rules were followed, every one of those checks ended as a failed update - on
+ * a good bundle, on an up-to-date device, on everything.
+ */
+describe("the contract the Capacitor plugin actually enforces", () => {
+  const everyOutcome: Array<[string, UpdateFacts]> = [
+    ["app-not-found", facts({ app: null })],
+    ["channel-not-found", facts({ channel: null })],
+    [
+      "environment-mismatch",
+      facts({
+        device: {
+          appId: "com.efficy.app.staging",
+          platform: "android",
+          versionCode: 60,
+          versionName: "builtin",
+        },
+        ota: bundle,
+      }),
+    ],
+    ["native", facts({ native: android, ota: bundle })],
+    ["native-required", facts({ ota: { ...bundle, min_update_version: "67" } })],
+    ["ota", facts({ ota: bundle })],
+    ["no-bundle", facts()],
+    [
+      "platform-mismatch",
+      facts({
+        device: {
+          appId: "com.efficy.app",
+          platform: "ios",
+          versionCode: 1,
+          versionName: "builtin",
+        },
+        ota: bundle,
+      }),
+    ],
+    [
+      "up-to-date",
+      facts({
+        device: {
+          appId: "com.efficy.app",
+          platform: "android",
+          versionCode: 60,
+          versionName: "9.9.9",
+        },
+        ota: bundle,
+      }),
+    ],
+  ];
+
+  it("covers every decision", () => {
+    const kinds = everyOutcome.map(([, input]) => decideUpdate(input).kind);
+    expect(new Set(kinds).size).toBe(everyOutcome.length);
+  });
+
+  /**
+   * `CapacitorUpdaterPlugin` line 4515 enters its classification branch when the
+   * response has *either* `error` or `kind`, and never looks for a bundle after
+   * that. A downloadable response carrying `kind` is therefore never downloaded.
+   */
+  it.each(everyOutcome)("%s classifies itself only when it carries no bundle", (label, input) => {
+    const response = render(input);
+
+    // Asserted unconditionally, and reported with the values: a branch that
+    // stops being reached would otherwise leave the case silently unasserted.
+    expect({
+      case: label,
+      // `kind` is present exactly when there is no bundle to download.
+      classifiedWhenEmpty: (response.kind !== undefined) === (response.url === undefined),
+      // `error` never rides along with a bundle.
+      errorFreeBundle: !(response.url && response.error !== undefined),
+      kind: response.kind,
+      url: response.url,
+    }).toMatchObject({ classifiedWhenEmpty: true, errorFreeBundle: true });
+  });
+
+  /**
+   * Line 4337 maps any kind outside these three to "failed", and line 4537
+   * raises downloadFailed for a failure. Nothing we return is a plugin-side
+   * failure: a misconfiguration is "blocked", and nothing-to-do is "up_to_date".
+   */
+  it.each(everyOutcome)("%s is never classified as a plugin failure", (_label, input) => {
+    expect(["up_to_date", "blocked", undefined]).toContain(render(input).kind);
+  });
+
+  /**
+   * Line 4551 calls `jsRes.getString("version")` unconditionally once a response
+   * is not classified. A missing key throws, is caught as "error in update
+   * check", and the good bundle is discarded.
+   */
+  it.each(everyOutcome)("%s sends version wherever version_name is sent", (label, input) => {
+    const response = render(input);
+
+    expect({
+      case: label,
+      mirrored: response.version_name === undefined || response.version === response.version_name,
+      version: response.version,
+      version_name: response.version_name,
+    }).toMatchObject({ mirrored: true });
+  });
+
+  it("an OTA response satisfies everything the plugin reads to download", () => {
+    const response = render(facts({ ota: bundle }));
+
+    // The four the download path touches, in order: 4515, 4551, 4609.
+    expect(response.kind).toBeUndefined();
+    expect(response.error).toBeUndefined();
+    expect(response.version).toBe("1.0.55");
+    expect(response.url).toMatch(/^https:\/\/.+\.zip$/);
+  });
+});
+
 describe("the wire response", () => {
   /**
    * The defect that cost the most: with autoUpdate "onlyDownload" the Capacitor

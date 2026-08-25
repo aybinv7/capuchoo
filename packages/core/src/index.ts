@@ -28,6 +28,7 @@ export {
   type UpdateEventPayload,
   type UpdateKind,
   type UpdateMessageValue,
+  type UpdateResponseKind,
 } from "./update-contract.js";
 
 export {

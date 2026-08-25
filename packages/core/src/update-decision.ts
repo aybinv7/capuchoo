@@ -220,22 +220,29 @@ export function renderUpdateResponse(
 
   switch (decision.kind) {
     // Neither carries config: there is no app, or no channel to resolve one for.
+    // Both are misconfiguration rather than breakage, so they are "blocked" -
+    // the plugin logs those at info and does not raise a failed update.
     case "app-not-found":
-      return { message: UpdateMessage.APP_NOT_FOUND };
+      return { message: UpdateMessage.APP_NOT_FOUND, kind: "blocked" };
 
     case "channel-not-found":
-      return { message: UpdateMessage.CHANNEL_NOT_FOUND };
+      return { message: UpdateMessage.CHANNEL_NOT_FOUND, kind: "blocked" };
 
     case "environment-mismatch":
-      return { message: UpdateMessage.ENVIRONMENT_MISMATCH, config };
+      return { message: UpdateMessage.ENVIRONMENT_MISMATCH, kind: "blocked", config };
 
     case "native": {
       const payload = nativePayload(decision.release);
       return {
         message: UpdateMessage.NATIVE_UPDATE_AVAILABLE,
+        // An update exists, but not one the plugin can download and unzip. Left
+        // unclassified it would fall through to the bundle path, find no `url`,
+        // and be reported as a failed update check.
+        kind: "blocked",
         // Mirrored at the top level so a client that only reads the flat shape
         // still learns the version and whether it may be postponed.
         version_name: payload.version_name,
+        version: payload.version_name,
         required: payload.required ?? false,
         ...(payload.release_notes ? { release_notes: payload.release_notes } : {}),
         native_update: payload,
@@ -246,9 +253,14 @@ export function renderUpdateResponse(
     case "native-required":
       return {
         message: UpdateMessage.NATIVE_UPDATE_REQUIRED,
+        // A bundle exists and the device may not have it yet - blocked, not
+        // failed. Without this the plugin normalised the missing kind to
+        // "failed" and raised downloadFailed on every check.
+        kind: "blocked",
         error:
           `Native version ${decision.minVersionCode} required. ` +
           `You have ${decision.installedVersionCode}.`,
+        ...(context.gate ? { version: context.gate.version_name } : {}),
         native_update: context.gate ? nativePayload(context.gate) : null,
         config,
       };
@@ -257,6 +269,10 @@ export function renderUpdateResponse(
       const { release } = decision;
       return {
         version_name: release.version_name,
+        // The name the plugin reads. Deliberately no `kind` here: the plugin
+        // treats the mere presence of that key as "this response carries no
+        // bundle" and never downloads.
+        version: release.version_name,
         url: release.url,
         ...(release.checksum ? { checksum: release.checksum } : {}),
         ...(release.session_key ? { sessionKey: release.session_key } : {}),
@@ -269,14 +285,21 @@ export function renderUpdateResponse(
       };
     }
 
+    // Nothing to serve and nothing wrong. "up_to_date" is the only non-error
+    // classification the plugin has; our own `message` keeps the distinction.
     case "no-bundle":
-      return { message: UpdateMessage.NO_BUNDLE, config };
+      return { message: UpdateMessage.NO_BUNDLE, kind: "up_to_date", config };
 
     case "platform-mismatch":
-      return { message: UpdateMessage.PLATFORM_MISMATCH, config };
+      return { message: UpdateMessage.PLATFORM_MISMATCH, kind: "up_to_date", config };
 
     case "up-to-date":
-      return { message: UpdateMessage.NO_UPDATE, config };
+      return {
+        message: UpdateMessage.NO_UPDATE,
+        kind: "up_to_date",
+        version: decision.version,
+        config,
+      };
   }
 }
 

@@ -62,6 +62,25 @@ export const UpdateMessage = {
 
 export type UpdateMessageValue = (typeof UpdateMessage)[keyof typeof UpdateMessage];
 
+/**
+ * How the plugin classifies a response that carries no downloadable bundle.
+ *
+ * Read from `@capgo/capacitor-updater@7.50.2`, which is the authority here:
+ * `CapacitorUpdaterPlugin.normalizedUpdateResponseKind` (android, line 4333)
+ * maps anything that is not one of these three to `"failed"`, and the check
+ * path at line 4515 enters this branch whenever the response has *either* an
+ * `error` or a `kind` key.
+ *
+ * Two consequences the backend must respect, both of which it violated:
+ *
+ * 1. A response that carries an update must NOT set `kind`, or the plugin
+ *    classifies it instead of downloading it.
+ * 2. A response that carries no update MUST set `kind`, or it is reported as a
+ *    failed update check - which is where the app's "the update could not be
+ *    downloaded" came from on a device that was simply up to date.
+ */
+export type UpdateResponseKind = "up_to_date" | "blocked" | "failed";
+
 /** What the device tells the server about itself. */
 export interface UpdateCheckRequest {
   /** Bundle identifier of the running build, e.g. `com.ayb.lowmaro.staging`. */
@@ -133,8 +152,26 @@ export interface UpdateCheckResponse {
   message?: string;
   error?: string;
 
+  /**
+   * Classification for a response that carries no bundle. Absent - and it must
+   * be absent - when one is offered. See `UpdateResponseKind`.
+   */
+  kind?: UpdateResponseKind;
+
   /** OTA bundle fields. */
   version_name?: string;
+  /**
+   * The same value as `version_name`, under the name the Capacitor plugin
+   * reads.
+   *
+   * `CapacitorUpdaterPlugin` line 4551 calls `jsRes.getString("version")`
+   * unconditionally once a response is not classified, and a missing key throws
+   * a JSONException that is caught as "error in update check". The backend sent
+   * only `version_name`, so every background check the plugin made - on every
+   * response, including a perfectly good bundle - ended as a failed update. Our
+   * own runtime never noticed because it reads the response itself.
+   */
+  version?: string;
   url?: string;
   checksum?: string;
   sessionKey?: string;
