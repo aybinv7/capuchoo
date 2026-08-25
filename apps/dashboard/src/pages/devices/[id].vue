@@ -44,28 +44,49 @@
           <CardTitle class="text-sm font-medium">Current Version</CardTitle>
           <GitCommit class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
+        <!-- `current_bundle_id` and `current_native_id` were read here and exist
+             on no table and in no API response, so both cards read N/A forever.
+             The device row records the applied bundle as `version_name` and the
+             native build number as `version_build`. -->
         <CardContent>
-          <div class="text-2xl font-bold">{{ device?.current_bundle_id || "N/A" }}</div>
-          <p class="text-xs text-muted-foreground">Bundle ID</p>
+          <div class="text-2xl font-bold">{{ device?.version_name || "builtin" }}</div>
+          <p class="text-xs text-muted-foreground">
+            {{
+              device?.version_builtin
+                ? `Shipped with ${device.version_builtin}`
+                : "Applied OTA bundle"
+            }}
+          </p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Native Version</CardTitle>
+          <CardTitle class="text-sm font-medium">Native Build</CardTitle>
           <Smartphone class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ device?.current_native_id || "N/A" }}</div>
+          <div class="text-2xl font-bold">{{ device?.version_build || "N/A" }}</div>
+          <p class="text-xs text-muted-foreground">versionCode of the installed binary</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Model</CardTitle>
+          <CardTitle class="text-sm font-medium">OS</CardTitle>
           <Cpu class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
+        <!-- This card said "Model / Unknown", hardcoded. Nothing stores a device
+             model: the runtime reports OS version, emulator and plugin version,
+             and those are what is shown. Adding a model means a field on the
+             contract, the runtime, the devices table and a migration. -->
         <CardContent>
-          <div class="text-2xl font-bold">Unknown</div>
-          <p class="text-xs text-muted-foreground">Device Model</p>
+          <div class="text-2xl font-bold">
+            {{ device?.version_os || "Unknown" }}
+          </div>
+          <p class="text-xs text-muted-foreground">
+            <template v-if="device?.is_emulator">Emulator · </template>
+            <template v-if="device?.plugin_version">plugin {{ device.plugin_version }}</template>
+            <template v-else>{{ device?.platform }}</template>
+          </p>
         </CardContent>
       </Card>
     </div>
@@ -73,26 +94,50 @@
     <!-- Content -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="md:col-span-2 space-y-6">
-        <!-- Update History (Mocked for now as we don't store history yet) -->
         <Card>
           <CardHeader>
             <CardTitle>Update History</CardTitle>
-            <CardDescription>Recent updates applied to this device.</CardDescription>
+            <CardDescription>Events this device reported, most recent first.</CardDescription>
           </CardHeader>
           <CardContent>
             <div class="relative pl-6 border-l-2 border-muted space-y-8">
-              <div v-for="(event, i) in mockHistory" :key="i" class="relative">
+              <div v-if="historyLoading" class="text-sm text-muted-foreground">Loading…</div>
+
+              <div v-else-if="!history?.length" class="text-sm text-muted-foreground">
+                Nothing reported yet. Events appear here as the device checks for, downloads and
+                applies updates.
+              </div>
+
+              <div v-for="event in history ?? []" :key="event.id" class="relative">
                 <div
-                  class="absolute -left-[29px] top-1 h-3 w-3 rounded-full bg-primary border-4 border-background"
+                  :class="[
+                    'absolute -left-[29px] top-1 h-3 w-3 rounded-full border-4 border-background',
+                    isFailure(event.action) ? 'bg-destructive' : 'bg-primary',
+                  ]"
                 />
                 <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium">Updated to v{{ event.version }}</span>
-                    <Badge variant="outline" class="text-xs">{{ event.type }}</Badge>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-medium">{{ describeAction(event.action) }}</span>
+                    <Badge v-if="event.new_version" variant="outline" class="text-xs">
+                      v{{ event.new_version }}
+                    </Badge>
+                    <Badge
+                      v-if="event.current_version && event.current_version !== event.new_version"
+                      variant="secondary"
+                      class="text-xs"
+                    >
+                      from v{{ event.current_version }}
+                    </Badge>
                   </div>
-                  <div class="text-sm text-muted-foreground">{{ event.date }}</div>
+                  <div class="text-sm text-muted-foreground">
+                    {{ formatDate(event.created_at, true) }}
+                  </div>
+                  <p v-if="event.error_message" class="text-sm text-destructive break-words">
+                    {{ event.error_message }}
+                  </p>
                 </div>
               </div>
+
               <!-- Initial Install -->
               <div class="relative">
                 <div
@@ -139,13 +184,24 @@
           </CardContent>
         </Card>
 
+        <!-- This was a hardcoded green pulse reading "Healthy - communicating
+             regularly", shown whether the device had checked in a minute ago or
+             never. It now reflects last_check, which is the only thing this page
+             can actually observe. -->
         <Card>
           <CardContent>
             <div class="flex items-center gap-2">
-              <ILucideActivity class="h-5 w-5 animate-pulse text-green-600" />
-              <span class="font-medium">Healthy</span>
+              <ILucideActivity
+                :class="[
+                  'h-5 w-5',
+                  health.tone === 'ok' && 'animate-pulse text-green-600',
+                  health.tone === 'warn' && 'text-amber-500',
+                  health.tone === 'muted' && 'text-muted-foreground',
+                ]"
+              />
+              <span class="font-medium">{{ health.label }}</span>
             </div>
-            <p class="text-xs mt-2">Device is communicating regularly with the server.</p>
+            <p class="text-xs mt-2 text-muted-foreground">{{ health.detail }}</p>
           </CardContent>
         </Card>
       </div>
@@ -162,10 +218,67 @@ const { data: devices } = useDevicesQuery();
 
 const device = computed(() => devices.value?.find((d) => String(d.id) === deviceId));
 
-const mockHistory = [
-  { version: "1.2.0", type: "Bundled", date: "2 hours ago" },
-  { version: "1.1.0", type: "Native", date: "Yesterday" },
-];
+/**
+ * The device's real event history.
+ *
+ * This card used to render two invented rows - "Updated to v1.2.0 Bundled, 2
+ * hours ago" and "v1.1.0 Native, Yesterday" - under a comment saying history
+ * was not stored yet. It is: `update_logs.device_id` is a foreign key into
+ * `devices(id)` and the endpoint has always accepted a `device_id` filter. So
+ * the page was showing fiction next to a real "Device Registered" row, which
+ * is the worst possible combination - it looked like data.
+ */
+const { data: history, isLoading: historyLoading } = useUpdateLogsQuery({
+  deviceId: computed(() => device.value?.id),
+  limit: 25,
+});
+
+/** `update_logs.action`, as something worth reading on a timeline. */
+const ACTION_LABELS: Record<string, string> = {
+  get: "Checked for updates",
+  update_available: "Update offered",
+  no_update_available: "Already up to date",
+  download: "Download started",
+  download_complete: "Download finished",
+  download_failed: "Download failed",
+  install: "Install started",
+  set: "Bundle applied",
+  app_ready: "Booted successfully",
+  update_failed: "Update failed",
+  native_update_required: "Native update required",
+  blocked_by_server_url: "Blocked by server",
+};
+
+const describeAction = (action: string) =>
+  ACTION_LABELS[action] ?? action.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+
+const isFailure = (action: string) => action.includes("fail") || action === "blocked_by_server_url";
+
+/**
+ * Healthy means "checked in recently", which is the only thing this page can
+ * actually observe. It used to be a hardcoded green pulse that said the device
+ * was communicating regularly whether or not it had been seen for a year.
+ */
+const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+
+const health = computed(() => {
+  const seen = device.value?.last_check;
+  if (!seen)
+    return { label: "Never seen", tone: "muted", detail: "This device has never checked in." };
+
+  const age = Date.now() - new Date(seen).getTime();
+  if (Number.isNaN(age)) {
+    return { label: "Unknown", tone: "muted", detail: "The last check-in time could not be read." };
+  }
+
+  return age < STALE_AFTER_MS
+    ? { label: "Healthy", tone: "ok", detail: "Checked in within the last seven days." }
+    : {
+        label: "Stale",
+        tone: "warn",
+        detail: `Last checked in ${Math.floor(age / 86_400_000)} days ago.`,
+      };
+});
 
 const formatDate = (dateString?: string, time = false) => {
   if (!dateString) return "Unknown date";

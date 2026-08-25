@@ -1,5 +1,12 @@
 import type { PluginListenerHandle } from "@capacitor/core";
 import type { ResolvedUpdate } from "@capuchoo/core";
+import {
+  apkFileName,
+  apksToDelete,
+  isCompleteDownload,
+  parseApkFileName,
+  type CachedApk,
+} from "./apk-cache.js";
 import { getUpdaterConfig } from "./config.js";
 import { nativePlugins } from "./optional-plugins.js";
 
@@ -9,23 +16,68 @@ export interface DownloadProgress {
   percent: number;
 }
 
-/** Cache file name prefix, derived from the app id so two flavours never collide. */
-function cachePrefix(): string {
+const DONE = { loaded: 0, total: 0, percent: 100 };
+
+function fileNameFor(update: ResolvedUpdate): string {
   const { appId, appName } = getUpdaterConfig();
-  const base = appId || appName;
-  return `${base.replaceAll(/[^\w.-]/g, "-")}-`;
+  return apkFileName(appId || appName, {
+    version: update.version,
+    versionCode: update.versionCode ?? 0,
+  });
 }
 
-function apkFileName(update: ResolvedUpdate): string {
-  return `${cachePrefix()}${update.version}-${update.versionCode ?? 0}.apk`;
+/** Every APK in the cache that belongs to this app. */
+async function listCachedApks(): Promise<CachedApk[]> {
+  const { appId, appName } = getUpdaterConfig();
+  const owner = appId || appName;
+
+  try {
+    const { Directory, Filesystem } = await nativePlugins.filesystem();
+    const { files } = await Filesystem.readdir({ directory: Directory.Cache, path: "" });
+
+    return files.flatMap((file) => {
+      const identity = parseApkFileName(owner, file.name);
+      return identity ? [{ ...identity, fileName: file.name }] : [];
+    });
+  } catch {
+    // A cache we cannot read is a cache we cannot reuse or prune, and neither
+    // is worth failing an update over.
+    return [];
+  }
+}
+
+/**
+ * The path of an already-downloaded, complete copy of this update.
+ *
+ * The only record that a download had finished used to be an in-memory
+ * `cachedPath`, so closing the app threw it away and the next launch downloaded
+ * the same 45 MB again while the file sat on disk. Asking the filesystem
+ * survives a restart.
+ */
+export async function findCachedApk(update: ResolvedUpdate): Promise<string | null> {
+  const fileName = fileNameFor(update);
+
+  try {
+    const { Directory, Filesystem } = await nativePlugins.filesystem();
+
+    const stat = await Filesystem.stat({ directory: Directory.Cache, path: fileName });
+    if (!isCompleteDownload({ size: stat.size }, update.fileSize)) return null;
+
+    const { uri } = await Filesystem.getUri({ directory: Directory.Cache, path: fileName });
+    return uri;
+  } catch {
+    // stat throws when the file is not there, which is the common case.
+    return null;
+  }
 }
 
 /**
  * Downloads a native APK into the app cache and returns its path.
  *
- * The file name embeds the app id, so a staging build and a production build
- * installed side by side cannot overwrite each other's download. The previous
- * implementation prefixed every file with a hard-coded app name.
+ * Returns immediately when a complete copy is already there. The previous
+ * implementation could not: its first step was `cleanApkCache()`, which deleted
+ * every APK for this app - including the exact file it was about to fetch - so
+ * pressing update twice always paid for the binary twice.
  */
 export async function downloadNativeUpdate(
   update: ResolvedUpdate,
@@ -35,26 +87,30 @@ export async function downloadNativeUpdate(
     throw new Error("This update has no download URL");
   }
 
+  const existing = await findCachedApk(update);
+  if (existing) {
+    onProgress({ ...DONE });
+    return existing;
+  }
+
   const { Network } = await nativePlugins.network();
   const network = await Network.getStatus();
   if (!network.connected) {
     throw new Error("Connect to the internet to download this update");
   }
 
-  // Clear older APKs first: they are typically 20-60 MB and the OS can evict
-  // the cache mid-download if it is already full.
-  await cleanApkCache();
+  const fileName = fileNameFor(update);
 
-  const fileName = apkFileName(update);
+  // Make room, but never for the file being written. APKs are tens of megabytes
+  // and the OS can evict from a full cache mid-download.
+  await pruneApkCache({ installedVersionCode: 0, keep: fileName });
+
   const [{ Directory, Filesystem }, { FileTransfer }] = await Promise.all([
     nativePlugins.filesystem(),
     nativePlugins.fileTransfer(),
   ]);
 
-  const destination = await Filesystem.getUri({
-    directory: Directory.Cache,
-    path: fileName,
-  });
+  const destination = await Filesystem.getUri({ directory: Directory.Cache, path: fileName });
 
   let progressListener: PluginListenerHandle | null = null;
 
@@ -83,23 +139,36 @@ export async function downloadNativeUpdate(
   }
 }
 
-/** Removes this app's cached APKs. Failures are non-fatal. */
-export async function cleanApkCache(): Promise<void> {
-  const prefix = cachePrefix();
-
+/**
+ * Deletes cached APKs the device has outgrown.
+ *
+ * Called on start-up with the installed build number, which is how an installed
+ * APK is finally cleaned up: the Android installer never calls back, but the
+ * next launch reports a higher build number and that says the same thing. A
+ * *newer* APK is kept - it is an update already paid for and waiting to be
+ * installed.
+ *
+ * Failures are non-fatal. Reclaiming disk space must never break an update.
+ */
+export async function pruneApkCache(options: {
+  installedVersionCode: number;
+  keep?: string | undefined;
+}): Promise<string[]> {
   try {
-    const { Directory, Filesystem } = await nativePlugins.filesystem();
-    const { files } = await Filesystem.readdir({
-      directory: Directory.Cache,
-      path: "",
-    });
+    const cached = await listCachedApks();
+    const doomed = apksToDelete({ cached, ...options });
+    if (doomed.length === 0) return [];
 
+    const { Directory, Filesystem } = await nativePlugins.filesystem();
     await Promise.all(
-      files
-        .filter((file) => file.name.startsWith(prefix) && file.name.endsWith(".apk"))
-        .map((file) => Filesystem.deleteFile({ directory: Directory.Cache, path: file.name })),
+      doomed.map((fileName) =>
+        Filesystem.deleteFile({ directory: Directory.Cache, path: fileName }),
+      ),
     );
+
+    return doomed;
   } catch (error) {
-    console.warn("[capuchoo] could not clean the APK cache", error);
+    console.warn("[capuchoo] could not prune the APK cache", error);
+    return [];
   }
 }

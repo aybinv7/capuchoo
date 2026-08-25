@@ -264,6 +264,7 @@
     "UpdateAppInput": true,
     "UpdateDownloadsChart": true,
     "UpdateLog": true,
+    "UpdateLogsFilters": true,
     "UpdateOrBundle": true,
     "UpdatesBundlesDataTableConfig": true,
     "User": true,

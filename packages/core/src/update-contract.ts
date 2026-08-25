@@ -198,6 +198,14 @@ export interface ResolvedUpdate {
   platform?: Platform;
   checksum?: string;
   sessionKey?: string;
+  /**
+   * Size in bytes of a native binary, when the server published one.
+   *
+   * The runtime verifies a cached download against it before reusing the file:
+   * a connection dropped mid-download leaves a partial APK at the right path,
+   * and installing that fails with "There was a problem parsing the package".
+   */
+  fileSize?: number;
   /** Set once the OTA plugin has downloaded the bundle. */
   bundleId?: string;
 }
@@ -228,6 +236,7 @@ export function resolveUpdate(
       required:
         response.message === UpdateMessage.NATIVE_UPDATE_REQUIRED || (native.required ?? false),
       platform: native.platform,
+      ...(typeof native.file_size === "number" ? { fileSize: native.file_size } : {}),
     };
   }
 

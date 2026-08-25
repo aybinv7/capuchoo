@@ -9,14 +9,17 @@ import {
   Filter,
   RefreshCw,
   ChevronDown,
+  Boxes,
   Download as DownloadIcon,
 } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
+import { useAppsQuery } from "@/modules/apps/composables/useAppsQuery";
 
 //TODO: remove the any type on date range
 // Props & Emits
 const props = defineProps<{
   searchQuery: string;
+  selectedAppId: string;
   selectedActions: string[];
   selectedPlatforms: string[];
   dateRange: any;
@@ -25,6 +28,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "update:searchQuery", value: string): void;
+  (e: "update:selectedAppId", value: string): void;
   (e: "update:selectedActions", value: string[]): void;
   (e: "update:selectedPlatforms", value: string[]): void;
   (e: "update:dateRange", value: DateRange): void;
@@ -33,15 +37,29 @@ const emit = defineEmits<{
   (e: "export"): void;
 }>();
 
-// Action options with colors
+const { data: apps } = useAppsQuery();
+
+/**
+ * The actions `update_logs_action_check` permits, after migration 003.
+ *
+ * Three of the seven offered before - `install_fail`, `first_open` and a
+ * `download_fail` spelling the constraint does allow but nothing emits - could
+ * never match a row, because Postgres rejects any value outside that list. A
+ * filter that cannot match anything is worse than no filter: it reads as "there
+ * were no failures".
+ */
 const actionOptions = [
+  { value: "get", label: "Update check", color: "bg-gray-500" },
+  { value: "update_available", label: "Update available", color: "bg-amber-500" },
+  { value: "no_update_available", label: "No update", color: "bg-gray-500" },
   { value: "download", label: "Download", color: "bg-blue-500" },
+  { value: "download_complete", label: "Download complete", color: "bg-blue-500" },
+  { value: "download_failed", label: "Download failed", color: "bg-red-500" },
   { value: "install", label: "Install", color: "bg-green-500" },
-  { value: "download_fail", label: "Download Failed", color: "bg-red-500" },
-  { value: "install_fail", label: "Install Failed", color: "bg-red-500" },
-  { value: "get", label: "Get Update", color: "bg-gray-500" },
-  { value: "set", label: "Set Version", color: "bg-purple-500" },
-  { value: "first_open", label: "First Open", color: "bg-yellow-500" },
+  { value: "set", label: "Bundle applied", color: "bg-purple-500" },
+  { value: "app_ready", label: "App ready", color: "bg-green-500" },
+  { value: "update_failed", label: "Update failed", color: "bg-red-500" },
+  { value: "native_update_required", label: "Native required", color: "bg-amber-500" },
 ];
 
 // Platform options
@@ -54,6 +72,7 @@ const platformOptions = [
 const activeFilterCount = computed(() => {
   let count = 0;
   if (props.searchQuery) count++;
+  if (props.selectedAppId) count++;
   if (props.selectedActions.length > 0) count++;
   if (props.selectedPlatforms.length > 0) count++;
   if (props.dateRange.start) count++;
@@ -128,13 +147,35 @@ const setPreset = (preset: "today" | "yesterday" | "last7" | "last30") => {
   <div class="space-y-4">
     <!-- Filter Bar -->
     <div class="flex flex-wrap items-center gap-3">
+      <!-- App selector. Filtered server-side, unlike everything else here: the
+           endpoint takes app_id and the list is capped at `limit` rows, so
+           narrowing in the browser would only ever filter the newest 100 events
+           across every app rather than the newest 100 for the one you want. -->
+      <Select
+        :model-value="selectedAppId"
+        @update:model-value="emit('update:selectedAppId', ($event as string) ?? '')"
+      >
+        <SelectTrigger class="min-w-[200px]">
+          <div class="flex items-center gap-2 truncate">
+            <Boxes class="h-4 w-4 shrink-0 text-muted-foreground" />
+            <SelectValue placeholder="All apps" />
+          </div>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">All apps</SelectItem>
+          <SelectItem v-for="app in apps ?? []" :key="app.id" :value="app.app_id">
+            {{ app.name || app.app_id }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+
       <!-- Search Input -->
       <div class="relative flex-1 min-w-[200px] max-w-[400px]">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           :model-value="searchQuery"
           @update:model-value="emit('update:searchQuery', $event as string)"
-          placeholder="Search by device ID, version, IP..."
+          placeholder="Search by device, version, action or error..."
           class="pl-10 pr-10"
         />
         <button

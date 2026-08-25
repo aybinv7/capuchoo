@@ -57,20 +57,27 @@ export function useUpdatePrompt() {
      * next press hands it to the system installer. An OTA bundle applies itself,
      * so it never rests here.
      */
-    phase: computed<"idle" | "downloading" | "downloaded" | "installing">(() => {
-      if (updater.isInstalling.value) return "installing";
-      if (updater.isDownloading.value) return "downloading";
-      if (isNativeUpdate.value && updater.cachedPath.value) return "downloaded";
-      return "idle";
-    }),
+    phase: computed<"idle" | "downloading" | "downloaded" | "installing" | "awaiting-install">(
+      () => {
+        if (updater.isInstalling.value) return "installing";
+        if (updater.isDownloading.value) return "downloading";
+        // Android's own dialog is up. Nothing here can dismiss it, observe it,
+        // or replace it - it is an OS security boundary for a sideloaded APK -
+        // so the only correct thing is to say what is being waited on.
+        if (updater.handedToInstaller.value) return "awaiting-install";
+        if (isNativeUpdate.value && updater.cachedPath.value) return "downloaded";
+        return "idle";
+      },
+    ),
 
     /**
      * Native updates need a download step and then an install step; OTA
      * updates apply themselves once downloaded.
      */
     primaryLabel: computed(() => {
-      if (updater.isDownloading.value) return "Downloading...";
+      if (updater.isDownloading.value) return `Downloading ${updater.progress.value.percent}%`;
       if (updater.isInstalling.value) return "Installing...";
+      if (updater.handedToInstaller.value) return "Waiting for Android...";
       if (isNativeUpdate.value && updater.cachedPath.value) return "Install now";
       if (isNativeUpdate.value) return "Download";
       return "Update now";

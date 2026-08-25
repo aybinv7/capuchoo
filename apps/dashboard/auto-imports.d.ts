@@ -744,6 +744,9 @@ declare global {
   export type { DashboardStats, StatsDataPoint, DashboardStatsData } from './src/modules/statistics/types/statistics.types'
   import('./src/modules/statistics/types/statistics.types')
   // @ts-ignore
+  export type { UpdateLogsFilters } from './src/modules/update-logs/composables/useUpdateLogsQuery'
+  import('./src/modules/update-logs/composables/useUpdateLogsQuery')
+  // @ts-ignore
   export type { UpdateLog } from './src/modules/update-logs/types/update-logs.types'
   import('./src/modules/update-logs/types/update-logs.types')
   // @ts-ignore

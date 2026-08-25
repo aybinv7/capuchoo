@@ -43,7 +43,22 @@ export {
   isNative,
 } from "./device.js";
 
-export { cleanApkCache, downloadNativeUpdate, type DownloadProgress } from "./download.service.js";
+export {
+  downloadNativeUpdate,
+  findCachedApk,
+  pruneApkCache,
+  type DownloadProgress,
+} from "./download.service.js";
+
+export {
+  apkFileName,
+  apksToDelete,
+  cachePrefix,
+  isCompleteDownload,
+  parseApkFileName,
+  type ApkIdentity,
+  type CachedApk,
+} from "./apk-cache.js";
 
 export { openNativeInstaller } from "./install.service.js";
 

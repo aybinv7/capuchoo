@@ -10,7 +10,12 @@ import {
 } from "../api.service.js";
 import { getUpdaterConfig } from "../config.js";
 import { isNative } from "../device.js";
-import { cleanApkCache, downloadNativeUpdate, type DownloadProgress } from "../download.service.js";
+import {
+  downloadNativeUpdate,
+  findCachedApk,
+  pruneApkCache,
+  type DownloadProgress,
+} from "../download.service.js";
 import { openNativeInstaller } from "../install.service.js";
 import { applyOtaUpdate, getCurrentBundle, notifyAppReady } from "../ota.service.js";
 
@@ -23,6 +28,18 @@ export interface UpdaterState {
   progress: DownloadProgress;
   /** Local path of a downloaded APK, ready to install. */
   cachedPath: string | null;
+  /**
+   * True once the APK has been handed to the Android package installer.
+   *
+   * Android shows its own confirmation dialog for a sideloaded APK and there is
+   * no way around it - it is an OS security boundary, not a styling choice. The
+   * handoff returns as soon as the intent is fired, long before the user has
+   * decided, so `installing` flips back to false while that dialog is still on
+   * screen and the prompt underneath reverted to offering an install the user
+   * was already being asked about. This keeps the app honest about what it is
+   * waiting for.
+   */
+  handedToInstaller: boolean;
   error: string | null;
   /** Transient status for the current operation. */
   statusMessage: string;
@@ -45,6 +62,7 @@ const state = ref<UpdaterState>({
   currentUpdate: null,
   progress: { ...NO_PROGRESS },
   cachedPath: null,
+  handedToInstaller: false,
   error: null,
   statusMessage: "",
   lastCheckMessage: "",
@@ -61,6 +79,7 @@ function publish(update: ResolvedUpdate): void {
   state.value.currentUpdate = update;
   state.value.updateAvailable = true;
   state.value.cachedPath = null;
+  state.value.handedToInstaller = false;
   state.value.progress = { ...NO_PROGRESS };
   state.value.error = null;
   state.value.lastCheckMessage = `Version ${update.version} is available`;
@@ -125,6 +144,18 @@ async function check(silent = false): Promise<boolean> {
 
     if (update) {
       publish(update);
+
+      // A previous run may already have paid for this binary. Asking the
+      // filesystem is what survives a restart; `cachedPath` alone does not, so
+      // relaunching used to re-download a file that was already on disk.
+      if (update.kind === "native") {
+        state.value.cachedPath = await findCachedApk(update);
+        if (state.value.cachedPath) {
+          state.value.progress = { ...DONE_PROGRESS };
+          state.value.statusMessage = "Ready to install.";
+        }
+      }
+
       await logUpdateEvent("check", update);
       return true;
     }
@@ -204,8 +235,17 @@ async function installNativeUpdate(): Promise<void> {
 
   try {
     await openNativeInstaller(path);
+
+    // Fired, not finished. Android now shows its own confirmation dialog and
+    // there is no callback for what the user does with it, so the prompt has to
+    // say what it is waiting for rather than silently offering the install
+    // again underneath.
+    state.value.handedToInstaller = true;
+    state.value.statusMessage = "Confirm the installation to finish updating.";
+
     await logUpdateEvent("install", update);
   } catch (error) {
+    state.value.handedToInstaller = false;
     state.value.error = error instanceof Error ? error.message : "Installation failed";
     await logUpdateEvent("error", update, { error: state.value.error });
   } finally {
@@ -225,7 +265,14 @@ async function init(): Promise<void> {
 
   await notifyAppReady();
   await attachPluginListeners();
-  await cleanApkCache();
+
+  // Delete APKs the device has outgrown. There is no callback from the Android
+  // installer, so this is where an installed binary's 47 MB finally goes: on
+  // the next launch the installed build number has passed it, which says the
+  // install landed. Anything newer is left alone - it is an update already
+  // downloaded and waiting, and deleting it would mean paying for it twice.
+  await pruneApkCache({ installedVersionCode: await getVersionCode() });
+
   await check(true);
 }
 
@@ -262,6 +309,8 @@ export function useUpdater() {
     lastCheckMessage: computed(() => state.value.lastCheckMessage),
     /** True when the user may not postpone the update. */
     isRequired: computed(() => state.value.currentUpdate?.required === true),
+    /** True while Android's own install dialog is waiting on the user. */
+    handedToInstaller: computed(() => state.value.handedToInstaller),
 
     check,
     startDownload,
@@ -285,6 +334,7 @@ export function __resetUpdaterState(): void {
     currentUpdate: null,
     progress: { ...NO_PROGRESS },
     cachedPath: null,
+    handedToInstaller: false,
     error: null,
     statusMessage: "",
     lastCheckMessage: "",

@@ -4,7 +4,6 @@ import {
   CheckCircle,
   XCircle,
   Activity,
-  Globe,
   Clock,
   Smartphone,
   ChevronRight,
@@ -49,11 +48,70 @@ const actionConfig: Record<
   },
   get: { icon: Activity, bg: "bg-gray-500/10", text: "text-gray-500", variant: "outline" },
   set: { icon: CheckCircle, bg: "bg-purple-500/10", text: "text-purple-500", variant: "secondary" },
-  first_open: {
-    icon: Activity,
-    bg: "bg-yellow-500/10",
-    text: "text-yellow-500",
+
+  // The rest of what update_logs_action_check actually permits. Without these
+  // every one of them fell through to the grey Activity fallback, so a failed
+  // update looked exactly like a routine check.
+  download_complete: {
+    icon: CheckCircle,
+    bg: "bg-blue-500/10",
+    text: "text-blue-500",
     variant: "secondary",
+  },
+  download_failed: {
+    icon: XCircle,
+    bg: "bg-red-500/10",
+    text: "text-red-500",
+    variant: "destructive",
+  },
+  update_fail: { icon: XCircle, bg: "bg-red-500/10", text: "text-red-500", variant: "destructive" },
+  update_failed: {
+    icon: XCircle,
+    bg: "bg-red-500/10",
+    text: "text-red-500",
+    variant: "destructive",
+  },
+  app_ready: {
+    icon: CheckCircle,
+    bg: "bg-green-500/10",
+    text: "text-green-500",
+    variant: "secondary",
+  },
+  update_available: {
+    icon: Download,
+    bg: "bg-amber-500/10",
+    text: "text-amber-500",
+    variant: "secondary",
+  },
+  native_update_required: {
+    icon: Smartphone,
+    bg: "bg-amber-500/10",
+    text: "text-amber-500",
+    variant: "secondary",
+  },
+  no_update_available: {
+    icon: Activity,
+    bg: "bg-gray-500/10",
+    text: "text-gray-500",
+    variant: "outline",
+  },
+  app_moved_to_background: {
+    icon: Activity,
+    bg: "bg-gray-500/10",
+    text: "text-gray-500",
+    variant: "outline",
+  },
+  app_moved_to_foreground: {
+    icon: Activity,
+    bg: "bg-gray-500/10",
+    text: "text-gray-500",
+    variant: "outline",
+  },
+  blocked_by_server_url: {
+    icon: XCircle,
+    bg: "bg-red-500/10",
+    text: "text-red-500",
+    variant: "destructive",
   },
 };
 
@@ -61,10 +119,22 @@ const actionConfig: Record<
 const formatAction = (action: string) =>
   action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-const formatRelativeTime = (timestamp: string) => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+/**
+ * Both of these took an argument that did not exist.
+ *
+ * The row's column is `created_at`; the type declared `timestamp`, so every
+ * call received `undefined` and every row showed "Invalid Date" - twice, once
+ * relative and once absolute. They now say so instead of printing the string
+ * `Invalid Date`, because a missing timestamp is a data problem and should not
+ * look like a formatting one.
+ */
+const formatRelativeTime = (value: string | null | undefined) => {
+  if (!value) return "unknown";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "unknown";
+
+  const diffMs = Date.now() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
@@ -76,8 +146,11 @@ const formatRelativeTime = (timestamp: string) => {
   return date.toLocaleDateString();
 };
 
-const formatDateTime = (timestamp: string) => {
-  return new Date(timestamp).toLocaleString();
+const formatDateTime = (value: string | null | undefined) => {
+  if (!value) return "unknown";
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "unknown" : date.toLocaleString();
 };
 
 const getActionConfig = (action: string) => {
@@ -129,7 +202,7 @@ const getActionConfig = (action: string) => {
             {{ log.platform }}
           </Badge>
           <span class="text-sm text-muted-foreground">
-            {{ formatRelativeTime(log.timestamp) }}
+            {{ formatRelativeTime(log.created_at) }}
           </span>
         </div>
 
@@ -145,17 +218,24 @@ const getActionConfig = (action: string) => {
           </template>
         </p>
 
-        <!-- Meta Info -->
+        <!-- Meta Info. `ip` and `user_agent` used to be rendered here; neither
+             is a column on update_logs, so the block was permanently empty.
+             `status` and `error_message` are real, and an error is the one
+             thing worth reading on a row like this. -->
         <div class="flex items-center gap-4 text-xs text-muted-foreground">
-          <div v-if="log.ip" class="flex items-center gap-1">
-            <Globe class="h-3 w-3" />
-            {{ log.ip }}
-          </div>
           <div class="flex items-center gap-1">
             <Clock class="h-3 w-3" />
-            {{ formatDateTime(log.timestamp) }}
+            {{ formatDateTime(log.created_at) }}
+          </div>
+          <div v-if="log.status" class="flex items-center gap-1">
+            <Activity class="h-3 w-3" />
+            {{ log.status }}
           </div>
         </div>
+
+        <p v-if="log.error_message" class="text-xs text-red-500 break-words">
+          {{ log.error_message }}
+        </p>
       </div>
 
       <!-- Chevron -->

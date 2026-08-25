@@ -17,6 +17,8 @@ definePage({
 
 // Filter state
 const searchQuery = ref("");
+/** Bundle identifier, or "" for every app. Applied server-side. */
+const selectedAppId = ref("");
 const selectedActions = ref<string[]>([]);
 const selectedPlatforms = ref<string[]>([]);
 const limit = ref(100);
@@ -29,23 +31,33 @@ const dateRange = ref<DateRange>({
   end: today(tz),
 });
 
-// Query
-const { data: logs, isLoading, isFetching, refetch } = useUpdateLogsQuery({ limit: limit.value });
+// Query. Refs, not `.value` - the composable reads them each time, so changing
+// the app or pressing "load more" actually changes what is fetched.
+const {
+  data: logs,
+  isLoading,
+  isFetching,
+  refetch,
+} = useUpdateLogsQuery({ appId: selectedAppId, limit });
 
 // Filter logs client-side
 const filteredLogs = computed(() => {
   if (!logs.value) return [];
 
   return logs.value.filter((log: UpdateLog) => {
-    // Search filter
+    // Search filter. `ip` was in here and is not a column on update_logs, so
+    // that clause never matched; `action` and `error_message` are, and an error
+    // is the thing you actually come to this page to find.
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
-      const matches =
-        log.device_id.toLowerCase().includes(query) ||
-        log.ip?.toLowerCase().includes(query) ||
-        log.new_version?.toLowerCase().includes(query) ||
-        log.current_version?.toLowerCase().includes(query);
-      if (!matches) return false;
+      const haystack = [
+        log.device_id,
+        log.action,
+        log.new_version,
+        log.current_version,
+        log.error_message,
+      ];
+      if (!haystack.some((value) => value?.toLowerCase().includes(query))) return false;
     }
 
     // Action filter
@@ -53,14 +65,16 @@ const filteredLogs = computed(() => {
       return false;
     }
 
-    // Platform filter
-    if (selectedPlatforms.value.length > 0 && !selectedPlatforms.value.includes(log.platform)) {
-      return false;
+    // Platform filter. `platform` is nullable on the row, and a row without one
+    // cannot satisfy a platform filter - so it drops out rather than being
+    // coerced to a platform it never reported.
+    if (selectedPlatforms.value.length > 0) {
+      if (!log.platform || !selectedPlatforms.value.includes(log.platform)) return false;
     }
 
     // Date range filter
     if (dateRange.value.start) {
-      const logDate = new Date(log.timestamp);
+      const logDate = new Date(log.created_at);
       const startDate = new Date(
         dateRange.value.start.year,
         dateRange.value.start.month - 1,
@@ -100,6 +114,7 @@ const stats = computed(() => {
 // Handlers
 const clearFilters = () => {
   searchQuery.value = "";
+  selectedAppId.value = "";
   selectedActions.value = [];
   selectedPlatforms.value = [];
   dateRange.value = {
@@ -198,6 +213,7 @@ const handleSelectLog = (log: UpdateLog) => {
     <!-- Filters -->
     <UpdateLogsFilters
       v-model:search-query="searchQuery"
+      v-model:selected-app-id="selectedAppId"
       v-model:selected-actions="selectedActions"
       v-model:selected-platforms="selectedPlatforms"
       v-model:date-range="dateRange"
