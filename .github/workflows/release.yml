@@ -61,6 +61,14 @@ jobs:
       - run: vp run -r build
       - run: vp run -r test
 
+      # Everything above ran against the workspace, where a sibling package is
+      # the local source. The registry is the only place that disagrees, and it
+      # is where the CLI once shipped importing a `@capuchoo/core` export that
+      # was not in the published 0.1.0. This compares the built public API
+      # against what is on npm at the same version number, and fails a release
+      # that would be a silent no-op for a package its dependents need.
+      - run: node scripts/check-release.mjs
+
       - name: Confirm npm can do the OIDC exchange
         run: |
           echo "npm $(npm --version) / node $(node --version)"

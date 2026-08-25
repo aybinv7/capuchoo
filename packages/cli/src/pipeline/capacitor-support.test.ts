@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import {
   RUNTIME_VERSION,
@@ -84,5 +85,21 @@ describe("version selection", () => {
     expect(runtime.name).toBe("@capuchoo/updater");
     expect(runtime.range).toBe(`^${RUNTIME_VERSION}`);
     expect(runtime.range).toMatch(/^\^\d+\.\d+\.\d+$/);
+  });
+
+  /**
+   * The other half of that trap: pinning is only useful if the pin is current.
+   * `RUNTIME_VERSION` is typed by hand, so nothing but this connected it to the
+   * package it names - and a release that bumped the updater and forgot the
+   * constant would have every new app installing the previous runtime, silently
+   * and for as long as nobody looked.
+   */
+  it("pins it to the version of the updater in this workspace", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../../../updater/package.json", import.meta.url), "utf8"),
+    ) as { name: string; version: string };
+
+    expect(manifest.name).toBe("@capuchoo/updater");
+    expect(RUNTIME_VERSION).toBe(manifest.version);
   });
 });

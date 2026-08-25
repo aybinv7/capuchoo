@@ -71,8 +71,9 @@ export default defineConfig({
     },
     overrides: [
       {
-        // A CLI's entire job is writing to stdout, and the backend logs to it.
-        files: ["packages/cli/**", "services/back/**"],
+        // A CLI's entire job is writing to stdout, the backend logs to it, and
+        // a release script's whole output is the report it prints.
+        files: ["packages/cli/**", "services/back/**", "scripts/**"],
         env: { node: true },
         rules: {
           "no-console": "off",
@@ -117,6 +118,16 @@ export default defineConfig({
       // so it is not run per package.
       ci: {
         command: ["vp check", "vp run -r --cache build", "vp run -r --cache test"],
+        cache: false,
+      },
+
+      // What the registry says, which is the only place a stale release shows
+      // up: a package already published at this version, with a different
+      // public API, will be skipped while its dependents publish against the
+      // old one. Needs `vp run -r build` first, and never cached - the answer
+      // depends on npm, not on this checkout.
+      "release:check": {
+        command: "node scripts/check-release.mjs",
         cache: false,
       },
     },

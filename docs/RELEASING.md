@@ -13,13 +13,22 @@ Three packages publish to npm. The apps and the backend do not - they are `priva
 
 1. Bump the version in the package's `package.json`. That file is the source of truth for what gets
    released.
-2. Run the **release** workflow (Actions > release > Run workflow). Leave `dry-run` checked the
+2. Run `vp run -r build && vp run release:check`. It tells you what will publish, what will be
+   skipped, and what is unsafe — see [The gate](#the-gate) below.
+3. Run the **release** workflow (Actions > release > Run workflow). Leave `dry-run` checked the
    first time and read the log.
-3. Run it again with `dry-run` unchecked.
+4. Run it again with `dry-run` unchecked.
 
 `npm publish` refuses a version that already exists, so a run only ships the packages you actually
 bumped and re-running is safe. Nothing writes back to the repository, so no bot commit races a
 developer push.
+
+**Bumping a package means bumping what depends on it.** `@capuchoo/core` is a dependency of both the
+updater and the CLI as `workspace:^`, which pnpm rewrites to `^<core's current version>` at pack
+time. Below 1.0.0 a caret does not cross a minor — `^0.2.0` means `>=0.2.0 <0.3.0` — so publishing
+core 0.3.0 without republishing the two leaves them pinned to a core that no longer exists in the
+form they were built against. The gate catches the case where that has already gone wrong; it cannot
+predict a range you have not published yet.
 
 This replaced `release-cli.yml`, which handled only the CLI and was triggered by a `cli-v*` tag. Two
 release paths over one workspace is how they drift.
@@ -44,6 +53,35 @@ pnpm publish -r --access public --otp=<code-from-your-authenticator>
 Then, for each of the four packages on npmjs.com: **Settings > Trusted publisher**, GitHub Actions,
 repository `aybinv7/capuchoo`, workflow `release.yml`. After that every release runs from CI and the
 manual path is never needed again.
+
+## The gate
+
+`scripts/check-release.mjs` runs in the workflow before the publish step, and locally as
+`vp run release:check`.
+
+It exists because everything else in the pipeline runs against the workspace, where a sibling
+package is the local source — so a package can typecheck, build and pass its tests against code that
+is not on npm. `@capuchoo/cli@0.5.0` shipped that way: it imported `canPublishTo` from
+`@capuchoo/core`, core's version had not been bumped, `workspace:^` was rewritten to `^0.1.0`, and
+the CLI died on first run with _does not provide an export named 'canPublishTo'_.
+
+For each publishable package whose version already exists on the registry, the gate downloads what
+was published at that exact version and compares the exported names in `dist/index.d.ts` against the
+local build. A difference means the package changed without a bump, so the release would skip it
+while its dependents publish against the old one.
+
+```
+  new      @capuchoo/core@0.3.0 is not on the registry - it will publish
+  same     @capuchoo/cli@0.6.0 matches the registry - it will be skipped
+
+Release blocked:
+  - @capuchoo/core@0.2.0 is already on the registry with a different public API
+    (adds decideUpdate, renderUpdateResponse, ...). Bump packages/core/package.json.
+```
+
+It compares names, not signatures, and not implementations. A changed return type behind an
+unchanged name still needs your judgement — the gate only removes the failure that has actually
+happened, where a name a sibling imports is simply not there.
 
 ## Two traps worth knowing
 
