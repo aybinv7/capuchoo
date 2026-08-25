@@ -14,54 +14,50 @@ boundaries, see [CI releases](docs/ci-releases.md).
 [![Downloads/week](https://img.shields.io/npm/dw/%40capuchoo%2Fcli.svg)](https://npmjs.org/package/@capuchoo/cli)
 
 <!-- toc -->
-
-- [Usage](#usage)
-- [Commands](#commands)
-
+* [Usage](#usage)
+* [Commands](#commands)
 <!-- tocstop -->
 
 # Usage
 
 <!-- usage -->
-
 ```sh-session
 $ npm install -g @capuchoo/cli
 $ capuchoo COMMAND
 running command...
 $ capuchoo (--version)
-@capuchoo/cli/0.6.0 win32-x64 node-v26.4.0
+@capuchoo/cli/0.7.0 win32-x64 node-v24.19.0
 $ capuchoo --help [COMMAND]
 USAGE
   $ capuchoo COMMAND
 ...
 ```
-
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-
-- [`capuchoo app delete [APPID]`](#capuchoo-app-delete-appid)
-- [`capuchoo app list`](#capuchoo-app-list)
-- [`capuchoo auth login`](#capuchoo-auth-login)
-- [`capuchoo auth logout`](#capuchoo-auth-logout)
-- [`capuchoo auth whoami`](#capuchoo-auth-whoami)
-- [`capuchoo channel create [NAME]`](#capuchoo-channel-create-name)
-- [`capuchoo channel delete [NAME]`](#capuchoo-channel-delete-name)
-- [`capuchoo channel list`](#capuchoo-channel-list)
-- [`capuchoo config list`](#capuchoo-config-list)
-- [`capuchoo config set KEY VALUE`](#capuchoo-config-set-key-value)
-- [`capuchoo deploy native`](#capuchoo-deploy-native)
-- [`capuchoo deploy ota`](#capuchoo-deploy-ota)
-- [`capuchoo doctor`](#capuchoo-doctor)
-- [`capuchoo help [COMMAND]`](#capuchoo-help-command)
-- [`capuchoo init`](#capuchoo-init)
-- [`capuchoo org create [NAME]`](#capuchoo-org-create-name)
-- [`capuchoo org list`](#capuchoo-org-list)
-- [`capuchoo setup`](#capuchoo-setup)
-- [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
-- [`capuchoo version sync`](#capuchoo-version-sync)
+* [`capuchoo app delete [APPID]`](#capuchoo-app-delete-appid)
+* [`capuchoo app list`](#capuchoo-app-list)
+* [`capuchoo auth login`](#capuchoo-auth-login)
+* [`capuchoo auth logout`](#capuchoo-auth-logout)
+* [`capuchoo auth whoami`](#capuchoo-auth-whoami)
+* [`capuchoo channel create [NAME]`](#capuchoo-channel-create-name)
+* [`capuchoo channel delete [NAME]`](#capuchoo-channel-delete-name)
+* [`capuchoo channel list`](#capuchoo-channel-list)
+* [`capuchoo config list`](#capuchoo-config-list)
+* [`capuchoo config set KEY VALUE`](#capuchoo-config-set-key-value)
+* [`capuchoo deploy native`](#capuchoo-deploy-native)
+* [`capuchoo deploy ota`](#capuchoo-deploy-ota)
+* [`capuchoo doctor`](#capuchoo-doctor)
+* [`capuchoo help [COMMAND]`](#capuchoo-help-command)
+* [`capuchoo init`](#capuchoo-init)
+* [`capuchoo menu`](#capuchoo-menu)
+* [`capuchoo org create [NAME]`](#capuchoo-org-create-name)
+* [`capuchoo org list`](#capuchoo-org-list)
+* [`capuchoo setup`](#capuchoo-setup)
+* [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
+* [`capuchoo version sync`](#capuchoo-version-sync)
 
 ## `capuchoo app delete [APPID]`
 
@@ -84,8 +80,7 @@ EXAMPLES
   $ capuchoo app delete com.company.app
 ```
 
-_See code:
-[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/app/delete.ts)_
+_See code: [src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/app/delete.ts)_
 
 ## `capuchoo app list`
 
@@ -102,8 +97,7 @@ DESCRIPTION
   List the apps this account can reach
 ```
 
-_See code:
-[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/app/list.ts)_
+_See code: [src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/app/list.ts)_
 
 ## `capuchoo auth login`
 
@@ -126,8 +120,7 @@ EXAMPLES
   $ capuchoo auth login --endpoint https://capucho.internal --api-key cap_...
 ```
 
-_See code:
-[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/auth/login.ts)_
+_See code: [src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -141,8 +134,7 @@ DESCRIPTION
   Remove the stored API key
 ```
 
-_See code:
-[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/auth/logout.ts)_
+_See code: [src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -159,8 +151,7 @@ DESCRIPTION
   Show the signed-in account, and the organizations and apps it can reach
 ```
 
-_See code:
-[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/auth/whoami.ts)_
+_See code: [src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/auth/whoami.ts)_
 
 ## `capuchoo channel create [NAME]`
 
@@ -190,8 +181,7 @@ EXAMPLES
   $ capuchoo channel create prod --environment prod --yes
 ```
 
-_See code:
-[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/channel/create.ts)_
+_See code: [src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/channel/create.ts)_
 
 ## `capuchoo channel delete [NAME]`
 
@@ -216,8 +206,7 @@ EXAMPLES
   $ capuchoo channel delete beta --yes
 ```
 
-_See code:
-[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/channel/delete.ts)_
+_See code: [src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/channel/delete.ts)_
 
 ## `capuchoo channel list`
 
@@ -234,8 +223,7 @@ DESCRIPTION
   List this app's channels and what they serve
 ```
 
-_See code:
-[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/channel/list.ts)_
+_See code: [src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/channel/list.ts)_
 
 ## `capuchoo config list`
 
@@ -252,8 +240,7 @@ DESCRIPTION
   Show the resolved configuration, and which build tools were found
 ```
 
-_See code:
-[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/config/list.ts)_
+_See code: [src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -276,8 +263,7 @@ EXAMPLES
   $ capuchoo config set defaultChannel staging
 ```
 
-_See code:
-[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/config/set.ts)_
+_See code: [src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -320,8 +306,7 @@ EXAMPLES
   $ capuchoo deploy native -c staging --type debug -y
 ```
 
-_See code:
-[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/deploy/native.ts)_
+_See code: [src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -357,8 +342,7 @@ EXAMPLES
   $ capuchoo deploy ota -c staging --dry-run
 ```
 
-_See code:
-[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/deploy/ota.ts)_
+_See code: [src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/deploy/ota.ts)_
 
 ## `capuchoo doctor`
 
@@ -375,8 +359,7 @@ EXAMPLES
   $ capuchoo doctor
 ```
 
-_See code:
-[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/doctor.ts)_
+_See code: [src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/doctor.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -396,8 +379,7 @@ DESCRIPTION
   Display help for capuchoo.
 ```
 
-_See code:
-[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.58/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.58/src/commands/help.ts)_
 
 ## `capuchoo init`
 
@@ -429,8 +411,26 @@ EXAMPLES
   $ capuchoo init --create --name "My App" --app-id com.acme.app --channel staging
 ```
 
-_See code:
-[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/init.ts)_
+
+## `capuchoo menu`
+
+Browse and run commands interactively
+
+```
+USAGE
+  $ capuchoo menu
+
+DESCRIPTION
+  Browse and run commands interactively
+
+EXAMPLES
+  $ capuchoo
+
+  $ capuchoo menu
+```
+
+_See code: [src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/menu.ts)_
 
 ## `capuchoo org create [NAME]`
 
@@ -455,8 +455,7 @@ EXAMPLES
   $ capuchoo org create Acme --json
 ```
 
-_See code:
-[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/org/create.ts)_
+_See code: [src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/org/create.ts)_
 
 ## `capuchoo org list`
 
@@ -473,8 +472,7 @@ DESCRIPTION
   List the organizations this account belongs to
 ```
 
-_See code:
-[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/org/list.ts)_
+_See code: [src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/org/list.ts)_
 
 ## `capuchoo setup`
 
@@ -502,8 +500,7 @@ EXAMPLES
   $ capuchoo setup --dry-run
 ```
 
-_See code:
-[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/setup.ts)_
+_See code: [src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/setup.ts)_
 
 ## `capuchoo version bump TYPE`
 
@@ -529,8 +526,7 @@ EXAMPLES
   $ capuchoo version bump minor --environment staging
 ```
 
-_See code:
-[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/version/bump.ts)_
+_See code: [src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -555,6 +551,5 @@ EXAMPLES
   $ capuchoo version sync --bump --environment staging
 ```
 
-_See code:
-[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.6.0/src/commands/version/sync.ts)_
+_See code: [src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.7.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->
