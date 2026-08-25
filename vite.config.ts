@@ -130,6 +130,14 @@ export default defineConfig({
         command: "node scripts/check-release.mjs",
         cache: false,
       },
+
+      // Asks a *running* backend whether it still speaks the plugin's contract.
+      // The unit tests prove the decision; only this proves the deployment.
+      // Takes a bundle id: `vp run smoke -- com.efficy.app`.
+      smoke: {
+        command: "node scripts/contract-smoke.mjs",
+        cache: false,
+      },
     },
   },
 });
