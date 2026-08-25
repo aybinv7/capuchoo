@@ -37,10 +37,57 @@ describe("capuchooUpdaterConfig", () => {
 
   it("refuses an empty apiUrl instead of shipping updates disabled", () => {
     // The plugin accepts an empty updateUrl and then silently never checks,
-    // which is the worst possible outcome. The old config produced exactly
-    // that whenever VITE_UPDATE_API_URL was unset.
-    expect(() => capuchooUpdaterConfig({ ...base, apiUrl: "" })).toThrow(/apiUrl is empty/);
-    expect(() => capuchooUpdaterConfig({ ...base, apiUrl: "///" })).toThrow(/apiUrl is empty/);
+    // which is the worst possible outcome.
+    expect(() => capuchooUpdaterConfig({ ...base, apiUrl: "" })).toThrow(/apiUrl/);
+    expect(() => capuchooUpdaterConfig({ ...base, apiUrl: "///" })).toThrow(/not a URL/);
+  });
+
+  /**
+   * The case the tests above did not cover, and the only one that happens.
+   *
+   * Every call site writes `process.env.VITE_UPDATE_API_URL`, which is
+   * `undefined` when unset - not `""`. The guard ran *after*
+   * `options.apiUrl.replace(...)`, so the helpful message was unreachable and a
+   * bare `npx cap sync` died with "Cannot read properties of undefined (reading
+   * 'replace')" and a stack inside node_modules.
+   *
+   * The old tests passed the whole time. They exercised the shape the author
+   * imagined rather than the shape the environment produces.
+   */
+  it.each([
+    ["apiUrl", { apiUrl: undefined }],
+    ["channel", { channel: undefined }],
+  ])("names %s when the environment did not set it", (key, override) => {
+    expect(() => capuchooUpdaterConfig({ ...base, ...override })).toThrow(
+      new RegExp(`${key} is missing`),
+    );
+  });
+
+  it("names every missing value at once, not one build at a time", () => {
+    const thrown = () => capuchooUpdaterConfig({ ...base, apiUrl: undefined, channel: undefined });
+
+    expect(thrown).toThrow(/apiUrl and channel are missing/);
+    expect(thrown).toThrow(/VITE_UPDATE_API_URL/);
+    expect(thrown).toThrow(/VITE_UPDATE_CHANNEL/);
+  });
+
+  it("says why a bare cap sync has neither", () => {
+    expect(() => capuchooUpdaterConfig({ ...base, apiUrl: undefined })).toThrow(/cap sync/);
+  });
+
+  // Whitespace is what a half-filled env file produces, and it is not a URL.
+  it("treats a blank value as missing", () => {
+    expect(() => capuchooUpdaterConfig({ ...base, apiUrl: "   " })).toThrow(/apiUrl is missing/);
+  });
+
+  /**
+   * Omitted, the plugin reports the binary's own versionName - which cannot go
+   * stale. Emitting `version: undefined` instead would tell the plugin the
+   * built-in bundle has no version at all.
+   */
+  it("leaves version out when the app does not override it", () => {
+    expect("version" in capuchooUpdaterConfig({ ...base, version: undefined })).toBe(false);
+    expect(capuchooUpdaterConfig({ ...base, version: "1.0.56" }).version).toBe("1.0.56");
   });
 
   it("never lets the plugin apply a bundle under the user", () => {

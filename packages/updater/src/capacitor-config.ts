@@ -20,16 +20,27 @@
 export type UpdaterMode = "onlyDownload" | "manual";
 
 export interface UpdaterPluginOptions {
-  /** Base URL of the Capuchoo backend. No trailing slash needed. */
-  apiUrl: string;
-  /** Channel this build defaults to. */
-  channel: string;
   /**
-   * Version the plugin reports as the built-in bundle. Pass the app's
-   * package.json version - if this is stale, the server compares against the
-   * wrong baseline and re-serves bundles the device already has.
+   * Base URL of the Capuchoo backend. No trailing slash needed.
+   *
+   * Typed as possibly undefined on purpose. Every real call site writes
+   * `process.env.VITE_UPDATE_API_URL`, which is `string | undefined`, and
+   * declaring it `string` only moved the failure from the type checker to a
+   * `TypeError: Cannot read properties of undefined (reading 'replace')` in the
+   * middle of `npx cap sync`.
    */
-  version: string;
+  apiUrl: string | undefined;
+  /** Channel this build defaults to. */
+  channel: string | undefined;
+  /**
+   * Version the plugin reports as its built-in bundle.
+   *
+   * Optional, and usually best left out. Omitted, the plugin reports the
+   * binary's own `versionName`, which cannot go stale. Pass something only to
+   * deliberately override that - and if it is wrong, the server compares
+   * against the wrong baseline and re-serves bundles the device already has.
+   */
+  version?: string | undefined;
   mode?: UpdaterMode;
   /** Milliseconds the plugin waits for `notifyAppReady` before rolling back. */
   appReadyTimeout?: number;
@@ -53,22 +64,58 @@ export interface CapacitorUpdaterPluginConfig {
   statsUrl: string;
   channelUrl: string;
   defaultChannel: string;
-  version: string;
+  /**
+   * Omitted when the app does not override it, so the plugin reports the
+   * binary's own versionName - which cannot go stale.
+   */
+  version?: string;
   directUpdate: boolean;
   appReadyTimeout: number;
   responseTimeout: number;
   allowModifyUrl: boolean;
 }
 
+/** What each required option needs, and where it comes from. */
+const REQUIRED: Array<{ key: "apiUrl" | "channel"; env: string; why: string }> = [
+  { key: "apiUrl", env: "VITE_UPDATE_API_URL", why: "the server the app asks for updates" },
+  { key: "channel", env: "VITE_UPDATE_CHANNEL", why: "the channel this build follows" },
+];
+
 export function capuchooUpdaterConfig(options: UpdaterPluginOptions): CapacitorUpdaterPluginConfig {
-  const apiUrl = options.apiUrl.replace(/\/+$/, "");
+  // Validated before anything is read off `options`.
+  //
+  // This used to call `options.apiUrl.replace(...)` first and check afterwards,
+  // so the helpful message below was unreachable for the one case that actually
+  // happens: `process.env.VITE_UPDATE_API_URL` is `undefined` when unset, not
+  // "". A bare `npx cap sync` died with "Cannot read properties of undefined
+  // (reading 'replace')" and a stack inside node_modules, which says nothing
+  // about the missing variable.
+  //
+  // Every missing value is named at once, because finding them one build at a
+  // time is its own small misery.
+  const missing = REQUIRED.filter(({ key }) => !options[key]?.trim());
+
+  if (missing.length > 0) {
+    throw new Error(
+      `capuchooUpdaterConfig: ${missing.map(({ key }) => key).join(" and ")} ` +
+        `${missing.length === 1 ? "is" : "are"} missing.\n` +
+        missing.map(({ key, env, why }) => `  ${key}  set ${env} - ${why}`).join("\n") +
+        "\n\nThese come from the flavour's env file, which the Capuchoo CLI loads " +
+        "during a deploy. A bare `npx cap sync` does not load it: either run the " +
+        "deploy, or export the variables first.",
+    );
+  }
+
+  const apiUrl = options.apiUrl!.replace(/\/+$/, "");
 
   if (!apiUrl) {
-    // The plugin accepts an empty updateUrl and then silently never checks for
-    // updates, which is the worst possible outcome. Fail the build instead.
+    // A URL of only slashes normalises to nothing. The plugin accepts an empty
+    // updateUrl and then silently never checks for updates, which is the worst
+    // possible outcome, so fail the build instead.
     throw new Error(
-      "capuchooUpdaterConfig: apiUrl is empty. Set VITE_UPDATE_API_URL for this " +
-        "flavour before building, otherwise the app ships with updates disabled.",
+      `capuchooUpdaterConfig: apiUrl is "${options.apiUrl}", which is not a URL. ` +
+        "Set VITE_UPDATE_API_URL for this flavour, otherwise the app ships with " +
+        "updates disabled.",
     );
   }
 
@@ -80,8 +127,8 @@ export function capuchooUpdaterConfig(options: UpdaterPluginOptions): CapacitorU
     updateUrl: `${apiUrl}/api/update`,
     statsUrl: `${apiUrl}/api/stats`,
     channelUrl: `${apiUrl}/api/channel_self`,
-    defaultChannel: options.channel,
-    version: options.version,
+    defaultChannel: options.channel!,
+    ...(options.version ? { version: options.version } : {}),
     // The app shows a prompt and calls set() itself; letting the plugin apply
     // the bundle immediately would reload the WebView under the user.
     directUpdate: false,
