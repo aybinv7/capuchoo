@@ -1,4 +1,4 @@
-import { askText, confirm, isInteractive, selectOne } from "../cli/prompts.js";
+import { askText, confirm, isInteractive, selectOne, whileWaiting } from "../cli/prompts.js";
 import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
@@ -136,7 +136,9 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   }
 
   const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
-  const profile = await cloud.whoami();
+  // The backend sleeps when idle, so this first call can take fifteen seconds.
+  // Unannounced, it looked like the CLI had hung before the deploy even started.
+  const profile = await whileWaiting("Reaching the backend...", cloud.whoami());
   if (!profile) {
     fail(
       command,

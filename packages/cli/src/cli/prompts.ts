@@ -78,6 +78,51 @@ export function spinner(): { start: (m: string) => void; stop: (m?: string) => v
   };
 }
 
+/**
+ * How long a call may take before silence starts to look like a hang.
+ *
+ * Under this, a spinner would appear and vanish within a frame, which reads as a
+ * glitch rather than progress.
+ */
+const LOOKS_STUCK_AFTER_MS = 400;
+
+/**
+ * Runs work, and shows a spinner only once it has been slow enough to worry about.
+ *
+ * The backend is on a host that sleeps when idle, so the first request of a
+ * session can take fifteen seconds to come back. Every command opened with an
+ * unannounced `whoami()`, so `capuchoo doctor` and `capuchoo deploy native` sat
+ * with a blank terminal for that whole time and looked broken - the user
+ * reported the CLI itself as laggy, which it is not: `--version` returns in
+ * 190ms.
+ *
+ * Deliberately delayed rather than always-on. A warm backend answers in well
+ * under the threshold and stays silent, so the spinner only ever appears when
+ * there is genuinely something to wait for.
+ */
+export async function whileWaiting<T>(message: string, work: Promise<T>): Promise<T> {
+  if (!isInteractive()) return work;
+
+  // Held on an object rather than in a plain `let`: control-flow analysis cannot
+  // see an assignment made inside a timer callback, so a `let` stays narrowed to
+  // its initialiser and the guard below becomes a type error.
+  const shown: { spinner?: ReturnType<typeof spinner> } = {};
+
+  const timer = setTimeout(() => {
+    shown.spinner = spinner();
+    shown.spinner.start(message);
+  }, LOOKS_STUCK_AFTER_MS);
+
+  try {
+    return await work;
+  } finally {
+    clearTimeout(timer);
+    // stop() on a spinner that never started throws, hence the guard rather
+    // than an unconditional call.
+    shown.spinner?.stop();
+  }
+}
+
 export async function selectOne<T>(
   question: string,
   choices: Choice<T>[],

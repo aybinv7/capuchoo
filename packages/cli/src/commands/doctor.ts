@@ -8,6 +8,7 @@ import {
 import chalk from "chalk";
 import fs from "node:fs";
 import path from "node:path";
+import { whileWaiting } from "../cli/prompts.js";
 import { BaseCommand } from "../base-command.js";
 import { describeSigning, inspectReleaseSigning } from "../pipeline/android-signing.js";
 import { CloudClient } from "../services/cloud.js";
@@ -53,7 +54,7 @@ export default class Doctor extends BaseCommand {
     findings.push({ level: "ok", what: "Endpoint", detail: credentials.endpoint });
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
-    const profile = await cloud.whoami().catch(() => null);
+    const profile = await whileWaiting("Reaching the backend...", cloud.whoami()).catch(() => null);
 
     if (!profile) {
       findings.push({
@@ -110,7 +111,10 @@ export default class Doctor extends BaseCommand {
 
     // --- channels ------------------------------------------------------------
 
-    const channels = await cloud.channels(project.cloudAppId).catch(() => null);
+    const channels = await whileWaiting(
+      "Reading channels...",
+      cloud.channels(project.cloudAppId),
+    ).catch(() => null);
 
     if (!channels) {
       findings.push({

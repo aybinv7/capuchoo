@@ -1,5 +1,6 @@
 import { Flags } from "@oclif/core";
 import chalk from "chalk";
+import { whileWaiting } from "../../cli/prompts.js";
 import { BaseCommand } from "../../base-command.js";
 import { CloudClient } from "../../services/cloud.js";
 import { readProjectConfig, resolveCredentials } from "../../utils/config.js";
@@ -20,7 +21,7 @@ export default class AppList extends BaseCommand {
     }
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
-    const apps = await cloud.apps();
+    const apps = await whileWaiting("Reading apps...", cloud.apps());
 
     if (flags.json) {
       this.log(JSON.stringify(apps, null, 2));

@@ -2,6 +2,7 @@ import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import { CloudClient } from "../../services/cloud.js";
 import { requireProjectConfig, resolveCredentials } from "../../utils/config.js";
+import { whileWaiting } from "../../cli/prompts.js";
 import { BaseCommand } from "../../base-command.js";
 
 export default class ChannelList extends BaseCommand {
@@ -21,7 +22,7 @@ export default class ChannelList extends BaseCommand {
     }
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
-    const channels = await cloud.channels(project.cloudAppId);
+    const channels = await whileWaiting("Reading channels...", cloud.channels(project.cloudAppId));
 
     if (flags.json) {
       this.log(JSON.stringify(channels, null, 2));

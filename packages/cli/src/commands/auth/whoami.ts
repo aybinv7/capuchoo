@@ -2,6 +2,7 @@ import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import { CloudClient } from "../../services/cloud.js";
 import { resolveCredentials } from "../../utils/config.js";
+import { whileWaiting } from "../../cli/prompts.js";
 import { BaseCommand } from "../../base-command.js";
 
 export default class AuthWhoami extends BaseCommand {
@@ -32,7 +33,7 @@ export default class AuthWhoami extends BaseCommand {
     // from the local config file - which login never wrote - so it always said
     // "No apps found", and it reported a session as valid without checking.
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
-    const profile = await cloud.whoami();
+    const profile = await whileWaiting("Reaching the backend...", cloud.whoami());
 
     if (!profile) {
       if (flags.json) {
