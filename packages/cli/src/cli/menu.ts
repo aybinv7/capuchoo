@@ -1,18 +1,6 @@
 /**
- * The shape of the interactive menu, derived from the commands that exist.
- *
- * Running `capuchoo` with no arguments used to print help and exit, so finding
- * anything meant typing a topic, reading, typing a subcommand, and getting
- * `Error: command channeml not found` for a typo. The menu is a loop instead:
- * pick a topic, pick a command, go back.
- *
- * Built from oclif's own command registry rather than a list written here, so it
- * cannot drift from what the CLI can actually do - a hand-maintained menu is a
- * second source of truth that goes stale the first time someone adds a command.
- *
- * Pure on purpose: an interactive loop cannot be tested without a terminal, but
- * the thing worth testing is which entries appear, under which topic, in which
- * order.
+ * The shape of the interactive menu, built from oclif's command registry so it
+ * cannot drift. Pure, so the entries and their order are testable.
  */
 
 export interface MenuCommand {
@@ -47,21 +35,10 @@ export interface TopicLike {
   description?: string | undefined;
 }
 
-/**
- * Never offered.
- *
- * `help` duplicates the menu itself, and the empty id is this command - offering
- * "run the menu" from inside the menu is a loop with no purpose.
- */
+/** Never offered: `help` duplicates the menu, and the others are the menu. */
 const HIDDEN_IDS = new Set(["", "help", "menu"]);
 
-/**
- * The order someone actually needs things in, for the entries that have an
- * obvious place in a first session. Everything else follows alphabetically.
- *
- * Alphabetical alone would open with `app` and bury `setup`, which is the one
- * command a new app needs first.
- */
+/** First-session order; everything else follows alphabetically. */
 const PRIORITY = ["setup", "init", "doctor", "deploy", "channel", "version", "config"];
 
 function byPriorityThenName(a: string, b: string): number {

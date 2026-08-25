@@ -1,25 +1,8 @@
 /**
  * What a device should install, decided from what the server found.
  *
- * This is the rule that governs every install of every app, and until this file
- * existed it lived as a two-hundred-line branch inside `updateService`,
- * interleaved with five Supabase round trips. It had no tests - not because it
- * was unimportant but because it could not be called without a database. So the
- * only harness available was a physical phone, and every defect in it was found
- * that way: a native binary served in the OTA `url` field, `required` dropped
- * in transit, release notes stored and never sent, a native release the channel
- * never pointed at.
- *
- * Those are one bug, five times: an unexecutable specification. So the decision
- * is separated from the fetching here. `decideUpdate` is pure and total - it
- * takes facts and returns one of a closed set of outcomes - and
- * `renderUpdateResponse` is the only place a wire response is shaped. Both run
- * in microseconds against a table of cases, which is where this class of defect
- * has to be caught, because a phone in someone's hand is not a test suite.
- *
- * The backend had also reimplemented three rules this package already exports:
- * semantic version comparison, the environment isolation check, and the message
- * strings. Copies drift; these do not.
+ * `decideUpdate` is pure over facts; `renderUpdateResponse` is the only place a
+ * wire response is shaped. Fetching stays in the backend.
  */
 
 import { isEnvironmentAllowed } from "./project-config.js";
@@ -48,13 +31,7 @@ export interface ChannelState {
   environment: Environment;
 }
 
-/**
- * A native binary row.
- *
- * `file_size_bytes` is the column name; the wire field is `file_size`. They
- * were never mapped, so the contract's `file_size` has never once been
- * populated - `renderUpdateResponse` is where that is now translated.
- */
+/** A native binary row. The column is `file_size_bytes`; the wire field is `file_size`. */
 export interface NativeRelease {
   version_name: string;
   version_code: number;
@@ -91,14 +68,7 @@ export interface UpdateFacts {
   ota: OtaRelease | null;
 }
 
-/**
- * The closed set of outcomes.
- *
- * Every one is named, including the three that used to share a bare
- * `{ config: {} }` response: a channel with no bundle, a bundle built for
- * another platform, and a device already up to date were indistinguishable on
- * the wire, so "the update did nothing" had no diagnosis.
- */
+/** The closed set of outcomes. */
 export type UpdateDecision =
   | { kind: "app-not-found" }
   | { kind: "channel-not-found" }
@@ -119,13 +89,8 @@ function minimumNativeVersion(ota: OtaRelease): number {
 }
 
 /**
- * Decides what to serve.
- *
- * The order is load-bearing. Native comes before OTA because the server can
- * have both, and applying a bundle to a binary too old to run it leaves the
- * device broken with no way back. The environment check comes before either, so
- * a staging build can never be handed a production bundle by asking for the
- * wrong channel.
+ * Decides what to serve. Order is load-bearing: environment gate, then native,
+ * then OTA - a bundle applied to a binary too old to run it cannot be undone.
  */
 export function decideUpdate(facts: UpdateFacts): UpdateDecision {
   const { device, app, channel, native, ota } = facts;
@@ -137,9 +102,7 @@ export function decideUpdate(facts: UpdateFacts): UpdateDecision {
     return { kind: "environment-mismatch", expected: channel.environment, channel };
   }
 
-  // A native binary assigned to the channel and newer than the installed one
-  // supersedes anything OTA. Platform is checked here rather than at the query
-  // so an iOS device is never offered an APK.
+  // Platform checked here, not at the query, so iOS is never offered an APK.
   if (native && native.platform === device.platform && native.version_code > device.versionCode) {
     return { kind: "native", release: native };
   }
@@ -154,9 +117,7 @@ export function decideUpdate(facts: UpdateFacts): UpdateDecision {
     };
   }
 
-  // `"builtin"` is not a semantic version, and compareVersions sorts anything
-  // unparseable oldest - which is exactly right: a device that has never taken
-  // an update is behind every published bundle.
+  // `"builtin"` is unparseable, and compareVersions sorts those oldest.
   if (compareVersions(ota.version_name, device.versionName) <= 0) {
     return { kind: "up-to-date", version: device.versionName };
   }
@@ -173,12 +134,7 @@ export function decideUpdate(facts: UpdateFacts): UpdateDecision {
   return { kind: "ota", release: ota };
 }
 
-/**
- * The wire fields of a native binary, and only those.
- *
- * The previous implementation spread the database row, so every device on earth
- * received the internal `id`, `app_id`, `uploaded_by` and row timestamps.
- */
+/** The wire fields of a native binary, and only those - never the database row. */
 export function nativePayload(release: NativeRelease): NativeUpdatePayload {
   return {
     version_name: release.version_name,
@@ -194,23 +150,15 @@ export function nativePayload(release: NativeRelease): NativeUpdatePayload {
 export interface RenderContext {
   /** Remote configuration for the channel's environment. */
   config: Record<string, unknown>;
-  /**
-   * The binary satisfying a blocked bundle's `min_update_version`, when one was
-   * found. Only consulted for a `native-required` decision, and null when the
-   * publisher gated a bundle behind a build they never uploaded.
-   */
+  /** The binary satisfying a blocked bundle's `min_update_version`, if it exists. */
   gate?: NativeRelease | null;
 }
 
 /**
  * Turns a decision into the response the plugin reads.
  *
- * The one rule that must never be broken here: a native binary is offered only
- * through `native_update`, never the top-level `url`. That field is the
- * Capacitor plugin's OTA contract - it downloads whatever is there and unzips
- * it as a web bundle. An APK in it made the plugin fetch 45 MB, fail to unzip
- * it, and report "the update could not be downloaded" while a perfectly
- * installable update sat unread in `native_update`.
+ * A native binary goes in `native_update`, never the top-level `url` - the
+ * plugin downloads whatever is there and unzips it as a web bundle.
  */
 export function renderUpdateResponse(
   decision: UpdateDecision,

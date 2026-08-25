@@ -1,3 +1,4 @@
+import { resolveSigning } from "./signing.js";
 import { askText, confirm, isInteractive, selectOne, whileWaiting } from "../cli/prompts.js";
 import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
@@ -241,8 +242,23 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   const currentVersion = readAppVersion(appDir);
   const version = bump ? bumpVersion(currentVersion, bump) : currentVersion;
 
-  const buildType = (flags.type ?? "release") as "debug" | "release";
   const platform = (flags.platform ?? "android") as "android" | "ios";
+
+  const signing = await resolveSigning({
+    appDir,
+    kind,
+    platform,
+    interactive,
+    requested: flags.type as "debug" | "release" | undefined,
+    allowUnsigned: flags["allow-unsigned"] ?? false,
+  });
+
+  if (!signing) {
+    command.log(chalk.dim("Cancelled."));
+    return;
+  }
+
+  const { buildType, allowUnsigned } = signing;
 
   // --- confirmation ----------------------------------------------------------
 
@@ -254,7 +270,13 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       `  version      ${chalk.green(version)}${bump ? chalk.dim(` (${bump} from ${currentVersion})`) : ""}`,
     );
     if (kind === "native") {
-      command.log(`  platform     ${chalk.green(platform)} / ${buildType}`);
+      const signedNote =
+        buildType === "debug"
+          ? chalk.dim(" (debug-signed)")
+          : allowUnsigned
+            ? chalk.yellow(" (unsigned)")
+            : "";
+      command.log(`  platform     ${chalk.green(platform)} / ${buildType}${signedNote}`);
     }
     command.log(`  serve now    ${active ? chalk.green("yes") : "no"}`);
     command.log(`  required     ${required ? chalk.yellow("yes") : "no"}`);
@@ -284,7 +306,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     buildType,
     skipAssets: flags["skip-assets"],
     skipBuild: flags["skip-build"],
-    allowUnsigned: flags["allow-unsigned"] ?? false,
+    allowUnsigned,
     flavor: flags.flavor,
     dryRun: flags["dry-run"],
     verbose: flags.verbose,

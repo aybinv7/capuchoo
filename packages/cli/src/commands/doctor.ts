@@ -10,7 +10,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { whileWaiting } from "../cli/prompts.js";
 import { BaseCommand } from "../base-command.js";
-import { describeSigning, inspectReleaseSigning } from "../pipeline/android-signing.js";
+import { describeSigning } from "../pipeline/android-signing.js";
+import { androidSigningState } from "../deploy/signing.js";
 import { CloudClient } from "../services/cloud.js";
 import { readProjectConfig, resolveCredentials } from "../utils/config.js";
 
@@ -333,31 +334,18 @@ export default class Doctor extends BaseCommand {
     return findings;
   }
 
-  /**
-   * Whether a release build can be signed.
-   *
-   * A `deploy native` to a prod channel compiled for 1m51s and then failed at
-   * `:app:packageProdRelease`, whose message mentions an "IncrementalSplitter"
-   * and nothing about signing. The cause was four unset properties in
-   * `local.properties`. This costs two file reads and reports it up front.
-   */
+  /** Whether a release build could be signed. Never blocking: debug and unsigned are valid choices. */
   private checkReleaseSigning(appDir: string): Finding[] {
-    const gradlePath = path.join(appDir, "android", "app", "build.gradle");
-    if (!fs.existsSync(gradlePath)) return [];
-
-    const propertiesPath = path.join(appDir, "android", "local.properties");
-    const status = inspectReleaseSigning({
-      buildGradle: fs.readFileSync(gradlePath, "utf8"),
-      localProperties: fs.existsSync(propertiesPath) ? fs.readFileSync(propertiesPath, "utf8") : "",
-    });
+    const status = androidSigningState(appDir);
+    if (!status) return [];
 
     if (status.kind === "unconfigured") {
       return [
         {
-          level: "fail",
+          level: "warn",
           what: "Release signing is not configured",
           detail: describeSigning(status),
-          fix: `Add ${status.missing.join(", ")} to android/local.properties`,
+          fix: `Add ${status.missing.join(", ")} to android/local.properties, or deploy with --type debug`,
         },
       ];
     }
@@ -365,23 +353,20 @@ export default class Doctor extends BaseCommand {
     if (status.kind === "unsigned") {
       return [
         {
-          // A warning, not a failure: an OTA deploy never builds a release APK,
-          // and a debug native deploy is signed with the debug key.
           level: "warn",
           what: "The release build type signs with nothing",
           detail: describeSigning(status),
-          fix: "Add a signingConfig to android/app/build.gradle before deploying a release",
+          fix: "Add a signingConfig to android/app/build.gradle, or deploy with --type debug",
         },
       ];
     }
 
-    // A path that points at nothing fails exactly like a missing property.
     if (status.storeFile) {
       const resolved = path.resolve(appDir, "android", "app", status.storeFile);
       if (!fs.existsSync(resolved)) {
         return [
           {
-            level: "fail",
+            level: "warn",
             what: "The release keystore is missing",
             detail: `signingConfigs.${status.configName} points at ${status.storeFile}, which does not exist`,
             fix: `Put the keystore at ${resolved}, or correct the path in android/local.properties`,
