@@ -54,16 +54,34 @@ export default class Doctor extends BaseCommand {
     findings.push({ level: "ok", what: "Endpoint", detail: credentials.endpoint });
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
-    const profile = await whileWaiting("Reaching the backend...", cloud.whoami()).catch(() => null);
+
+    // Unreachable and rejected are different problems with different fixes, and
+    // conflating them is worse than saying nothing. This reported "Credentials
+    // rejected - the endpoint did not accept the stored API key" for a backend
+    // that was merely asleep: the key was valid, the very next run proved it,
+    // and the message had sent someone looking at credentials with confidence.
+    let profile;
+    try {
+      profile = await whileWaiting("Reaching the backend...", cloud.whoami());
+    } catch (error) {
+      findings.push({
+        level: "fail",
+        what: "The backend could not be reached",
+        detail: `${credentials.endpoint} - ${error instanceof Error ? error.message : String(error)}`,
+        fix:
+          "Check the endpoint and the connection, then run doctor again. A host " +
+          "that sleeps when idle can time out on its first request and answer the second.",
+      });
+      this.report(findings);
+      return;
+    }
 
     if (!profile) {
       findings.push({
         level: "fail",
         what: "Credentials rejected",
-        detail: `${credentials.endpoint} did not accept the stored API key`,
-        // The endpoint is the likelier culprit: a retired backend answers
-        // /health but validates nothing.
-        fix: `capuchoo config set endpoint <url>   (or capuchoo auth login)`,
+        detail: `${credentials.endpoint} answered, and refused the stored API key`,
+        fix: `capuchoo auth login   (or capuchoo config set endpoint <url>)`,
       });
       this.report(findings);
       return;
@@ -97,7 +115,9 @@ export default class Doctor extends BaseCommand {
     // An app-scoped key lists every app the account owns and is refused only by
     // the endpoints that publish - so without this check the first sign of a
     // mismatch is a 403 at step 7 of 7, after a full build and zip.
-    if (!canPublishTo(profile, project.cloudAppId)) {
+    const outOfScope = !canPublishTo(profile, project.cloudAppId);
+
+    if (outOfScope) {
       const scoped = profile.apps.find((app) => app.id === profile.credential?.app_id);
       findings.push({
         level: "fail",
@@ -117,12 +137,25 @@ export default class Doctor extends BaseCommand {
     ).catch(() => null);
 
     if (!channels) {
-      findings.push({
-        level: "fail",
-        what: "The linked cloud app could not be read",
-        detail: `cloudAppId ${project.cloudAppId} - deleted, or belongs to another account`,
-        fix: "capuchoo init --force",
-      });
+      // An out-of-scope key is refused by this endpoint too, and blaming the app
+      // for that is a second wrong diagnosis on top of a correct one: doctor
+      // reported "deleted, or belongs to another account" for an app that exists
+      // and is fine, one line after correctly saying the key was for another app.
+      findings.push(
+        outOfScope
+          ? {
+              level: "fail",
+              what: "This app's channels could not be read",
+              detail: "The same key restriction reported above also blocks reading them",
+              fix: "capuchoo auth login   (with a key for this app, or an unscoped one)",
+            }
+          : {
+              level: "fail",
+              what: "The linked cloud app could not be read",
+              detail: `cloudAppId ${project.cloudAppId} - deleted, or belongs to another account`,
+              fix: "capuchoo init --force",
+            },
+      );
       this.report(findings);
       return;
     }

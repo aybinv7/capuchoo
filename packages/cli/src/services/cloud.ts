@@ -6,7 +6,7 @@ import type {
   Environment,
   UserProfile,
 } from "@capuchoo/core";
-import { del, get, post, uploadArtifact, type HttpOptions } from "../utils/http.js";
+import { HttpError, del, get, post, uploadArtifact, type HttpOptions } from "../utils/http.js";
 
 /**
  * The Capuchoo API client.
@@ -29,12 +29,27 @@ export class CloudClient {
     return this.options.endpoint;
   }
 
-  /** Verifies the credentials and returns the profile behind them. */
+  /**
+   * The signed-in account, or null when the server refuses these credentials.
+   *
+   * `null` means the server answered and said no. Anything else - a timeout, a
+   * 502 from a service waking up, DNS - throws, because it is a failure to *ask*
+   * and not an answer.
+   *
+   * This used to swallow every error into `null`, so `doctor` reported
+   * "Credentials rejected - the endpoint did not accept the stored API key" for
+   * a backend that was merely asleep. The key was valid; the same command
+   * succeeded on the next run. A wrong diagnosis is worse than none, because it
+   * sends you looking in the wrong place with confidence.
+   */
   async whoami(): Promise<UserProfile | null> {
     try {
       return await get<UserProfile>("/api/auth/me", this.options);
-    } catch {
-      return null;
+    } catch (error) {
+      if (error instanceof HttpError && (error.status === 401 || error.status === 403)) {
+        return null;
+      }
+      throw error;
     }
   }
 

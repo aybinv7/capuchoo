@@ -96,6 +96,33 @@ export interface ResolvedProjectConfig {
 export const ENVIRONMENTS: readonly Environment[] = ["dev", "staging", "prod"];
 
 /**
+ * The channels every app gets when it is created.
+ *
+ * A channel and an environment are different axes, and conflating them is
+ * confusing enough to be worth writing down here:
+ *
+ *   - **environment** is a safety gate. It decides which *builds* may be served
+ *     a channel - a `.staging` bundle id cannot be handed a prod channel - so it
+ *     exists to stop a staging bundle reaching production devices.
+ *   - **channel** is an audience. It decides which release a group of devices
+ *     receives.
+ *
+ * These three are the *pipeline*, one per environment, and they are what an app
+ * needs before anything can be deployed to it at all. A new app had none, so the
+ * first deploy failed on a channel/environment pairing the user had to reason out
+ * from an error message.
+ *
+ * Anything beyond these is an *audience*, not a stage: a per-client channel or
+ * an A/B arm is an extra channel on the **prod** environment, because the people
+ * on it are running production builds. It is not another set of three.
+ */
+export const DEFAULT_CHANNELS: ReadonlyArray<{ name: string; environment: Environment }> = [
+  { name: "prod", environment: "prod" },
+  { name: "staging", environment: "staging" },
+  { name: "dev", environment: "dev" },
+];
+
+/**
  * The layout both existing applications already use. Used as the default so a
  * v1 `project.json` needs no migration to keep deploying.
  */

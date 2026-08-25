@@ -1,5 +1,6 @@
-import { askText, confirm, isInteractive, log, selectOne } from "../cli/prompts.js";
+import { askText, confirm, log, selectOne } from "../cli/prompts.js";
 import {
+  DEFAULT_CHANNELS,
   ENVIRONMENTS,
   PROJECT_CONFIG_VERSION,
   canCreateApps,
@@ -244,41 +245,30 @@ export default class Init extends BaseCommand {
   }
 
   /**
-   * Creates the first channel, because a linked app without one cannot be
-   * deployed to. The environment is chosen explicitly: a channel's name never
-   * decides which flavour it serves.
+   * Creates the channels a linked app needs before anything can be deployed.
+   *
+   * Without `--channel` this creates the standard three - prod, staging and dev,
+   * each on its matching environment. That is the pipeline every app wants, and
+   * an app that had none failed its first deploy on a channel/environment
+   * pairing the user had to work out from an error message.
+   *
+   * `--channel <name>` still creates exactly one, because naming a channel is a
+   * statement of intent: a per-client or A/B channel is an audience rather than
+   * a stage, and belongs on the prod environment rather than in a set of three.
    */
   private async offerFirstChannel(
     cloud: CloudClient,
     app: CloudApp,
     requested: string | undefined,
   ): Promise<void> {
-    this.log(chalk.yellow("  This app has no channel yet, so nothing can be deployed to it."));
-    this.log(
-      chalk.dim("  A channel's environment is what tells the CLI which flavour to build.\n"),
-    );
-
     const name = requested?.trim();
 
-    if (!name && !isInteractive()) {
-      this.log(
-        chalk.dim("  Create one with: ") +
-          chalk.cyan("capuchoo channel create staging") +
-          chalk.dim("   (or pass --channel)"),
-      );
+    if (!name) {
+      await this.createDefaultChannels(cloud, app);
       return;
     }
 
-    if (!name) {
-      const create = await confirm("Create one now?", { default: true });
-      if (!create) {
-        this.log(chalk.dim("  Later: ") + chalk.cyan("capuchoo channel create staging"));
-        return;
-      }
-    }
-
-    const chosen =
-      name ?? (await askText("Channel name", { initial: "staging", flag: "--channel" })).trim();
+    const chosen = name;
 
     const environment =
       suggestEnvironment(chosen) ??
@@ -313,6 +303,58 @@ export default class Init extends BaseCommand {
       );
       this.log(chalk.dim(`  Retry with: capuchoo channel create ${chosen}`));
     }
+  }
+
+  /**
+   * Creates prod, staging and dev, each on its matching environment.
+   *
+   * Created rather than offered one at a time: an app with no channel cannot be
+   * deployed to at all, and these three are never the wrong answer - they are
+   * the environments the CLI already builds for. Asking "channel name?" made the
+   * first thing a new user saw a question they had no basis to answer.
+   *
+   * Each is attempted independently. A partial result is useful, and one
+   * failure - a name already taken, say - should not cost the other two.
+   */
+  private async createDefaultChannels(cloud: CloudClient, app: CloudApp): Promise<void> {
+    this.log(chalk.bold("  channels"));
+
+    const created: string[] = [];
+    const failed: string[] = [];
+
+    for (const { name, environment } of DEFAULT_CHANNELS) {
+      try {
+        await cloud.createChannel({ app_id: app.id, name, environment });
+        this.log(`    ${chalk.green("+")} ${name} ${chalk.dim(`(${environment})`)}`);
+        created.push(name);
+      } catch (error) {
+        this.log(
+          `    ${chalk.yellow("!")} ${name} ${chalk.dim(
+            error instanceof Error ? error.message : String(error),
+          )}`,
+        );
+        failed.push(name);
+      }
+    }
+
+    this.log("");
+
+    if (created.length > 0) {
+      this.log(
+        chalk.dim("  Deploy with: ") + chalk.cyan(`capuchoo deploy ota --channel ${created[0]}`),
+      );
+    }
+
+    if (failed.length > 0) {
+      this.log(chalk.dim(`  Retry the rest with: capuchoo channel create ${failed[0]}`));
+    }
+
+    // A channel per client, or per A/B arm, is an audience rather than a stage -
+    // one more channel on the prod environment, not another set of three.
+    this.log(
+      chalk.dim("  A client or A/B channel is an extra one on prod: ") +
+        chalk.cyan("capuchoo channel create <name>"),
+    );
   }
 
   /** Detects which flavours the project actually has files for. */

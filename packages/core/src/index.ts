@@ -49,6 +49,7 @@ export {
 } from "./update-decision.js";
 
 export {
+  DEFAULT_CHANNELS,
   ENVIRONMENTS,
   PROJECT_CONFIG_VERSION,
   defaultFlavour,
