@@ -12,6 +12,14 @@ import path from "node:path";
  * worked, but only because the limit was disabled.
  */
 
+/** A request that never came back. Distinguishable so a caller can retry it. */
+export class TimeoutError extends Error {
+  constructor(url: string, timeoutMs: number) {
+    super(`${url} did not respond within ${Math.round(timeoutMs / 1000)}s`);
+    this.name = "TimeoutError";
+  }
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -70,7 +78,8 @@ async function request<T>(
   options: HttpOptions & { body?: unknown },
 ): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 30_000);
+  const timeoutMs = options.timeoutMs ?? 30_000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(url, {
@@ -99,7 +108,7 @@ async function request<T>(
   } catch (error) {
     if (error instanceof HttpError) throw error;
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`${url} did not respond within the timeout`);
+      throw new TimeoutError(url, timeoutMs);
     }
     // A DNS or TLS failure surfaces as an opaque "fetch failed"; say which host.
     if (error instanceof TypeError) {

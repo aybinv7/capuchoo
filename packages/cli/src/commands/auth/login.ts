@@ -4,6 +4,7 @@ import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import ora from "ora";
 import { CloudClient } from "../../services/cloud.js";
+import { TimeoutError } from "../../utils/http.js";
 import { readGlobalConfig, updateGlobalConfig } from "../../utils/config.js";
 import { BaseCommand } from "../../base-command.js";
 
@@ -151,8 +152,22 @@ export default class AuthLogin extends BaseCommand {
     try {
       session = await CloudClient.login(endpoint, email.trim(), password);
     } catch (error) {
-      spinner.fail("Sign-in failed");
-      throw new Error(AuthLogin.explainSignInFailure(error));
+      // A sign-in is usually the first request of a session, so it meets the
+      // backend at its coldest - and a host that sleeps when idle can take
+      // longer than the default timeout to answer. The second attempt lands on
+      // a service that is now awake.
+      if (!(error instanceof TimeoutError)) {
+        spinner.fail("Sign-in failed");
+        throw new Error(AuthLogin.explainSignInFailure(error));
+      }
+
+      spinner.text = "The backend was asleep - waking it and retrying";
+      try {
+        session = await CloudClient.login(endpoint, email.trim(), password, 120_000);
+      } catch (retried) {
+        spinner.fail("Sign-in failed");
+        throw new Error(AuthLogin.explainSignInFailure(retried));
+      }
     }
 
     spinner.text = "Creating a key for this machine";
@@ -161,7 +176,7 @@ export default class AuthLogin extends BaseCommand {
       const { key } = await new CloudClient(endpoint, session.token).createApiKey({
         name: `capuchoo-cli ${hostname()}`,
       });
-      spinner.succeed(`Signed in as ${session.user.email}`);
+      spinner.succeed("Created a key for this machine");
       return key;
     } catch (error) {
       spinner.fail("Signed in, but could not create an API key");

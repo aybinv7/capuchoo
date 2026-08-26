@@ -260,6 +260,7 @@ export default class Doctor extends BaseCommand {
     }
 
     findings.push(...this.checkRuntimeWiring(appDir));
+    findings.push(...this.checkReleaseSigning(appDir));
 
     this.report(findings);
   }
@@ -328,8 +329,6 @@ export default class Doctor extends BaseCommand {
         findings.push({ level: "ok", what: "Capacitor plugin config" });
       }
     }
-
-    findings.push(...this.checkReleaseSigning(appDir));
 
     return findings;
   }

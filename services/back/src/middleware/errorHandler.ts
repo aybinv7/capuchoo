@@ -71,7 +71,9 @@ export const errorHandler = (
 };
 
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
-  const error = new NotFoundError(`Route ${req.originalUrl} not found`);
+  // NotFoundError appends " not found" itself; passing it too logged
+  // "Route / not found not found".
+  const error = new NotFoundError(`Route ${req.originalUrl}`);
   next(error);
 };
 

@@ -64,11 +64,12 @@ export class CloudClient {
     endpoint: string,
     email: string,
     password: string,
+    timeoutMs?: number,
   ): Promise<{ token: string; user: { id: string; email: string } }> {
     const response = await post<{
       token?: string;
       user?: { id?: string; email?: string };
-    }>("/api/auth/login", { email, password }, { endpoint, apiKey: "" });
+    }>("/api/auth/login", { email, password }, { endpoint, apiKey: "", timeoutMs });
 
     if (!response.token) throw new Error("The backend accepted the sign-in but returned no token");
 
