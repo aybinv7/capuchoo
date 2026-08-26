@@ -24,7 +24,7 @@
  * manager believes `latest` is, and pnpm caches registry metadata - so minutes
  * after a release it installs the previous version and says nothing.
  */
-export const RUNTIME_VERSION = "0.5.0";
+export const RUNTIME_VERSION = "0.6.0";
 
 /** Capacitor majors this toolchain installs for. */
 export const SUPPORTED_MAJORS = [7, 8] as const;

@@ -121,17 +121,44 @@ function declarations(root) {
 }
 
 /**
- * Guarantees that every sibling dependency is declared with `workspace:`.
+ * An oclif CLI's public surface is its commands, not its exported types.
  *
- * That protocol is what makes the rest of this script sound: pnpm rewrites it at
- * pack time to a caret on the sibling's *current* version, so the range always
- * points at the version whose surface is checked below. A hand-written range
- * breaks that link silently - and below 1.0.0 a caret does not cross a minor, so
- * a stale `^0.1.2` cannot pick up 0.2.0 no matter how long it sits there.
+ * Adding a command changes nothing in `dist/index.d.ts`, so the declaration diff
+ * reports the package unchanged.
+ */
+function commandIds(paths) {
+  return new Set(
+    paths
+      .filter((path) => /(^|\/)dist\/commands\/.+\.js$/.test(path) && !path.endsWith(".map"))
+      .map((path) => path.replace(/^.*dist\/commands\//, "").replace(/\.js$/, "")),
+  );
+}
+
+/** Every file under a directory, relative to it. */
+function filesUnder(root, prefix = "") {
+  const found = [];
+
+  try {
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) found.push(...filesUnder(join(root, entry.name), relative));
+      else found.push(relative);
+    }
+  } catch {
+    // Missing build; reported by the caller.
+  }
+
+  return found;
+}
+
+/**
+ * Every sibling dependency must be declared with `workspace:`.
  *
- * `@capuchoo/cli@0.5.0` is on npm doing exactly this: it imports `canPublishTo`
- * and declares `@capuchoo/core: ^0.1.2`, which predates that export. Installing
- * it fails on first run with "does not provide an export named 'canPublishTo'".
+ * pnpm rewrites it at pack time to a caret on the sibling's current version, so
+ * the range always points at the version whose surface is checked here. Below
+ * 1.0.0 a caret does not cross a minor, so a hand-written `^0.1.2` can never
+ * pick up 0.2.0 - which is how cli@0.5.0 shipped importing an export it could
+ * not resolve.
  */
 function nonWorkspaceSiblings(manifest) {
   const deps = { ...manifest.dependencies, ...manifest.peerDependencies };
@@ -238,6 +265,14 @@ for (const pkg of publishablePackages()) {
 
     for (const name of after) if (!before.has(name)) added.push(`${entry}:${name}`);
     for (const name of before) if (!after.has(name)) removed.push(`${entry}:${name}`);
+  }
+
+  if (pkg.manifest.oclif) {
+    const before = commandIds([...files.keys()]);
+    const after = commandIds(filesUnder(join(pkg.dir, "dist"), "dist"));
+
+    for (const id of after) if (!before.has(id)) added.push(`command:${id}`);
+    for (const id of before) if (!after.has(id)) removed.push(`command:${id}`);
   }
 
   if (added.length === 0 && removed.length === 0) {
