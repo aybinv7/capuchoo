@@ -1,4 +1,4 @@
-import { askText, confirm, log, selectOne } from "../cli/prompts.js";
+import { askText, confirm, log, selectOne, whileWaiting } from "../cli/prompts.js";
 import {
   DEFAULT_CHANNELS,
   ENVIRONMENTS,
@@ -19,6 +19,13 @@ import chalk from "chalk";
 import fs from "node:fs";
 import path from "node:path";
 import ora from "ora";
+import {
+  conflictingIds,
+  detectIdentity,
+  type AppIdentity,
+  type Detected,
+  type ProjectFiles,
+} from "../pipeline/app-identity.js";
 import { CloudClient } from "../services/cloud.js";
 import {
   projectConfigPath,
@@ -134,22 +141,14 @@ export default class Init extends BaseCommand {
 
     // --- pick or create the app ---------------------------------------------
 
-    const mode = flags.link
-      ? "existing"
-      : flags.create
-        ? "new"
-        : await selectOne<string>(
-            "Should this directory publish to an existing app, or a new one?",
-            [
-              { value: "existing", label: "An app that already exists" },
-              { value: "new", label: "A new app" },
-            ],
-            "--link or --create",
-          );
+    const mode = await this.resolveMode(cloud, appDir, flags);
 
     const app =
       mode === "existing"
-        ? await this.linkExisting(cloud, flags["app-id"])
+        ? await this.linkExisting(
+            cloud,
+            flags["app-id"] ?? this.detectIdentity(appDir).appId?.value,
+          )
         : await this.createNew(cloud, {
             name: flags.name,
             appId: flags["app-id"],
@@ -357,6 +356,33 @@ export default class Init extends BaseCommand {
     );
   }
 
+  /** Reads the files that declare an app's identity, skipping any that are absent. */
+  private projectFiles(appDir: string): ProjectFiles {
+    const read = (...parts: string[]): string | undefined => {
+      const file = path.join(appDir, ...parts);
+      return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : undefined;
+    };
+
+    const capacitorConfig = ["capacitor.config.ts", "capacitor.config.js", "capacitor.config.json"]
+      .map((name) => read(name))
+      .find(Boolean);
+
+    return {
+      capacitorConfig,
+      buildGradle: read("android", "app", "build.gradle"),
+      envFile: read(defaultFlavour("prod").envFile),
+      packageJson: read("package.json"),
+    };
+  }
+
+  private detectIdentity(appDir: string): AppIdentity {
+    return detectIdentity(this.projectFiles(appDir));
+  }
+
+  private conflictingIds(appDir: string, chosen: string): Detected[] {
+    return conflictingIds(this.projectFiles(appDir), chosen);
+  }
+
   /** Detects which flavours the project actually has files for. */
   private detectFlavours(appDir: string): Partial<Record<Environment, FlavourConfig>> {
     const found: Partial<Record<Environment, FlavourConfig>> = {};
@@ -382,6 +408,48 @@ export default class Init extends BaseCommand {
     }
 
     return "dist";
+  }
+
+  /**
+   * Whether to link or create, answered by the project rather than asked.
+   *
+   * "Existing app, or a new one?" was the first question `init` asked, and the
+   * project already knows: the bundle id it declares either exists on the
+   * account or it does not. Only an ambiguous project - no detectable id - is
+   * still a question.
+   */
+  private async resolveMode(
+    cloud: CloudClient,
+    appDir: string,
+    flags: { link: boolean; create: boolean; "app-id"?: string | undefined },
+  ): Promise<"existing" | "new"> {
+    if (flags.link) return "existing";
+    if (flags.create) return "new";
+
+    const wanted = flags["app-id"] ?? this.detectIdentity(appDir).appId?.value;
+
+    if (wanted) {
+      const apps = await whileWaiting("Looking for this app...", cloud.apps()).catch(() => null);
+
+      if (apps) {
+        const match = apps.find((app) => app.app_id === wanted);
+        log.info(
+          match
+            ? `${wanted} already exists on this account - linking to it.`
+            : `${wanted} is not on this account yet - creating it.`,
+        );
+        return match ? "existing" : "new";
+      }
+    }
+
+    return selectOne<"existing" | "new">(
+      "Should this directory publish to an existing app, or a new one?",
+      [
+        { value: "existing", label: "An app that already exists" },
+        { value: "new", label: "A new app" },
+      ],
+      "--link or --create",
+    );
   }
 
   private async linkExisting(cloud: CloudClient, wanted?: string): Promise<CloudApp> {
@@ -451,16 +519,27 @@ export default class Init extends BaseCommand {
             "--org",
           ));
 
+    // Detected, then confirmed. The project already declares both, and the
+    // bundle id in particular is not a free choice: the device reports whatever
+    // is compiled into the binary, so a value typed here that disagrees produces
+    // "App not found" on a phone and nowhere earlier.
+    const detected = this.detectIdentity(process.cwd());
+
+    if (detected.appId) {
+      log.info(`Bundle id ${detected.appId.value} - from ${detected.appId.source}`);
+    }
+
     const name =
       given.name?.trim() ||
       (await askText("App name", {
-        initial: path.basename(process.cwd()),
+        initial: detected.appName?.value ?? path.basename(process.cwd()),
         flag: "--name",
       }));
 
     const appId =
       given.appId?.trim() ||
       (await askText("Production bundle identifier", {
+        initial: detected.appId?.value ?? "",
         placeholder: "com.company.app",
         flag: "--app-id",
         validate: (value) =>
@@ -468,6 +547,13 @@ export default class Init extends BaseCommand {
             ? undefined
             : "Expected something like com.company.app - lower case, at least two segments",
       }));
+
+    for (const conflict of this.conflictingIds(process.cwd(), appId.trim())) {
+      log.warn(
+        `${conflict.source} says ${conflict.value}. A device reports the id compiled ` +
+          "into its binary, so these have to match or the server will not find the app.",
+      );
+    }
 
     if (!isValidBundleId(appId)) {
       this.error(

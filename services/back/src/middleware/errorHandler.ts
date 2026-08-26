@@ -2,7 +2,18 @@ import { Request, Response, NextFunction } from "express";
 import { AppError, ValidationError, NotFoundError, DatabaseError } from "@/types";
 import logger from "@/utils/logger";
 
-export const errorHandler = (error: Error, req: Request, res: Response): void => {
+/**
+ * Express identifies error middleware by arity: it must take four parameters.
+ * With three it is treated as ordinary middleware and never receives an error,
+ * so every `next(error)` fell through to Express's default handler and answered
+ * with an HTML page instead of JSON. `_next` is unused and must stay.
+ */
+export const errorHandler = (
+  error: Error,
+  req: Request,
+  res: Response,
+  _next: NextFunction,
+): void => {
   let statusCode = 500;
   let message = "Internal server error";
   let isOperational = false;
