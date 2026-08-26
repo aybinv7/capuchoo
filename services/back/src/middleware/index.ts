@@ -5,3 +5,5 @@ export * from "./checkOrgAccess";
 export * from "./checkAppAccess";
 export * from "./checkResourceAccess";
 export * from "./resource-access";
+export * from "./publish-access";
+export * from "./requirePublishAccess";

@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { adminController, nativeUpdateController } from "@/controllers";
 import { rateLimiter } from "@/middleware/security";
-import { authenticate, checkResourceAccess } from "@/middleware";
+import { authenticate, checkResourceAccess, requirePublishAccess } from "@/middleware";
+import { PUBLISH_ROLES } from "@/middleware/publish-access";
 
 const router: Router = Router();
 
@@ -15,12 +16,14 @@ router.use(authenticate);
 router.post(
   "/admin/upload",
   adminController.getUploadMiddleware(),
+  requirePublishAccess(),
   adminController.uploadBundle.bind(adminController),
 );
 
 router.post(
   "/admin/native-upload",
   nativeUpdateController.getUploadMiddleware(),
+  requirePublishAccess(),
   nativeUpdateController.uploadNativeUpdate.bind(nativeUpdateController),
 );
 
@@ -30,19 +33,19 @@ router.post("/dashboard/bundles", adminController.createBundle.bind(adminControl
 
 router.put(
   "/dashboard/bundles/:id",
-  checkResourceAccess("app_versions"),
+  checkResourceAccess("app_versions", PUBLISH_ROLES),
   adminController.updateBundle.bind(adminController),
 );
 
 router.delete(
   "/dashboard/bundles/:id",
-  checkResourceAccess("app_versions"),
+  checkResourceAccess("app_versions", PUBLISH_ROLES),
   adminController.deleteBundle.bind(adminController),
 );
 
 router.post(
   "/dashboard/bundles/:id/promote",
-  checkResourceAccess("app_versions"),
+  checkResourceAccess("app_versions", PUBLISH_ROLES),
   adminController.promoteBundle.bind(adminController),
 );
 
@@ -66,13 +69,13 @@ router.post("/dashboard/channels", adminController.createChannel.bind(adminContr
 
 router.put(
   "/dashboard/channels/:id",
-  checkResourceAccess("channels"),
+  checkResourceAccess("channels", PUBLISH_ROLES),
   adminController.updateChannel.bind(adminController),
 );
 
 router.delete(
   "/dashboard/channels/:id",
-  checkResourceAccess("channels"),
+  checkResourceAccess("channels", PUBLISH_ROLES),
   adminController.deleteChannel.bind(adminController),
 );
 

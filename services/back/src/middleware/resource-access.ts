@@ -1,3 +1,5 @@
+import type { AppRole } from "./checkAppAccess";
+
 /**
  * The authorization rule for resources addressed by their own id, with no I/O.
  *
@@ -18,6 +20,10 @@ export interface AccessRequest {
   keyAppId?: string | undefined;
   /** Whether the account has permission on the resource's app. */
   permitted?: boolean | undefined;
+  /** The account's effective role on that app, when one is needed. */
+  role?: AppRole | null | undefined;
+  /** Roles allowed to perform this operation. Omitted means any access will do. */
+  requiredRoles?: readonly AppRole[] | undefined;
 }
 
 export type AccessDecision =
@@ -47,6 +53,15 @@ export function decideResourceAccess(request: AccessRequest, noun: string): Acce
   }
   if (!request.permitted) {
     return { allow: false, status: 403, reason: `No access to this ${noun.toLowerCase()}` };
+  }
+  if (request.requiredRoles && !request.requiredRoles.includes(request.role as AppRole)) {
+    return {
+      allow: false,
+      status: 403,
+      reason:
+        `This operation requires ${request.requiredRoles.join(" or ")} on the app; ` +
+        `this account is ${request.role ?? "unassigned"}.`,
+    };
   }
   return { allow: true, appId: request.resourceAppId };
 }

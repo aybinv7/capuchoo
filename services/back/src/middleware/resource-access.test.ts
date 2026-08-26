@@ -78,3 +78,48 @@ describe("decideResourceAccess", () => {
     expect(decision).toMatchObject({ allow: false, status: 403 });
   });
 });
+
+/**
+ * Role enforcement on the mutating routes. `hasAppAccess` was a boolean, so any
+ * grant at all was enough - a viewer could promote a bundle onto a channel,
+ * which is how a release reaches devices.
+ */
+describe("decideResourceAccess with a required role", () => {
+  const permitted = {
+    userId: "user-1",
+    resourceId: "row-1",
+    resourceAppId: "app-1",
+    permitted: true,
+    requiredRoles: ["admin", "developer"] as const,
+  };
+
+  it.each(["admin", "developer"] as const)("allows a %s", (role) => {
+    expect(decideResourceAccess({ ...permitted, role }, "Bundle")).toEqual({
+      allow: true,
+      appId: "app-1",
+    });
+  });
+
+  it.each(["tester", "viewer"] as const)("refuses a %s and names the role", (role) => {
+    const decision = decideResourceAccess({ ...permitted, role }, "Bundle");
+
+    expect(decision).toMatchObject({ allow: false, status: 403 });
+    expect(decision).toHaveProperty("reason", expect.stringContaining(role));
+  });
+
+  it("still refuses an account with no access before asking about roles", () => {
+    expect(
+      decideResourceAccess({ ...permitted, permitted: false, role: null }, "Bundle"),
+    ).toMatchObject({ allow: false, reason: "No access to this bundle" });
+  });
+
+  // Read routes pass no requiredRoles, and must keep working for a viewer.
+  it("allows any access when no role is required", () => {
+    expect(
+      decideResourceAccess(
+        { userId: "u", resourceId: "r", resourceAppId: "app-1", permitted: true, role: "viewer" },
+        "Channel",
+      ),
+    ).toMatchObject({ allow: true });
+  });
+});

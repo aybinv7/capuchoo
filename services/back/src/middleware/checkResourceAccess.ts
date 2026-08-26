@@ -1,3 +1,4 @@
+import type { AppRole } from "./checkAppAccess";
 import { Request, Response, NextFunction } from "express";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
@@ -20,7 +21,8 @@ import { decideResourceAccess } from "./resource-access";
  */
 
 /** True when the user has direct permission on the app, or admins its org. */
-export async function hasAppAccess(userId: string, appUuid: string): Promise<boolean> {
+/** The account's effective role on an app, or null when it has none. */
+export async function appRoleFor(userId: string, appUuid: string): Promise<AppRole | null> {
   const { data: permission } = await supabaseService
     .getClient()
     .from("app_permissions")
@@ -29,7 +31,7 @@ export async function hasAppAccess(userId: string, appUuid: string): Promise<boo
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (permission) return true;
+  if (permission?.role) return permission.role as AppRole;
 
   const { data: app } = await supabaseService
     .getClient()
@@ -38,7 +40,7 @@ export async function hasAppAccess(userId: string, appUuid: string): Promise<boo
     .eq("id", appUuid)
     .maybeSingle();
 
-  if (!app) return false;
+  if (!app?.organization_id) return null;
 
   const { data: orgMember } = await supabaseService
     .getClient()
@@ -49,11 +51,14 @@ export async function hasAppAccess(userId: string, appUuid: string): Promise<boo
     .in("role", ["owner", "admin"])
     .maybeSingle();
 
-  return Boolean(orgMember);
+  return orgMember ? "admin" : null;
 }
 
 /** Guards a resource that belongs to an app, addressed as `:id`. */
-export const checkResourceAccess = (table: "channels" | "app_versions") => {
+export const checkResourceAccess = (
+  table: "channels" | "app_versions",
+  requiredRoles?: readonly AppRole[],
+) => {
   const noun = table === "channels" ? "Channel" : "Bundle";
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -64,7 +69,7 @@ export const checkResourceAccess = (table: "channels" | "app_versions") => {
       // Both queries are skipped when the request cannot pass anyway, so an
       // unauthenticated caller costs nothing.
       let resourceAppId: string | null = null;
-      let permitted = false;
+      let role: AppRole | null = null;
 
       if (userId && id) {
         const { data: row } = await supabaseService
@@ -75,7 +80,7 @@ export const checkResourceAccess = (table: "channels" | "app_versions") => {
           .maybeSingle();
 
         resourceAppId = row?.app_id ?? null;
-        if (resourceAppId) permitted = await hasAppAccess(userId, resourceAppId);
+        if (resourceAppId) role = await appRoleFor(userId, resourceAppId);
       }
 
       const decision = decideResourceAccess(
@@ -84,7 +89,9 @@ export const checkResourceAccess = (table: "channels" | "app_versions") => {
           resourceId: id,
           resourceAppId,
           keyAppId: (req as any).appId as string | undefined,
-          permitted,
+          permitted: role !== null,
+          role,
+          requiredRoles,
         },
         noun,
       );
