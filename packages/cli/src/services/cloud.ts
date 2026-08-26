@@ -53,6 +53,61 @@ export class CloudClient {
     }
   }
 
+  /**
+   * Exchanges an email and password for a session token.
+   *
+   * Static because it runs before any credential exists: the whole point is to
+   * get one. `authenticate` accepts the returned Supabase JWT wherever it accepts
+   * an API key.
+   */
+  static async login(
+    endpoint: string,
+    email: string,
+    password: string,
+  ): Promise<{ token: string; user: { id: string; email: string } }> {
+    const response = await post<{
+      token?: string;
+      user?: { id?: string; email?: string };
+    }>("/api/auth/login", { email, password }, { endpoint, apiKey: "" });
+
+    if (!response.token) throw new Error("The backend accepted the sign-in but returned no token");
+
+    return {
+      token: response.token,
+      user: { id: response.user?.id ?? "", email: response.user?.email ?? email },
+    };
+  }
+
+  /** Creates an account. Returns no token when the backend requires email confirmation. */
+  static async register(
+    endpoint: string,
+    email: string,
+    password: string,
+  ): Promise<{ token?: string | undefined; message: string }> {
+    const response = await post<{ token?: string; message?: string }>(
+      "/api/auth/register",
+      { email, password },
+      { endpoint, apiKey: "" },
+    );
+
+    return { token: response.token, message: response.message ?? "Registered." };
+  }
+
+  /**
+   * Mints an API key for the signed-in account.
+   *
+   * A JWT expires; a key does not, so the CLI stores the key and forgets the
+   * token. Unscoped by default - the key acts as the account, and the app roles
+   * are what restrict it.
+   */
+  createApiKey(input: { name: string; appId?: string | undefined }): Promise<{ key: string }> {
+    return post<{ key: string }>(
+      "/api/api-keys",
+      { name: input.name, ...(input.appId ? { app_id: input.appId } : {}) },
+      this.options,
+    );
+  }
+
   organizations(): Promise<CloudOrganization[]> {
     return get<CloudOrganization[]>("/api/organizations", this.options);
   }
