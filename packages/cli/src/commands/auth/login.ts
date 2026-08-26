@@ -77,6 +77,35 @@ export default class AuthLogin extends BaseCommand {
   }
 
   /**
+   * Turns a sign-in failure into something actionable.
+   *
+   * There is deliberately no `capuchoo auth register`: confirming an email is a
+   * browser round-trip, so a CLI signup could only ever end with "now go and
+   * check your email". Accounts are created in the dashboard, and an unconfirmed
+   * one is the state most likely to bring someone here confused.
+   */
+  static explainSignInFailure(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (/not confirmed/i.test(message)) {
+      return (
+        "That account exists but its email has not been confirmed yet. Open the " +
+        "link in the sign-up email, then run this again."
+      );
+    }
+
+    if (/invalid login credentials/i.test(message)) {
+      return (
+        "That email and password were not accepted. If you have not signed up yet, " +
+        "create the account in the dashboard first - there is no signup here, " +
+        "because confirming an email needs a browser."
+      );
+    }
+
+    return message;
+  }
+
+  /**
    * Gets an API key, by signing in or by being handed one.
    *
    * Signing in is the default because pasting a key could not be the first step:
@@ -123,7 +152,7 @@ export default class AuthLogin extends BaseCommand {
       session = await CloudClient.login(endpoint, email.trim(), password);
     } catch (error) {
       spinner.fail("Sign-in failed");
-      throw new Error(error instanceof Error ? error.message : String(error));
+      throw new Error(AuthLogin.explainSignInFailure(error));
     }
 
     spinner.text = "Creating a key for this machine";

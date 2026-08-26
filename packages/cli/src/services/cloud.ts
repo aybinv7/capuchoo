@@ -78,21 +78,6 @@ export class CloudClient {
     };
   }
 
-  /** Creates an account. Returns no token when the backend requires email confirmation. */
-  static async register(
-    endpoint: string,
-    email: string,
-    password: string,
-  ): Promise<{ token?: string | undefined; message: string }> {
-    const response = await post<{ token?: string; message?: string }>(
-      "/api/auth/register",
-      { email, password },
-      { endpoint, apiKey: "" },
-    );
-
-    return { token: response.token, message: response.message ?? "Registered." };
-  }
-
   /**
    * Mints an API key for the signed-in account.
    *

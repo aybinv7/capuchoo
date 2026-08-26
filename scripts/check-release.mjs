@@ -258,6 +258,7 @@ for (const pkg of publishablePackages()) {
 
   const added = [];
   const removed = [];
+  const changedFiles = [];
 
   for (const entry of [...entryPoints].sort(byName)) {
     const before = exportedNames(files.get(`package/dist/${entry}`) ?? "");
@@ -273,9 +274,28 @@ for (const pkg of publishablePackages()) {
 
     for (const id of after) if (!before.has(id)) added.push(`command:${id}`);
     for (const id of before) if (!after.has(id)) removed.push(`command:${id}`);
+
+    // For a CLI, behaviour is the product. Neither the exported types nor the
+    // command list changes when a command's implementation does, so both the
+    // sign-in rewrite and the init detection reported as "matches the registry"
+    // and would have published nothing.
+    for (const [path, published] of files) {
+      if (!/^package\/dist\/.+\.js$/.test(path)) continue;
+
+      const relative = path.slice("package/".length);
+      let local;
+      try {
+        local = readFileSync(join(pkg.dir, relative), "utf8");
+      } catch {
+        removed.push(`file:${relative}`);
+        continue;
+      }
+
+      if (local !== published) changedFiles.push(relative);
+    }
   }
 
-  if (added.length === 0 && removed.length === 0) {
+  if (added.length === 0 && removed.length === 0 && changedFiles.length === 0) {
     lines.push(`  same     ${pkg.name}@${pkg.version} matches the registry - it will be skipped`);
     continue;
   }
@@ -283,6 +303,9 @@ for (const pkg of publishablePackages()) {
   const changes = [
     added.length ? `adds ${added.sort(byName).join(", ")}` : null,
     removed.length ? `removes ${removed.sort(byName).join(", ")}` : null,
+    changedFiles.length
+      ? `changes ${changedFiles.length} file(s): ${changedFiles.sort(byName).slice(0, 4).join(", ")}${changedFiles.length > 4 ? ", ..." : ""}`
+      : null,
   ]
     .filter(Boolean)
     .join("; ");
