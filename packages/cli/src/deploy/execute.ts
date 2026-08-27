@@ -4,7 +4,6 @@ import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";
-import path from "node:path";
 import {
   describeFailure,
   formatBytes,
@@ -22,6 +21,7 @@ import {
   writeAppVersion,
 } from "../utils/config.js";
 import { Reporter } from "../utils/reporter.js";
+import { restoreVersionFiles, snapshotVersionFiles } from "./version-guard.js";
 
 /**
  * Shared implementation for `deploy ota` and `deploy native`.
@@ -333,16 +333,23 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     fail(command, `This deploy cannot proceed:\n${detail}\n\nNothing was changed.`);
   }
 
-  // Written only after confirmation and validation, so neither an abandoned
-  // prompt nor a rejected request leaves package.json touched.
+  // Read before anything is written, so a deploy that does not publish can put
+  // the working tree back exactly as it was.
+  const versionFiles = snapshotVersionFiles(appDir, project.versionCodeFile);
+
+  // Written before the build rather than after: an app may read its own
+  // package.json version while building, and the restore on failure is what
+  // makes writing early safe.
   if (bump) writeAppVersion(appDir, version);
+
+  // Hoisted so the failure path can tell "nothing was published, put it back"
+  // from "it published, and the files have to stay".
+  let uploaded = false;
 
   try {
     const outcome = await runDeploy(request, reporter);
     const artifact = outcome.artifact;
     if (!artifact) throw new Error("The pipeline produced no artefact");
-
-    let uploaded = false;
 
     if (!flags["dry-run"]) {
       reporter.begin("upload");
@@ -432,15 +439,31 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       return;
     }
 
-    if (bump) {
-      // Say so explicitly: the file on disk no longer matches what is
-      // published, and a silent mismatch is how a version gets skipped.
+    if (uploaded) {
+      // Published, so the files must stay: the version on disk is the version
+      // that now exists on the server, and rewinding it would make the next
+      // deploy publish the same one again.
       process.stderr.write(
         chalk.yellow(
-          `\n! package.json was already bumped to ${version}. ` +
-            `Revert it with: git checkout -- ${path.join(".", "package.json")}\n`,
+          `\n! ${version} was published before this failed, so the version files ` +
+            "were left as they are.\n",
         ),
       );
+    } else {
+      // Nothing was published, so nothing should have changed. Done here rather
+      // than by telling the operator to run git checkout: a tool that knows it
+      // left a file wrong should put it back, and that message was easy to miss
+      // under a wall of build errors.
+      const restored = restoreVersionFiles(versionFiles);
+
+      if (restored.length > 0) {
+        process.stderr.write(
+          chalk.dim(
+            `\n  Nothing was published, so ${restored.join(" and ")} ` +
+              `${restored.length === 1 ? "was" : "were"} restored.\n`,
+          ),
+        );
+      }
     }
 
     command.error(message);
