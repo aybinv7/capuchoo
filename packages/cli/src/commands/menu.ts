@@ -41,20 +41,11 @@ export default class Menu extends BaseCommand {
       return;
     }
 
-    // Local only, so the menu appears at once. Channel state needs the network
-    // against a backend that sleeps, and is filled in lazily below.
-    const facts = this.localFacts();
-    const state = resolveOnboarding(facts);
-
-    const menu = buildMenu({
-      commands: this.config.commands.filter((command) => !hiddenCommands(facts).has(command.id)),
-      topics: this.config.topics,
-    });
-
+    const { facts, state, menu } = this.snapshot();
     this.showHeader(menu, facts, state);
 
     try {
-      await this.loop(menu, facts, state);
+      await this.loop();
     } catch (error) {
       // Ctrl+C at a menu is how you leave, not a crash.
       if (error instanceof PromptCancelled) return;
@@ -123,12 +114,33 @@ export default class Menu extends BaseCommand {
     };
   }
 
-  private async loop(
-    menu: MenuShape,
-    facts: OnboardingFacts,
-    state: OnboardingState,
-  ): Promise<void> {
+  /**
+   * Where the menu is now.
+   *
+   * Local only, so the menu appears at once - channel state needs the network
+   * against a backend that sleeps, and is filled in lazily by showHeader.
+   */
+  private snapshot(): { facts: OnboardingFacts; state: OnboardingState; menu: MenuShape } {
+    const facts = this.localFacts();
+
+    return {
+      facts,
+      state: resolveOnboarding(facts),
+      menu: buildMenu({
+        commands: this.config.commands.filter((command) => !hiddenCommands(facts).has(command.id)),
+        topics: this.config.topics,
+      }),
+    };
+  }
+
+  private async loop(): Promise<void> {
     for (;;) {
+      // Re-read every pass. Held from the first render, the menu went on
+      // recommending `setup` after init had linked the directory, and went on
+      // offering `auth login` to someone who had just signed in - the state it
+      // exists to reflect is the state its own commands change.
+      const { facts, state, menu } = this.snapshot();
+
       const choice = await this.chooseTopLevel(menu, facts, state);
       if (choice === QUIT) return;
 

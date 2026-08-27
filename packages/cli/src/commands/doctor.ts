@@ -35,6 +35,20 @@ interface Finding {
  * Each finding names the fix, because a diagnosis you cannot act on is just bad
  * news.
  */
+/**
+ * The app's capacitor config, and whether it builds its plugin block with
+ * `capuchooUpdaterConfig`. Textual, like the rest of the wiring checks.
+ */
+function readCapacitorConfig(appDir: string): { file?: string; usesHelper: boolean } {
+  const file = ["capacitor.config.ts", "capacitor.config.js"]
+    .map((name) => path.join(appDir, name))
+    .find((candidate) => fs.existsSync(candidate));
+
+  if (!file) return { usesHelper: false };
+
+  return { file, usesHelper: fs.readFileSync(file, "utf8").includes("capuchooUpdaterConfig") };
+}
+
 export default class Doctor extends BaseCommand {
   static override description = "Check that this app, its credentials and its channels are usable";
 
@@ -206,6 +220,11 @@ export default class Doctor extends BaseCommand {
 
     // --- flavours ------------------------------------------------------------
 
+    // Whether the flavour files have to carry VITE_UPDATE_CHANNEL: the helper
+    // refuses to build a plugin block without it, a hand-written block sets
+    // defaultChannel itself.
+    const { usesHelper: usesUpdaterHelper } = readCapacitorConfig(appDir);
+
     const environments = new Set<Environment>(
       channels.map((channel) => channel.environment).filter(Boolean) as Environment[],
     );
@@ -245,6 +264,22 @@ export default class Doctor extends BaseCommand {
         });
       } else {
         findings.push({ level: "ok", what: `Flavour ${environment}`, detail: flavour.envFile });
+      }
+
+      // capuchooUpdaterConfig() throws on a missing channel, and it throws
+      // inside `cap sync` - so the deploy dies after the version was bumped,
+      // with a stack in node_modules. Cheaper to say so here.
+      const channel = /^VITE_UPDATE_CHANNEL=(.*)$/m.exec(contents)?.[1]?.trim();
+
+      if (!channel && usesUpdaterHelper) {
+        findings.push({
+          level: "fail",
+          what: `${flavour.envFile} has no VITE_UPDATE_CHANNEL`,
+          detail:
+            "capuchooUpdaterConfig() refuses to build a plugin block without it, so " +
+            "cap sync fails part-way through the deploy",
+          fix: `Add VITE_UPDATE_CHANNEL=${environment}`,
+        });
       }
     }
 
@@ -310,13 +345,10 @@ export default class Doctor extends BaseCommand {
       findings.push({ level: "ok", what: "notifyAppReady() present" });
     }
 
-    const capacitorConfig = ["capacitor.config.ts", "capacitor.config.js"]
-      .map((name) => path.join(appDir, name))
-      .find((file) => fs.existsSync(file));
+    const { file: capacitorConfig, usesHelper } = readCapacitorConfig(appDir);
 
     if (capacitorConfig) {
-      const config = fs.readFileSync(capacitorConfig, "utf8");
-      if (!config.includes("capuchooUpdaterConfig") && !config.includes("capuchooUpdaterConfig")) {
+      if (!usesHelper) {
         findings.push({
           level: "warn",
           what: `${path.basename(capacitorConfig)} does not use capuchooUpdaterConfig()`,
