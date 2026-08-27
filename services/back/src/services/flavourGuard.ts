@@ -54,8 +54,13 @@ export async function assertFlavourMatchesChannel(
  * column in a select and rejecting every API key, which this project has already
  * done once.
  *
- * 42703 is undefined_column. Matched on the SQLSTATE rather than the message,
- * because the message is not ours.
+ * Two error shapes, because the write may be refused by either layer:
+ *
+ *   42703    PostgreSQL undefined_column, if the statement reaches the database.
+ *   PGRST204 PostgREST, which checks its own schema cache first and answers
+ *            "Could not find the 'flavour' column of 'app_versions'". This is
+ *            the one that actually occurs, and matching only on the PostgreSQL
+ *            wording let a live publish fail with a 500 - found by trying it.
  */
 export async function insertTolerantOfFlavour(
   table: string,
@@ -66,7 +71,11 @@ export async function insertTolerantOfFlavour(
   } catch (error) {
     const code = (error as { code?: string })?.code;
     const message = error instanceof Error ? error.message : String(error);
-    const missingColumn = code === "42703" || /column .*flavour.* does not exist/i.test(message);
+
+    const missingColumn =
+      code === "42703" ||
+      code === "PGRST204" ||
+      (/flavour/i.test(message) && /does not exist|could not find/i.test(message));
 
     if (!missingColumn || row.flavour === undefined) throw error;
 

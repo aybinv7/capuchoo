@@ -38,10 +38,17 @@ describe("writing the flavour survives running before migration 008", () => {
     expect(native).not.toContain('insert("native_updates", [updateRecord])');
   });
 
-  it("the helper retries on undefined_column and only then", () => {
+  it("the helper recognises both error shapes, and only those", () => {
     const guard = read("services/flavourGuard.ts");
 
+    // PGRST204 is the one that actually happens: PostgREST checks its own schema
+    // cache and answers "Could not find the 'flavour' column of 'app_versions'"
+    // before the statement reaches PostgreSQL. Matching only 42703 and the
+    // PostgreSQL wording let a live publish fail with a 500.
     expect(guard).toContain("42703");
+    expect(guard).toContain("PGRST204");
+    expect(guard).toMatch(/could not find/i);
+
     // Anything else must surface: swallowing a real failure would report a
     // successful publish that stored nothing.
     expect(guard).toContain("if (!missingColumn");

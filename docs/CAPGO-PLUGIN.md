@@ -85,6 +85,39 @@ itself.
 They are enforced in `packages/core/src/update-decision.test.ts`, asserted across every outcome
 rather than case by case, so a new decision cannot break them quietly.
 
+### What the plugin sends
+
+From `CapgoUpdater.java` lines 1971-1987, which builds the body for every check the plugin makes on
+its own. Worth reading before designing anything server-side around a field you assume is there.
+
+| Field            | Meaning                                                           |
+| ---------------- | ----------------------------------------------------------------- |
+| `platform`       | Hardcoded `"android"` in the Android source.                      |
+| `device_id`      | The plugin's own device UUID.                                     |
+| `app_id`         | The bundle identifier compiled into the binary.                   |
+| `custom_id`      | Free field the app can set. Unused by us.                         |
+| `version_build`  | Native `versionName`.                                             |
+| `version_code`   | Native `versionCode`.                                             |
+| `version_os`     | OS version.                                                       |
+| `version_name`   | **Applied bundle** version, or `builtin`. Not the native version. |
+| `plugin_version` | Plugin version.                                                   |
+| `is_emulator`    | Whether it is running on an emulator.                             |
+| `is_prod`        | **False for a debuggable build.**                                 |
+| `install_source` | Play Store, sideload, and so on.                                  |
+| `defaultChannel` | The baked-in channel. **Not `channel`** — see below.              |
+| `key_id`         | Only when a decryption key is cached.                             |
+
+Two of these are load-bearing and were unread for months:
+
+- **`defaultChannel`, not `channel`.** The plugin never sends a key called `channel`; our own
+  runtime does. `updateService` accepts `channel`, then `defaultChannel`, then `default_channel`, so
+  both callers resolve — but a server reading only `channel` would put every plugin-initiated check
+  on the fallback channel, which is a hard failure to notice because our runtime's checks look
+  correct.
+- **`is_prod` and `is_emulator` are the honest way to identify a build.** They come from the binary,
+  not from the spelling of its identifier, and they are what `allow_dev` and `allow_emulator` gate
+  on. A device on an older plugin may send neither, so absent must not be read as false.
+
 ### The response fields the plugin declares
 
 From `LatestVersion` in `dist/docs.json`. Fields Capuchoo sends are marked.
