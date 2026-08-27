@@ -59,9 +59,9 @@ export function resolveOnboarding(facts: OnboardingFacts): OnboardingState {
     return {
       stage: "unlinked",
       next: {
-        command: "setup",
+        command: "init",
         label: "Set this app up",
-        why: "Installs what the app needs and links it to Capuchoo.",
+        why: "Links it, installs what it needs, and wires the app up.",
       },
     };
   }
@@ -70,7 +70,7 @@ export function resolveOnboarding(facts: OnboardingFacts): OnboardingState {
     return {
       stage: "incomplete",
       next: {
-        command: "setup",
+        command: "init",
         label: "Finish setting up",
         why: "Linked, but the app cannot check for updates without @capuchoo/updater.",
       },
@@ -124,8 +124,9 @@ export function hiddenCommands(facts: OnboardingFacts): Set<string> {
 
 /** A label that reads correctly for the current state, or null to keep the default. */
 export function labelFor(command: string, facts: OnboardingFacts): string | null {
-  if (command === "setup" && facts.linked && facts.updaterInstalled) return "setup (re-run)";
-  if (command === "init" && facts.linked) return "init (re-link)";
+  // One command now, and re-running it is a no-op plus a check - so the label
+  // says "re-check" rather than implying it will redo the setup.
+  if (command === "init" && facts.linked && facts.updaterInstalled) return "init (re-check)";
   return null;
 }
 

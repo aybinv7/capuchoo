@@ -43,17 +43,19 @@ describe("resolveOnboarding", () => {
     });
   });
 
-  it("sends an unlinked app to setup", () => {
+  // One command, so both stages point at the same place. `setup` used to be a
+  // second command whose own advice was to go and run `init`.
+  it("sends an unlinked app to init", () => {
     expect(resolveOnboarding({ ...ready, linked: false })).toMatchObject({
       stage: "unlinked",
-      next: { command: "setup" },
+      next: { command: "init" },
     });
   });
 
-  it("sends a linked app without the runtime back to setup", () => {
+  it("sends a linked app without the runtime back to init", () => {
     expect(resolveOnboarding({ ...ready, updaterInstalled: false })).toMatchObject({
       stage: "incomplete",
-      next: { command: "setup", label: "Finish setting up" },
+      next: { command: "init", label: "Finish setting up" },
     });
   });
 
@@ -110,14 +112,14 @@ describe("hiddenCommands", () => {
 });
 
 describe("labelFor", () => {
-  it("says re-run once an app is already set up", () => {
-    expect(labelFor("setup", ready)).toBe("setup (re-run)");
-    expect(labelFor("init", ready)).toBe("init (re-link)");
+  it("says re-check once an app is already set up", () => {
+    // Not "re-run": a second run is a no-op plus a verification, and a label
+    // implying it will redo the setup is why nobody ran it again.
+    expect(labelFor("init", ready)).toBe("init (re-check)");
   });
 
   it("keeps the default label on a fresh app", () => {
     const fresh = { ...ready, linked: false, updaterInstalled: false };
-    expect(labelFor("setup", fresh)).toBeNull();
     expect(labelFor("init", fresh)).toBeNull();
   });
 

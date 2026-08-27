@@ -76,9 +76,13 @@ believed.
 - **The CLI owns the deploy pipeline.** It does not call an application's `package.json` scripts,
   does not assume pnpm, and treats Trapeze, `@capacitor/assets` and `@capacitor/cli` as optional. A
   missing tool is a skip or a substitution with an explanation, never a half-finished deploy.
-- **Nothing writes to a committed env file.** Build values are passed as environment variables.
+- **No _deploy_ writes to a committed env file.** Build values are passed as environment variables.
   `version-code.json` is the only tracked file a deploy modifies, and only after the artefact
-  exists.
+  exists. `init` does write two lines per flavour - `VITE_UPDATE_API_URL` and
+  `VITE_UPDATE_CHANNEL` - because those are configuration rather than per-build values, and printing
+  them as instructions instead meant three separate first runs reached `deploy` and were refused for
+  the missing variable. It shows a diff, asks, and never replaces a value that is already there and
+  different.
 - **Validate before doing work.** The old pipeline bumped the version first and discovered a missing
   env file second. Cheap checks go before anything that mutates or uploads.
 

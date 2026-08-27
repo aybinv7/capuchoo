@@ -1,4 +1,4 @@
-import { askText, confirm, log, selectOne, whileWaiting } from "../cli/prompts.js";
+import { askText, confirm, isInteractive, log, selectOne, whileWaiting } from "../cli/prompts.js";
 import {
   DEFAULT_CHANNELS,
   ENVIRONMENTS,
@@ -13,6 +13,7 @@ import {
   type Environment,
   type FlavourConfig,
   type ProjectConfig,
+  type UserProfile,
 } from "@capuchoo/core";
 import { Flags } from "@oclif/core";
 import chalk from "chalk";
@@ -31,11 +32,22 @@ import { HttpError } from "../utils/http.js";
 import {
   projectConfigPath,
   readProjectConfig,
+  requireProjectConfig,
   resolveCredentials,
   writeProjectConfig,
 } from "../utils/config.js";
 import AuthLogin from "./auth/login.js";
 import { BaseCommand } from "../base-command.js";
+import { INIT_STEPS, selectSteps, type InitStepId } from "../cli/init-plan.js";
+import {
+  renderOutcomes,
+  stepCode,
+  stepEnv,
+  stepIdentifiers,
+  stepPackages,
+  type StepContext,
+  type StepOutcome,
+} from "../init/steps.js";
 
 /** The answers --create can supply, so the wizard has nothing left to ask. */
 interface CreateFlags {
@@ -45,14 +57,19 @@ interface CreateFlags {
 }
 
 export default class Init extends BaseCommand {
-  static override description =
-    "Link this directory to a Capuchoo app and write .capuchoo/project.json";
+  static override description = "Set this app up to receive updates, from nothing to verified";
+
+  // `setup` was a second command that installed packages and then printed three
+  // edits to apply by hand. Both halves live here now, so there is one command
+  // to run and it is safe to re-run.
+  static override aliases = ["setup"];
 
   static override examples = [
     "<%= config.bin %> init",
-    "<%= config.bin %> init --link",
-    "<%= config.bin %> init --create",
-    '<%= config.bin %> init --create --name "My App" --app-id com.acme.app --channel staging',
+    "<%= config.bin %> init --yes",
+    "<%= config.bin %> init --dry-run",
+    "<%= config.bin %> init --only env --only code",
+    '<%= config.bin %> init --create --name "My App" --app-id com.acme.app',
   ];
 
   static override flags = {
@@ -92,6 +109,38 @@ export default class Init extends BaseCommand {
       default: false,
       description: "Overwrite an existing project.json",
     }),
+    yes: Flags.boolean({
+      char: "y",
+      default: false,
+      description: "Apply every change without asking",
+    }),
+    // Scoped to the wiring steps, and it says so: linking creates a cloud app,
+    // which is not something a flag called --dry-run should do. Refused on an
+    // unlinked directory rather than half-honoured.
+    "dry-run": Flags.boolean({
+      default: false,
+      description: "Report the wiring changes without writing (needs a linked directory)",
+    }),
+    native: Flags.boolean({
+      default: false,
+      description: "Also install what downloading and installing an APK needs",
+    }),
+    "skip-telemetry": Flags.boolean({
+      default: false,
+      description: "Do not install @capacitor/device",
+    }),
+    "skip-sync": Flags.boolean({
+      default: false,
+      description: "Do not run cap sync after installing",
+    }),
+    skip: Flags.string({
+      multiple: true,
+      description: `Steps to leave out: ${INIT_STEPS.join(", ")}`,
+    }),
+    only: Flags.string({
+      multiple: true,
+      description: "Run only these steps (verify always runs unless skipped)",
+    }),
   };
 
   async run(): Promise<void> {
@@ -104,41 +153,37 @@ export default class Init extends BaseCommand {
     this.log("");
 
     const existing = readProjectConfig(appDir);
-    if (existing && !flags.force) {
-      this.log(chalk.yellow("  Already initialised: ") + `${existing.appName} (${existing.appId})`);
-      const action = await selectOne<string>(
-        "What now?",
-        [
-          { value: "keep", label: "Keep it", hint: existing.appId },
-          { value: "relink", label: "Re-link to a different app" },
-        ],
-        "--force",
+
+    if (flags["dry-run"] && !existing) {
+      this.error(
+        "--dry-run reports what the wiring steps would change, and this directory is " +
+          "not linked yet. Linking creates a cloud app, which a dry run must not do.\n\n" +
+          "Run init without --dry-run to link, then --dry-run to inspect the rest.",
       );
-      if (action === "keep") return;
     }
 
-    // --- credentials ---------------------------------------------------------
+    // Already linked: re-run the steps rather than asking whether to.
+    //
+    // This used to offer "keep it" or "re-link", and "keep it" returned without
+    // doing anything - so the command that was supposed to finish setting an app
+    // up did nothing at all on the second run, which is most of why knowing
+    // whether to run `setup` or `init` mattered. Re-linking is a real but rare
+    // intent, and it has a flag.
+    if (existing && !flags.force) {
+      this.log(chalk.dim("  linked to ") + `${existing.appName} (${existing.appId})`);
+      this.log(chalk.dim("  Re-link to a different app with --force."));
 
-    let credentials = resolveCredentials();
-    if (!credentials) {
-      this.log(chalk.dim("  No credentials found yet.\n"));
-      try {
-        await AuthLogin.performLogin();
-      } catch (error) {
-        this.error(error instanceof Error ? error.message : String(error));
-      }
-      credentials = resolveCredentials();
+      const { cloud } = await this.signIn();
+      await this.wireUp(
+        appDir,
+        cloud,
+        { id: existing.cloudAppId, app_id: existing.appId, name: existing.appName } as CloudApp,
+        flags,
+      );
+      return;
     }
 
-    if (!credentials) {
-      this.error("Still not authenticated, so this directory cannot be linked.");
-    }
-
-    const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
-    const profile = await cloud.whoami();
-    if (!profile) {
-      this.error(`The credentials for ${credentials.endpoint} were rejected.`);
-    }
+    const { cloud, profile } = await this.signIn();
 
     // --- pick or create the app ---------------------------------------------
 
@@ -242,6 +287,130 @@ export default class Init extends BaseCommand {
       await this.offerFirstChannel(cloud, app, flags.channel);
     }
     this.log("");
+
+    await this.wireUp(appDir, cloud, app, flags);
+  }
+
+  /**
+   * Signs in if needed, and hands back a client that has been proven to work.
+   *
+   * `whoami` is checked here rather than left to the first real call: a rejected
+   * credential discovered three steps later reads as whatever that step was
+   * doing.
+   */
+  private async signIn(): Promise<{ cloud: CloudClient; profile: UserProfile }> {
+    let credentials = resolveCredentials();
+
+    if (!credentials) {
+      this.log(chalk.dim("  No credentials found yet.\n"));
+      try {
+        await AuthLogin.performLogin();
+      } catch (error) {
+        this.error(error instanceof Error ? error.message : String(error));
+      }
+      credentials = resolveCredentials();
+    }
+
+    if (!credentials) {
+      this.error("Still not authenticated, so this directory cannot be linked.");
+    }
+
+    const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);
+    const profile = await cloud.whoami();
+
+    if (!profile) {
+      this.error(`The credentials for ${credentials.endpoint} were rejected.`);
+    }
+
+    return { cloud, profile };
+  }
+
+  /**
+   * Everything between "linked" and "can receive an update".
+   *
+   * This used to be a printed list of three edits at the end of `setup`, and
+   * nobody applied them: every first run - two of mine and one of the user's -
+   * got as far as `deploy` and was refused for a missing VITE_UPDATE_API_URL. A
+   * wall of text after an install is not a step anybody performs.
+   *
+   * Each step decides for itself whether it is already done, so running init
+   * again is a no-op plus a check. That is what removes the need to know which
+   * of `login`, `setup` and `init` you wanted.
+   */
+  private async wireUp(
+    appDir: string,
+    cloud: CloudClient,
+    app: CloudApp,
+    flags: {
+      yes: boolean;
+      "dry-run": boolean;
+      native: boolean;
+      "skip-telemetry": boolean;
+      "skip-sync": boolean;
+      skip?: string[] | undefined;
+      only?: string[] | undefined;
+    },
+  ): Promise<void> {
+    const project = requireProjectConfig(appDir);
+    const context: StepContext = {
+      appDir,
+      project,
+      endpoint: cloud.endpoint,
+      cloud,
+      cloudAppId: app.id,
+      bundleId: app.app_id,
+      interactive: isInteractive() && !flags.yes,
+      assumeYes: flags.yes,
+      dryRun: flags["dry-run"],
+      cliVersion: this.config.version,
+      native: flags.native,
+      telemetry: !flags["skip-telemetry"],
+      sync: !flags["skip-sync"],
+    };
+
+    const runners: Array<[InitStepId, () => Promise<StepOutcome>]> = [
+      ["identifiers", () => stepIdentifiers(context)],
+      ["packages", () => stepPackages(context)],
+      ["env", () => stepEnv(context)],
+      ["code", () => stepCode(context)],
+    ];
+
+    const wanted = new Set(
+      selectSteps(
+        runners.map(([id]) => ({ id, status: "todo" as const, why: "" })),
+        { only: flags.only, skip: flags.skip },
+      ).map((step) => step.id),
+    );
+
+    const outcomes: StepOutcome[] = [];
+    for (const [id, runner] of runners) {
+      if (!wanted.has(id)) continue;
+      // Reported rather than thrown: a step that could not finish must not hide
+      // the ones after it.
+      outcomes.push(await runner());
+    }
+
+    if (outcomes.length > 0) {
+      this.log("");
+      this.log(renderOutcomes(outcomes));
+      this.log("");
+    }
+
+    if (flags["dry-run"]) {
+      log.info("Dry run: nothing was written.");
+      return;
+    }
+
+    const failed = outcomes.filter((outcome) => outcome.state === "failed");
+    if (failed.length > 0) {
+      this.error(failed.map((outcome) => `${outcome.id}: ${outcome.detail}`).join("\n"));
+    }
+
+    // Always, and never cached: a step that reports "already done" is a claim,
+    // and doctor is the only thing here that checks.
+    if (!flags.skip?.includes("verify")) {
+      await this.config.runCommand("doctor", []);
+    }
   }
 
   /**

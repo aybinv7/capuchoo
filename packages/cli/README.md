@@ -29,7 +29,7 @@ $ npm install -g @capuchoo/cli
 $ capuchoo COMMAND
 running command...
 $ capuchoo (--version)
-@capuchoo/cli/0.9.1 win32-x64 node-v24.20.0
+@capuchoo/cli/0.10.1 win32-x64 node-v24.20.0
 $ capuchoo --help [COMMAND]
 USAGE
   $ capuchoo COMMAND
@@ -95,7 +95,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/delete.ts)_
+[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/app/delete.ts)_
 
 ## `capuchoo app grant EMAIL ROLE`
 
@@ -119,7 +119,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/grant.ts)_
+[src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/app/grant.ts)_
 
 ## `capuchoo app identifiers [ACTION] [BUNDLEID]`
 
@@ -152,7 +152,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/identifiers.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/identifiers.ts)_
+[src/commands/app/identifiers.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/app/identifiers.ts)_
 
 ## `capuchoo app list`
 
@@ -170,7 +170,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/list.ts)_
+[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/app/list.ts)_
 
 ## `capuchoo app revoke EMAIL`
 
@@ -194,7 +194,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/revoke.ts)_
+[src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/app/revoke.ts)_
 
 ## `capuchoo app roles`
 
@@ -212,7 +212,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/roles.ts)_
+[src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/app/roles.ts)_
 
 ## `capuchoo auth issue`
 
@@ -238,7 +238,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/issue.ts)_
+[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/auth/issue.ts)_
 
 ## `capuchoo auth keys`
 
@@ -256,7 +256,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/keys.ts)_
+[src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/auth/keys.ts)_
 
 ## `capuchoo auth login`
 
@@ -280,7 +280,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/login.ts)_
+[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -295,7 +295,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/logout.ts)_
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth revoke ID`
 
@@ -319,7 +319,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/revoke.ts)_
+[src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/auth/revoke.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -337,7 +337,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/whoami.ts)_
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/auth/whoami.ts)_
 
 ## `capuchoo channel create [NAME]`
 
@@ -368,7 +368,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/channel/create.ts)_
+[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/channel/create.ts)_
 
 ## `capuchoo channel delete [NAME]`
 
@@ -394,7 +394,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/channel/delete.ts)_
+[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/channel/delete.ts)_
 
 ## `capuchoo channel list`
 
@@ -412,7 +412,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/channel/list.ts)_
+[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/channel/list.ts)_
 
 ## `capuchoo config list`
 
@@ -430,7 +430,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/config/list.ts)_
+[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -454,7 +454,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/config/set.ts)_
+[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -498,7 +498,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/deploy/native.ts)_
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -535,7 +535,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/deploy/ota.ts)_
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/deploy/ota.ts)_
 
 ## `capuchoo doctor`
 
@@ -553,7 +553,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/doctor.ts)_
+[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/doctor.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -578,36 +578,50 @@ _See code:
 
 ## `capuchoo init`
 
-Link this directory to a Capuchoo app and write .capuchoo/project.json
+Set this app up to receive updates, from nothing to verified
 
 ```
 USAGE
   $ capuchoo init [-l | -c] [--name <value> ] [--app-id <value>] [--org <value> ] [--channel <value>] [-f]
+    [-y] [--dry-run] [--native] [--skip-telemetry] [--skip-sync] [--skip <value>...] [--only <value>...]
 
 FLAGS
   -c, --create           Create a new app instead of asking
   -f, --force            Overwrite an existing project.json
   -l, --link             Link an existing app instead of asking
+  -y, --yes              Apply every change without asking
       --app-id=<value>   Bundle identifier of the app, e.g. com.company.app
       --channel=<value>  Create this channel after linking, e.g. staging
+      --dry-run          Report the wiring changes without writing (needs a linked directory)
       --name=<value>     Name of the app to create (default: this directory's name)
+      --native           Also install what downloading and installing an APK needs
+      --only=<value>...  Run only these steps (verify always runs unless skipped)
       --org=<value>      Organization to create the app in, by name or id
+      --skip=<value>...  Steps to leave out: credentials, link, identifiers, channels, packages, env, code, verify,
+                         publish, confirm
+      --skip-sync        Do not run cap sync after installing
+      --skip-telemetry   Do not install @capacitor/device
 
 DESCRIPTION
-  Link this directory to a Capuchoo app and write .capuchoo/project.json
+  Set this app up to receive updates, from nothing to verified
+
+ALIASES
+  $ capuchoo setup
 
 EXAMPLES
   $ capuchoo init
 
-  $ capuchoo init --link
+  $ capuchoo init --yes
 
-  $ capuchoo init --create
+  $ capuchoo init --dry-run
 
-  $ capuchoo init --create --name "My App" --app-id com.acme.app --channel staging
+  $ capuchoo init --only env --only code
+
+  $ capuchoo init --create --name "My App" --app-id com.acme.app
 ```
 
 _See code:
-[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/init.ts)_
+[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/init.ts)_
 
 ## `capuchoo menu`
 
@@ -627,7 +641,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/menu.ts)_
+[src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/menu.ts)_
 
 ## `capuchoo org create [NAME]`
 
@@ -653,7 +667,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/create.ts)_
+[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/org/create.ts)_
 
 ## `capuchoo org invite EMAIL ROLE`
 
@@ -678,7 +692,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/invite.ts)_
+[src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/org/invite.ts)_
 
 ## `capuchoo org list`
 
@@ -696,7 +710,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/list.ts)_
+[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/org/list.ts)_
 
 ## `capuchoo org members`
 
@@ -717,36 +731,54 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/members.ts)_
+[src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/org/members.ts)_
 
 ## `capuchoo setup`
 
-Install everything this app needs to receive updates
+Set this app up to receive updates, from nothing to verified
 
 ```
 USAGE
-  $ capuchoo setup [--native] [--skip-telemetry] [--skip-sync] [--dry-run] [-y]
+  $ capuchoo setup [-l | -c] [--name <value> ] [--app-id <value>] [--org <value> ] [--channel <value>] [-f]
+    [-y] [--dry-run] [--native] [--skip-telemetry] [--skip-sync] [--skip <value>...] [--only <value>...]
 
 FLAGS
-  -y, --yes             Accept every prompt
-      --dry-run         Report what would be installed, change nothing
-      --native          Also install what downloading and installing an APK needs
-      --skip-sync       Do not run cap sync afterwards
-      --skip-telemetry  Do not install @capacitor/device
+  -c, --create           Create a new app instead of asking
+  -f, --force            Overwrite an existing project.json
+  -l, --link             Link an existing app instead of asking
+  -y, --yes              Apply every change without asking
+      --app-id=<value>   Bundle identifier of the app, e.g. com.company.app
+      --channel=<value>  Create this channel after linking, e.g. staging
+      --dry-run          Report the wiring changes without writing (needs a linked directory)
+      --name=<value>     Name of the app to create (default: this directory's name)
+      --native           Also install what downloading and installing an APK needs
+      --only=<value>...  Run only these steps (verify always runs unless skipped)
+      --org=<value>      Organization to create the app in, by name or id
+      --skip=<value>...  Steps to leave out: credentials, link, identifiers, channels, packages, env, code, verify,
+                         publish, confirm
+      --skip-sync        Do not run cap sync after installing
+      --skip-telemetry   Do not install @capacitor/device
 
 DESCRIPTION
-  Install everything this app needs to receive updates
+  Set this app up to receive updates, from nothing to verified
 
-EXAMPLES
+ALIASES
   $ capuchoo setup
 
-  $ capuchoo setup --native
+EXAMPLES
+  $ capuchoo init
 
-  $ capuchoo setup --dry-run
+  $ capuchoo init --yes
+
+  $ capuchoo init --dry-run
+
+  $ capuchoo init --only env --only code
+
+  $ capuchoo init --create --name "My App" --app-id com.acme.app
 ```
 
 _See code:
-[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/setup.ts)_
+[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/setup.ts)_
 
 ## `capuchoo version bump TYPE`
 
@@ -773,7 +805,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/version/bump.ts)_
+[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -799,5 +831,5 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/version/sync.ts)_
+[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.10.1/src/commands/version/sync.ts)_
 <!-- commandsstop -->
