@@ -9,6 +9,21 @@ export interface MenuCommand {
   /** What to show: the last segment, e.g. `ota`. */
   label: string;
   description: string;
+  /**
+   * Positional arguments the command cannot run without.
+   *
+   * The menu invokes commands with no argv, so a command with required args
+   * failed the moment it was picked - `app grant` answered "Missing 2 required
+   * args" and there was no way to supply them. Carried here so the menu can ask.
+   */
+  requiredArgs: RequiredArg[];
+}
+
+export interface RequiredArg {
+  name: string;
+  description: string;
+  /** A closed set, when the command declares one - `role` is admin|developer|... */
+  options?: string[] | undefined;
 }
 
 export interface MenuTopic {
@@ -28,6 +43,14 @@ export interface CommandLike {
   id: string;
   description?: string | undefined;
   hidden?: boolean | undefined;
+  /**
+   * oclif's cached arg metadata, keyed by name.
+   *
+   * Typed loosely on purpose: this takes `Config#commands`, whose `Arg.Cached`
+   * shape is generic over the arg's own value type, and a precise annotation
+   * here would make the menu depend on oclif's internals to compile.
+   */
+  args?: Record<string, { required?: boolean; description?: string; options?: readonly string[] }>;
 }
 
 export interface TopicLike {
@@ -37,6 +60,22 @@ export interface TopicLike {
 
 /** Never offered: `help` duplicates the menu, and the others are the menu. */
 const HIDDEN_IDS = new Set(["", "help", "menu"]);
+
+/**
+ * The arguments a command will refuse to run without, in declaration order.
+ *
+ * Order matters: they are positional, so asking for them out of order would
+ * build the wrong command line.
+ */
+export function requiredArgsOf(command: CommandLike): RequiredArg[] {
+  return Object.entries(command.args ?? {})
+    .filter(([, arg]) => arg.required === true)
+    .map(([name, arg]) => ({
+      name,
+      description: arg.description ?? "",
+      ...(arg.options ? { options: [...arg.options] } : {}),
+    }));
+}
 
 /** First-session order; everything else follows alphabetically. */
 const PRIORITY = ["setup", "init", "doctor", "deploy", "channel", "version", "config"];
@@ -72,6 +111,7 @@ export function buildMenu(input: { commands: CommandLike[]; topics: TopicLike[] 
       id: command.id,
       label: lastSegment(command.id),
       description: command.description ?? "",
+      requiredArgs: requiredArgsOf(command),
     };
 
     const topic = command.id.includes(":") ? command.id.split(":")[0]! : null;

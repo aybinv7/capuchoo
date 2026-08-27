@@ -3,7 +3,7 @@ import { BaseCommand } from "../base-command.js";
 import { buildMenu, menuSize, type Menu as MenuShape, type MenuCommand } from "../cli/menu.js";
 import fs from "node:fs";
 import path from "node:path";
-import { PromptCancelled, isInteractive, selectOne } from "../cli/prompts.js";
+import { PromptCancelled, askText, isInteractive, selectOne } from "../cli/prompts.js";
 import {
   hiddenCommands,
   isBlocked,
@@ -154,6 +154,38 @@ export default class Menu extends BaseCommand {
     }
   }
 
+  /**
+   * Asks for each required positional argument, in declaration order.
+   *
+   * Order is load-bearing - they are positional - and a declared option set
+   * becomes a picker rather than free text, because "one of admin, developer,
+   * tester, viewer" is a list and typing it is only a chance to get it wrong.
+   */
+  private async collectArgs(command: MenuCommand): Promise<string[]> {
+    const values: string[] = [];
+
+    for (const arg of command.requiredArgs) {
+      if (arg.options && arg.options.length > 0) {
+        values.push(
+          await selectOne(
+            arg.description || arg.name,
+            arg.options.map((option) => ({ value: option, label: option })),
+            `--help`,
+          ),
+        );
+        continue;
+      }
+
+      values.push(
+        await askText(arg.description || arg.name, {
+          flag: `${command.id.replaceAll(":", " ")} <${arg.name}>`,
+        }),
+      );
+    }
+
+    return values;
+  }
+
   /** The recommended step first, then everything else. */
   private async chooseTopLevel(
     menu: MenuShape,
@@ -230,12 +262,32 @@ export default class Menu extends BaseCommand {
    * friction this command exists to remove.
    */
   private async runAndReturn(command: MenuCommand): Promise<void> {
+    // Asked before the command line is printed, so what is shown is what runs.
+    // The menu invokes with no argv, so a command with required positional args
+    // used to fail the instant it was picked: `app grant` answered "Missing 2
+    // required args", from a menu whose whole purpose is not needing to know the
+    // arguments.
+    let argv: string[];
+    try {
+      argv = await this.collectArgs(command);
+    } catch (error) {
+      if (error instanceof PromptCancelled) {
+        this.log(chalk.dim("\n  Cancelled."));
+        return;
+      }
+      throw error;
+    }
+
     this.log("");
-    this.log(chalk.dim(`  ${this.config.bin} ${command.id.replaceAll(":", " ")}`));
+    this.log(
+      chalk.dim(
+        `  ${this.config.bin} ${command.id.replaceAll(":", " ")} ${argv.join(" ")}`.trimEnd(),
+      ),
+    );
     this.log("");
 
     try {
-      await this.config.runCommand(command.id, []);
+      await this.config.runCommand(command.id, argv);
     } catch (error) {
       if (error instanceof PromptCancelled) {
         this.log(chalk.dim("\n  Cancelled."));

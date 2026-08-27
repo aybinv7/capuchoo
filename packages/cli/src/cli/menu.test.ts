@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { buildMenu, menuSize, type CommandLike } from "./menu.js";
+import { buildMenu, menuSize, requiredArgsOf, type CommandLike } from "./menu.js";
 
 /** The real registry, as oclif reports it. */
 const COMMANDS: CommandLike[] = [
@@ -107,5 +107,87 @@ describe("buildMenu", () => {
     const empty = buildMenu({ commands: [], topics: [] });
     expect(empty).toEqual({ topics: [], commands: [] });
     expect(menuSize(empty)).toBe(0);
+  });
+});
+
+/**
+ * The menu invokes commands with no argv, so a command with required positional
+ * args failed the instant it was picked: `app grant` answered "Missing 2 required
+ * args" from a menu whose whole purpose is not having to know the arguments.
+ */
+describe("requiredArgsOf", () => {
+  it("finds the required args, in declaration order", () => {
+    const args = requiredArgsOf({
+      id: "app:grant",
+      args: {
+        email: { required: true, description: "Account to grant" },
+        role: {
+          required: true,
+          description: "One of admin, developer",
+          options: ["admin", "developer"],
+        },
+      },
+    });
+
+    // Positional, so order is the command line.
+    expect(args.map((a) => a.name)).toEqual(["email", "role"]);
+    expect(args[0]!.description).toBe("Account to grant");
+    expect(args[1]!.options).toEqual(["admin", "developer"]);
+  });
+
+  it("ignores optional args", () => {
+    const args = requiredArgsOf({
+      id: "app:identifiers",
+      args: {
+        action: { required: false, description: "list, add or remove" },
+        bundleId: { description: "Bundle identifier" },
+      },
+    });
+
+    expect(args).toEqual([]);
+  });
+
+  it("is empty for a command that declares none", () => {
+    expect(requiredArgsOf({ id: "doctor" })).toEqual([]);
+    expect(requiredArgsOf({ id: "doctor", args: {} })).toEqual([]);
+  });
+
+  it("omits options rather than emitting an empty list", () => {
+    // An empty array would make the menu render a picker with nothing in it.
+    const [arg] = requiredArgsOf({ id: "x", args: { a: { required: true } } });
+
+    expect(arg).toEqual({ name: "a", description: "" });
+  });
+
+  it("copies the option list, so the menu cannot mutate oclif's", () => {
+    const options = ["admin", "developer"];
+    const [arg] = requiredArgsOf({ id: "x", args: { role: { required: true, options } } });
+
+    arg!.options!.push("owner");
+    expect(options).toEqual(["admin", "developer"]);
+  });
+});
+
+describe("buildMenu carries the args through", () => {
+  it("puts them on the entry the menu will run", () => {
+    const menu = buildMenu({
+      commands: [
+        {
+          id: "app:grant",
+          description: "Grant a role",
+          args: { email: { required: true, description: "Account to grant" } },
+        },
+      ],
+      topics: [{ name: "app", description: "Apps" }],
+    });
+
+    const grant = menu.topics[0]!.commands[0]!;
+    expect(grant.requiredArgs.map((a) => a.name)).toEqual(["email"]);
+  });
+
+  it("gives a command with no args an empty list, never undefined", () => {
+    const menu = buildMenu({ commands: [{ id: "doctor" }], topics: [] });
+
+    expect(menu.commands[0]!.requiredArgs).toEqual([]);
   });
 });
