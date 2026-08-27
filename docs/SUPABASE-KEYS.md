@@ -27,10 +27,10 @@ browser** with a 401 - a safety net if one ever leaks into a client bundle.
   is exactly the failure this exists to prevent - the backend recorded nothing for months. It also
   warns if a publishable key was put in the secret slot, or a secret key in the publishable slot.
 
-- **`apps/dashboard` and `apps/template` use the publishable key.** The dashboard reads
-  `VITE_SUPABASE_PUBLISHABLE_KEY` only - it deploys from this workspace, where the environment is
-  known. `apps/template` keeps a `VITE_SUPABASE_ANON_KEY` fallback, because an app built from it may
-  be shipped by someone whose environment has not migrated. Never put a secret key in a
+- **`apps/dashboard` uses the publishable key.** It reads `VITE_SUPABASE_PUBLISHABLE_KEY` only -
+  it deploys from this workspace, where the environment is known. An app scaffolded outside this
+  repo should keep a `VITE_SUPABASE_ANON_KEY` fallback, because whoever ships it may not have
+  migrated yet. Never put a secret key in a
   `VITE_`-prefixed variable: Vite inlines those into the bundle.
 
 Variable names, new and legacy - the legacy ones are accepted so an environment can be migrated

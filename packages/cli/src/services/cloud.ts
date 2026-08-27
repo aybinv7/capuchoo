@@ -21,6 +21,13 @@ export interface Membership {
 
 export type AppFlavour = "prod" | "staging" | "dev";
 
+export interface UpdateLogRow {
+  action?: string | null;
+  new_version?: string | null;
+  device_id?: string | null;
+  created_at?: string | null;
+}
+
 export interface AppIdentifierRow {
   id?: string;
   bundle_id: string;
@@ -237,6 +244,20 @@ export class CloudClient {
 
   channels(cloudAppId: string): Promise<CloudChannel[]> {
     return get<CloudChannel[]>(`/api/apps/${cloudAppId}/channels`, this.options);
+  }
+
+  /**
+   * The update log, newest first.
+   *
+   * Keyed by the *bundle* identifier rather than the app uuid, which is what
+   * this endpoint accepts. Used to answer "has a device taken this version yet",
+   * which is the only evidence an onboarding has that updates actually work.
+   */
+  updateLogs(bundleId: string, limit = 100): Promise<UpdateLogRow[]> {
+    return get<UpdateLogRow[]>(
+      `/api/dashboard/update-logs?app_id=${encodeURIComponent(bundleId)}&limit=${limit}`,
+      this.options,
+    );
   }
 
   releases(cloudAppId: string, channel?: string): Promise<CloudRelease[]> {

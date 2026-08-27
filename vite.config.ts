@@ -55,7 +55,7 @@ export default defineConfig({
       // apps and drowned every real finding.
       //
       // Type checking still happens, with the tool that understands each
-      // package: vue-tsc for apps/template and apps/dashboard, tsc for the CLI,
+      // package: vue-tsc for apps/dashboard, tsc for the CLI,
       // the backend and the plugin, and tsdown's --dts for core and updater.
       // All of them run in `vp run -r build`.
       typeAware: true,
@@ -105,7 +105,7 @@ export default defineConfig({
 
     tasks: {
       // Build only the publishable libraries. Run this before
-      // `vp -C apps/template dev`, because the apps import them from `dist`.
+      // an app's `vp dev`, because the apps import them from `dist`.
       libs: {
         command: 'vp run --filter "./packages/**" build',
         cache: false,

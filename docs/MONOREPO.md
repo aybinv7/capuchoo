@@ -12,8 +12,7 @@ capuchoo/
 │   ├── updater/        @capuchoo/updater       app-side runtime
 │   ├── cli/            @capuchoo/cli          build and publish releases
 ├── apps/
-│   ├── dashboard/      @capuchoo/dashboard     orgs, apps, channels, releases
-│   └── template/       @capuchoo/template      reference Capacitor application
+│   └── dashboard/      @capuchoo/dashboard     orgs, apps, channels, releases
 ├── services/
 │   └── back/           @capuchoo/back          update server
 ├── vite.config.ts      lint, format, and the fan-out tasks
@@ -24,9 +23,9 @@ capuchoo/
 The dependency direction is one-way and worth keeping that way:
 
 ```
-core  <-  updater  <-  template
-  \                       ^
-   \-- cli ---------------/        (cli is a devDependency of the app)
+core  <-  updater  <-  app
+  \                    ^
+   \-- cli ------------/        (cli is a devDependency of the app)
 ```
 
 `core` depends on nothing. That is what lets the CLI import it in Node, the updater import it inside
@@ -137,7 +136,7 @@ Each package is checked by the tool that understands it:
 | Package             | Checked by      |
 | ------------------- | --------------- |
 | core, updater       | `vp pack --dts` |
-| dashboard, template | `vue-tsc`       |
+| dashboard           | `vue-tsc`       |
 
 All of them run inside `vp run -r build`, so a type error fails the build.
 
@@ -164,7 +163,7 @@ The apps import `@capuchoo/updater` from its `dist`, so build the libraries firs
 
 ```sh
 vp run libs
-vp -C apps/template dev
+vp -C <your-capacitor-app> dev
 ```
 
 Or run `vp pack --watch` in `packages/updater` alongside the app's dev server.
@@ -250,7 +249,6 @@ Verified 2026-08-22.
 - `POST /api/downloaded`, `/applied`, `/failed`: their action values are fixed but nothing calls
   them yet, and OTA telemetry still depends on whatever the plugin posts to `statsUrl`. inspection,
   but no Android or iOS build has compiled them.
-- `apps/template` has no cloud app - `capuchoo init` relinks it - so it has never been deployed.
 
 **Deliberately not done**
 

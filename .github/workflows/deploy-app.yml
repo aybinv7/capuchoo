@@ -11,11 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       app:
-        description: "Workspace directory of the app to ship"
+        description: "Workspace directory of the app to ship, e.g. apps/my-app"
         required: true
-        type: choice
-        options: [apps/template]
-        default: apps/template
+        type: string
       type:
         description: "ota = web bundle only, native = APK"
         required: true

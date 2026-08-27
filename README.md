@@ -12,7 +12,6 @@ dashboard to manage it.
 | `packages/updater` | `@capuchoo/updater`   | App-side runtime: checks, downloads, applies, prompts.           |
 | `packages/cli`     | `@capuchoo/cli`       | Builds and publishes OTA and native releases.                    |
 | `apps/dashboard`   | `@capuchoo/dashboard` | Organizations, apps, channels, releases.                         |
-| `apps/template`    | `@capuchoo/template`  | Reference Capacitor application, wired end to end.               |
 | `services/back`    | `@capuchoo/back`      | Update server. Owns channels, artefacts and the update decision. |
 
 ## Getting started
@@ -29,7 +28,7 @@ build, test, lint, format. See [docs/MONOREPO.md](./docs/MONOREPO.md).
 ## Shipping an app
 
 ```sh
-cd apps/template
+cd <your-capacitor-app>            # scaffolded with @cavulsqa/create
 
 capuchoo auth login                          # once, stores an API key
 capuchoo init                                # links this directory to a cloud app
@@ -99,7 +98,7 @@ await useUpdater().init();
 
 For the prompt, `useUpdatePrompt()` returns everything a dialog needs - title, body, button label,
 whether it can be dismissed - so each app writes only its own markup.
-`apps/template/src/shared/components/updater/UpdatePrompt.vue` is a Framework7 example.
+The apps scaffolded by `@cavulsqa/create` ship a Framework7 example of exactly that.
 
 ## Documentation
 
