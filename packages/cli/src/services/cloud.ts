@@ -6,7 +6,26 @@ import type {
   Environment,
   UserProfile,
 } from "@capuchoo/core";
-import { HttpError, del, get, post, uploadArtifact, type HttpOptions } from "../utils/http.js";
+import { HttpError, del, get, post, put, uploadArtifact, type HttpOptions } from "../utils/http.js";
+
+export type OrgRole = "owner" | "admin" | "member";
+export type AppRole = "admin" | "developer" | "tester" | "viewer";
+
+/** A row of organization_members or app_permissions, joined with its user. */
+export interface Membership {
+  user_id: string;
+  role: string;
+  users?: { id: string; email: string; full_name?: string | null } | null;
+}
+
+export interface ApiKeySummary {
+  id: string;
+  name: string;
+  key_prefix?: string;
+  app_id?: string | null;
+  created_at?: string;
+  last_used_at?: string | null;
+}
 
 /**
  * The Capuchoo API client.
@@ -96,6 +115,55 @@ export class CloudClient {
 
   organizations(): Promise<CloudOrganization[]> {
     return get<CloudOrganization[]>("/api/organizations", this.options);
+  }
+
+  /**
+   * Keys belonging to this account. The plain key is never returned again.
+   *
+   * Unwrapped here: this endpoint answers `{ success, keys }` while the member
+   * and permission lists answer bare arrays.
+   */
+  async apiKeys(): Promise<ApiKeySummary[]> {
+    const response = await get<{ keys?: ApiKeySummary[] } | ApiKeySummary[]>(
+      "/api/api-keys",
+      this.options,
+    );
+
+    return Array.isArray(response) ? response : (response.keys ?? []);
+  }
+
+  revokeApiKey(id: string): Promise<void> {
+    return del(`/api/api-keys/${id}`, this.options);
+  }
+
+  orgMembers(organizationId: string): Promise<Membership[]> {
+    return get<Membership[]>(`/api/organizations/${organizationId}/members`, this.options);
+  }
+
+  /** Adds by email; the server resolves it. Guarded by requireOrgAdmin. */
+  addOrgMember(organizationId: string, email: string, role: OrgRole): Promise<unknown> {
+    return post(`/api/organizations/${organizationId}/members`, { email, role }, this.options);
+  }
+
+  setOrgMemberRole(organizationId: string, userId: string, role: OrgRole): Promise<unknown> {
+    return put(`/api/organizations/${organizationId}/members/${userId}`, { role }, this.options);
+  }
+
+  removeOrgMember(organizationId: string, userId: string): Promise<void> {
+    return del(`/api/organizations/${organizationId}/members/${userId}`, this.options);
+  }
+
+  appPermissions(cloudAppId: string): Promise<Membership[]> {
+    return get<Membership[]>(`/api/apps/${cloudAppId}/permissions`, this.options);
+  }
+
+  /** Grants by email. Guarded by requireAppAdmin. */
+  grantAppRole(cloudAppId: string, email: string, role: AppRole): Promise<unknown> {
+    return post(`/api/apps/${cloudAppId}/permissions`, { email, role }, this.options);
+  }
+
+  revokeAppRole(cloudAppId: string, userId: string): Promise<void> {
+    return del(`/api/apps/${cloudAppId}/permissions/${userId}`, this.options);
   }
 
   apps(): Promise<CloudApp[]> {

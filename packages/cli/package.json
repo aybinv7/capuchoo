@@ -59,10 +59,10 @@
     "topicSeparator": " ",
     "topics": {
       "app": {
-        "description": "List and delete apps"
+        "description": "List and delete apps, and manage who can publish"
       },
       "auth": {
-        "description": "Sign in to a Capuchoo backend"
+        "description": "Sign in, and manage this account's API keys"
       },
       "channel": {
         "description": "Create and inspect an app's channels"
@@ -74,7 +74,7 @@
         "description": "Build and publish a release"
       },
       "org": {
-        "description": "Create and list organizations"
+        "description": "Create organizations and manage who is in them"
       },
       "version": {
         "description": "Manage the app version and native build numbers"

@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
 
+/** app_permissions.role, as the CHECK constraint defines it. */
+const ROLES = ["admin", "developer", "tester", "viewer"];
+
 class AppController {
   /**
    * Get all apps accessible to user
@@ -249,10 +252,36 @@ class AppController {
         return;
       }
 
-      const { user_id, role } = req.body;
+      // An email is accepted as well as a user_id, matching addMember on
+      // organisations. A caller types an address, not a uuid, and there is
+      // deliberately no user-lookup endpoint to turn one into the other -
+      // that would be an email enumeration surface.
+      const { role } = req.body;
+      const email = req.body.email as string | undefined;
+      let userId = req.body.user_id as string | undefined;
 
-      if (!user_id || !role) {
-        res.status(400).json({ error: "user_id and role are required" });
+      if (!role || (!userId && !email)) {
+        res.status(400).json({ error: "role and one of user_id or email are required" });
+        return;
+      }
+
+      if (!userId && email) {
+        const { data: user } = await supabaseService
+          .getClient()
+          .from("users")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (!user) {
+          res.status(404).json({ error: `No account with the email "${email}"` });
+          return;
+        }
+        userId = user.id;
+      }
+
+      if (!ROLES.includes(role)) {
+        res.status(400).json({ error: `role must be one of ${ROLES.join(", ")}` });
         return;
       }
 
@@ -263,7 +292,7 @@ class AppController {
         .upsert(
           {
             app_id: appId,
-            user_id,
+            user_id: userId,
             role,
             updated_at: new Date().toISOString(),
           },
