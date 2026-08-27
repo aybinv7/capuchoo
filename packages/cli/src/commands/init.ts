@@ -31,6 +31,7 @@ import { CloudClient } from "../services/cloud.js";
 import { HttpError } from "../utils/http.js";
 import {
   projectConfigPath,
+  readAppVersion,
   readProjectConfig,
   requireProjectConfig,
   resolveCredentials,
@@ -39,6 +40,7 @@ import {
 import AuthLogin from "./auth/login.js";
 import { BaseCommand } from "../base-command.js";
 import { INIT_STEPS, selectSteps, type InitStepId } from "../cli/init-plan.js";
+import { waitForAdoption } from "../init/prove.js";
 import {
   renderOutcomes,
   stepCode,
@@ -48,6 +50,16 @@ import {
   type StepContext,
   type StepOutcome,
 } from "../init/steps.js";
+
+/**
+ * How long --prove waits for a device, and how often it asks.
+ *
+ * Two minutes is long enough to open an app on a phone and short enough that a
+ * forgotten terminal is not left spinning. The poll is generous because the
+ * backend sleeps when idle and this is not a race.
+ */
+const PROVE_TIMEOUT_MS = 120_000;
+const PROVE_POLL_MS = 5_000;
 
 /** The answers --create can supply, so the wizard has nothing left to ask. */
 interface CreateFlags {
@@ -140,6 +152,10 @@ export default class Init extends BaseCommand {
     only: Flags.string({
       multiple: true,
       description: "Run only these steps (verify always runs unless skipped)",
+    }),
+    prove: Flags.boolean({
+      default: false,
+      description: "Publish a release and wait for a device to take it",
     }),
   };
 
@@ -347,6 +363,8 @@ export default class Init extends BaseCommand {
       native: boolean;
       "skip-telemetry": boolean;
       "skip-sync": boolean;
+      prove: boolean;
+      channel?: string | undefined;
       skip?: string[] | undefined;
       only?: string[] | undefined;
     },
@@ -411,6 +429,92 @@ export default class Init extends BaseCommand {
     if (!flags.skip?.includes("verify")) {
       await this.config.runCommand("doctor", []);
     }
+
+    if (flags.prove) await this.prove(appDir, cloud, app, flags);
+  }
+
+  /**
+   * Publishes, then waits for a device to take it.
+   *
+   * The only step that produces evidence instead of a claim. Everything before
+   * it checks configuration; this one shows that a real install asked this
+   * backend and was handed the bundle that was just published.
+   *
+   * Off unless asked, because it builds the app and uploads a release - not
+   * something a command should do as a side effect of being run twice.
+   */
+  private async prove(
+    appDir: string,
+    cloud: CloudClient,
+    app: CloudApp,
+    flags: { channel?: string | undefined; yes: boolean },
+  ): Promise<void> {
+    const channels = await cloud.channels(app.id).catch(() => []);
+    const target =
+      channels.find((channel) => channel.name === flags.channel) ??
+      channels.find((channel) => channel.environment === "dev") ??
+      channels[0];
+
+    if (!target) {
+      this.error("There is no channel to publish to. Create one, then run init --prove again.");
+    }
+
+    this.log("");
+    this.log(chalk.bold(`  Publishing to ${target.name}`));
+
+    // Reuses the deploy command rather than reimplementing it: the build, the
+    // signing check, the archive format and the upload all live there, and a
+    // second copy of that is how the two drift.
+    await this.config.runCommand("deploy:ota", [
+      "--channel",
+      target.name,
+      ...(flags.yes ? ["--yes"] : []),
+    ]);
+
+    const version = readAppVersion(appDir);
+
+    this.log("");
+    this.log(chalk.bold(`  Waiting for a device to take ${version}`));
+    this.log(
+      chalk.dim(
+        "  Open the app on a device or emulator. Ctrl+C to stop waiting - the\n" +
+          "  bundle stays published either way.",
+      ),
+    );
+
+    const spin = ora({ text: "No device yet", stream: process.stderr }).start();
+
+    const { adopted, adoption } = await waitForAdoption(
+      () => cloud.updateLogs(app.app_id),
+      version,
+      {
+        timeoutMs: PROVE_TIMEOUT_MS,
+        pollMs: PROVE_POLL_MS,
+        onAttempt: (elapsed) => {
+          spin.text = `No device yet (${Math.round(elapsed / 1000)}s)`;
+        },
+      },
+    );
+
+    if (adopted) {
+      spin.succeed(
+        `${adoption.devices} device${adoption.devices === 1 ? "" : "s"} took ${version}`,
+      );
+      this.log("");
+      this.log(chalk.green("  Updates work end to end."));
+      this.log("");
+      return;
+    }
+
+    // Not a failure of the deploy: nothing asked while we were watching, which
+    // is the normal case when nothing is running.
+    spin.stop();
+    this.log("");
+    this.log(
+      chalk.yellow(`  No device asked for an update in ${PROVE_TIMEOUT_MS / 1000}s.`) +
+        `\n  ${chalk.dim(`${version} is published on ${target.name} and will be served when one does.`)}`,
+    );
+    this.log("");
   }
 
   /**

@@ -133,10 +133,10 @@ is why the shared deploy implementation lives in `src/deploy/execute.ts` - as
 
 Each package is checked by the tool that understands it:
 
-| Package             | Checked by      |
-| ------------------- | --------------- |
-| core, updater       | `vp pack --dts` |
-| dashboard           | `vue-tsc`       |
+| Package       | Checked by      |
+| ------------- | --------------- |
+| core, updater | `vp pack --dts` |
+| dashboard     | `vue-tsc`       |
 
 All of them run inside `vp run -r build`, so a type error fails the build.
 

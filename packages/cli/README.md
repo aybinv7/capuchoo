@@ -583,7 +583,7 @@ Set this app up to receive updates, from nothing to verified
 ```
 USAGE
   $ capuchoo init [-l | -c] [--name <value> ] [--app-id <value>] [--org <value> ] [--channel <value>] [-f]
-    [-y] [--dry-run] [--native] [--skip-telemetry] [--skip-sync] [--skip <value>...] [--only <value>...]
+    [-y] [--dry-run] [--native] [--skip-telemetry] [--skip-sync] [--skip <value>...] [--only <value>...] [--prove]
 
 FLAGS
   -c, --create           Create a new app instead of asking
@@ -597,6 +597,7 @@ FLAGS
       --native           Also install what downloading and installing an APK needs
       --only=<value>...  Run only these steps (verify always runs unless skipped)
       --org=<value>      Organization to create the app in, by name or id
+      --prove            Publish a release and wait for a device to take it
       --skip=<value>...  Steps to leave out: credentials, link, identifiers, channels, packages, env, code, verify,
                          publish, confirm
       --skip-sync        Do not run cap sync after installing
@@ -740,7 +741,7 @@ Set this app up to receive updates, from nothing to verified
 ```
 USAGE
   $ capuchoo setup [-l | -c] [--name <value> ] [--app-id <value>] [--org <value> ] [--channel <value>] [-f]
-    [-y] [--dry-run] [--native] [--skip-telemetry] [--skip-sync] [--skip <value>...] [--only <value>...]
+    [-y] [--dry-run] [--native] [--skip-telemetry] [--skip-sync] [--skip <value>...] [--only <value>...] [--prove]
 
 FLAGS
   -c, --create           Create a new app instead of asking
@@ -754,6 +755,7 @@ FLAGS
       --native           Also install what downloading and installing an APK needs
       --only=<value>...  Run only these steps (verify always runs unless skipped)
       --org=<value>      Organization to create the app in, by name or id
+      --prove            Publish a release and wait for a device to take it
       --skip=<value>...  Steps to leave out: credentials, link, identifiers, channels, packages, env, code, verify,
                          publish, confirm
       --skip-sync        Do not run cap sync after installing

@@ -97,8 +97,8 @@ await useUpdater().init();
 ```
 
 For the prompt, `useUpdatePrompt()` returns everything a dialog needs - title, body, button label,
-whether it can be dismissed - so each app writes only its own markup.
-The apps scaffolded by `@cavulsqa/create` ship a Framework7 example of exactly that.
+whether it can be dismissed - so each app writes only its own markup. The apps scaffolded by
+`@cavulsqa/create` ship a Framework7 example of exactly that.
 
 ## Documentation
 
