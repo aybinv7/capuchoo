@@ -9,9 +9,11 @@ import {
   describeFailure,
   formatBytes,
   runDeploy,
+  validateRequest,
   type DeployKind,
   type DeployRequest,
 } from "../pipeline/deploy.js";
+import { resolveFlavour } from "../pipeline/flavour.js";
 import { CloudClient } from "../services/cloud.js";
 import {
   readAppVersion,
@@ -297,10 +299,6 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     }
   }
 
-  // The version is written only after confirmation, so an abandoned prompt
-  // leaves package.json untouched.
-  if (bump) writeAppVersion(appDir, version);
-
   const request: DeployRequest = {
     appDir,
     project,
@@ -319,6 +317,25 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     quiet: json,
     identifiers,
   };
+
+  // Validated before package.json is written, not after.
+  //
+  // The bump used to happen first, so a deploy that could never have succeeded -
+  // a flavour missing VITE_UPDATE_API_URL, say - still left the version
+  // advanced. Three attempts took an app from 5.0.0 to 8.0.0 with nothing
+  // published, and each one printed "package.json was already bumped" as if that
+  // were acceptable. `validateRequest` reads files and does no work, so there is
+  // no reason for it to run second. runDeploy checks again, for its other
+  // callers.
+  const problems = validateRequest(request, resolveFlavour(appDir, project, environment));
+  if (problems.length > 0) {
+    const detail = problems.map((problem) => `  - ${problem}`).join("\n");
+    fail(command, `This deploy cannot proceed:\n${detail}\n\nNothing was changed.`);
+  }
+
+  // Written only after confirmation and validation, so neither an abandoned
+  // prompt nor a rejected request leaves package.json touched.
+  if (bump) writeAppVersion(appDir, version);
 
   try {
     const outcome = await runDeploy(request, reporter);

@@ -151,14 +151,25 @@ export async function selectOne<T>(
   }) as Parameters<typeof clack.select<T>>[0]["options"];
 
   if (choices.length > AUTOCOMPLETE_THRESHOLD) {
-    return settle(
-      await clack.autocomplete({
-        message: question,
-        options: options as Parameters<typeof clack.autocomplete<T>>[0]["options"],
-        maxItems: AUTOCOMPLETE_THRESHOLD,
-        placeholder: "Type to filter...",
-      }),
-    );
+    // Submitting an autocomplete with nothing highlighted - Enter on a filter
+    // that matches nothing, which is easy to do - resolves to `undefined`, not
+    // to a cancel. Returned as-is it crashed the caller on the next property
+    // read ("Cannot read properties of undefined"), which reads like a bug in
+    // whatever you were trying to run. Ask again instead; Ctrl+C still leaves.
+    for (;;) {
+      const answer = settle(
+        await clack.autocomplete({
+          message: question,
+          options: options as Parameters<typeof clack.autocomplete<T>>[0]["options"],
+          maxItems: AUTOCOMPLETE_THRESHOLD,
+          placeholder: "Type to filter...",
+        }),
+      );
+
+      if (answer !== undefined && answer !== null) return answer;
+
+      log.warn("Nothing selected. Pick one with the arrow keys, or press Ctrl+C to leave.");
+    }
   }
 
   return settle(await clack.select({ message: question, options }));
