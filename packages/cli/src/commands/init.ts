@@ -587,11 +587,21 @@ export default class Init extends BaseCommand {
 
       return app;
     } catch (error) {
-      creating.fail(
-        error instanceof HttpError && error.status === 409
-          ? "That bundle identifier is taken"
-          : "Could not create the app",
-      );
+      if (error instanceof HttpError && error.status === 409) {
+        creating.fail("That bundle identifier is taken");
+        this.error(
+          `${error.message}
+
+` +
+            `  Either change the applicationId this app builds with, or have an
+` +
+            `  administrator of the owning organisation grant you access to it -
+` +
+            `  then run ${chalk.cyan("capuchoo init")} again and it will link rather than create.`,
+        );
+      }
+
+      creating.fail("Could not create the app");
       this.error(error instanceof Error ? error.message : String(error));
     }
   }
