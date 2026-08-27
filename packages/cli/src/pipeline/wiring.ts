@@ -92,6 +92,35 @@ export function patchEnvFile(content: string, apiUrl: string, channel: string): 
   return patch;
 }
 
+/**
+ * A flavour env file that did not exist.
+ *
+ * `init` writes `project.json` pointing at `build/<env>/.env.<env>` for all three
+ * flavours whether or not they exist, and the patcher above only ever edited
+ * files that were already there - so a fresh app or a template got the pointer
+ * and no file, and every deploy then failed on "does not set VITE_APP_ID". The
+ * step that was meant to make an app deployable skipped the case where there was
+ * most to do.
+ *
+ * Only the three values a deploy actually requires, plus the environment name
+ * for convention. Anything else is the app's to add - this is a starting point,
+ * not a template of someone else's settings.
+ */
+export function newEnvFile(environment: string, appId: string, apiUrl: string): string {
+  return [
+    `# ${environment} build. Created by capuchoo init.`,
+    "",
+    `VITE_APP_ID=${appId}`,
+    `VITE_ENVIRONMENT=${environment}`,
+    "",
+    "# Capuchoo. Both are required: capuchooUpdaterConfig() refuses to build a",
+    "# plugin block without them, and an empty updateUrl disables updates silently.",
+    `VITE_UPDATE_API_URL=${apiUrl}`,
+    `VITE_UPDATE_CHANNEL=${environment}`,
+    "",
+  ].join("\n");
+}
+
 const READY_IMPORT = 'import { notifyAppReady } from "@capuchoo/updater";';
 
 /**

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
-import { patchCapacitorConfig, patchEntryFile, patchEnvFile, describePatch } from "./wiring.js";
+import {
+  patchCapacitorConfig,
+  patchEntryFile,
+  patchEnvFile,
+  newEnvFile,
+  describePatch,
+} from "./wiring.js";
 
 const API = "https://capuchoo-back.onrender.com";
 
@@ -232,5 +238,50 @@ describe("describePatch", () => {
     expect(diff).toContain("main.ts");
     expect(diff).toContain("+ void notifyAppReady();");
     expect(diff).not.toContain("+ createApp(App).mount");
+  });
+});
+
+/**
+ * The case that was silently skipped. `init` points project.json at all three
+ * flavour files whether they exist or not, so a template - which has none - got
+ * the pointer and no files, and every deploy then failed on "does not set
+ * VITE_APP_ID".
+ */
+describe("newEnvFile", () => {
+  const file = newEnvFile("dev", "com.acme.app", API);
+
+  it("sets everything a deploy requires", () => {
+    // describeFlavourProblems refuses a flavour without these two, and
+    // capuchooUpdaterConfig refuses to build without the channel.
+    expect(file).toContain("VITE_APP_ID=com.acme.app");
+    expect(file).toContain(`VITE_UPDATE_API_URL=${API}`);
+    expect(file).toContain("VITE_UPDATE_CHANNEL=dev");
+  });
+
+  it("names the environment, for convention and for the config to read", () => {
+    expect(file).toContain("VITE_ENVIRONMENT=dev");
+    expect(newEnvFile("staging", "x.y", API)).toContain("VITE_ENVIRONMENT=staging");
+  });
+
+  it("says where it came from", () => {
+    expect(file).toContain("capuchoo init");
+  });
+
+  it("uses the channel matching the flavour, not a fixed one", () => {
+    expect(newEnvFile("prod", "x.y", API)).toContain("VITE_UPDATE_CHANNEL=prod");
+    expect(newEnvFile("staging", "x.y", API)).toContain("VITE_UPDATE_CHANNEL=staging");
+  });
+
+  it("is a starting point, not somebody else's settings", () => {
+    // Four values and comments. Anything more is the app's to add, and guessing
+    // at an app's own variables is how a generated file becomes noise.
+    const assignments = file.split("\n").filter((line) => /^[A-Z]/.test(line));
+    expect(assignments).toHaveLength(4);
+  });
+
+  it("round-trips through the patcher as already-set", () => {
+    // What init writes must satisfy what init checks, or a second run would
+    // report work to do on a file it just created.
+    expect(patchEnvFile(file, API, "dev").content).toBeNull();
   });
 });

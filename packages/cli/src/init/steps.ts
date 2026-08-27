@@ -23,9 +23,11 @@ import {
 } from "../pipeline/install.js";
 import {
   describePatch,
+  newEnvFile,
   patchCapacitorConfig,
   patchEntryFile,
   patchEnvFile,
+  type Patch,
 } from "../pipeline/wiring.js";
 import type { CloudClient } from "../services/cloud.js";
 
@@ -165,10 +167,19 @@ export async function stepEnv(ctx: StepContext): Promise<StepOutcome> {
 
   for (const [environment, flavour] of Object.entries(ctx.project.flavours)) {
     const file = path.join(ctx.appDir, flavour.envFile);
-    if (!fs.existsSync(file)) continue;
 
-    const before = fs.readFileSync(file, "utf8");
-    const patch = patchEnvFile(before, ctx.endpoint, environment as Environment);
+    // Absent is the case with most to do, and it used to be the one case this
+    // skipped: init writes project.json pointing at all three flavour files
+    // whether they exist or not, so a fresh app or a template got the pointer
+    // and no files, and every deploy then failed on "does not set VITE_APP_ID".
+    const before = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+    const patch: Patch =
+      before === null
+        ? {
+            content: newEnvFile(environment, ctx.bundleId, ctx.endpoint),
+            summary: "created",
+          }
+        : patchEnvFile(before, ctx.endpoint, environment as Environment);
 
     if (patch.conflict) conflicts.push(`${flavour.envFile}: ${patch.conflict}`);
 
@@ -177,18 +188,23 @@ export async function stepEnv(ctx: StepContext): Promise<StepOutcome> {
       continue;
     }
 
+    const diff = describePatch(flavour.envFile, before ?? "", patch.content);
+
     if (ctx.dryRun) {
-      log.info(describePatch(flavour.envFile, before, patch.content));
+      log.info(diff);
       continue;
     }
 
     if (ctx.interactive && !ctx.assumeYes) {
-      log.info(describePatch(flavour.envFile, before, patch.content));
-      if (!(await confirm(`Write ${flavour.envFile}?`, { default: true }))) continue;
+      log.info(diff);
+      const question = before === null ? `Create ${flavour.envFile}?` : `Write ${flavour.envFile}?`;
+      if (!(await confirm(question, { default: true }))) continue;
     }
 
+    // A created file may sit in a directory that does not exist either.
+    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, patch.content, "utf8");
-    applied.push(flavour.envFile);
+    applied.push(before === null ? `${flavour.envFile} (new)` : flavour.envFile);
   }
 
   for (const conflict of conflicts) {
