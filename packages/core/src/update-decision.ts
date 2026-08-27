@@ -5,7 +5,7 @@
  * wire response is shaped. Fetching stays in the backend.
  */
 
-import { isEnvironmentAllowed } from "./project-config.js";
+import { describeFlavourMismatch, isFlavourAllowed, type AppIdentity } from "./app-identity.js";
 import {
   UpdateMessage,
   type Environment,
@@ -17,18 +17,48 @@ import { compareVersions } from "./version.js";
 
 /** The build a device is running, as it reports itself. */
 export interface DeviceState {
-  /** Bundle identifier of the binary, which carries its environment suffix. */
+  /** Bundle identifier of the binary. Says nothing about its flavour on its own. */
   appId: string;
   platform: Platform;
   /** Native build number. 0 when the device did not report one. */
   versionCode: number;
   /** Applied OTA bundle version, or `"builtin"` when none has landed. */
   versionName: string;
+  /**
+   * The plugin's `is_prod`: false for a debuggable build.
+   *
+   * Undefined means the device did not say, which must not be read as false -
+   * every device on an older plugin would then be treated as a dev build.
+   */
+  isProduction?: boolean | undefined;
+  /** The plugin's `is_emulator`. Undefined means it did not say. */
+  isEmulator?: boolean | undefined;
 }
 
+/**
+ * A channel, and who it will serve.
+ *
+ * The flags mirror columns that have existed since the first schema and that
+ * nothing read: a channel could be marked `allow_emulator: false` in the
+ * database and still serve every emulator that asked. They are optional here
+ * and default to permissive, matching both the column defaults and a backend
+ * that did not select them.
+ */
 export interface ChannelState {
   name: string;
-  environment: Environment;
+  /**
+   * The flavour whose builds this channel serves, or null when it is bound to
+   * none - in which case no flavour gate applies. This used to default to
+   * "staging" when the column was empty, which was a guess made to keep the old
+   * suffix rule usable; a channel that claims nothing now gates nothing.
+   */
+  environment: Environment | null;
+  /** `allow_dev`: whether a debuggable build may be served. */
+  allowDevBuilds?: boolean | undefined;
+  /** `allow_emulator`. */
+  allowEmulators?: boolean | undefined;
+  iosEnabled?: boolean | undefined;
+  androidEnabled?: boolean | undefined;
 }
 
 /** A native binary row. The column is `file_size_bytes`; the wire field is `file_size`. */
@@ -58,8 +88,12 @@ export interface OtaRelease {
 /** Everything the server looked up. Facts only - no decisions. */
 export interface UpdateFacts {
   device: DeviceState;
-  /** null when no app carries the requested bundle identifier. */
-  app: { id: string } | null;
+  /**
+   * The registered identity for the requested bundle identifier, or null when
+   * nothing claims it. Carries the flavour, which is why the decision no longer
+   * has to guess one from the identifier's spelling.
+   */
+  identity: AppIdentity | null;
   /** null when the app has no channel by the requested name. */
   channel: ChannelState | null;
   /** The native binary the channel points at, if any. */
@@ -72,7 +106,15 @@ export interface UpdateFacts {
 export type UpdateDecision =
   | { kind: "app-not-found" }
   | { kind: "channel-not-found" }
-  | { kind: "environment-mismatch"; expected: Environment; channel: ChannelState }
+  | {
+      kind: "flavour-mismatch";
+      buildFlavour: Environment;
+      channelFlavour: Environment;
+      channel: ChannelState;
+    }
+  | { kind: "platform-disabled"; platform: Platform; channel: ChannelState }
+  | { kind: "emulator-blocked"; channel: ChannelState }
+  | { kind: "dev-build-blocked"; channel: ChannelState }
   | { kind: "native"; release: NativeRelease }
   | { kind: "native-required"; minVersionCode: number; installedVersionCode: number }
   | { kind: "ota"; release: OtaRelease }
@@ -89,17 +131,53 @@ function minimumNativeVersion(ota: OtaRelease): number {
 }
 
 /**
- * Decides what to serve. Order is load-bearing: environment gate, then native,
- * then OTA - a bundle applied to a binary too old to run it cannot be undone.
+ * Whether the channel serves this platform at all. Absent flags are permissive.
+ */
+function platformEnabled(channel: ChannelState, platform: Platform): boolean {
+  if (platform === "ios") return channel.iosEnabled !== false;
+  if (platform === "android") return channel.androidEnabled !== false;
+
+  return true;
+}
+
+/**
+ * Decides what to serve.
+ *
+ * Order is load-bearing. Every gate runs before any artefact is chosen, because
+ * a device the channel refuses must be told so rather than handed the wrong
+ * build; and native runs before OTA, because a bundle applied to a binary too
+ * old to run it cannot be undone.
  */
 export function decideUpdate(facts: UpdateFacts): UpdateDecision {
-  const { device, app, channel, native, ota } = facts;
+  const { device, identity, channel, native, ota } = facts;
 
-  if (!app) return { kind: "app-not-found" };
+  if (!identity) return { kind: "app-not-found" };
   if (!channel) return { kind: "channel-not-found" };
 
-  if (!isEnvironmentAllowed(device.appId, channel.environment)) {
-    return { kind: "environment-mismatch", expected: channel.environment, channel };
+  if (!platformEnabled(channel, device.platform)) {
+    return { kind: "platform-disabled", platform: device.platform, channel };
+  }
+
+  // Both are non-null whenever isFlavourAllowed says no: it allows a null on
+  // either side unconditionally.
+  if (!isFlavourAllowed(identity.flavour, channel.environment)) {
+    return {
+      kind: "flavour-mismatch",
+      buildFlavour: identity.flavour as Environment,
+      channelFlavour: channel.environment as Environment,
+      channel,
+    };
+  }
+
+  // `=== true` and `=== false` throughout: undefined means the device did not
+  // report, and refusing on a value nobody sent would strand every install on
+  // an older plugin.
+  if (channel.allowEmulators === false && device.isEmulator === true) {
+    return { kind: "emulator-blocked", channel };
+  }
+
+  if (channel.allowDevBuilds === false && device.isProduction === false) {
+    return { kind: "dev-build-blocked", channel };
   }
 
   // Platform checked here, not at the query, so iOS is never offered an APK.
@@ -176,8 +254,20 @@ export function renderUpdateResponse(
     case "channel-not-found":
       return { message: UpdateMessage.CHANNEL_NOT_FOUND, kind: "blocked" };
 
-    case "environment-mismatch":
-      return { message: UpdateMessage.ENVIRONMENT_MISMATCH, kind: "blocked", config };
+    // All four are "the channel will not serve this device". Blocked rather
+    // than failed: nothing is broken, and the plugin logs blocked at info
+    // instead of raising a failed update.
+    case "flavour-mismatch":
+      return { message: UpdateMessage.FLAVOUR_MISMATCH, kind: "blocked", config };
+
+    case "platform-disabled":
+      return { message: UpdateMessage.PLATFORM_DISABLED, kind: "blocked", config };
+
+    case "emulator-blocked":
+      return { message: UpdateMessage.EMULATOR_BLOCKED, kind: "blocked", config };
+
+    case "dev-build-blocked":
+      return { message: UpdateMessage.DEV_BUILD_BLOCKED, kind: "blocked", config };
 
     case "native": {
       const payload = nativePayload(decision.release);
@@ -258,8 +348,19 @@ export function describeDecision(decision: UpdateDecision): string {
       return "no app carries this bundle identifier";
     case "channel-not-found":
       return "the app has no channel by that name";
-    case "environment-mismatch":
-      return `a ${decision.expected} channel refused this build`;
+    case "flavour-mismatch":
+      return describeFlavourMismatch(
+        "this identifier",
+        decision.buildFlavour,
+        decision.channelFlavour,
+        decision.channel.name,
+      );
+    case "platform-disabled":
+      return `channel "${decision.channel.name}" does not serve ${decision.platform}`;
+    case "emulator-blocked":
+      return `channel "${decision.channel.name}" does not serve emulators`;
+    case "dev-build-blocked":
+      return `channel "${decision.channel.name}" does not serve debuggable builds`;
     case "native":
       return `native ${decision.release.version_name} (code ${decision.release.version_code})`;
     case "native-required":

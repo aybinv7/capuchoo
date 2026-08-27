@@ -19,7 +19,8 @@ import {
   type UpdateFacts,
 } from "./update-decision.js";
 
-const APP = { id: "app-uuid" };
+/** Registered, and making no flavour claim - the common single-identifier app. */
+const SHARED = { appId: "app-uuid", bundleId: "com.efficy.app", flavour: null } as const;
 
 const android: NativeRelease = {
   version_name: "1.0.56",
@@ -42,7 +43,7 @@ const bundle: OtaRelease = {
   release_notes: null,
 };
 
-/** A prod-suffixless Android device on a prod channel, up to date on nothing. */
+/** An Android device on a prod channel, up to date on nothing. */
 function facts(overrides: Partial<UpdateFacts> = {}): UpdateFacts {
   return {
     device: {
@@ -51,7 +52,7 @@ function facts(overrides: Partial<UpdateFacts> = {}): UpdateFacts {
       versionCode: 60,
       versionName: "builtin",
     },
-    app: APP,
+    identity: SHARED,
     channel: { name: "production", environment: "prod" },
     native: null,
     ota: null,
@@ -63,37 +64,51 @@ const render = (input: UpdateFacts) => renderUpdateResponse(decideUpdate(input),
 
 describe("which outcome fires", () => {
   it("reports an unknown bundle identifier", () => {
-    expect(decideUpdate(facts({ app: null }))).toEqual({ kind: "app-not-found" });
+    expect(decideUpdate(facts({ identity: null }))).toEqual({ kind: "app-not-found" });
   });
 
   it("reports an unknown channel", () => {
     expect(decideUpdate(facts({ channel: null }))).toEqual({ kind: "channel-not-found" });
   });
 
-  it("refuses a staging build asking a production channel", () => {
+  it("refuses an identifier registered as staging on the production channel", () => {
     const decision = decideUpdate(
       facts({
-        device: {
-          appId: "com.efficy.app.staging",
-          platform: "android",
-          versionCode: 60,
-          versionName: "builtin",
+        identity: {
+          appId: "app-uuid",
+          bundleId: "com.efficy.app.staging",
+          flavour: "staging",
         },
         ota: bundle,
       }),
     );
 
-    expect(decision.kind).toBe("environment-mismatch");
+    expect(decision).toMatchObject({ kind: "flavour-mismatch", buildFlavour: "staging" });
   });
 
   /**
-   * The exception that must survive: a production build beta-tests on a staging
-   * channel. A plain equality check here rejected exactly the setup Lowmaro
-   * runs, where every channel is bound to staging and the app id has no suffix.
+   * The case the old heuristic could not serve at all, and the reason for this
+   * rewrite. Lowmaro builds dev, staging and prod from `com.ayb.lowmaro`, so
+   * every build parsed as production and its dev channel was unreachable. A
+   * shared identifier makes no flavour claim, so there is nothing to refuse.
    */
-  it("allows a production build on a staging channel", () => {
+  it("serves every channel to an identifier shared by all flavours", () => {
+    for (const environment of ["prod", "staging", "dev"] as const) {
+      const decision = decideUpdate(
+        facts({ channel: { name: environment, environment }, ota: bundle }),
+      );
+
+      expect(decision).toMatchObject({ kind: "ota" });
+    }
+  });
+
+  it("serves a dev-registered identifier its own channel", () => {
     const decision = decideUpdate(
-      facts({ channel: { name: "staging", environment: "staging" }, ota: bundle }),
+      facts({
+        identity: { appId: "app-uuid", bundleId: "com.efficy.app.dev", flavour: "dev" },
+        channel: { name: "dev", environment: "dev" },
+        ota: bundle,
+      }),
     );
 
     expect(decision).toMatchObject({ kind: "ota" });
@@ -256,17 +271,47 @@ describe("the min_update_version gate", () => {
  */
 describe("the contract the Capacitor plugin actually enforces", () => {
   const everyOutcome: Array<[string, UpdateFacts]> = [
-    ["app-not-found", facts({ app: null })],
+    ["app-not-found", facts({ identity: null })],
     ["channel-not-found", facts({ channel: null })],
     [
-      "environment-mismatch",
+      "flavour-mismatch",
+      facts({
+        identity: { appId: "app-uuid", bundleId: "com.efficy.app.staging", flavour: "staging" },
+        ota: bundle,
+      }),
+    ],
+    [
+      "platform-disabled",
+      facts({
+        channel: { name: "production", environment: "prod", androidEnabled: false },
+        ota: bundle,
+      }),
+    ],
+    [
+      "emulator-blocked",
       facts({
         device: {
-          appId: "com.efficy.app.staging",
+          appId: "com.efficy.app",
           platform: "android",
           versionCode: 60,
           versionName: "builtin",
+          isEmulator: true,
         },
+        channel: { name: "production", environment: "prod", allowEmulators: false },
+        ota: bundle,
+      }),
+    ],
+    [
+      "dev-build-blocked",
+      facts({
+        device: {
+          appId: "com.efficy.app",
+          platform: "android",
+          versionCode: 60,
+          versionName: "builtin",
+          isProduction: false,
+        },
+        channel: { name: "production", environment: "prod", allowDevBuilds: false },
         ota: bundle,
       }),
     ],
@@ -490,7 +535,7 @@ describe("the wire response", () => {
     ).toEqual(config);
 
     // No app and no channel means there is no environment to resolve config for.
-    expect(withConfig(facts({ app: null })).config).toBeUndefined();
+    expect(withConfig(facts({ identity: null })).config).toBeUndefined();
     expect(withConfig(facts({ channel: null })).config).toBeUndefined();
   });
 });
@@ -534,7 +579,7 @@ describe("what the client resolves each response to", () => {
   });
 
   it.each([
-    ["no app", facts({ app: null })],
+    ["no app", facts({ identity: null })],
     ["no channel", facts({ channel: null })],
     ["no bundle", facts()],
     [
@@ -550,14 +595,44 @@ describe("what the client resolves each response to", () => {
       }),
     ],
     [
-      "an environment mismatch",
+      "a flavour mismatch",
+      facts({
+        identity: { appId: "app-uuid", bundleId: "com.efficy.app.staging", flavour: "staging" },
+        ota: bundle,
+      }),
+    ],
+    [
+      "a channel with the platform switched off",
+      facts({
+        channel: { name: "production", environment: "prod", androidEnabled: false },
+        ota: bundle,
+      }),
+    ],
+    [
+      "an emulator on a channel that refuses them",
       facts({
         device: {
-          appId: "com.efficy.app.staging",
+          appId: "com.efficy.app",
           platform: "android",
           versionCode: 60,
           versionName: "builtin",
+          isEmulator: true,
         },
+        channel: { name: "production", environment: "prod", allowEmulators: false },
+        ota: bundle,
+      }),
+    ],
+    [
+      "a debuggable build on a channel that refuses them",
+      facts({
+        device: {
+          appId: "com.efficy.app",
+          platform: "android",
+          versionCode: 60,
+          versionName: "builtin",
+          isProduction: false,
+        },
+        channel: { name: "production", environment: "prod", allowDevBuilds: false },
         ota: bundle,
       }),
     ],

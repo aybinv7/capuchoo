@@ -54,6 +54,9 @@ const BUNDLE: OtaRelease = {
 const STAGING = { name: "staging", environment: "staging" } as const;
 const DEV = { name: "dev", environment: "dev" } as const;
 
+/** com.efficy.app, registered without a flavour claim - so no channel refuses it. */
+const SHARED = { appId: APP.id, bundleId: "com.efficy.app", flavour: null } as const;
+
 function facts(overrides: Partial<UpdateFacts>): UpdateFacts {
   return {
     device: {
@@ -62,7 +65,7 @@ function facts(overrides: Partial<UpdateFacts>): UpdateFacts {
       versionCode: 1,
       versionName: "builtin",
     },
-    app: APP,
+    identity: SHARED,
     channel: STAGING,
     native: NATIVE,
     ota: BUNDLE,
@@ -110,7 +113,7 @@ function expectAdditiveChange(
 describe("responses that gained the fields the plugin reads", () => {
   it("an unknown bundle identifier", () => {
     expectAdditiveChange(
-      respond(facts({ app: null })),
+      respond(facts({ identity: null })),
       { message: "App not found" },
       { kind: "blocked" },
     );
@@ -124,14 +127,45 @@ describe("responses that gained the fields the plugin reads", () => {
     );
   });
 
-  // com.efficy.app has no suffix, so it is a production build and the dev
-  // channel refuses it. Captured for four device states; all four returned this.
-  it("a production build against a dev channel", () => {
-    expectAdditiveChange(
-      respond(facts({ channel: DEV })),
-      { message: "Environment mismatch", config: {} },
-      { kind: "blocked" },
+  /**
+   * This is the one captured response that is deliberately no longer produced.
+   *
+   * `com.efficy.app` has no suffix, so the old rule read it as a production
+   * build and the dev channel refused it - for all four captured device states.
+   * The identifier now says what it is, and it says nothing about flavour, so
+   * there is nothing for the channel to contradict and the bundle is served.
+   *
+   * Refusing here was never right. It refused every app that builds its
+   * flavours from one identifier, which is the default Capacitor setup.
+   */
+  it("a dev channel now serves an identifier with no flavour claim", () => {
+    // The fixture's channel also points at a newer binary, so what comes back is
+    // the native offer - which is the point: the gate no longer swallows the
+    // channel's contents, and native still outranks OTA.
+    const response = respond(facts({ channel: DEV }));
+
+    expect(response).toMatchObject({
+      message: "native_update_available",
+      kind: "blocked",
+      version: NATIVE.version_name,
+    });
+
+    // And with no binary in the way, the bundle itself.
+    const bundleOnly = respond(facts({ channel: DEV, native: null }));
+
+    expect(bundleOnly.message).toBeUndefined();
+    expect(bundleOnly.version).toBe(BUNDLE.version_name);
+    expect(bundleOnly.url).toBe(BUNDLE.url);
+  });
+
+  it("but refuses an identifier registered as dev on the staging channel", () => {
+    const response = respond(
+      facts({
+        identity: { appId: APP.id, bundleId: "com.efficy.app.dev", flavour: "dev" },
+      }),
     );
+
+    expect(response).toMatchObject({ message: "Flavour mismatch", kind: "blocked" });
   });
 
   it("a device already ahead of the channel", () => {

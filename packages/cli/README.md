@@ -29,7 +29,7 @@ $ npm install -g @capuchoo/cli
 $ capuchoo COMMAND
 running command...
 $ capuchoo (--version)
-@capuchoo/cli/0.9.0 win32-x64 node-v24.20.0
+@capuchoo/cli/0.9.1 win32-x64 node-v24.20.0
 $ capuchoo --help [COMMAND]
 USAGE
   $ capuchoo COMMAND
@@ -44,6 +44,7 @@ USAGE
 
 - [`capuchoo app delete [APPID]`](#capuchoo-app-delete-appid)
 - [`capuchoo app grant EMAIL ROLE`](#capuchoo-app-grant-email-role)
+- [`capuchoo app identifiers [ACTION] [BUNDLEID]`](#capuchoo-app-identifiers-action-bundleid)
 - [`capuchoo app list`](#capuchoo-app-list)
 - [`capuchoo app revoke EMAIL`](#capuchoo-app-revoke-email)
 - [`capuchoo app roles`](#capuchoo-app-roles)
@@ -94,7 +95,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/app/delete.ts)_
+[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/delete.ts)_
 
 ## `capuchoo app grant EMAIL ROLE`
 
@@ -118,7 +119,40 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/app/grant.ts)_
+[src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/grant.ts)_
+
+## `capuchoo app identifiers [ACTION] [BUNDLEID]`
+
+List, add or remove the bundle identifiers this app ships under
+
+```
+USAGE
+  $ capuchoo app identifiers [ACTION] [BUNDLEID] [--flavour prod|staging|dev] [--platform android|ios|all] [-y]
+
+ARGUMENTS
+  [ACTION]    (list|add|remove) [default: list] list, add or remove
+  [BUNDLEID]  Bundle identifier, for add and remove
+
+FLAGS
+  -y, --yes                Skip the confirmation
+      --flavour=<option>   Which flavour ships under it. Omit when every flavour does, which turns the gate off.
+                           <options: prod|staging|dev>
+      --platform=<option>  android, ios, or all
+                           <options: android|ios|all>
+
+DESCRIPTION
+  List, add or remove the bundle identifiers this app ships under
+
+EXAMPLES
+  $ capuchoo app identifiers
+
+  $ capuchoo app identifiers add com.acme.app.dev --flavour dev
+
+  $ capuchoo app identifiers remove com.acme.app.dev
+```
+
+_See code:
+[src/commands/app/identifiers.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/identifiers.ts)_
 
 ## `capuchoo app list`
 
@@ -136,7 +170,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/app/list.ts)_
+[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/list.ts)_
 
 ## `capuchoo app revoke EMAIL`
 
@@ -160,7 +194,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/app/revoke.ts)_
+[src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/revoke.ts)_
 
 ## `capuchoo app roles`
 
@@ -178,7 +212,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/app/roles.ts)_
+[src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/app/roles.ts)_
 
 ## `capuchoo auth issue`
 
@@ -204,7 +238,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/auth/issue.ts)_
+[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/issue.ts)_
 
 ## `capuchoo auth keys`
 
@@ -222,7 +256,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/auth/keys.ts)_
+[src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/keys.ts)_
 
 ## `capuchoo auth login`
 
@@ -246,7 +280,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/auth/login.ts)_
+[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -261,7 +295,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/auth/logout.ts)_
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth revoke ID`
 
@@ -285,7 +319,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/auth/revoke.ts)_
+[src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/revoke.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -303,7 +337,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/auth/whoami.ts)_
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/auth/whoami.ts)_
 
 ## `capuchoo channel create [NAME]`
 
@@ -334,7 +368,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/channel/create.ts)_
+[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/channel/create.ts)_
 
 ## `capuchoo channel delete [NAME]`
 
@@ -360,7 +394,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/channel/delete.ts)_
+[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/channel/delete.ts)_
 
 ## `capuchoo channel list`
 
@@ -378,7 +412,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/channel/list.ts)_
+[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/channel/list.ts)_
 
 ## `capuchoo config list`
 
@@ -396,7 +430,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/config/list.ts)_
+[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -420,7 +454,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/config/set.ts)_
+[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -464,7 +498,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/deploy/native.ts)_
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -501,7 +535,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/deploy/ota.ts)_
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/deploy/ota.ts)_
 
 ## `capuchoo doctor`
 
@@ -519,7 +553,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/doctor.ts)_
+[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/doctor.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -573,7 +607,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/init.ts)_
+[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/init.ts)_
 
 ## `capuchoo menu`
 
@@ -593,7 +627,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/menu.ts)_
+[src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/menu.ts)_
 
 ## `capuchoo org create [NAME]`
 
@@ -619,7 +653,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/org/create.ts)_
+[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/create.ts)_
 
 ## `capuchoo org invite EMAIL ROLE`
 
@@ -644,7 +678,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/org/invite.ts)_
+[src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/invite.ts)_
 
 ## `capuchoo org list`
 
@@ -662,7 +696,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/org/list.ts)_
+[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/list.ts)_
 
 ## `capuchoo org members`
 
@@ -683,7 +717,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/org/members.ts)_
+[src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/org/members.ts)_
 
 ## `capuchoo setup`
 
@@ -712,7 +746,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/setup.ts)_
+[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/setup.ts)_
 
 ## `capuchoo version bump TYPE`
 
@@ -739,7 +773,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/version/bump.ts)_
+[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -765,5 +799,5 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/version/sync.ts)_
+[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.1/src/commands/version/sync.ts)_
 <!-- commandsstop -->

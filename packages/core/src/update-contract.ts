@@ -41,10 +41,19 @@ export const UpdateMessage = {
   /** The channel name does not exist for this application. */
   CHANNEL_NOT_FOUND: "Channel not found",
   /**
-   * The requesting app id does not belong to the channel's environment - a
-   * staging build asking a production channel, for example.
+   * The requesting identifier is registered as another flavour's - a build of
+   * `com.acme.app.dev` asking the channel bound to prod.
+   *
+   * Only reachable when the identifier actually claims a flavour. An identifier
+   * shared by every flavour makes no claim and cannot mismatch.
    */
-  ENVIRONMENT_MISMATCH: "Environment mismatch",
+  FLAVOUR_MISMATCH: "Flavour mismatch",
+  /** The channel has this platform switched off. */
+  PLATFORM_DISABLED: "Channel disabled for this platform",
+  /** The channel refuses emulators. */
+  EMULATOR_BLOCKED: "Channel does not serve emulators",
+  /** The channel refuses debuggable builds. */
+  DEV_BUILD_BLOCKED: "Channel does not serve development builds",
   /**
    * The channel exists but points at no bundle, and PLATFORM_MISMATCH means it
    * points at one built for another platform.

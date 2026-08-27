@@ -57,6 +57,15 @@ believed.
 - **`@capuchoo/core` depends on nothing, and must stay that way.** It is imported by the CLI in
   Node, by the updater inside a WebView, and by the backend and dashboard. A single dependency there
   leaks into all of them.
+- **A flavour is declared, never inferred from a bundle identifier.** `app_identifiers` maps a
+  bundle id to an app and, optionally, to one flavour. `flavour IS NULL` means every flavour ships
+  under that identifier and no flavour gate applies - which is the default Capacitor setup, and what
+  `com.ayb.lowmaro` does. The server used to read `.dev` / `.staging` off the end of the identifier
+  instead: an app with one identifier could never be served its dev channel, and an app that
+  suffixed per flavour needed one Capuchoo app per identifier, splitting its channels and devices.
+  No other platform infers this - Expo keys updates to a project id, CodePush compiles a
+  per-deployment key in. The invariant that replaces it is _every artefact on a channel came from
+  one flavour_, enforced at upload where the flavour is known for certain.
 - **The update decision lives in `packages/core/src/update-decision.ts`, and nowhere else.**
   `decideUpdate` is pure and total over a closed set of outcomes; `renderUpdateResponse` is the only
   place a wire response is shaped. The backend gathers facts and calls them - it must never branch

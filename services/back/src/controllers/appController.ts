@@ -3,6 +3,8 @@ import {
   adoptionReparents,
   decideAppRegistration,
   describeAppConflict,
+  isFlavour,
+  isValidBundleId,
   type AppRegistration,
 } from "@capuchoo/core";
 import supabaseService from "@/services/supabaseService";
@@ -201,6 +203,29 @@ class AppController {
         { onConflict: "app_id,user_id" },
       );
 
+      // Every app needs at least one identifier or no device can name it. Shared
+      // by default: an app that suffixes per flavour registers those explicitly,
+      // and guessing from the spelling is what this replaced.
+      try {
+        await supabaseService.upsert(
+          "app_identifiers",
+          {
+            app_id: app.id,
+            bundle_id: app.app_id,
+            platform: app.platform ?? "all",
+            flavour: null,
+          },
+          { onConflict: "bundle_id" },
+        );
+      } catch (error) {
+        // Resolution falls back to apps.app_id, so a failure here costs nothing
+        // until the identifier is needed. Worth a line rather than a 500.
+        logger.warn("Could not register the app's own bundle identifier", {
+          appId: app.id,
+          error,
+        });
+      }
+
       // `adopted` is not a column - it tells the caller its "create" returned a
       // row that already existed, so the CLI can say "linked" rather than
       // "created" and nobody goes looking for a duplicate.
@@ -269,6 +294,134 @@ class AppController {
       existingOrganizationExists: (organisation.data ?? []).length > 0,
       callerHasDirectPermission: (permission.data ?? []).length > 0,
     });
+  }
+
+  /**
+   * The bundle identifiers this app ships under.
+   * GET /api/apps/:id/identifiers
+   */
+  async listIdentifiers(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const keyAppId = (req as any).appId;
+      if (keyAppId && keyAppId !== id) {
+        res.status(403).json({ error: "Forbidden: API key restricted to another app" });
+        return;
+      }
+
+      const result = await supabaseService.query("app_identifiers", {
+        select: "id, bundle_id, platform, flavour, created_at",
+        eq: { app_id: id },
+      });
+
+      res.json(result.data ?? []);
+    } catch (error) {
+      logger.error("List identifiers failed", { error });
+      res.status(500).json({ error: "Failed to list identifiers" });
+    }
+  }
+
+  /**
+   * Registers a bundle identifier for this app.
+   * POST /api/apps/:id/identifiers
+   *
+   * `flavour` omitted means every flavour ships under it, which is the default
+   * Capacitor setup and turns the flavour gate off for this identifier. Passing
+   * one is what makes `com.acme.app.dev` gate as a dev build - and what makes it
+   * the *same* app as `com.acme.app` rather than a second one.
+   */
+  async createIdentifier(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { bundle_id, platform, flavour } = req.body;
+
+      if (!bundle_id || typeof bundle_id !== "string") {
+        res.status(400).json({ error: "bundle_id is required" });
+        return;
+      }
+
+      if (!isValidBundleId(bundle_id)) {
+        res.status(400).json({
+          error: `"${bundle_id}" is not a bundle identifier. Expected something like com.company.app.`,
+        });
+        return;
+      }
+
+      if (flavour !== undefined && flavour !== null && !isFlavour(flavour)) {
+        res.status(400).json({ error: `flavour must be one of prod, staging, dev, or omitted` });
+        return;
+      }
+
+      const owner = await supabaseService.query("app_identifiers", {
+        select: "app_id",
+        eq: { bundle_id },
+      });
+      const existing = owner.data?.[0];
+
+      if (existing && existing.app_id !== id) {
+        // Same rule as apps.app_id had, on the table that now owns it: a device
+        // reports one identifier, so two apps claiming it are unresolvable.
+        res.status(409).json({
+          error: describeAppConflict(bundle_id),
+          code: "bundle_id_taken",
+        });
+        return;
+      }
+
+      const row = {
+        app_id: id,
+        bundle_id,
+        platform: platform ?? "all",
+        flavour: isFlavour(flavour) ? flavour : null,
+      };
+
+      const result = existing
+        ? await supabaseService.update("app_identifiers", row, { bundle_id })
+        : await supabaseService.insert("app_identifiers", row);
+
+      res.status(existing ? 200 : 201).json(result[0]);
+    } catch (error) {
+      logger.error("Create identifier failed", { error });
+      res.status(500).json({ error: "Failed to register the identifier" });
+    }
+  }
+
+  /**
+   * DELETE /api/apps/:id/identifiers/:bundleId
+   *
+   * Refuses the last one: an app no device can name is unreachable, and the
+   * failure would show up as "App not found" on every check.
+   */
+  async deleteIdentifier(req: Request, res: Response): Promise<void> {
+    try {
+      const { id, bundleId } = req.params;
+
+      const existing = await supabaseService.query("app_identifiers", {
+        select: "bundle_id",
+        eq: { app_id: id },
+      });
+
+      const rows = existing.data ?? [];
+      if (!rows.some((row: any) => row.bundle_id === bundleId)) {
+        res.status(404).json({ error: "This app does not have that identifier" });
+        return;
+      }
+
+      if (rows.length === 1) {
+        res.status(409).json({
+          error:
+            "This is the app's only bundle identifier. Removing it would leave nothing " +
+            "for a device to report, so every update check would answer App not found.",
+        });
+        return;
+      }
+
+      await supabaseService.delete("app_identifiers", { app_id: id, bundle_id: bundleId });
+      res.status(204).send();
+    } catch (error) {
+      logger.error("Delete identifier failed", { error });
+      res.status(500).json({ error: "Failed to remove the identifier" });
+    }
   }
 
   /**

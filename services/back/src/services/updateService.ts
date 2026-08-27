@@ -2,6 +2,8 @@ import {
   decideUpdate,
   describeDecision,
   renderUpdateResponse,
+  toAppIdentity,
+  type AppIdentity,
   type NativeRelease,
   type OtaRelease,
   type Environment,
@@ -16,40 +18,74 @@ import logger from "@/utils/logger";
 
 class UpdateService implements IUpdateService {
   /**
-   * Resolve string App ID (e.g. "com.example.app") to UUID
+   * Resolves a bundle identifier to the app that owns it and the flavour it is.
+   *
+   * `app_identifiers` first, because that is where the answer is declared. The
+   * fallbacks exist so a database mid-migration keeps serving, and both report
+   * `flavour: null` - no claim, so no flavour gate. Guessing a flavour is what
+   * this replaced.
    */
-  async resolveAppUuid(appIdString: string): Promise<string | null> {
+  async resolveIdentity(bundleId: string): Promise<AppIdentity | null> {
     try {
-      // 1. Try exact match
-      let result = await supabaseService.query("apps", {
-        select: "id",
-        eq: { app_id: appIdString },
+      const registered = await supabaseService.query("app_identifiers", {
+        select: "app_id, bundle_id, platform, flavour",
+        eq: { bundle_id: bundleId },
       });
-      if (result.data && result.data.length > 0) {
-        return result.data[0].id;
+
+      if (registered.data && registered.data.length > 0) {
+        return toAppIdentity(registered.data[0]);
+      }
+    } catch (error) {
+      // The table may not exist yet. Falling through is correct: apps.app_id
+      // still resolves every app that has one.
+      logger.warn("app_identifiers lookup failed, falling back to apps.app_id", {
+        bundleId,
+        error,
+      });
+    }
+
+    try {
+      const exact = await supabaseService.query("apps", {
+        select: "id",
+        eq: { app_id: bundleId },
+      });
+
+      if (exact.data && exact.data.length > 0) {
+        return { appId: exact.data[0].id, bundleId, flavour: null };
       }
 
-      // 2. Try stripping suffixes (e.g. io.aybinv.vuena.staging -> io.aybinv.vuena)
-      const suffixes = [".staging", ".dev"];
-      for (const suffix of suffixes) {
-        if (appIdString.endsWith(suffix)) {
-          const baseAppId = appIdString.slice(0, -suffix.length);
-          result = await supabaseService.query("apps", {
-            select: "id",
-            eq: { app_id: baseAppId },
+      // Last resort, and deprecated: strip a flavour suffix and look for the
+      // base identifier. It is a guess, so it grants no flavour - registering
+      // the identifier is what makes it authoritative.
+      for (const suffix of [".staging", ".dev"]) {
+        if (!bundleId.endsWith(suffix)) continue;
+
+        const base = bundleId.slice(0, -suffix.length);
+        const stripped = await supabaseService.query("apps", {
+          select: "id",
+          eq: { app_id: base },
+        });
+
+        if (stripped.data && stripped.data.length > 0) {
+          logger.warn("Resolved a bundle identifier by stripping its suffix", {
+            bundleId,
+            base,
+            fix: "Register it: POST /api/apps/:id/identifiers",
           });
-          if (result.data && result.data.length > 0) {
-            logger.info(`Resolved App UUID via suffix match: ${appIdString} -> ${baseAppId}`);
-            return result.data[0].id;
-          }
+          return { appId: stripped.data[0].id, bundleId, flavour: null };
         }
       }
 
       return null;
     } catch (error) {
-      logger.error("Failed to resolve app UUID", { appIdString, error });
+      logger.error("Failed to resolve a bundle identifier", { bundleId, error });
       return null;
     }
+  }
+
+  /** Kept for the callers that only need the uuid. */
+  async resolveAppUuid(appIdString: string): Promise<string | null> {
+    return (await this.resolveIdentity(appIdString))?.appId ?? null;
   }
 
   async getAppConfig(appId: string): Promise<Record<string, any>> {
@@ -84,9 +120,10 @@ class UpdateService implements IUpdateService {
     }
   }
 
+  /** `environment` may be null: a channel bound to no flavour gets the "all" scope. */
   async resolveEnvConfig(
     appUuid: string,
-    environment: string,
+    environment: string | null,
     channel: string,
   ): Promise<Record<string, any>> {
     try {
@@ -95,7 +132,7 @@ class UpdateService implements IUpdateService {
         .from("app_env_vars")
         .select("key, value, value_type, environment, channel")
         .eq("app_id", appUuid)
-        .or(`environment.eq.all,environment.eq.${environment}`)
+        .or(`environment.eq.all,environment.eq.${environment ?? "all"}`)
         .order("environment", { ascending: true });
 
       if (error || !data) return {};
@@ -137,7 +174,8 @@ class UpdateService implements IUpdateService {
    */
   async checkForUpdate(request: UpdateRequest): Promise<UpdateResponse> {
     try {
-      const appUuid = await this.resolveAppUuid(request.appId);
+      const identity = await this.resolveIdentity(request.appId);
+      const appUuid = identity?.appId ?? null;
 
       // Priority: explicit channel > defaultChannel > default_channel > staging.
       // The plugin sends camelCase; older builds send snake_case.
@@ -173,9 +211,23 @@ class UpdateService implements IUpdateService {
           // The sentinel for "no bundle has ever been applied". It is not a
           // semantic version, and the decision sorts it behind every release.
           versionName: request.version_name || "builtin",
+          // Straight through from the plugin's is_prod / is_emulator, which the
+          // field normalizer has already camelCased. Left undefined when the
+          // device did not report - the decision must not read silence as false.
+          isProduction: typeof request.isProd === "boolean" ? request.isProd : undefined,
+          isEmulator: typeof request.isEmulator === "boolean" ? request.isEmulator : undefined,
         },
-        app: appUuid ? { id: appUuid } : null,
-        channel: channel ? { name: channel.name, environment: channel.environment } : null,
+        identity,
+        channel: channel
+          ? {
+              name: channel.name,
+              environment: channel.environment,
+              allowDevBuilds: channel.allowDevBuilds,
+              allowEmulators: channel.allowEmulators,
+              iosEnabled: channel.iosEnabled,
+              androidEnabled: channel.androidEnabled,
+            }
+          : null,
         native,
         ota,
       });
@@ -220,14 +272,23 @@ class UpdateService implements IUpdateService {
   ): Promise<{
     id: string;
     name: string;
-    environment: Environment;
+    environment: Environment | null;
+    allowDevBuilds: boolean;
+    allowEmulators: boolean;
+    iosEnabled: boolean;
+    androidEnabled: boolean;
     currentVersionId: string | null;
     currentNativeVersionId: string | null;
   } | null> {
     const { data, error } = await supabaseService
       .getClient()
       .from("channels")
-      .select("id, environment, current_version_id, current_native_version_id")
+      // One literal: supabase-js infers the row type from the string, and a
+      // concatenation defeats that - every column comes back as an error type.
+      // prettier-ignore
+      .select(
+        "id, environment, allow_dev, allow_emulator, ios_enabled, android_enabled, current_version_id, current_native_version_id",
+      )
       .eq("app_id", appUuid)
       .eq("name", name)
       .maybeSingle();
@@ -237,9 +298,17 @@ class UpdateService implements IUpdateService {
     return {
       id: data.id,
       name,
-      // A channel row without one is a data defect, not a reason to serve
-      // production bundles: staging is the safe reading.
-      environment: (data.environment || "staging") as Environment,
+      // Passed through as it is, including null. It used to default to
+      // "staging", which was a guess kept only to make the old suffix rule
+      // workable; a channel bound to no flavour now gates on none.
+      environment: (data.environment as Environment | null) ?? null,
+      // The columns have existed since the first schema and nothing read them,
+      // so a channel marked allow_emulator: false served every emulator that
+      // asked. Absent reads as permissive, matching the column defaults.
+      allowDevBuilds: data.allow_dev !== false,
+      allowEmulators: data.allow_emulator !== false,
+      iosEnabled: data.ios_enabled !== false,
+      androidEnabled: data.android_enabled !== false,
       currentVersionId: data.current_version_id ?? null,
       currentNativeVersionId: data.current_native_version_id ?? null,
     };

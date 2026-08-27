@@ -19,6 +19,17 @@ export interface Membership {
   users?: { id: string; email: string; full_name?: string | null } | null;
 }
 
+export type AppFlavour = "prod" | "staging" | "dev";
+
+export interface AppIdentifierRow {
+  id?: string;
+  bundle_id: string;
+  platform?: string | null;
+  /** null when every flavour ships under this identifier. */
+  flavour?: string | null;
+  created_at?: string;
+}
+
 export interface ApiKeySummary {
   id: string;
   name: string;
@@ -260,6 +271,23 @@ export class CloudClient {
     return channel;
   }
 
+  /** Registered bundle identifiers, and the flavour each declares. */
+  identifiers(cloudAppId: string): Promise<AppIdentifierRow[]> {
+    return get<AppIdentifierRow[]>(`/api/apps/${cloudAppId}/identifiers`, this.options);
+  }
+
+  /** `flavour` omitted means every flavour ships under this identifier. */
+  registerIdentifier(
+    cloudAppId: string,
+    input: { bundle_id: string; platform?: string; flavour?: AppFlavour | null },
+  ): Promise<AppIdentifierRow> {
+    return post<AppIdentifierRow>(`/api/apps/${cloudAppId}/identifiers`, input, this.options);
+  }
+
+  removeIdentifier(cloudAppId: string, bundleId: string): Promise<void> {
+    return del(`/api/apps/${cloudAppId}/identifiers/${encodeURIComponent(bundleId)}`, this.options);
+  }
+
   uploadBundle(input: {
     filePath: string;
     appId: string;
@@ -269,6 +297,8 @@ export class CloudClient {
     releaseNotes: string;
     active: boolean;
     required: boolean;
+    /** The flavour this artefact was built from; the server refuses a mismatch. */
+    flavour?: string | undefined;
   }) {
     return uploadArtifact(
       "/api/admin/upload",
@@ -281,6 +311,7 @@ export class CloudClient {
         release_notes: input.releaseNotes,
         active: String(input.active),
         required: String(input.required),
+        ...(input.flavour ? { flavour: input.flavour } : {}),
       },
       { ...this.options, fileField: "bundle" },
     );
@@ -296,6 +327,7 @@ export class CloudClient {
     releaseNotes: string;
     active: boolean;
     required: boolean;
+    flavour?: string | undefined;
   }) {
     return uploadArtifact(
       "/api/admin/native-upload",
@@ -309,6 +341,7 @@ export class CloudClient {
         release_notes: input.releaseNotes,
         active: String(input.active),
         required: String(input.required),
+        ...(input.flavour ? { flavour: input.flavour } : {}),
       },
       { ...this.options, fileField: "bundle" },
     );

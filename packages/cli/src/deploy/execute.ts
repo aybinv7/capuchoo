@@ -201,6 +201,12 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   const channel = await cloud.requireChannel(project.cloudAppId, channelName);
   const environment: Environment = channel.environment;
 
+  // Fetched so the preflight can check the flavour against what is registered
+  // rather than against the spelling of the identifier. Left undefined on
+  // failure - an older backend has no such endpoint, and treating that as "none
+  // registered" would warn on every deploy.
+  const identifiers = await cloud.identifiers(project.cloudAppId).catch(() => undefined);
+
   // --- release options -------------------------------------------------------
 
   // `isInteractive()` matters as much as the flags: without it a piped or CI
@@ -311,6 +317,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     dryRun: flags["dry-run"],
     verbose: flags.verbose,
     quiet: json,
+    identifiers,
   };
 
   try {
@@ -334,6 +341,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
               releaseNotes: note ?? "",
               active,
               required,
+              flavour: environment,
             })
           : await cloud.uploadNative({
               filePath: artifact.filePath,
@@ -345,6 +353,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
               releaseNotes: note ?? "",
               active,
               required,
+              flavour: environment,
             });
 
       uploaded = result.status >= 200 && result.status < 300;

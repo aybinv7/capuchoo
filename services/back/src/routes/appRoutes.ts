@@ -34,6 +34,22 @@ router.delete(
   appController.removePermission.bind(appController),
 );
 
+// Bundle identifiers. Reading needs app access; changing needs app admin,
+// because an identifier decides which binaries an app answers for.
+router.get("/:id/identifiers", checkAppAccess(), appController.listIdentifiers.bind(appController));
+
+router.post(
+  "/:id/identifiers",
+  requireAppAdmin(),
+  appController.createIdentifier.bind(appController),
+);
+
+router.delete(
+  "/:id/identifiers/:bundleId",
+  requireAppAdmin(),
+  appController.deleteIdentifier.bind(appController),
+);
+
 // App Channels
 router.get("/:id/channels", checkAppAccess(), adminController.getChannels.bind(adminController));
 

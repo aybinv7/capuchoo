@@ -1,4 +1,4 @@
-import { parseUpdateEvent } from "@capuchoo/core";
+import { isFlavour, parseUpdateEvent } from "@capuchoo/core";
 import { Request, Response } from "express";
 import {
   NativeUpdateRecord,
@@ -9,6 +9,7 @@ import {
 } from "@/types";
 import config from "@/config";
 import fileService from "@/services/fileService";
+import { assertFlavourMatchesChannel } from "@/services/flavourGuard";
 import supabaseService from "@/services/supabaseService";
 import deviceService from "@/services/deviceService";
 import updateService from "@/services/updateService";
@@ -254,6 +255,7 @@ class NativeUpdateController {
         active = false,
         release_notes,
         app_id,
+        flavour,
       } = req.body;
 
       // Prioritize version_name if provided, otherwise use version
@@ -314,6 +316,8 @@ class NativeUpdateController {
         return;
       }
 
+      await assertFlavourMatchesChannel(appUuid, channel || "prod", flavour);
+
       const versionCodeNum = parseInt(version_code, 10);
       if (isNaN(versionCodeNum) || versionCodeNum < 1) {
         throw new ValidationError("version_code must be a positive integer");
@@ -370,6 +374,7 @@ class NativeUpdateController {
         active: active === "true" || active === true,
         file_size_bytes: req.file.size,
         release_notes: release_notes || null,
+        ...(isFlavour(flavour) ? { flavour } : {}),
       };
 
       const insertedRecord = await this.supabaseService.insert("native_updates", [updateRecord]);

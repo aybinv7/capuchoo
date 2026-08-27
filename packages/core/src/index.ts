@@ -53,9 +53,6 @@ export {
   ENVIRONMENTS,
   PROJECT_CONFIG_VERSION,
   defaultFlavour,
-  describeEnvironmentMismatch,
-  environmentFromAppId,
-  isEnvironmentAllowed,
   isValidBundleId,
   normaliseProjectConfig,
   validateProjectConfig,
@@ -90,6 +87,18 @@ export {
   type CredentialScope,
   canPublishTo,
 } from "./cloud.js";
+
+export {
+  APP_FLAVOURS,
+  describeFlavourMismatch,
+  describeUploadFlavourMismatch,
+  isFlavour,
+  isFlavourAllowed,
+  toAppIdentity,
+  type AppFlavour,
+  type AppIdentity,
+  type IdentityRow,
+} from "./app-identity.js";
 
 export {
   adoptionReparents,

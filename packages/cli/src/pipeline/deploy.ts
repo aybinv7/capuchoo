@@ -1,5 +1,7 @@
 import {
-  describeEnvironmentMismatch,
+  describeFlavourMismatch,
+  isFlavour,
+  isFlavourAllowed,
   type Environment,
   type ResolvedProjectConfig,
 } from "@capuchoo/core";
@@ -58,6 +60,18 @@ export interface DeployRequest {
   dryRun: boolean;
   verbose: boolean;
   quiet: boolean;
+  /**
+   * The app's registered bundle identifiers, when they could be fetched.
+   *
+   * Undefined means not asked, which must not read as "none registered" - the
+   * check below would then warn on every deploy against an older backend.
+   */
+  identifiers?: RegisteredIdentifier[] | undefined;
+}
+
+export interface RegisteredIdentifier {
+  bundle_id: string;
+  flavour?: string | null;
 }
 
 export interface DeployArtifact {
@@ -126,18 +140,37 @@ export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour
   const problems = describeFlavourProblems(flavour);
 
   const declaredAppId = flavour.fileEnv.VITE_APP_ID;
-  if (declaredAppId) {
-    // Uses the shared rule rather than a plain equality check, so the CLI
-    // rejects exactly what the server rejects and nothing more. A production
-    // build on a staging channel is deliberately allowed - that is how a
-    // release candidate gets beta-tested - and an equality check here blocked
-    // it, which is a legitimate setup the CLI has no business refusing.
-    const mismatch = describeEnvironmentMismatch(
-      declaredAppId,
-      request.environment,
-      request.channel,
-    );
-    if (mismatch) problems.push(`${mismatch} (from ${flavour.config.envFile})`);
+
+  // Checked against what the server has registered, not against the spelling of
+  // the identifier. The previous version read `.dev` / `.staging` off the end of
+  // VITE_APP_ID and refused on that, which meant an app building every flavour
+  // from one identifier - the default setup - could never deploy to its dev
+  // channel, and an identifier that merely ended in `.dev` was assumed to be one
+  // whether or not anybody said so.
+  if (declaredAppId && request.identifiers) {
+    const registered = request.identifiers.find((row) => row.bundle_id === declaredAppId);
+
+    if (!registered) {
+      problems.push(
+        `${flavour.config.envFile} builds ${declaredAppId}, which is not registered ` +
+          `for this app. Register it with: capuchoo app identifier add ${declaredAppId}` +
+          `${isFlavour(request.environment) ? ` --flavour ${request.environment}` : ""}`,
+      );
+    } else if (
+      !isFlavourAllowed(
+        isFlavour(registered.flavour) ? registered.flavour : null,
+        request.environment,
+      )
+    ) {
+      problems.push(
+        describeFlavourMismatch(
+          declaredAppId,
+          registered.flavour as Environment,
+          request.environment,
+          request.channel,
+        ) + ` (from ${flavour.config.envFile})`,
+      );
+    }
   }
 
   if (request.kind === "native" && request.platform === "ios") {

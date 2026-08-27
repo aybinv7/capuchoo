@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import { ENVIRONMENTS, type Environment } from "@capuchoo/core";
+import { ENVIRONMENTS, isFlavour, type Environment } from "@capuchoo/core";
 import { AppError, ConflictError, ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
+import { assertFlavourMatchesChannel } from "@/services/flavourGuard";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
 import semver from "semver";
@@ -62,6 +63,7 @@ class AdminController {
         active = true,
         release_notes = "",
         app_id,
+        flavour,
       } = req.body;
 
       const finalVersion = version_name || version;
@@ -116,6 +118,8 @@ class AdminController {
         return;
       }
 
+      await assertFlavourMatchesChannel(appUuid, channel || "prod", flavour);
+
       const buffer = req.file!.buffer || fs.readFileSync(req.file!.path);
       const checksum = this.fileService.calculateChecksum(buffer);
 
@@ -134,6 +138,7 @@ class AdminController {
         required: required === "true" || required === true,
         active: active === "true" || active === true,
         release_notes: release_notes || null,
+        ...(isFlavour(flavour) ? { flavour } : {}),
       };
 
       let insertedRecord;

@@ -69,6 +69,34 @@ CREATE TABLE apps (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Bundle identifiers an app ships under.
+--
+-- Separate from apps.app_id because one app can ship several: an Android project
+-- using applicationIdSuffix produces com.acme.app, com.acme.app.staging and
+-- com.acme.app.dev, and those are one app with three binaries rather than three
+-- apps. flavour IS NULL means every flavour ships under this identifier, which is
+-- the default Capacitor setup and turns the flavour gate off for it.
+--
+-- Replaced reading the flavour off the end of the identifier. See migration 008.
+CREATE TABLE app_identifiers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    app_id UUID NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+    bundle_id VARCHAR(255) UNIQUE NOT NULL,
+    platform VARCHAR(20) NOT NULL DEFAULT 'all' CHECK (platform IN ('android', 'ios', 'all')),
+    flavour VARCHAR(20) CHECK (flavour IN ('prod', 'staging', 'dev')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_app_identifiers_app ON app_identifiers(app_id);
+
+-- Partial, because NULL is not equal to NULL in a UNIQUE constraint and the
+-- shared row still has to be unique per app and platform.
+CREATE UNIQUE INDEX idx_app_identifiers_flavour
+    ON app_identifiers(app_id, platform, flavour) WHERE flavour IS NOT NULL;
+CREATE UNIQUE INDEX idx_app_identifiers_shared
+    ON app_identifiers(app_id, platform) WHERE flavour IS NULL;
+
 -- App permissions (per-app roles for fine-grained control)
 CREATE TABLE app_permissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -89,6 +117,10 @@ CREATE TABLE channels (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     app_id UUID NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
+    -- The flavour whose builds this channel serves. NULL binds it to none, and
+    -- then no flavour gate applies. Read by the server since channels existed and
+    -- missing from this file until migration 008.
+    environment VARCHAR(20) CHECK (environment IS NULL OR environment IN ('prod', 'staging', 'dev')),
     is_public BOOLEAN NOT NULL DEFAULT false,
     allow_device_self_set BOOLEAN NOT NULL DEFAULT false,
     allow_dev BOOLEAN NOT NULL DEFAULT true,
@@ -126,6 +158,9 @@ CREATE TABLE app_versions (
     -- Version control
     min_update_version VARCHAR(50),
     channel VARCHAR(100) NOT NULL DEFAULT 'prod',
+    -- Which flavour built this bundle, so "one channel, one flavour" is
+    -- checkable rather than assumed. NULL on anything uploaded before it existed.
+    flavour VARCHAR(20) CHECK (flavour IS NULL OR flavour IN ('prod', 'staging', 'dev')),
     required BOOLEAN NOT NULL DEFAULT false,
     active BOOLEAN NOT NULL DEFAULT true,
     
