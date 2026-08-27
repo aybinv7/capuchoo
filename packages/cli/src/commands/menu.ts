@@ -1,8 +1,18 @@
 import chalk from "chalk";
 import { BaseCommand } from "../base-command.js";
 import { buildMenu, menuSize, type Menu as MenuShape, type MenuCommand } from "../cli/menu.js";
+import fs from "node:fs";
+import path from "node:path";
 import { PromptCancelled, isInteractive, selectOne } from "../cli/prompts.js";
-import { readProjectConfig } from "../utils/config.js";
+import {
+  hiddenCommands,
+  isBlocked,
+  labelFor,
+  resolveOnboarding,
+  type OnboardingFacts,
+  type OnboardingState,
+} from "../cli/onboarding.js";
+import { readProjectConfig, resolveCredentials } from "../utils/config.js";
 
 const BACK = Symbol("back");
 const QUIT = Symbol("quit");
@@ -31,15 +41,20 @@ export default class Menu extends BaseCommand {
       return;
     }
 
+    // Local only, so the menu appears at once. Channel state needs the network
+    // against a backend that sleeps, and is filled in lazily below.
+    const facts = this.localFacts();
+    const state = resolveOnboarding(facts);
+
     const menu = buildMenu({
-      commands: this.config.commands,
+      commands: this.config.commands.filter((command) => !hiddenCommands(facts).has(command.id)),
       topics: this.config.topics,
     });
 
-    this.showHeader(menu);
+    this.showHeader(menu, facts, state);
 
     try {
-      await this.loop(menu);
+      await this.loop(menu, facts, state);
     } catch (error) {
       // Ctrl+C at a menu is how you leave, not a crash.
       if (error instanceof PromptCancelled) return;
@@ -55,7 +70,7 @@ export default class Menu extends BaseCommand {
    * file. Nothing here touches the network: the menu must appear instantly, and
    * the backend is on a host that can take fifteen seconds to wake.
    */
-  private showHeader(menu: MenuShape): void {
+  private showHeader(menu: MenuShape, facts: OnboardingFacts, state: OnboardingState): void {
     const project = readProjectConfig(process.cwd());
 
     this.log("");
@@ -63,15 +78,58 @@ export default class Menu extends BaseCommand {
     this.log(
       project
         ? `  ${chalk.dim("linked to")} ${project.appName} ${chalk.dim(`(${project.appId})`)}`
-        : `  ${chalk.dim("not linked - run")} ${chalk.cyan("init")} ${chalk.dim("or")} ${chalk.cyan("setup")}`,
+        : facts.signedIn
+          ? `  ${chalk.dim("not linked yet")}`
+          : `  ${chalk.dim("not signed in")}`,
     );
-    this.log(`  ${chalk.dim(`${menuSize(menu)} commands`)}`);
+
+    if (state.next) {
+      this.log("");
+      this.log(`  ${chalk.green("Next")}  ${chalk.bold(state.next.label)}`);
+      this.log(`        ${chalk.dim(state.next.why)}`);
+    }
+
+    this.log("");
+    this.log(`  ${chalk.dim(`${menuSize(menu)} commands available`)}`);
     this.log("");
   }
 
-  private async loop(menu: MenuShape): Promise<void> {
+  /** Everything knowable without a request. */
+  private localFacts(): OnboardingFacts {
+    const appDir = process.cwd();
+    const manifestPath = path.join(appDir, "package.json");
+    const inAppDirectory = fs.existsSync(manifestPath);
+
+    let updaterInstalled = false;
+    if (inAppDirectory) {
+      try {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as {
+          dependencies?: Record<string, string>;
+          devDependencies?: Record<string, string>;
+        };
+        updaterInstalled = Boolean(
+          { ...manifest.dependencies, ...manifest.devDependencies }["@capuchoo/updater"],
+        );
+      } catch {
+        // A malformed manifest is the app's problem, not the menu's.
+      }
+    }
+
+    return {
+      signedIn: resolveCredentials() !== null,
+      inAppDirectory,
+      linked: readProjectConfig(appDir) !== null,
+      updaterInstalled,
+    };
+  }
+
+  private async loop(
+    menu: MenuShape,
+    facts: OnboardingFacts,
+    state: OnboardingState,
+  ): Promise<void> {
     for (;;) {
-      const choice = await this.chooseTopLevel(menu);
+      const choice = await this.chooseTopLevel(menu, facts, state);
       if (choice === QUIT) return;
 
       const command =
@@ -84,15 +142,44 @@ export default class Menu extends BaseCommand {
     }
   }
 
-  private async chooseTopLevel(menu: MenuShape): Promise<TopLevel | typeof QUIT> {
+  /** The recommended step first, then everything else. */
+  private async chooseTopLevel(
+    menu: MenuShape,
+    facts: OnboardingFacts,
+    state: OnboardingState,
+  ): Promise<TopLevel | typeof QUIT> {
+    const all = [...menu.commands, ...menu.topics.flatMap((topic) => topic.commands)];
+    const recommended = state.next
+      ? all.find((command) => command.id === state.next!.command)
+      : undefined;
+
+    const entry = (command: MenuCommand) => ({
+      value: { kind: "command", command } as TopLevel,
+      label: labelFor(command.id, facts) ?? command.label,
+      hint: command.description,
+    });
+
+    // Signed out, the whole menu is noise: nothing else can succeed.
+    if (isBlocked(state) && recommended) {
+      return selectOne<TopLevel | typeof QUIT>(
+        state.next!.label,
+        [
+          { ...entry(recommended), label: `${recommended.label} ${chalk.green("(next)")}` },
+          { value: QUIT, label: "Quit", hint: "" },
+        ],
+        "--help",
+      );
+    }
+
     return selectOne<TopLevel | typeof QUIT>(
       "What would you like to do?",
       [
-        ...menu.commands.map((command) => ({
-          value: { kind: "command", command } as TopLevel,
-          label: command.label,
-          hint: command.description,
-        })),
+        ...(recommended
+          ? [{ ...entry(recommended), label: `${recommended.label} ${chalk.green("(next)")}` }]
+          : []),
+        ...menu.commands
+          .filter((command) => command.id !== recommended?.id)
+          .map((command) => entry(command)),
         ...menu.topics.map((topic) => ({
           value: { kind: "topic", topic: topic.name } as TopLevel,
           label: `${topic.name} ${chalk.dim("›")}`,
