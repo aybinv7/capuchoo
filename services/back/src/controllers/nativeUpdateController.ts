@@ -9,7 +9,7 @@ import {
 } from "@/types";
 import config from "@/config";
 import fileService from "@/services/fileService";
-import { assertFlavourMatchesChannel } from "@/services/flavourGuard";
+import { assertFlavourMatchesChannel, insertTolerantOfFlavour } from "@/services/flavourGuard";
 import supabaseService from "@/services/supabaseService";
 import deviceService from "@/services/deviceService";
 import updateService from "@/services/updateService";
@@ -377,7 +377,10 @@ class NativeUpdateController {
         ...(isFlavour(flavour) ? { flavour } : {}),
       };
 
-      const insertedRecord = await this.supabaseService.insert("native_updates", [updateRecord]);
+      const insertedRecord = await insertTolerantOfFlavour(
+        "native_updates",
+        updateRecord as unknown as Record<string, unknown>,
+      );
 
       // Serving a native update is decided by `channels.current_native_version_id`
       // and nothing else - `active` on the row alone means "publishable". Without

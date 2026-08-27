@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { ENVIRONMENTS, isFlavour, type Environment } from "@capuchoo/core";
 import { AppError, ConflictError, ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
-import { assertFlavourMatchesChannel } from "@/services/flavourGuard";
+import { assertFlavourMatchesChannel, insertTolerantOfFlavour } from "@/services/flavourGuard";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
 import semver from "semver";
@@ -143,7 +143,7 @@ class AdminController {
 
       let insertedRecord;
       try {
-        insertedRecord = await this.supabaseService.insert("app_versions", [updateRecord]);
+        insertedRecord = await insertTolerantOfFlavour("app_versions", updateRecord);
       } catch (error) {
         // Re-publishing a version is a client mistake, not a server fault, and
         // the caller can act on it - bump the version, or delete the release.

@@ -1,6 +1,7 @@
 import { describeUploadFlavourMismatch, isFlavour, isFlavourAllowed } from "@capuchoo/core";
 import { ConflictError } from "@/types";
 import supabaseService from "./supabaseService";
+import logger from "@/utils/logger";
 
 /**
  * Refuses an artefact whose flavour contradicts the channel it is bound for.
@@ -41,5 +42,37 @@ export async function assertFlavourMatchesChannel(
     throw new ConflictError(
       describeUploadFlavourMismatch(data?.name ?? channelName, channelFlavour, declared),
     );
+  }
+}
+
+/**
+ * Inserts a row, dropping `flavour` and retrying if the column is not there yet.
+ *
+ * The CLI declares a flavour on every upload from 0.10.0, and the column arrives
+ * with migration 008. Deployed in that order without this, every publish would
+ * fail on `column "flavour" does not exist` - the same shape as naming a missing
+ * column in a select and rejecting every API key, which this project has already
+ * done once.
+ *
+ * 42703 is undefined_column. Matched on the SQLSTATE rather than the message,
+ * because the message is not ours.
+ */
+export async function insertTolerantOfFlavour(
+  table: string,
+  row: Record<string, unknown>,
+): Promise<any> {
+  try {
+    return await supabaseService.insert(table, [row]);
+  } catch (error) {
+    const code = (error as { code?: string })?.code;
+    const message = error instanceof Error ? error.message : String(error);
+    const missingColumn = code === "42703" || /column .*flavour.* does not exist/i.test(message);
+
+    if (!missingColumn || row.flavour === undefined) throw error;
+
+    logger.warn("Storing without the flavour column - migration 008 has not run", { table });
+
+    const { flavour: _dropped, ...rest } = row;
+    return supabaseService.insert(table, [rest]);
   }
 }
