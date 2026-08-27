@@ -90,3 +90,13 @@ export {
   type CredentialScope,
   canPublishTo,
 } from "./cloud.js";
+
+export {
+  APP_ROLE_ORDER,
+  canIssueCap,
+  describeCap,
+  effectiveRole,
+  isAppRole,
+  roleRank,
+  type AppRole,
+} from "./role-cap.js";

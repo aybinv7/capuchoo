@@ -37,6 +37,11 @@ export const authenticate = async (
         if (user.app_id) {
           (req as any).appId = user.app_id;
         }
+        // A ceiling, not a grant: the effective role is the weaker of this and
+        // whatever the account has on the app.
+        if (user.key_role) {
+          (req as any).keyRole = user.key_role;
+        }
         return next();
       }
       res.status(401).json({ error: "Invalid API key" });
@@ -76,7 +81,10 @@ async function validateApiKey(apiKey: string): Promise<any> {
     const { data: keyData, error: keyError } = await supabaseService
       .getAdminClient()
       .from("api_keys")
-      .select("id, user_id, app_id")
+      // Not a column list: `role` arrives with migration 007, and naming a
+      // column that does not exist yet makes this return null - which would
+      // reject every API key until the migration ran.
+      .select("*")
       .eq("key_hash", keyHash)
       .single();
 
@@ -109,6 +117,7 @@ async function validateApiKey(apiKey: string): Promise<any> {
       email: userData.email,
       full_name: userData.full_name,
       app_id: keyData.app_id, // Pass app scope if present
+      key_role: keyData.role ?? null, // Ceiling on what this key may do
     };
   } catch (error) {
     logger.error("API key validation failed", { error });

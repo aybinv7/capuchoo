@@ -47,6 +47,7 @@ USAGE
 - [`capuchoo app list`](#capuchoo-app-list)
 - [`capuchoo app revoke EMAIL`](#capuchoo-app-revoke-email)
 - [`capuchoo app roles`](#capuchoo-app-roles)
+- [`capuchoo auth issue`](#capuchoo-auth-issue)
 - [`capuchoo auth keys`](#capuchoo-auth-keys)
 - [`capuchoo auth login`](#capuchoo-auth-login)
 - [`capuchoo auth logout`](#capuchoo-auth-logout)
@@ -178,6 +179,32 @@ EXAMPLES
 
 _See code:
 [src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/app/roles.ts)_
+
+## `capuchoo auth issue`
+
+Create an API key, optionally limited to one app and one role
+
+```
+USAGE
+  $ capuchoo auth issue [--name <value>] [--role viewer|tester|developer|admin] [--this-app]
+
+FLAGS
+  --name=<value>   Label shown in capuchoo auth keys
+  --role=<option>  Ceiling on what the key may do: viewer, tester, developer, admin
+                   <options: viewer|tester|developer|admin>
+  --this-app       Restrict the key to the app this directory is linked to
+
+DESCRIPTION
+  Create an API key, optionally limited to one app and one role
+
+EXAMPLES
+  $ capuchoo auth issue --name ci --role developer --this-app
+
+  $ capuchoo auth issue --name readonly --role viewer
+```
+
+_See code:
+[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.9.0/src/commands/auth/issue.ts)_
 
 ## `capuchoo auth keys`
 

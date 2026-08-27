@@ -1,3 +1,4 @@
+import { effectiveRole } from "@capuchoo/core";
 import type { AppRole } from "./checkAppAccess";
 import { Request, Response, NextFunction } from "express";
 import supabaseService from "@/services/supabaseService";
@@ -81,6 +82,8 @@ export const checkResourceAccess = (
 
         resourceAppId = row?.app_id ?? null;
         if (resourceAppId) role = await appRoleFor(userId, resourceAppId);
+        // A capped key can never do more than its ceiling, whatever the account has.
+        role = effectiveRole(role, (req as any).keyRole as AppRole | undefined);
       }
 
       const decision = decideResourceAccess(

@@ -1,3 +1,4 @@
+import { APP_ROLE_ORDER, canIssueCap, isAppRole } from "@capuchoo/core";
 import { Request, Response, NextFunction } from "express";
 import { randomBytes, createHash } from "crypto";
 import supabaseService from "@/services/supabaseService";
@@ -15,8 +16,9 @@ class ApiKeyController {
         throw new AppError("Unauthorized", 401);
       }
 
-      // Optional: scope to specific app
+      // Optional: scope to specific app, and cap what the key may do
       const { name = "CLI Key", app_id } = req.body;
+      const role = (req.body.role ?? null) as string | null;
 
       // A key may never mint a key with more reach than itself. Without this,
       // the app scope the deploy endpoints enforce is not a boundary: a key
@@ -27,6 +29,24 @@ class ApiKeyController {
         throw new AppError(
           "This API key is restricted to one application, so it can only create keys " +
             "for that same application. Create a broader key from the dashboard.",
+          403,
+        );
+      }
+
+      if (role !== null && !isAppRole(role)) {
+        throw new AppError(`role must be one of ${APP_ROLE_ORDER.join(", ")}`, 400);
+      }
+
+      // A key may never mint one with more reach than itself, in role as well as
+      // in app scope - otherwise a developer key could issue an admin key and
+      // escape its own ceiling. A dashboard session has no cap and may issue any.
+      const callerRole = (req as any).keyRole as string | undefined;
+      if (!canIssueCap(isAppRole(callerRole) ? callerRole : null, role)) {
+        throw new AppError(
+          role === null
+            ? "This API key is capped, so it cannot create an uncapped key. " +
+                "Pass a role at or below its own ceiling."
+            : `This API key is capped at ${callerRole}, so it cannot create a ${role} key.`,
           403,
         );
       }
@@ -51,6 +71,9 @@ class ApiKeyController {
           key_hash: keyHash,
           key_prefix: keyPrefix,
           app_id: app_id || null, // Optional app scope
+          // Sent only when set. The column arrives with migration 007, and an
+          // uncapped key - what `auth login` mints - must keep working before it.
+          ...(role === null ? {} : { role }),
         })
         .select()
         .single();
@@ -68,6 +91,7 @@ class ApiKeyController {
         name: data.name,
         prefix: keyPrefix,
         app_id: data.app_id,
+        role: data.role,
         created_at: data.created_at,
       });
     } catch (error) {
@@ -91,19 +115,21 @@ class ApiKeyController {
       let query = supabaseService
         .getAdminClient()
         .from("api_keys")
-        .select("id, name, key_prefix, app_id, last_used_at, created_at")
+        .select("id, name, key_prefix, app_id, role, last_used_at, created_at")
         .eq("user_id", user.id);
 
       if (app_id) {
         query = query.eq("app_id", app_id);
       }
 
-      const { data, error } = await query.order("created_at", {
-        ascending: false,
-      });
+      const first = await query.order("created_at", { ascending: false });
+      let data: unknown[] | null = first.data;
 
-      if (error) {
-        throw new AppError(error.message, 500);
+      if (first.error) {
+        // Most likely the `role` column, which arrives with migration 007.
+        const retry = await this.listWithoutCap(req);
+        if (retry.error) throw new AppError(retry.error.message, 500);
+        data = retry.data;
       }
 
       res.json({
@@ -113,6 +139,21 @@ class ApiKeyController {
     } catch (error) {
       next(error);
     }
+  }
+
+  /** The same listing without the cap column, for before migration 007 runs. */
+  private async listWithoutCap(req: Request) {
+    const user = (req as any).user;
+    let query = supabaseService
+      .getAdminClient()
+      .from("api_keys")
+      .select("id, name, key_prefix, app_id, last_used_at, created_at")
+      .eq("user_id", user.id);
+
+    const { app_id } = req.query;
+    if (app_id) query = query.eq("app_id", app_id);
+
+    return query.order("created_at", { ascending: false });
   }
 
   /**

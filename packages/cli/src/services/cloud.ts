@@ -1,4 +1,5 @@
 import type {
+  AppRole,
   CloudApp,
   CloudChannel,
   CloudOrganization,
@@ -9,7 +10,7 @@ import type {
 import { HttpError, del, get, post, put, uploadArtifact, type HttpOptions } from "../utils/http.js";
 
 export type OrgRole = "owner" | "admin" | "member";
-export type AppRole = "admin" | "developer" | "tester" | "viewer";
+export type { AppRole } from "@capuchoo/core";
 
 /** A row of organization_members or app_permissions, joined with its user. */
 export interface Membership {
@@ -23,6 +24,8 @@ export interface ApiKeySummary {
   name: string;
   key_prefix?: string;
   app_id?: string | null;
+  /** Role ceiling, or null when the key carries the account's own rights. */
+  role?: string | null;
   created_at?: string;
   last_used_at?: string | null;
 }
@@ -105,10 +108,19 @@ export class CloudClient {
    * token. Unscoped by default - the key acts as the account, and the app roles
    * are what restrict it.
    */
-  createApiKey(input: { name: string; appId?: string | undefined }): Promise<{ key: string }> {
+  createApiKey(input: {
+    name: string;
+    appId?: string | undefined;
+    /** Ceiling on what the key may do. Omitted means the account's own rights. */
+    role?: AppRole | undefined;
+  }): Promise<{ key: string }> {
     return post<{ key: string }>(
       "/api/api-keys",
-      { name: input.name, ...(input.appId ? { app_id: input.appId } : {}) },
+      {
+        name: input.name,
+        ...(input.appId ? { app_id: input.appId } : {}),
+        ...(input.role ? { role: input.role } : {}),
+      },
       this.options,
     );
   }

@@ -111,6 +111,11 @@ Until it runs, those events are not recorded. Nothing else breaks: the endpoint 
 failed write as an error, so it answers 200 with `recorded: false` and logs the reason. Run it in
 the Supabase SQL editor; it is idempotent.
 
+`scripts/migrations/007_api_key_role_cap.sql` — **not applied.** Adds a nullable `role` column to
+`api_keys`, capping what a key may do. Every existing key stays uncapped, so nothing changes
+behaviour until a capped one is issued — but `capuchoo auth issue --role developer` cannot work
+until it runs.
+
 Apply a migration by pasting it into **Supabase → SQL Editor → New query**. There is no migration
 runner in this repository, which is why this section exists — a file in `scripts/migrations/` has
 not necessarily been run against anything.

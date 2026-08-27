@@ -30,6 +30,7 @@ export const requirePublishAccess = () => {
         bundleId,
         appUuid,
         keyAppId: (req as any).appId as string | undefined,
+        keyRole: (req as any).keyRole as AppRole | undefined,
         ...grants,
       });
 

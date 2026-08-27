@@ -108,4 +108,47 @@ describe("decidePublishAccess", () => {
       });
     });
   });
+
+  /**
+   * The point of a cap: a CI credential that publishes but cannot administer,
+   * issued by someone who can do both.
+   */
+  describe("a capped key", () => {
+    it("still publishes when capped at developer", () => {
+      expect(
+        decidePublishAccess({ ...base, appRole: "admin", keyRole: "developer" }),
+      ).toMatchObject({ allow: true, role: "developer" });
+    });
+
+    it.each(["tester", "viewer"] as const)("cannot publish when capped at %s", (keyRole) => {
+      const decision = decidePublishAccess({ ...base, appRole: "admin", keyRole });
+
+      expect(decision).toMatchObject({ allow: false, status: 403 });
+      expect(decision).toHaveProperty("reason", expect.stringContaining("capped"));
+    });
+
+    // Reading "this account is admin" while holding a viewer-capped key would
+    // send someone to fix the wrong thing.
+    it("blames the key rather than the account", () => {
+      const decision = decidePublishAccess({ ...base, appRole: "admin", keyRole: "viewer" });
+      expect(decision).toHaveProperty("reason", expect.not.stringContaining("this account"));
+    });
+
+    // A cap can only reduce. Otherwise handing over a key would grant rights.
+    it("cannot raise a viewer account", () => {
+      expect(decidePublishAccess({ ...base, appRole: "viewer", keyRole: "admin" })).toMatchObject({
+        allow: false,
+      });
+    });
+
+    it("changes nothing when uncapped", () => {
+      expect(decidePublishAccess({ ...base, keyRole: null })).toMatchObject({ allow: true });
+    });
+
+    it("caps the org-admin fallback too", () => {
+      expect(
+        decidePublishAccess({ ...base, appRole: null, orgRole: "owner", keyRole: "viewer" }),
+      ).toMatchObject({ allow: false });
+    });
+  });
 });
