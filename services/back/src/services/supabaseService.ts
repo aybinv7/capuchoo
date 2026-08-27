@@ -162,7 +162,7 @@ class SupabaseService implements ISupabaseService {
 
       if (error) {
         logger.error("Supabase insert error", { table, data, error });
-        throw new DatabaseError(`Insert failed: ${error.message}`);
+        throw new DatabaseError(`Insert failed: ${error.message}`, error.code);
       }
 
       return result;
@@ -194,7 +194,7 @@ class SupabaseService implements ISupabaseService {
 
       if (error) {
         logger.error("Supabase upsert error", { table, data, error });
-        throw new DatabaseError(`Upsert failed: ${error.message}`);
+        throw new DatabaseError(`Upsert failed: ${error.message}`, error.code);
       }
 
       return result;
@@ -216,7 +216,7 @@ class SupabaseService implements ISupabaseService {
 
       if (error) {
         logger.error("Supabase update error", { table, data, filter, error });
-        throw new DatabaseError(`Update failed: ${error.message}`);
+        throw new DatabaseError(`Update failed: ${error.message}`, error.code);
       }
 
       return result;
@@ -243,7 +243,7 @@ class SupabaseService implements ISupabaseService {
 
       if (error) {
         logger.error("Supabase delete error", { table, filter, error });
-        throw new DatabaseError(`Delete failed: ${error.message}`);
+        throw new DatabaseError(`Delete failed: ${error.message}`, error.code);
       }
 
       return { success: true };

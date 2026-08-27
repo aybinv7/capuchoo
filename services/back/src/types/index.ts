@@ -380,7 +380,11 @@ export class NotFoundError extends AppError {
 }
 
 export class DatabaseError extends AppError {
-  constructor(message: string) {
+  /** The PostgreSQL SQLSTATE, when Supabase reported one. */
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
     super(`Database error: ${message}`, 500);
+    if (code) this.code = code;
   }
 }

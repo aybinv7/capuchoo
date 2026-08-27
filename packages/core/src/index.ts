@@ -92,6 +92,17 @@ export {
 } from "./cloud.js";
 
 export {
+  adoptionReparents,
+  decideAppRegistration,
+  describeAdoption,
+  describeAppConflict,
+  type AdoptionReason,
+  type AppRegistration,
+  type AppRegistrationFacts,
+  type ExistingApp,
+} from "./app-registration.js";
+
+export {
   APP_ROLE_ORDER,
   canIssueCap,
   describeCap,

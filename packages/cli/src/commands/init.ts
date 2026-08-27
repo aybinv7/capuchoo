@@ -27,6 +27,7 @@ import {
   type ProjectFiles,
 } from "../pipeline/app-identity.js";
 import { CloudClient } from "../services/cloud.js";
+import { HttpError } from "../utils/http.js";
 import {
   projectConfigPath,
   readProjectConfig,
@@ -574,10 +575,23 @@ export default class Init extends BaseCommand {
         platform: "android",
         organization_id: organizationId,
       });
-      creating.succeed(`Created ${app.name}`);
+      const adopted = (app as { adopted?: boolean }).adopted === true;
+      creating.succeed(adopted ? `Linked to the existing ${app.name}` : `Created ${app.name}`);
+
+      if (adopted) {
+        log.info(
+          "That bundle identifier was already registered here, so this linked to it " +
+            "instead of registering a second app.",
+        );
+      }
+
       return app;
     } catch (error) {
-      creating.fail("Could not create the app");
+      creating.fail(
+        error instanceof HttpError && error.status === 409
+          ? "That bundle identifier is taken"
+          : "Could not create the app",
+      );
       this.error(error instanceof Error ? error.message : String(error));
     }
   }

@@ -1,4 +1,10 @@
 import { Request, Response } from "express";
+import {
+  adoptionReparents,
+  decideAppRegistration,
+  describeAppConflict,
+  type AppRegistration,
+} from "@capuchoo/core";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
 
@@ -143,27 +149,126 @@ class AppController {
         return;
       }
 
-      const result = await supabaseService.insert("apps", {
-        name,
-        app_id,
-        organization_id,
-        platform: platform || "all",
-        icon_url,
-      });
-      const app = result[0];
+      const registration = await this.resolveRegistration(app_id, organization_id, userId);
 
-      // Add 'admin' permission to creator for this app
-      await supabaseService.insert("app_permissions", {
-        app_id: app.id,
-        user_id: userId,
-        role: "admin",
-      });
+      if (registration.kind === "conflict") {
+        logger.warn("App registration refused", {
+          app_id,
+          requestedOrganizationId: organization_id,
+          ownedBy: registration.app.organization_id,
+        });
+        res.status(409).json({ error: describeAppConflict(app_id), code: "app_id_taken" });
+        return;
+      }
 
-      res.status(201).json(app);
+      let app;
+      let created = false;
+
+      if (registration.kind === "adopt") {
+        logger.info("Adopting an existing app row", {
+          app_id,
+          reason: registration.reason,
+          appUuid: registration.app.id,
+        });
+
+        app = adoptionReparents(registration.reason)
+          ? (
+              await supabaseService.update(
+                "apps",
+                { organization_id, updated_at: new Date().toISOString() },
+                { id: registration.app.id },
+              )
+            )[0]
+          : (await supabaseService.query("apps", { select: "*", eq: { id: registration.app.id } }))
+              .data?.[0];
+      } else {
+        const result = await supabaseService.insert("apps", {
+          name,
+          app_id,
+          organization_id,
+          platform: platform || "all",
+          icon_url,
+        });
+        app = result[0];
+        created = true;
+      }
+
+      // The creator is app admin. On adoption this may already exist, so it is an
+      // upsert on the pair - a duplicate here used to abort a successful create.
+      await supabaseService.upsert(
+        "app_permissions",
+        { app_id: app.id, user_id: userId, role: "admin" },
+        { onConflict: "app_id,user_id" },
+      );
+
+      // `adopted` is not a column - it tells the caller its "create" returned a
+      // row that already existed, so the CLI can say "linked" rather than
+      // "created" and nobody goes looking for a duplicate.
+      res.status(created ? 201 : 200).json(
+        created
+          ? app
+          : {
+              ...app,
+              adopted: true,
+              adoption_reason: (registration as { reason: string }).reason,
+            },
+      );
     } catch (error) {
+      // A unique violation can still arrive: two inits racing between the lookup
+      // and the insert. It is the caller's conflict, not a server fault.
+      if ((error as { code?: string })?.code === "23505") {
+        logger.warn("App registration lost a race", { app_id: req.body?.app_id });
+        res
+          .status(409)
+          .json({ error: describeAppConflict(req.body?.app_id), code: "app_id_taken" });
+        return;
+      }
+
       logger.error("Create app failed", { error });
       res.status(500).json({ error: "Failed to create app" });
     }
+  }
+
+  /**
+   * Looks up whatever already holds this bundle identifier and decides.
+   *
+   * Runs with the service client on purpose: the blocking row is one the caller
+   * cannot see, so asking as the caller would report "free" and then fail on the
+   * constraint - which is exactly the 500 this replaces.
+   */
+  private async resolveRegistration(
+    appId: string,
+    requestedOrganizationId: string,
+    userId: string,
+  ): Promise<AppRegistration> {
+    const found = await supabaseService.query("apps", {
+      select: "id, app_id, organization_id",
+      eq: { app_id: appId },
+    });
+    const existing = found.data?.[0];
+
+    if (!existing) return decideAppRegistration({ appId, requestedOrganizationId });
+
+    const [organisation, permission] = await Promise.all([
+      existing.organization_id
+        ? supabaseService.query("organizations", {
+            select: "id",
+            eq: { id: existing.organization_id },
+          })
+        : Promise.resolve({ data: [] }),
+      supabaseService.query("app_permissions", {
+        select: "app_id",
+        eq: { app_id: existing.id, user_id: userId },
+      }),
+    ]);
+
+    return decideAppRegistration({
+      appId,
+      requestedOrganizationId,
+      existing,
+      existingOrganizationExists: (organisation.data ?? []).length > 0,
+      callerHasDirectPermission: (permission.data ?? []).length > 0,
+    });
   }
 
   /**
