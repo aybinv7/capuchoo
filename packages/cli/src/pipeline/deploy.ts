@@ -244,7 +244,16 @@ export async function runDeploy(
     }
 
     reporter.begin("web");
-    const web = await buildWeb(context, request.project.build);
+
+    // The app's own build script failing is not a Capuchoo failure, and until
+    // now it was reported as a dead end. If there is already build output on
+    // disk, publishing it is one flag away - worth saying, because the
+    // alternative is reading somebody else's TypeScript errors and concluding
+    // the deploy tool is broken.
+    const web = await buildWeb(context, request.project.build).catch((error: unknown) => {
+      throw new Error(describeBuildFailure(error, request), { cause: error });
+    });
+
     if (web.ran) reporter.note(web.via);
 
     reporter.begin("native-config");
@@ -374,4 +383,33 @@ export function describeFailure(error: unknown, appDir: string): string {
     return `${error.message}\n\n  Full output: ${path.join(appDir, LOG_FILE)}`;
   }
   return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * A build failure, plus the way past it when there is one.
+ *
+ * The command that failed belongs to the application, not to Capuchoo - a
+ * typecheck against a dependency that is not installed, most often. Reported
+ * bare, it reads as "the deploy tool broke", and the flag that publishes the
+ * build output already on disk is not mentioned anywhere near the error.
+ *
+ * Only suggested when that output actually exists. Pointing at --skip-build
+ * with an empty webDir would just move the failure one step later.
+ */
+export function describeBuildFailure(error: unknown, request: DeployRequest): string {
+  // Through describeFailure, so a CommandError keeps its "Full output" log path -
+  // wrapping the error in a plain one dropped that, and the log is where the rest
+  // of the build output is.
+  const message = describeFailure(error, request.appDir);
+  const webDir = path.resolve(request.appDir, request.project.webDir);
+
+  if (!fs.existsSync(webDir) || fs.readdirSync(webDir).length === 0) return message;
+
+  return (
+    `${message}\n\n` +
+    `  That command is your app's, not Capuchoo's. ${request.project.webDir} already holds a\n` +
+    "  build, so to publish it as it is:\n\n" +
+    `    capuchoo deploy ${request.kind} --channel ${request.channel} --skip-build\n\n` +
+    "  Or set build.command in .capuchoo/project.json to something that works."
+  );
 }
