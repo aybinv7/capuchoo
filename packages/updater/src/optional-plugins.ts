@@ -38,6 +38,24 @@ export class MissingNativePluginsError extends Error {
   }
 }
 
+/**
+ * Imports through a variable specifier, so a bundler cannot resolve it.
+ *
+ * `import("@capacitor/network")` written literally is statically analysable, and
+ * Rolldown fails the *build* of any app that has not installed it:
+ *
+ *   Rolldown failed to resolve import "@capacitor/local-notifications"
+ *   from ".../@capuchoo/updater/dist/vue.js"
+ *
+ * which defeats the entire point of an optional peer - an OTA-only app would
+ * have to install four native plugins it never calls just to compile. Held in a
+ * variable, resolution happens at runtime, where `load` already turns a miss
+ * into a message naming what to install.
+ */
+async function importOptional<T>(specifier: string): Promise<T> {
+  return (await import(/* @vite-ignore */ specifier)) as T;
+}
+
 async function load<T>(specifier: string, importer: () => Promise<T>): Promise<T> {
   try {
     return await importer();
@@ -52,13 +70,16 @@ async function load<T>(specifier: string, importer: () => Promise<T>): Promise<T
   }
 }
 
+const optional =
+  <T>(specifier: string) =>
+  () =>
+    load(specifier, () => importOptional<T>(specifier));
+
 export const nativePlugins = {
-  fileTransfer: () => load("@capacitor/file-transfer", () => import("@capacitor/file-transfer")),
-  filesystem: () => load("@capacitor/filesystem", () => import("@capacitor/filesystem")),
-  network: () => load("@capacitor/network", () => import("@capacitor/network")),
-  fileOpener: () =>
-    load(
-      "@capawesome-team/capacitor-file-opener",
-      () => import("@capawesome-team/capacitor-file-opener"),
-    ),
+  fileTransfer: optional<typeof import("@capacitor/file-transfer")>("@capacitor/file-transfer"),
+  filesystem: optional<typeof import("@capacitor/filesystem")>("@capacitor/filesystem"),
+  network: optional<typeof import("@capacitor/network")>("@capacitor/network"),
+  fileOpener: optional<typeof import("@capawesome-team/capacitor-file-opener")>(
+    "@capawesome-team/capacitor-file-opener",
+  ),
 };

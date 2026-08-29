@@ -28,7 +28,10 @@ async function plugin(): Promise<LocalNotificationsPlugin | null> {
   if (Capacitor.getPlatform() === "web") return null;
 
   try {
-    const module = (await import("@capacitor/local-notifications")) as {
+    // Through a variable, so a bundler cannot resolve it and fail the build of
+    // an app that never enabled notifications. See optional-plugins.ts.
+    const specifier = "@capacitor/local-notifications";
+    const module = (await import(/* @vite-ignore */ specifier)) as {
       LocalNotifications?: LocalNotificationsPlugin;
     };
     return module.LocalNotifications ?? null;
