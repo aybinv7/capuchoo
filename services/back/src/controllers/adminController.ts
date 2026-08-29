@@ -3,6 +3,8 @@ import { ENVIRONMENTS, isFlavour, type Environment } from "@capuchoo/core";
 import { AppError, ConflictError, ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
 import { assertFlavourMatchesChannel, insertTolerantOfFlavour } from "@/services/flavourGuard";
+import { SIGNED_URL_TTL_SECONDS, storageKeyFromUrl } from "@/services/signedDownload";
+import config from "@/config";
 import supabaseService from "@/services/supabaseService";
 import logger from "@/utils/logger";
 import semver from "semver";
@@ -1102,6 +1104,57 @@ class AdminController {
     } catch (error) {
       logger.error("Update logs fetch failed", { error });
       res.json([]);
+    }
+  }
+
+  /**
+   * A fresh, expiring link to a bundle's artefact.
+   * GET /api/dashboard/bundles/:id/download
+   *
+   * The dashboard used to open `download_url` straight from the row. That was a
+   * permanent public URL, and once the bucket was made private it became a 400 -
+   * the download button and the copyable config snippet both broke at the moment
+   * the storage was secured.
+   *
+   * So the link is minted per click instead of stored. The dashboard is
+   * authenticated and permission-checked, which is exactly what a permanent
+   * public URL was not.
+   */
+  async bundleDownloadUrl(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      const result = await this.supabaseService.query("app_versions", {
+        select: "id, version_name, external_url",
+        eq: { id },
+      });
+      const bundle = result.data?.[0];
+
+      if (!bundle) {
+        res.status(404).json({ error: "No bundle with that id" });
+        return;
+      }
+
+      const stored = bundle.external_url as string | null;
+      if (!stored) {
+        res.status(409).json({ error: "This bundle has no stored artefact" });
+        return;
+      }
+
+      const key = storageKeyFromUrl(stored, config.supabase.bucketName);
+
+      // Not ours to sign - a release may point at a CDN, and that URL is already
+      // whatever its owner intended.
+      if (!key) {
+        res.json({ url: stored, expiresIn: null });
+        return;
+      }
+
+      const url = await this.supabaseService.createSignedUrl(key, SIGNED_URL_TTL_SECONDS);
+      res.json({ url, expiresIn: SIGNED_URL_TTL_SECONDS });
+    } catch (error) {
+      logger.error("Bundle download URL failed", { error });
+      res.status(500).json({ error: "Could not create a download link" });
     }
   }
 

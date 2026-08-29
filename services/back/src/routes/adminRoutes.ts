@@ -43,6 +43,13 @@ router.delete(
   adminController.deleteBundle.bind(adminController),
 );
 
+// Reading a bundle is enough to download it; publishing is a separate right.
+router.get(
+  "/dashboard/bundles/:id/download",
+  checkResourceAccess("app_versions"),
+  adminController.bundleDownloadUrl.bind(adminController),
+);
+
 router.post(
   "/dashboard/bundles/:id/promote",
   checkResourceAccess("app_versions", PUBLISH_ROLES),

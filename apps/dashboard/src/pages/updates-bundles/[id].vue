@@ -15,9 +15,9 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" @click="downloadAsset">
+        <Button variant="outline" size="sm" :disabled="downloading" @click="downloadAsset">
           <ILucideDownload class="mr-2 h-4 w-4" />
-          Download
+          {{ downloading ? "Preparing..." : "Download" }}
         </Button>
         <Button variant="outline" size="sm" @click="promoteDialogOpen = true">
           <ILucideZap class="mr-2 h-4 w-4 text-yellow-500" />
@@ -259,6 +259,7 @@
 
 <script setup lang="ts">
 import { toast } from "vue-sonner";
+import { apiClient } from "@/services/api.client";
 import UpdatesBundlesTablePromoteDialog from "@/modules/updates-bundles/components/UpdatesBundlesTable/UpdatesBundlesTablePromoteDialog.vue";
 
 const { id: updateId } = defineProps<{
@@ -346,25 +347,45 @@ const formatFileSize = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-const downloadAsset = () => {
-  if (item.value?.download_url) {
-    window.open(item.value.download_url, "_blank");
-  } else {
-    toast.error("Download URL not available");
+/**
+ * Asks the backend for a link, rather than opening the stored one.
+ *
+ * `download_url` on the row is a permanent public URL, and the storage bucket is
+ * private - so opening it directly returned 400 the moment the bucket was
+ * secured. The backend mints a signed link per request, which is also the only
+ * version of this that was ever access-controlled.
+ */
+const downloading = ref(false);
+
+const requestDownloadUrl = async () => {
+  const { data } = await apiClient.get(`/dashboard/bundles/${updateId}/download`);
+  return data.url as string;
+};
+
+const downloadAsset = async () => {
+  if (!item.value) return;
+
+  downloading.value = true;
+  try {
+    window.open(await requestDownloadUrl(), "_blank");
+  } catch {
+    toast.error("Could not create a download link");
+  } finally {
+    downloading.value = false;
   }
 };
 
+/**
+ * Shown without a URL on purpose.
+ *
+ * It used to embed `download_url`, which is now a link that expires - pasting a
+ * one-hour URL into a config file produces something that works today and fails
+ * next week, which is worse than not offering it. Devices are handed a fresh
+ * signed link by /api/update on every check; nothing needs to hard-code one.
+ */
 const configSnippet = computed(() => {
   if (!item.value) return "";
-  return JSON.stringify(
-    {
-      url: item.value.download_url,
-      version: item.value.version_name,
-      channel: item.value.channel,
-    },
-    null,
-    2,
-  );
+  return JSON.stringify({ version: item.value.version_name, channel: item.value.channel }, null, 2);
 });
 
 const copyConfig = () => {
