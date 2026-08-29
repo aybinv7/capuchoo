@@ -4,6 +4,7 @@ import { CloudClient } from "../../services/cloud.js";
 import { resolveCredentials } from "../../utils/config.js";
 import { whileWaiting } from "../../cli/prompts.js";
 import { BaseCommand } from "../../base-command.js";
+import { runnable } from "../../cli/invocation.js";
 
 export default class AuthWhoami extends BaseCommand {
   static override description =
@@ -24,7 +25,7 @@ export default class AuthWhoami extends BaseCommand {
       }
       this.log("");
       this.log(chalk.yellow("  Not signed in."));
-      this.log(`  Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.log(`  Run ${chalk.cyan(runnable(`auth login`))}.`);
       this.log("");
       return;
     }
@@ -43,7 +44,7 @@ export default class AuthWhoami extends BaseCommand {
       }
       this.error(
         `The stored credentials for ${credentials.endpoint} are no longer valid. ` +
-          `Run ${chalk.cyan("capuchoo auth login")}.`,
+          `Run ${chalk.cyan(runnable(`auth login`))}.`,
       );
     }
 

@@ -22,6 +22,7 @@ import {
 } from "../utils/config.js";
 import { Reporter } from "../utils/reporter.js";
 import { restoreVersionFiles, snapshotVersionFiles } from "./version-guard.js";
+import { runnable } from "../cli/invocation.js";
 
 /**
  * Shared implementation for `deploy ota` and `deploy native`.
@@ -133,7 +134,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     fail(
       command,
       "Not authenticated. Run " +
-        chalk.cyan("capuchoo auth login") +
+        chalk.cyan(runnable(`auth login`)) +
         ", or set CAPUCHOO_ENDPOINT and CAPUCHOO_API_KEY.",
     );
   }
@@ -148,7 +149,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       `The credentials for ${credentials.endpoint} were rejected. ` +
         (credentials.source === "environment"
           ? "Check CAPUCHOO_API_KEY."
-          : `Run ${chalk.cyan("capuchoo auth login")} again.`),
+          : `Run ${chalk.cyan(runnable(`auth login`))} again.`),
     );
   }
 

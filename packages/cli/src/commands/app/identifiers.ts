@@ -5,6 +5,7 @@ import { confirm, isInteractive, log, whileWaiting } from "../../cli/prompts.js"
 import { requireCloud } from "../../cli/team.js";
 import { readProjectConfig } from "../../utils/config.js";
 import { APP_FLAVOURS, type AppFlavour } from "@capuchoo/core";
+import { runnable } from "../../cli/invocation.js";
 
 /**
  * The bundle identifiers an app answers for.
@@ -52,7 +53,7 @@ export default class AppIdentifiers extends BaseCommand {
 
     const project = readProjectConfig(process.cwd());
     if (!project) {
-      this.error(`This directory is not linked to an app. Run ${chalk.cyan("capuchoo init")}.`);
+      this.error(`This directory is not linked to an app. Run ${chalk.cyan(runnable(`init`))}.`);
     }
 
     if (args.action === "add") await this.add(cloud, project.cloudAppId, args.bundleId, flags);

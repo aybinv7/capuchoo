@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { BaseCommand } from "../../base-command.js";
 import { CloudClient } from "../../services/cloud.js";
 import { resolveCredentials } from "../../utils/config.js";
+import { runnable } from "../../cli/invocation.js";
 
 export default class OrgList extends BaseCommand {
   static override description = "List the organizations this account belongs to";
@@ -17,7 +18,7 @@ export default class OrgList extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan(runnable(`auth login`))}.`);
     }
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);

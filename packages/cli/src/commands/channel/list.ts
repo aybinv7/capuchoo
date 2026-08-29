@@ -4,6 +4,7 @@ import { CloudClient } from "../../services/cloud.js";
 import { requireProjectConfig, resolveCredentials } from "../../utils/config.js";
 import { whileWaiting } from "../../cli/prompts.js";
 import { BaseCommand } from "../../base-command.js";
+import { runnable } from "../../cli/invocation.js";
 
 export default class ChannelList extends BaseCommand {
   static override description = "List this app's channels and what they serve";
@@ -18,7 +19,7 @@ export default class ChannelList extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan(runnable(`auth login`))}.`);
     }
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);

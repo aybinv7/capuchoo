@@ -4,6 +4,7 @@ import { BaseCommand } from "../../base-command.js";
 import { confirm, isInteractive, log } from "../../cli/prompts.js";
 import { CloudClient } from "../../services/cloud.js";
 import { readProjectConfig, resolveCredentials } from "../../utils/config.js";
+import { runnable } from "../../cli/invocation.js";
 
 /**
  * Deleting an app takes its channels, bundles and update history with it, and
@@ -34,7 +35,7 @@ export default class AppDelete extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan(runnable(`auth login`))}.`);
     }
 
     const wanted = args.appId?.trim();

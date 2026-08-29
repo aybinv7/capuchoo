@@ -4,6 +4,7 @@ import { BaseCommand } from "../../base-command.js";
 import { confirm, isInteractive, log } from "../../cli/prompts.js";
 import { CloudClient } from "../../services/cloud.js";
 import { requireProjectConfig, resolveCredentials } from "../../utils/config.js";
+import { runnable } from "../../cli/invocation.js";
 
 /**
  * Deleting a channel is not recoverable and devices are pointed at it by name,
@@ -33,7 +34,7 @@ export default class ChannelDelete extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan(runnable(`auth login`))}.`);
     }
 
     const name = args.name?.trim();

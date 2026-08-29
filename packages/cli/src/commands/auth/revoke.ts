@@ -4,6 +4,7 @@ import { BaseCommand } from "../../base-command.js";
 import { confirm, isInteractive, whileWaiting } from "../../cli/prompts.js";
 import { requireCloud } from "../../cli/team.js";
 import { resolveCredentials } from "../../utils/config.js";
+import { runnable } from "../../cli/invocation.js";
 
 export default class AuthRevoke extends BaseCommand {
   static override description = "Revoke an API key";
@@ -28,7 +29,7 @@ export default class AuthRevoke extends BaseCommand {
 
     if (!key) {
       this.error(
-        `No key with id "${args.id}". Run ${chalk.cyan("capuchoo auth keys")} to see them.`,
+        `No key with id "${args.id}". Run ${chalk.cyan(runnable(`auth keys`))} to see them.`,
       );
     }
 

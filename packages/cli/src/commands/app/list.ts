@@ -4,6 +4,7 @@ import { whileWaiting } from "../../cli/prompts.js";
 import { BaseCommand } from "../../base-command.js";
 import { CloudClient } from "../../services/cloud.js";
 import { readProjectConfig, resolveCredentials } from "../../utils/config.js";
+import { runnable } from "../../cli/invocation.js";
 
 export default class AppList extends BaseCommand {
   static override description = "List the apps this account can reach";
@@ -17,7 +18,7 @@ export default class AppList extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan(runnable(`auth login`))}.`);
     }
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);

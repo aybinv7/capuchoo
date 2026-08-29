@@ -4,6 +4,7 @@ import type { ResolvedProjectConfig } from "@capuchoo/core";
 import { normaliseProjectConfig } from "@capuchoo/core";
 import { CloudClient } from "../services/cloud.js";
 import { readProjectConfig, resolveCredentials } from "../utils/config.js";
+import { runnable } from "./invocation.js";
 
 export const APP_ROLES = ["admin", "developer", "tester", "viewer"] as const;
 export const ORG_ROLES = ["owner", "admin", "member"] as const;
@@ -20,12 +21,12 @@ export interface LinkedApp {
 export function requireLinkedApp(command: Command): LinkedApp {
   const credentials = resolveCredentials();
   if (!credentials) {
-    command.error(`Not signed in. Run ${chalk.cyan("capuchoo auth login")}.`);
+    command.error(`Not signed in. Run ${chalk.cyan(runnable(`auth login`))}.`);
   }
 
   const raw = readProjectConfig(process.cwd());
   if (!raw) {
-    command.error(`This directory is not linked to an app. Run ${chalk.cyan("capuchoo init")}.`);
+    command.error(`This directory is not linked to an app. Run ${chalk.cyan(runnable(`init`))}.`);
   }
 
   return {
@@ -38,7 +39,7 @@ export function requireLinkedApp(command: Command): LinkedApp {
 export function requireCloud(command: Command): CloudClient {
   const credentials = resolveCredentials();
   if (!credentials) {
-    command.error(`Not signed in. Run ${chalk.cyan("capuchoo auth login")}.`);
+    command.error(`Not signed in. Run ${chalk.cyan(runnable(`auth login`))}.`);
   }
 
   return new CloudClient(credentials.endpoint, credentials.apiKey);

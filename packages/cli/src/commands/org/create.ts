@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { BaseCommand } from "../../base-command.js";
 import { CloudClient } from "../../services/cloud.js";
 import { resolveCredentials } from "../../utils/config.js";
+import { runnable } from "../../cli/invocation.js";
 
 /**
  * An account with no organization cannot own an app, so this was the one step
@@ -31,7 +32,7 @@ export default class OrgCreate extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan(runnable(`auth login`))}.`);
     }
 
     const name = args.name?.trim();

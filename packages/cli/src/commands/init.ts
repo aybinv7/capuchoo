@@ -41,6 +41,7 @@ import AuthLogin from "./auth/login.js";
 import { BaseCommand } from "../base-command.js";
 import { INIT_STEPS, selectSteps, type InitStepId } from "../cli/init-plan.js";
 import { waitForAdoption } from "../init/prove.js";
+import { runnable } from "../cli/invocation.js";
 import {
   renderOutcomes,
   stepCode,
@@ -294,7 +295,7 @@ export default class Init extends BaseCommand {
       this.log("");
       this.log(
         chalk.dim("  Deploy with: ") +
-          chalk.cyan(`capuchoo deploy ota --channel ${deployable[0]!.name}`),
+          chalk.cyan(runnable(`deploy ota --channel ${deployable[0]!.name}`)),
       );
     } else {
       // An app with no channel is not deployable, and init already knows it.
@@ -561,7 +562,7 @@ export default class Init extends BaseCommand {
         `  ${chalk.green("Created channel")} ${channel.name} ${chalk.dim(`(${environment})`)}`,
       );
       this.log(
-        chalk.dim("  Deploy with: ") + chalk.cyan(`capuchoo deploy ota --channel ${channel.name}`),
+        chalk.dim("  Deploy with: ") + chalk.cyan(runnable(`deploy ota --channel ${channel.name}`)),
       );
     } catch (error) {
       // The app and project.json are already correct, so this is a warning and
@@ -614,7 +615,7 @@ export default class Init extends BaseCommand {
 
     if (created.length > 0) {
       this.log(
-        chalk.dim("  Deploy with: ") + chalk.cyan(`capuchoo deploy ota --channel ${created[0]}`),
+        chalk.dim("  Deploy with: ") + chalk.cyan(runnable(`deploy ota --channel ${created[0]}`)),
       );
     }
 
@@ -626,7 +627,7 @@ export default class Init extends BaseCommand {
     // one more channel on the prod environment, not another set of three.
     this.log(
       chalk.dim("  A client or A/B channel is an extra one on prod: ") +
-        chalk.cyan("capuchoo channel create <name>"),
+        chalk.cyan(runnable(`channel create <name>`)),
     );
   }
 
@@ -870,7 +871,7 @@ export default class Init extends BaseCommand {
 ` +
             `  administrator of the owning organisation grant you access to it -
 ` +
-            `  then run ${chalk.cyan("capuchoo init")} again and it will link rather than create.`,
+            `  then run ${chalk.cyan(runnable(`init`))} again and it will link rather than create.`,
         );
       }
 

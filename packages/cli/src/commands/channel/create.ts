@@ -5,6 +5,7 @@ import { BaseCommand } from "../../base-command.js";
 import { confirm, isInteractive, log, selectOne } from "../../cli/prompts.js";
 import { CloudClient } from "../../services/cloud.js";
 import { requireProjectConfig, resolveCredentials } from "../../utils/config.js";
+import { runnable } from "../../cli/invocation.js";
 
 /**
  * Creating a channel used to be dashboard-only, which broke the CLI story: a
@@ -49,7 +50,7 @@ export default class ChannelCreate extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.error(`Not authenticated. Run ${chalk.cyan("capuchoo auth login")}.`);
+      this.error(`Not authenticated. Run ${chalk.cyan(runnable(`auth login`))}.`);
     }
 
     const cloud = new CloudClient(credentials.endpoint, credentials.apiKey);

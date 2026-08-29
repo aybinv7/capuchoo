@@ -1,3 +1,4 @@
+import { runnable } from "../cli/invocation.js";
 import {
   canPublishTo,
   hasEnvironmentMismatch,
@@ -62,7 +63,7 @@ export default class Doctor extends BaseCommand {
 
     const credentials = resolveCredentials();
     if (!credentials) {
-      this.report([{ level: "fail", what: "Not signed in", fix: "capuchoo auth login" }]);
+      this.report([{ level: "fail", what: "Not signed in", fix: runnable("auth login") }]);
       return;
     }
 
@@ -96,7 +97,7 @@ export default class Doctor extends BaseCommand {
         level: "fail",
         what: "Credentials rejected",
         detail: `${credentials.endpoint} answered, and refused the stored API key`,
-        fix: `capuchoo auth login   (or capuchoo config set endpoint <url>)`,
+        fix: `${runnable("auth login")}   (or ${runnable("config set endpoint <url>")})`,
       });
       this.report(findings);
       return;
@@ -115,7 +116,7 @@ export default class Doctor extends BaseCommand {
       findings.push({
         level: "fail",
         what: "This directory is not linked to an app",
-        fix: "capuchoo init",
+        fix: runnable("init"),
       });
       this.report(findings);
       return;
@@ -140,7 +141,7 @@ export default class Doctor extends BaseCommand {
         detail: scoped
           ? `The key is restricted to ${scoped.name} (${scoped.app_id})`
           : `The key is restricted to app ${profile.credential?.app_id}`,
-        fix: "capuchoo auth login   (with a key for this app, or an unscoped one)",
+        fix: `${runnable("auth login")}   (with a key for this app, or an unscoped one)`,
       });
     }
 
@@ -162,13 +163,13 @@ export default class Doctor extends BaseCommand {
               level: "fail",
               what: "This app's channels could not be read",
               detail: "The same key restriction reported above also blocks reading them",
-              fix: "capuchoo auth login   (with a key for this app, or an unscoped one)",
+              fix: `${runnable("auth login")}   (with a key for this app, or an unscoped one)`,
             }
           : {
               level: "fail",
               what: "The linked cloud app could not be read",
               detail: `cloudAppId ${project.cloudAppId} - deleted, or belongs to another account`,
-              fix: "capuchoo init --force",
+              fix: runnable("init --force"),
             },
       );
       this.report(findings);
@@ -180,7 +181,7 @@ export default class Doctor extends BaseCommand {
         level: "fail",
         what: "No channels",
         detail: "Nothing can be deployed until a channel exists",
-        fix: "capuchoo channel create staging",
+        fix: runnable("channel create staging"),
       });
     }
 
@@ -213,7 +214,7 @@ export default class Doctor extends BaseCommand {
           level: "warn",
           what: `Channel "${channel.name}" is serving no bundle`,
           detail: "No OTA version is active on it yet",
-          fix: `capuchoo deploy ota --channel ${channel.name}`,
+          fix: runnable(`deploy ota --channel ${channel.name}`),
         });
       }
     }

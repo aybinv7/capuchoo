@@ -39,8 +39,13 @@ export async function generateAssets(
 ): Promise<StepOutcome> {
   const { toolchain, flavour } = context;
 
+  // Both misses say what to put where, rather than only what is absent. This
+  // is skipped on every deploy of an app that ships no artwork, and a line
+  // repeated on every deploy should either be actionable or not be there.
+  const missing = `put icon.png (and optionally splash.png) in ${flavour.config.assetPath}`;
+
   if (!flavour.assetPath) {
-    return { ran: false, reason: `no asset directory at ${flavour.config.assetPath}` };
+    return { ran: false, reason: `no launcher artwork - ${missing}` };
   }
 
   const sources = fs
@@ -48,10 +53,7 @@ export async function generateAssets(
     .filter((name) => /^(icon|splash)(-dark)?\.(png|svg)$/.test(name));
 
   if (sources.length === 0) {
-    return {
-      ran: false,
-      reason: `${flavour.config.assetPath} has no icon.png or splash.png`,
-    };
+    return { ran: false, reason: `no launcher artwork - ${missing}` };
   }
 
   const bin = resolveBin("capacitor-assets", toolchain.appDir);
