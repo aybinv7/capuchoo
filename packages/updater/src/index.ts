@@ -62,6 +62,8 @@ export {
 
 export { openNativeInstaller } from "./install.service.js";
 
+export { isDismissible, updateGate, type Gate, type GateFacts, type GateState } from "./gate.js";
+
 export { applyOtaUpdate, discardBundle, getCurrentBundle, notifyAppReady } from "./ota.service.js";
 
 // Re-exported so an app does not need a direct @capuchoo/core dependency just

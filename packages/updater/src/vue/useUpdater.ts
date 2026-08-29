@@ -18,6 +18,7 @@ import {
 } from "../download.service.js";
 import { openNativeInstaller } from "../install.service.js";
 import { applyOtaUpdate, getCurrentBundle, notifyAppReady } from "../ota.service.js";
+import { canNotify, clearProgress, showProgress } from "../notification.service.js";
 
 export interface UpdaterState {
   checking: boolean;
@@ -202,13 +203,29 @@ async function startDownload(): Promise<void> {
   state.value.statusMessage =
     update.kind === "native" ? "Downloading the new version..." : "Downloading update...";
 
+  // Asked for once, here, rather than at start-up: a permission prompt out of
+  // context is one people decline, and an app that never downloads an update
+  // should never see it at all.
+  const notify = getUpdaterConfig().notifyProgress ? await canNotify() : false;
+
   try {
     if (update.kind === "native") {
       state.value.cachedPath = await downloadNativeUpdate(update, (progress) => {
         state.value.progress = progress;
+
+        // The whole point of a backgrounded download: the app may not be on
+        // screen, and a download with no visible sign of life gets cancelled.
+        if (notify) {
+          void showProgress({
+            title: `Downloading ${getUpdaterConfig().appName} ${update.version}`,
+            percent: progress.percent,
+            body: `${progress.percent}%`,
+          });
+        }
       });
       state.value.progress = { ...DONE_PROGRESS };
       state.value.statusMessage = "Download complete. Tap Install to continue.";
+      if (notify) await clearProgress();
       await logUpdateEvent("download_complete", update);
       return;
     }
@@ -217,6 +234,9 @@ async function startDownload(): Promise<void> {
     await applyOtaUpdate(update);
   } catch (error) {
     state.value.error = error instanceof Error ? error.message : "The update failed";
+    // Cleared on failure too, or an ongoing notification outlives the download
+    // it was reporting and sits there claiming progress forever.
+    if (notify) await clearProgress();
     await logUpdateEvent("error", update, { error: state.value.error });
   } finally {
     state.value.downloading = false;

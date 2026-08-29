@@ -19,6 +19,16 @@ export interface UpdaterConfig {
   environment: string;
   /** Milliseconds before an update check is abandoned. */
   timeoutMs: number;
+  /**
+   * Show an ongoing notification with download progress.
+   *
+   * Off unless asked. It needs @capacitor/local-notifications and, on Android
+   * 13+, a POST_NOTIFICATIONS grant - so an app that never backgrounds a
+   * download should not be made to request a permission it will not use.
+   *
+   * Set VITE_UPDATE_NOTIFY=true, or pass it when configuring the updater.
+   */
+  notifyProgress: boolean;
 }
 
 function env(key: string): string | undefined {
@@ -58,6 +68,9 @@ export function getUpdaterConfig(): UpdaterConfig {
     environment:
       overrides.environment ?? env("VITE_ENVIRONMENT") ?? (env("PROD") === "true" ? "prod" : "dev"),
     timeoutMs: overrides.timeoutMs ?? 30_000,
+    // Only the exact string, so a stray value cannot switch on a permission
+    // prompt the app never intended to show.
+    notifyProgress: overrides.notifyProgress ?? env("VITE_UPDATE_NOTIFY") === "true",
   };
 }
 

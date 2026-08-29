@@ -1,4 +1,5 @@
 import { computed } from "vue";
+import { isDismissible, updateGate, type GateFacts } from "../gate.js";
 import { useUpdater } from "./useUpdater.js";
 
 /**
@@ -15,6 +16,16 @@ export function useUpdatePrompt() {
 
   const update = updater.currentUpdate;
   const isNativeUpdate = computed(() => update.value?.kind === "native");
+
+  const facts = computed<GateFacts>(() => ({
+    available: updater.updateAvailable.value,
+    required: updater.isRequired.value,
+    kind: update.value?.kind ?? null,
+    downloading: updater.isDownloading.value,
+    installing: updater.isInstalling.value,
+    downloaded: updater.cachedPath.value !== null,
+    handedToInstaller: updater.handedToInstaller.value,
+  }));
 
   return {
     ...updater,
@@ -91,11 +102,21 @@ export function useUpdatePrompt() {
     /** Busy state - the primary button must be disabled. */
     busy: computed(() => updater.isDownloading.value || updater.isInstalling.value),
 
+    /**
+     * Whether a required update is standing in the app's way right now.
+     *
+     * Not one long block: it closes to be acknowledged, opens while the download
+     * runs so the app stays usable, and closes again for the install. Holding
+     * someone for a whole 8 MB download teaches them to force-quit, and a
+     * force-quit mid-download is how an update never lands at all.
+     *
+     * Render `gate.blocked` as an overlay the app cannot be used behind, and
+     * `gate.reason` as its text.
+     */
+    gate: computed(() => updateGate(facts.value)),
+
     /** A required update cannot be postponed, and neither can one mid-flight. */
-    dismissible: computed(
-      () =>
-        !updater.isRequired.value && !updater.isDownloading.value && !updater.isInstalling.value,
-    ),
+    dismissible: computed(() => isDismissible(facts.value)),
 
     showProgress: computed(() => updater.isDownloading.value && updater.progress.value.percent > 0),
   };

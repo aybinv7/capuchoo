@@ -24,7 +24,7 @@
  * manager believes `latest` is, and pnpm caches registry metadata - so minutes
  * after a release it installs the previous version and says nothing.
  */
-export const RUNTIME_VERSION = "0.6.2";
+export const RUNTIME_VERSION = "0.7.0";
 
 /** Capacitor majors this toolchain installs for. */
 export const SUPPORTED_MAJORS = [7, 8] as const;
@@ -121,6 +121,14 @@ export function nativePackages(major: CapacitorMajor): PackageSpec[] {
     },
     { name: "@capacitor/filesystem", range: `^${major}`, why: "caches it" },
     { name: "@capacitor/network", range: `^${major}`, why: "checks connectivity first" },
+    {
+      name: "@capacitor/local-notifications",
+      range: `^${major}`,
+      // Installed with the rest, used only when VITE_UPDATE_NOTIFY=true. A
+      // backgrounded download is invisible otherwise, and an update that looks
+      // stalled is one people cancel.
+      why: "shows download progress while the app is in the background",
+    },
     {
       name: "@capawesome-team/capacitor-file-opener",
       range: `^${major}`,
