@@ -1108,6 +1108,111 @@ class AdminController {
   }
 
   /**
+   * OTA bundles and native binaries in one list, each tagged with which it is.
+   * GET /api/dashboard/updates-bundles
+   *
+   * The dashboard has always asked for this and always got a 404 - the route was
+   * never implemented, so its Updates & Bundles page has shown nothing since it
+   * was written. The page's own types describe exactly this shape, down to the
+   * `type` discriminator its detail view reads from `?type=`.
+   *
+   * Native rows carry `version_code` and `file_size_bytes`; OTA rows carry
+   * `session_key` and `min_native_version`. Both carry `is_active_for`, the
+   * channels currently pointing at them, which is what "live" means here - the
+   * `active` column only says an artefact *may* be served.
+   */
+  async getUpdatesAndBundles(req: Request, res: Response): Promise<void> {
+    try {
+      const identifier = (req.query.app_id as string) || undefined;
+      let appUuid = identifier ? await this.resolveAppUuid(identifier) : null;
+
+      const keyAppId = (req as any).appId;
+      if (keyAppId) {
+        if (appUuid && keyAppId !== appUuid) {
+          res.status(403).json({ error: "Forbidden: API key restricted to another app" });
+          return;
+        }
+        appUuid = keyAppId;
+      }
+
+      if (!appUuid) {
+        res.status(400).json({ error: "app_id is required" });
+        return;
+      }
+
+      const client = this.supabaseService.getClient();
+
+      const [bundles, natives, channels] = await Promise.all([
+        client
+          .from("app_versions")
+          .select("*")
+          .eq("app_id", appUuid)
+          .order("created_at", { ascending: false }),
+        client
+          .from("native_updates")
+          .select("*")
+          .eq("app_id", appUuid)
+          .order("created_at", { ascending: false }),
+        client
+          .from("channels")
+          .select("name, current_version_id, current_native_version_id")
+          .eq("app_id", appUuid),
+      ]);
+
+      if (bundles.error) throw bundles.error;
+      if (natives.error) throw natives.error;
+
+      const rooms = channels.data ?? [];
+      const servingBundle = (id: string) =>
+        rooms.filter((ch: any) => ch.current_version_id === id).map((ch: any) => ch.name);
+      const servingNative = (id: string) =>
+        rooms.filter((ch: any) => ch.current_native_version_id === id).map((ch: any) => ch.name);
+
+      const rows = [
+        ...(bundles.data ?? []).map((row: any) => ({
+          id: row.id,
+          type: "bundle" as const,
+          platform: row.platform,
+          version_name: row.version_name,
+          download_url: row.external_url || row.r2_path,
+          checksum: row.checksum,
+          session_key: row.session_key,
+          channel: row.channel || "prod",
+          required: row.required,
+          active: row.active,
+          created_at: row.created_at,
+          created_by: row.uploaded_by,
+          release_notes: row.release_notes,
+          min_native_version: row.min_update_version,
+          is_active_for: servingBundle(row.id),
+        })),
+        ...(natives.data ?? []).map((row: any) => ({
+          id: row.id,
+          type: "native" as const,
+          platform: row.platform,
+          version_name: row.version_name,
+          version_code: row.version_code,
+          download_url: row.download_url,
+          checksum: row.checksum,
+          channel: row.channel || "prod",
+          required: row.required,
+          active: row.active,
+          created_at: row.created_at,
+          created_by: row.uploaded_by,
+          file_size_bytes: row.file_size_bytes,
+          release_notes: row.release_notes,
+          is_active_for: servingNative(row.id),
+        })),
+      ].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+
+      res.json(rows);
+    } catch (error) {
+      logger.error("Updates and bundles fetch failed", { error });
+      res.status(500).json({ error: "Failed to fetch updates and bundles" });
+    }
+  }
+
+  /**
    * A fresh, expiring link to a bundle's artefact.
    * GET /api/dashboard/bundles/:id/download
    *
@@ -1124,18 +1229,29 @@ class AdminController {
     try {
       const { id } = req.params;
 
-      const result = await this.supabaseService.query("app_versions", {
-        select: "id, version_name, external_url",
-        eq: { id },
-      });
-      const bundle = result.data?.[0];
+      // Both kinds share one detail page and one download button, so this looks
+      // in both tables. Asked in parallel because an id is in one or the other
+      // and a miss on the first should not cost a second round trip.
+      const [ota, native] = await Promise.all([
+        this.supabaseService.query("app_versions", {
+          select: "id, version_name, external_url",
+          eq: { id },
+        }),
+        this.supabaseService.query("native_updates", {
+          select: "id, version_name, download_url",
+          eq: { id },
+        }),
+      ]);
 
-      if (!bundle) {
-        res.status(404).json({ error: "No bundle with that id" });
+      const bundle = ota.data?.[0];
+      const binary = native.data?.[0];
+
+      if (!bundle && !binary) {
+        res.status(404).json({ error: "No bundle or native update with that id" });
         return;
       }
 
-      const stored = bundle.external_url as string | null;
+      const stored = (bundle?.external_url ?? binary?.download_url) as string | null;
       if (!stored) {
         res.status(409).json({ error: "This bundle has no stored artefact" });
         return;

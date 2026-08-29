@@ -55,12 +55,20 @@ export async function appRoleFor(userId: string, appUuid: string): Promise<AppRo
   return orgMember ? "admin" : null;
 }
 
+export type ResourceTable = "channels" | "app_versions" | "native_updates";
+
 /** Guards a resource that belongs to an app, addressed as `:id`. */
 export const checkResourceAccess = (
-  table: "channels" | "app_versions",
+  /**
+   * Where to look the id up. An array tries each in order, for a route that
+   * addresses two kinds by one id - the bundle detail page and its download
+   * button serve OTA bundles and native binaries through the same `:id`.
+   */
+  table: ResourceTable | readonly ResourceTable[],
   requiredRoles?: readonly AppRole[],
 ) => {
-  const noun = table === "channels" ? "Channel" : "Bundle";
+  const tables = Array.isArray(table) ? table : [table as ResourceTable];
+  const noun = tables[0] === "channels" ? "Channel" : "Bundle";
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -73,14 +81,22 @@ export const checkResourceAccess = (
       let role: AppRole | null = null;
 
       if (userId && id) {
-        const { data: row } = await supabaseService
-          .getClient()
-          .from(table)
-          .select("app_id")
-          .eq("id", id)
-          .maybeSingle();
+        // First table that has the row wins. A miss is not an error here: the
+        // id simply lives in the other one.
+        for (const candidate of tables) {
+          const { data: row } = await supabaseService
+            .getClient()
+            .from(candidate)
+            .select("app_id")
+            .eq("id", id)
+            .maybeSingle();
 
-        resourceAppId = row?.app_id ?? null;
+          if (row?.app_id) {
+            resourceAppId = row.app_id;
+            break;
+          }
+        }
+
         if (resourceAppId) role = await appRoleFor(userId, resourceAppId);
         // A capped key can never do more than its ceiling, whatever the account has.
         role = effectiveRole(role, (req as any).keyRole as AppRole | undefined);

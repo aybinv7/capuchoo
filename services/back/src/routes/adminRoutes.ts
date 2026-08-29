@@ -43,10 +43,15 @@ router.delete(
   adminController.deleteBundle.bind(adminController),
 );
 
+router.get(
+  "/dashboard/updates-bundles",
+  adminController.getUpdatesAndBundles.bind(adminController),
+);
+
 // Reading a bundle is enough to download it; publishing is a separate right.
 router.get(
   "/dashboard/bundles/:id/download",
-  checkResourceAccess("app_versions"),
+  checkResourceAccess(["app_versions", "native_updates"]),
   adminController.bundleDownloadUrl.bind(adminController),
 );
 
