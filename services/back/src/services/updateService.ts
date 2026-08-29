@@ -15,6 +15,8 @@ import supabaseService from "./supabaseService";
 import deviceService from "./deviceService";
 import { statsVersion } from "./telemetry";
 import logger from "@/utils/logger";
+import config from "@/config";
+import { SIGNED_URL_TTL_SECONDS, storageKeyFromUrl } from "./signedDownload";
 
 class UpdateService implements IUpdateService {
   /**
@@ -255,7 +257,7 @@ class UpdateService implements IUpdateService {
         });
       }
 
-      return renderUpdateResponse(decision, {
+      return renderUpdateResponse(await this.signDownloads(decision), {
         config,
         gate: await this.findGateNative(decision, appUuid, platform),
       });
@@ -266,6 +268,45 @@ class UpdateService implements IUpdateService {
   }
 
   /** The channel a check names, with the two pointers that decide what it serves. */
+  /**
+   * Replaces a stored download URL with one that expires.
+   *
+   * Only for the two outcomes that actually hand over an artefact, so a check
+   * that answers "up to date" costs no storage call - and only for URLs in our
+   * own bucket, because a release may legitimately point at a CDN.
+   *
+   * A signing failure keeps the stored URL. An update that still arrives beats
+   * one that does not, and the reason is logged rather than swallowed.
+   */
+  private async signDownloads(decision: UpdateDecision): Promise<UpdateDecision> {
+    const bucket = config.supabase.bucketName;
+
+    if (decision.kind === "ota") {
+      const url = await this.sign(decision.release.url, bucket);
+      return url ? { ...decision, release: { ...decision.release, url } } : decision;
+    }
+
+    if (decision.kind === "native") {
+      const url = await this.sign(decision.release.download_url, bucket);
+      return url ? { ...decision, release: { ...decision.release, download_url: url } } : decision;
+    }
+
+    return decision;
+  }
+
+  /** A signed URL for one of ours, or null to keep what was stored. */
+  private async sign(url: string, bucket: string): Promise<string | null> {
+    const key = storageKeyFromUrl(url, bucket);
+    if (!key) return null;
+
+    try {
+      return await supabaseService.createSignedUrl(key, SIGNED_URL_TTL_SECONDS);
+    } catch (error) {
+      logger.warn("Serving the stored URL: signing failed", { key, error });
+      return null;
+    }
+  }
+
   private async findChannel(
     appUuid: string,
     name: string,

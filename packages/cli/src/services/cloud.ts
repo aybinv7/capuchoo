@@ -61,8 +61,15 @@ export interface ApiKeySummary {
 export class CloudClient {
   private readonly options: HttpOptions;
 
-  constructor(endpoint: string, apiKey: string) {
-    this.options = { endpoint, apiKey };
+  constructor(endpoint: string, apiKey: string, options: { onWaking?: () => void } = {}) {
+    // Said once, on stderr, because a ninety-second wait with no output is
+    // indistinguishable from a hang - and this host sleeps, so the first call of
+    // a session routinely takes that long.
+    const onWaking =
+      options.onWaking ??
+      (() => process.stderr.write("  The backend was asleep - waking it and retrying...\n"));
+
+    this.options = { endpoint, apiKey, onWaking };
   }
 
   get endpoint(): string {

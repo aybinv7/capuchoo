@@ -36,6 +36,14 @@ export interface HttpOptions {
   endpoint: string;
   apiKey: string;
   timeoutMs?: number;
+  /**
+   * Called once, before a retry, when the first attempt timed out.
+   *
+   * A hook rather than a log line: this module knows nothing about how a command
+   * presents itself, and a silent 90-second wait is indistinguishable from a
+   * hang.
+   */
+  onWaking?: (() => void) | undefined;
 }
 
 async function readBody(response: Response): Promise<unknown> {
@@ -72,13 +80,24 @@ function messageFrom(body: unknown, fallback: string): string {
   return fallback;
 }
 
-async function request<T>(
+/**
+ * How long to allow a second attempt after a timeout.
+ *
+ * The backend sleeps when idle. A cold start was measured at 32.2s against a
+ * 30s timeout, so the first request of a session failed and the second
+ * succeeded - the worst possible shape, because the tool looks broken and then
+ * looks fine, and nobody trusts it afterwards. This is generous enough that
+ * waking is not a race.
+ */
+const WAKE_TIMEOUT_MS = 90_000;
+
+async function attempt<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   url: string,
   options: HttpOptions & { body?: unknown },
+  timeoutMs: number,
 ): Promise<T> {
   const controller = new AbortController();
-  const timeoutMs = options.timeoutMs ?? 30_000;
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -117,6 +136,33 @@ async function request<T>(
     throw error;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * One request, with a second chance when the host was merely asleep.
+ *
+ * Retried for GET only. A timeout says the response never arrived, not that the
+ * server did nothing - replaying `POST /api/admin/upload` could publish the same
+ * bundle twice, and no amount of convenience is worth that. Every timeout seen
+ * in practice was on `GET /api/auth/me`, the first call every command makes.
+ *
+ * `auth login` had this logic for itself. Down here, every command inherits it.
+ */
+async function request<T>(
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  url: string,
+  options: HttpOptions & { body?: unknown },
+): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? 30_000;
+
+  try {
+    return await attempt<T>(method, url, options, timeoutMs);
+  } catch (error) {
+    if (!(error instanceof TimeoutError) || method !== "GET") throw error;
+
+    options.onWaking?.();
+    return attempt<T>(method, url, options, WAKE_TIMEOUT_MS);
   }
 }
 
