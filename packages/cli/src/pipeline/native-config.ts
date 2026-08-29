@@ -49,6 +49,21 @@ export async function applyNativeConfig(input: NativeConfigInput): Promise<Nativ
   const trapezeBin = resolveBin("trapeze", input.appDir);
 
   if (trapezeBin && input.flavour.trapezeConfig) {
+    // Identity first, then Trapeze on top. These used to be alternatives, and
+    // that was wrong in a way nothing reported: the built-in step is what writes
+    // applicationId, versionName and versionCode into build.gradle, so a Trapeze
+    // config that only declared a permission meant the version was never applied
+    // at all. The APK then shipped with whatever gradle happened to hold - a
+    // release published as v0.3.0 / code 5 containing 0.2.1 / code 4.
+    //
+    // Which does not merely mislabel the file. The device reports the version
+    // compiled into it, so it would install that update and go on reporting the
+    // older code, be offered the same release again, and loop.
+    //
+    // Trapeze runs second so an app that *does* declare versions in its config
+    // still wins - it is the more specific statement of intent.
+    const builtin = applyBuiltinConfig(input);
+
     // `-y` accepts the diff Trapeze prints; without it the command waits for
     // input forever in CI.
     const result = await run(trapezeBin, ["run", input.flavour.trapezeConfig, "-y"], {
@@ -57,7 +72,7 @@ export async function applyNativeConfig(input: NativeConfigInput): Promise<Nativ
       env: input.env,
     });
 
-    return { method: "trapeze", changed: [], ...describeTrapezeRun(result) };
+    return { method: "trapeze", changed: builtin.changed, ...describeTrapezeRun(result) };
   }
 
   const reason = !trapezeBin
