@@ -24,6 +24,7 @@ import {
 import {
   describePatch,
   newEnvFile,
+  patchAndroidManifest,
   patchCapacitorConfig,
   patchEntryFile,
   patchEnvFile,
@@ -227,9 +228,17 @@ export async function stepEnv(ctx: StepContext): Promise<StepOutcome> {
 /** notifyAppReady() in the entry file, and the plugin block in the config. */
 export async function stepCode(ctx: StepContext): Promise<StepOutcome> {
   const id: InitStepId = "code";
+  const manifest = path.join(ctx.project.androidDir, "app/src/main/AndroidManifest.xml");
+
   const targets: Array<{ file: string | null; patch: typeof patchEntryFile }> = [
     { file: findEntryFile(ctx.appDir), patch: patchEntryFile },
     { file: findCapacitorConfig(ctx.appDir), patch: patchCapacitorConfig },
+    // Only with --native: the permission exists for the in-app APK install, and
+    // an app that never does one should not ask for it. Without it the download
+    // succeeds and the installer silently does nothing.
+    ...(ctx.native && fs.existsSync(path.join(ctx.appDir, manifest))
+      ? [{ file: manifest, patch: patchAndroidManifest }]
+      : []),
   ];
 
   const applied: string[] = [];

@@ -160,6 +160,52 @@ export function patchEntryFile(content: string): Patch {
   };
 }
 
+export const INSTALL_PERMISSION = "android.permission.REQUEST_INSTALL_PACKAGES";
+
+/**
+ * Declares the permission an in-app APK install cannot happen without.
+ *
+ * `init --native` installs the four plugins that download and open an APK, and
+ * the permission they need was only ever added by a Trapeze config. An app
+ * configured by the built-in path got the plugins and not the permission, so it
+ * downloaded a 9 MB update and then silently did nothing - `FileOpener.openFile`
+ * resolves either way, so even the app could not tell.
+ *
+ * Verified on a device: without this the installer activity never starts and the
+ * requested-permission list holds INTERNET and nothing else.
+ */
+export function patchAndroidManifest(content: string): Patch {
+  if (content.includes(INSTALL_PERMISSION)) {
+    return unchanged("already allows installing an APK");
+  }
+
+  const line = `    <uses-permission android:name="${INSTALL_PERMISSION}" />`;
+
+  // Beside the permissions that are already there, so the file keeps its shape.
+  const existing = /^[ 	]*<uses-permission[^>]*\/>\s*$/m.exec(content);
+  if (existing) {
+    const at = existing.index + existing[0].length;
+    return {
+      content: `${content.slice(0, at)}\n${line}${content.slice(at)}`,
+      summary: "added REQUEST_INSTALL_PACKAGES",
+    };
+  }
+
+  const close = content.lastIndexOf("</manifest>");
+  if (close === -1) {
+    return {
+      content: null,
+      summary: "no </manifest> to insert into",
+      manual: line,
+    };
+  }
+
+  return {
+    content: `${content.slice(0, close)}${line}\n${content.slice(close)}`,
+    summary: "added REQUEST_INSTALL_PACKAGES",
+  };
+}
+
 const CONFIG_IMPORT = 'import { capuchooUpdaterConfig } from "@capuchoo/updater/capacitor";';
 
 const CONFIG_BLOCK = (indent: string) =>

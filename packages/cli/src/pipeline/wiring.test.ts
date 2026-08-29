@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  INSTALL_PERMISSION,
+  patchAndroidManifest,
   patchCapacitorConfig,
   patchEntryFile,
   patchEnvFile,
@@ -283,5 +285,79 @@ describe("newEnvFile", () => {
     // What init writes must satisfy what init checks, or a second run would
     // report work to do on a file it just created.
     expect(patchEnvFile(file, API, "dev").content).toBeNull();
+  });
+});
+
+/** The real manifest a Capacitor app is created with. */
+const MANIFEST = `<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:label="@string/app_name">
+        <activity android:name=".MainActivity" />
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>
+`;
+
+/**
+ * Verified on a device before this existed: the APK downloaded byte-exact from a
+ * signed URL, `FileOpener.openFile` returned `{ opened: true }`, no installer
+ * activity started, and the app's requested permissions held INTERNET and
+ * nothing else. Success reported, nothing installed.
+ */
+describe("patchAndroidManifest", () => {
+  it("declares the permission an APK install needs", () => {
+    const patch = patchAndroidManifest(MANIFEST);
+
+    expect(patch.content).toContain(INSTALL_PERMISSION);
+    expect(patch.summary).toContain("REQUEST_INSTALL_PACKAGES");
+  });
+
+  it("keeps the permissions that were already there", () => {
+    expect(patchAndroidManifest(MANIFEST).content).toContain("android.permission.INTERNET");
+  });
+
+  it("puts it beside them rather than at the end of the file", () => {
+    const lines = patchAndroidManifest(MANIFEST).content!.split("\n");
+    const internet = lines.findIndex((l) => l.includes("permission.INTERNET"));
+    const added = lines.findIndex((l) => l.includes(INSTALL_PERMISSION));
+
+    expect(added).toBe(internet + 1);
+  });
+
+  it("stays inside the manifest element", () => {
+    const content = patchAndroidManifest(MANIFEST).content!;
+
+    expect(content.indexOf(INSTALL_PERMISSION)).toBeLessThan(content.indexOf("</manifest>"));
+  });
+
+  it("does nothing when it is already declared", () => {
+    const already = MANIFEST.replace(
+      "</manifest>",
+      `    <uses-permission android:name="${INSTALL_PERMISSION}" />
+</manifest>`,
+    );
+
+    expect(patchAndroidManifest(already).content).toBeNull();
+  });
+
+  it("still works on a manifest with no permissions at all", () => {
+    const bare = `<manifest><application /></manifest>`;
+    const patch = patchAndroidManifest(bare);
+
+    expect(patch.content).toContain(INSTALL_PERMISSION);
+    expect(patch.content!.indexOf(INSTALL_PERMISSION)).toBeLessThan(
+      patch.content!.indexOf("</manifest>"),
+    );
+  });
+
+  it("refuses rather than guessing when there is no manifest element", () => {
+    const patch = patchAndroidManifest("<something-else />");
+
+    expect(patch.content).toBeNull();
+    expect(patch.manual).toContain(INSTALL_PERMISSION);
   });
 });

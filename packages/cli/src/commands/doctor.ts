@@ -1,4 +1,5 @@
 import { runnable } from "../cli/invocation.js";
+import { INSTALL_PERMISSION } from "../pipeline/wiring.js";
 import {
   canPublishTo,
   hasEnvironmentMismatch,
@@ -296,9 +297,60 @@ export default class Doctor extends BaseCommand {
     }
 
     findings.push(...this.checkRuntimeWiring(appDir));
+    findings.push(...this.checkNativeInstall(appDir, project.androidDir));
     findings.push(...this.checkReleaseSigning(appDir));
 
     this.report(findings);
+  }
+
+  /**
+   * Whether an in-app APK install can actually happen.
+   *
+   * The four plugins that download and open an APK are installed by
+   * `init --native`; the permission that lets Android act on the second half was
+   * only ever added by a Trapeze config, and the built-in configuration path
+   * says plainly that it does not apply manifest permissions.
+   *
+   * So an app could hold all four plugins, download a 9 MB update, and silently
+   * do nothing - `FileOpener.openFile` resolves whether or not an installer
+   * exists, so neither the app nor the user learns anything. Confirmed on a
+   * device: no installer activity started, and the requested-permission list
+   * held INTERNET and nothing else.
+   *
+   * Only reported when the plugins are present. An OTA-only app has no use for
+   * the permission and should not be told to add one.
+   */
+  private checkNativeInstall(appDir: string, androidDir: string): Finding[] {
+    const manifestPath = path.join(appDir, androidDir, "app/src/main/AndroidManifest.xml");
+    if (!fs.existsSync(manifestPath)) return [];
+
+    const pkgPath = path.join(appDir, "package.json");
+    if (!fs.existsSync(pkgPath)) return [];
+
+    const manifest = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const deps = { ...manifest.dependencies, ...manifest.devDependencies };
+
+    if (!deps["@capacitor/file-transfer"] && !deps["@capawesome-team/capacitor-file-opener"]) {
+      return [];
+    }
+
+    if (fs.readFileSync(manifestPath, "utf8").includes(INSTALL_PERMISSION)) {
+      return [{ level: "ok", what: "In-app APK install is permitted" }];
+    }
+
+    return [
+      {
+        level: "fail",
+        what: "AndroidManifest does not allow installing an APK",
+        detail:
+          "The plugins for an in-app native update are installed, but without " +
+          `${INSTALL_PERMISSION} the download succeeds and the installer silently does nothing`,
+        fix: runnable("init --native"),
+      },
+    ];
   }
 
   /**
