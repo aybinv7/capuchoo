@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import {
   describeFlavourMismatch,
   isFlavour,
@@ -269,7 +270,14 @@ export async function runDeploy(
     nativeConfigMethod = nativeConfig.method;
 
     if (nativeConfig.method === "trapeze") {
-      reporter.note("Trapeze applied the flavour configuration");
+      // Said only when it did something. Trapeze exits 0 on a config it does not
+      // recognise, so reporting the method is not reporting the outcome.
+      if (nativeConfig.warning) {
+        reporter.note(chalk.yellow(nativeConfig.warning));
+        warnings.push(nativeConfig.warning);
+      } else {
+        reporter.note("Trapeze applied the flavour configuration");
+      }
     } else {
       reporter.note(
         `Built-in configuration (${nativeConfig.reason}): ` +

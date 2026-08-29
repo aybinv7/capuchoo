@@ -28,6 +28,10 @@ export interface NativeConfigResult {
   changed: string[];
   /** Why the built-in path was used, when it was. */
   reason?: string;
+  /** False when Trapeze ran but changed nothing it was asked to. */
+  applied?: boolean;
+  /** Set when the run succeeded without doing what the config asked. */
+  warning?: string;
 }
 
 export interface NativeConfigInput {
@@ -47,12 +51,13 @@ export async function applyNativeConfig(input: NativeConfigInput): Promise<Nativ
   if (trapezeBin && input.flavour.trapezeConfig) {
     // `-y` accepts the diff Trapeze prints; without it the command waits for
     // input forever in CI.
-    await run(trapezeBin, ["run", input.flavour.trapezeConfig, "-y"], {
+    const result = await run(trapezeBin, ["run", input.flavour.trapezeConfig, "-y"], {
       ...input.runOptions,
       cwd: input.appDir,
       env: input.env,
     });
-    return { method: "trapeze", changed: [] };
+
+    return { method: "trapeze", changed: [], ...describeTrapezeRun(result) };
   }
 
   const reason = !trapezeBin
@@ -60,6 +65,49 @@ export async function applyNativeConfig(input: NativeConfigInput): Promise<Nativ
     : `no Trapeze config at ${input.flavour.config.trapezeConfig}`;
 
   return { ...applyBuiltinConfig(input), reason };
+}
+
+/**
+ * What Trapeze actually did, rather than merely that it exited 0.
+ *
+ * Trapeze succeeds when it does nothing. A config whose shape it does not
+ * recognise produces
+ *
+ *   [warn] Unsupported configuration option android.0. Skipping
+ *   [info] No changes to apply
+ *
+ * and exit code 0 - so "Trapeze applied the flavour configuration" was printed
+ * for a run that applied none of it. That cost a real debugging cycle: the
+ * manifest permission an APK install needs was silently never added, and the
+ * step said it had been. Exit codes are not evidence when a tool treats
+ * "nothing matched" as success.
+ */
+export function describeTrapezeRun(result: { stdout: string; stderr: string }): {
+  applied?: boolean;
+  warning?: string;
+} {
+  const output = `${result.stdout}
+${result.stderr}`;
+
+  const unsupported = /Unsupported configuration option ([^\s.]+(?:\.[^\s.]+)*)\.?/.exec(output);
+  if (unsupported) {
+    return {
+      applied: false,
+      warning:
+        `Trapeze ignored "${unsupported[1]}" in the flavour config - that key is not a shape ` +
+        "it recognises, so those settings were not applied",
+    };
+  }
+
+  if (/No changes to apply/i.test(output)) {
+    return {
+      applied: false,
+      warning:
+        "Trapeze ran and found nothing to change - the flavour config may not match the project",
+    };
+  }
+
+  return { applied: true };
 }
 
 function applyBuiltinConfig(input: NativeConfigInput): Omit<NativeConfigResult, "reason"> {
