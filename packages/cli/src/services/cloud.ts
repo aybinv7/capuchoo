@@ -325,6 +325,15 @@ export class CloudClient {
     releaseNotes: string;
     active: boolean;
     required: boolean;
+    /**
+     * Native version this bundle needs before a device may run it.
+     *
+     * A web bundle can depend on a native capability - a new plugin, a new
+     * permission - that an older binary does not have. Serving it there means a
+     * crash on launch and a rollback, and the device asks again on the next
+     * check. The server holds the OTA back and offers the binary instead.
+     */
+    minNativeVersion?: string | undefined;
     /** The flavour this artefact was built from; the server refuses a mismatch. */
     flavour?: string | undefined;
   }) {
@@ -339,6 +348,7 @@ export class CloudClient {
         release_notes: input.releaseNotes,
         active: String(input.active),
         required: String(input.required),
+        ...(input.minNativeVersion ? { min_update_version: input.minNativeVersion } : {}),
         ...(input.flavour ? { flavour: input.flavour } : {}),
       },
       { ...this.options, fileField: "bundle" },

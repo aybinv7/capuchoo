@@ -98,6 +98,8 @@ export interface DeployFlags {
   platform?: string;
   type?: string;
   "allow-unsigned"?: boolean;
+  /** OTA only: the native version a device needs before this bundle is served. */
+  "min-native"?: string;
   flavor?: string;
 }
 
@@ -366,6 +368,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
               releaseNotes: note ?? "",
               active,
               required,
+              ...(flags["min-native"] ? { minNativeVersion: flags["min-native"] } : {}),
               flavour: environment,
             })
           : await cloud.uploadNative({

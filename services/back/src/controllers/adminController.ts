@@ -66,6 +66,7 @@ class AdminController {
         release_notes = "",
         app_id,
         flavour,
+        min_update_version,
       } = req.body;
 
       const finalVersion = version_name || version;
@@ -96,6 +97,18 @@ class AdminController {
 
       if (["android", "ios", "web"].indexOf(platform) === -1) {
         throw new ValidationError("Invalid platform. Must be: android, ios, web");
+      }
+
+      // Validated rather than stored as typed: a malformed value here does not
+      // fail the upload, it silently disables the gate at decision time, and
+      // the release looks published.
+      const minUpdateVersion =
+        min_update_version === undefined || min_update_version === "" ? null : min_update_version;
+
+      if (minUpdateVersion !== null && !semver.valid(minUpdateVersion)) {
+        throw new ValidationError(
+          `min_update_version must be a semver version, got "${minUpdateVersion}"`,
+        );
       }
 
       // Resolve the app UUID from bundle identifier if provided
@@ -140,6 +153,12 @@ class AdminController {
         required: required === "true" || required === true,
         active: active === "true" || active === true,
         release_notes: release_notes || null,
+        // The native build this bundle needs before it may run. The column has
+        // always existed and the update decision has always honoured it, but
+        // nothing wrote it: no CLI flag, no request field. The one gate that
+        // stops a web bundle from landing on a binary too old to run it was
+        // unreachable from every supported path.
+        ...(minUpdateVersion ? { min_update_version: minUpdateVersion } : {}),
         ...(isFlavour(flavour) ? { flavour } : {}),
       };
 
