@@ -81,6 +81,42 @@ const REQUIRED: Array<{ key: "apiUrl" | "channel"; env: string; why: string }> =
   { key: "channel", env: "VITE_UPDATE_CHANNEL", why: "the channel this build follows" },
 ];
 
+/**
+ * The server's origin, with a trailing `/api` removed if someone included it.
+ *
+ * Every URL below is built as `${apiUrl}/api/...`, so an apiUrl that already
+ * ends in `/api` produces `/api/api/update`, `/api/api/stats` and
+ * `/api/api/channel_self`. That is not a 404 - it lands on the authenticated
+ * dashboard routes and answers **401**, which the plugin treats as permanent:
+ *
+ *   [CapgoUpdater] Dropping stats batch after permanent error
+ *
+ * So the plugin's own update checks and every statistic it ever produced were
+ * discarded, on a device where updates otherwise appeared to work perfectly -
+ * because the app-side updater reads VITE_UPDATE_API_URL directly and never
+ * goes through this. Two clients, one config, and only one of them broken. It
+ * took a doubled path in `capacitor.config.json` to notice.
+ *
+ * Repairing rather than refusing: `/api/api/...` is never a real endpoint, so
+ * there is nothing ambiguous to preserve. Loud, because the mental model is
+ * still wrong and the next person writes it the same way.
+ */
+export function normaliseApiUrl(raw: string): string {
+  const trimmed = raw.replace(/\/+$/, "");
+  const withoutApi = trimmed.replace(/\/api$/i, "");
+
+  if (withoutApi !== trimmed) {
+    console.warn(
+      `capuchooUpdaterConfig: apiUrl ends with "/api" (${raw}). It is the server's ` +
+        `origin, and "/api/..." is appended to it - the value given would produce ` +
+        `${trimmed}/api/update, which answers 401 and makes the plugin drop every ` +
+        `update check and statistic silently. Using ${withoutApi} instead.`,
+    );
+  }
+
+  return withoutApi;
+}
+
 export function capuchooUpdaterConfig(options: UpdaterPluginOptions): CapacitorUpdaterPluginConfig {
   // Validated before anything is read off `options`.
   //
@@ -106,7 +142,7 @@ export function capuchooUpdaterConfig(options: UpdaterPluginOptions): CapacitorU
     );
   }
 
-  const apiUrl = options.apiUrl!.replace(/\/+$/, "");
+  const apiUrl = normaliseApiUrl(options.apiUrl!);
 
   if (!apiUrl) {
     // A URL of only slashes normalises to nothing. The plugin accepts an empty

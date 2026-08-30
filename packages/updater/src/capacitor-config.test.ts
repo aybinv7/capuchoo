@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { vi } from "vite-plus/test";
 import { capuchooUpdaterConfig } from "./capacitor-config.js";
 
 /**
@@ -111,6 +112,75 @@ describe("capuchooUpdaterConfig", () => {
     expect(capuchooUpdaterConfig(base).appReadyTimeout).toBe(10_000);
     expect(capuchooUpdaterConfig({ ...base, appReadyTimeout: 20_000 }).appReadyTimeout).toBe(
       20_000,
+    );
+  });
+});
+
+/**
+ * A doubled `/api`, which cost every statistic and every plugin-side check.
+ *
+ * Each URL here is built as `${apiUrl}/api/...`, so an apiUrl that already ends
+ * in `/api` produces `/api/api/update` and `/api/api/stats`. Those are not
+ * 404s - they land on the authenticated dashboard routes and answer 401, which
+ * `isTransientStatsFailure` treats as permanent:
+ *
+ *   [CapgoUpdater] Dropping stats batch after permanent error
+ *
+ * Observed on a real phone whose updates worked perfectly throughout, because
+ * the app-side updater reads VITE_UPDATE_API_URL directly and never passes
+ * through this function. Only the plugin's own traffic was dead, and nothing
+ * said so.
+ */
+describe("an apiUrl that already ends in /api", () => {
+  const build = (apiUrl: string) => capuchooUpdaterConfig({ apiUrl, channel: "dev" });
+
+  it("does not produce /api/api/update", () => {
+    const config = build("https://example.com/api");
+
+    expect(config.updateUrl).toBe("https://example.com/api/update");
+  });
+
+  it("does not produce /api/api/stats", () => {
+    expect(build("https://example.com/api").statsUrl).toBe("https://example.com/api/stats");
+  });
+
+  it("does not produce /api/api/channel_self", () => {
+    expect(build("https://example.com/api").channelUrl).toBe(
+      "https://example.com/api/channel_self",
+    );
+  });
+
+  it("handles a trailing slash after it too", () => {
+    expect(build("https://example.com/api/").updateUrl).toBe("https://example.com/api/update");
+  });
+
+  it("says so, because the mental model is still wrong", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    build("https://example.com/api");
+
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0]?.[0]).toContain("401");
+    warn.mockRestore();
+  });
+
+  it("leaves a correct origin alone, and says nothing", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const config = build("https://example.com");
+
+    expect(config.updateUrl).toBe("https://example.com/api/update");
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("does not strip a host that merely contains api", () => {
+    // `api.example.com` is an origin, not a path segment.
+    expect(build("https://api.example.com").updateUrl).toBe("https://api.example.com/api/update");
+  });
+
+  it("does not strip an /api in the middle of a path", () => {
+    expect(build("https://example.com/api/v2").updateUrl).toBe(
+      "https://example.com/api/v2/api/update",
     );
   });
 });
