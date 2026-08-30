@@ -539,11 +539,37 @@ class NativeUpdateController {
   async deleteNativeUpdate(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+
+      // Refused rather than performed, when a channel is actively serving this
+      // binary. `findAssignedNative` does a `.maybeSingle()` lookup by id and
+      // returns null on a miss - so deleting one a channel points at does not
+      // error anywhere, it just makes that channel silently stop offering it,
+      // and every OTA bundle gated behind it becomes unsatisfiable the same
+      // way `assertNativeGateSatisfiable` exists to prevent at upload time.
+      const { data: servingChannels } = await this.supabaseService
+        .getClient()
+        .from("channels")
+        .select("name")
+        .eq("current_native_version_id", id);
+
+      if (servingChannels && servingChannels.length > 0) {
+        const names = servingChannels.map((c: any) => c.name).join(", ");
+        throw new ValidationError(
+          `Cannot delete: this native build is currently served by ${names}. ` +
+            `Point ${servingChannels.length === 1 ? "that channel" : "those channels"} ` +
+            `at a different release first.`,
+        );
+      }
+
       await this.supabaseService.delete("native_updates", {
         id,
       });
       res.status(204).send();
     } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
       logger.error("Native update deletion failed", { error });
       res.status(500).json({ error: "Failed to delete native update" });
     }

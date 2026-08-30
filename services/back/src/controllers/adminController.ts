@@ -506,9 +506,35 @@ class AdminController {
   async deleteBundle(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+
+      // Refused rather than performed, when a channel is actively serving this
+      // row. `findAssignedBundle` does a `.maybeSingle()` lookup by id and
+      // returns null on a miss - so deleting a bundle a channel points at does
+      // not error anywhere, it just makes that channel silently stop serving
+      // it. Nothing changed the row, nothing logged it, and the dashboard's own
+      // Delete button reaches this endpoint directly.
+      const { data: servingChannels } = await this.supabaseService
+        .getClient()
+        .from("channels")
+        .select("name")
+        .eq("current_version_id", id);
+
+      if (servingChannels && servingChannels.length > 0) {
+        const names = servingChannels.map((c: any) => c.name).join(", ");
+        throw new ValidationError(
+          `Cannot delete: this bundle is currently served by ${names}. ` +
+            `Point ${servingChannels.length === 1 ? "that channel" : "those channels"} ` +
+            `at a different release first.`,
+        );
+      }
+
       await this.supabaseService.delete("app_versions", { id: id });
       res.status(204).send();
     } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
       logger.error("Bundle deletion failed", { error });
       res.status(500).json({ error: "Failed to delete bundle" });
     }
