@@ -12,7 +12,7 @@
  * and a courtesy that can break the thing it decorates is a defect.
  */
 
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
 /** Fixed, so each progress update replaces the last rather than stacking. */
 const NOTIFICATION_ID = 8_242_001;
@@ -27,18 +27,13 @@ interface LocalNotificationsPlugin {
 async function plugin(): Promise<LocalNotificationsPlugin | null> {
   if (Capacitor.getPlatform() === "web") return null;
 
-  try {
-    // Through a variable, so a bundler cannot resolve it and fail the build of
-    // an app that never enabled notifications. See optional-plugins.ts.
-    const specifier = "@capacitor/local-notifications";
-    const module = (await import(/* @vite-ignore */ specifier)) as {
-      LocalNotifications?: LocalNotificationsPlugin;
-    };
-    return module.LocalNotifications ?? null;
-  } catch {
-    // Not installed. An app that never backgrounds a download has no use for it.
-    return null;
-  }
+  // Through Capacitor's registry, not a module import: a bare specifier hidden
+  // from the bundler is also hidden from module resolution, and dies in the
+  // browser on "Failed to resolve module specifier". See optional-plugins.ts,
+  // where the same mistake cost every native download.
+  if (!Capacitor.isPluginAvailable("LocalNotifications")) return null;
+
+  return registerPlugin<LocalNotificationsPlugin>("LocalNotifications");
 }
 
 /**

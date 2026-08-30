@@ -1,21 +1,51 @@
 /**
- * Plugins only the native-update path needs, loaded when it runs.
+ * Plugins only the native-update path needs, reached through Capacitor's own
+ * registry rather than through a module import.
  *
  * OTA updates need `@capgo/capacitor-updater` and nothing else. Downloading and
  * installing an APK additionally needs file transfer, filesystem, network and a
  * file opener - four packages an app that only ships web bundles should not have
  * to install.
  *
- * They are optional peers, imported here rather than at module load, so
- * importing this library does not require them. A missing one produces a message
- * naming what to install instead of `Cannot find module` from inside a bundler.
- *
  * They cannot be plain dependencies: `cap sync` discovers plugins by reading the
  * *application's* `dependencies` and `devDependencies` - `getDependencies()` in
  * @capacitor/cli does not recurse - so a plugin pulled in transitively would
  * have its JavaScript installed and its native half never added to the Android
  * or iOS project. `capuchoo setup --native` adds them to the app instead.
+ *
+ * Two ways of loading them have now failed on a real device, and the reason the
+ * third is different is worth writing down.
+ *
+ *  1. `await import("@capacitor/network")` as a literal. Statically analysable,
+ *     so Rolldown fails the *build* of any app that has not installed it:
+ *
+ *       Rolldown failed to resolve import "@capacitor/local-notifications"
+ *       from ".../@capuchoo/updater/dist/vue.js"
+ *
+ *     An OTA-only app had to install four native plugins it never calls, just
+ *     to compile.
+ *
+ *  2. The same import through a variable, with `@vite-ignore`. That hides it
+ *     from the bundler - and hiding it from the bundler hides it from module
+ *     resolution too. The specifier survives into the browser, where nothing
+ *     maps bare names, so every native download died on:
+ *
+ *       TypeError: Failed to resolve module specifier '@capacitor/network'
+ *
+ *     reported to the user as "@capacitor/network is not installed" while it
+ *     was installed, synced, and listed by `cap sync`. Optional peers became
+ *     unusable peers.
+ *
+ * `registerPlugin` resolves nothing. It is a proxy keyed by the plugin's
+ * registered *name*, from `@capacitor/core`, which is already a hard peer, and
+ * the native half is discovered by that name at run time. There is no import to
+ * resolve, so there is nothing for a bundler to fail on and nothing for the
+ * browser to look up. `Capacitor.isPluginAvailable` is what actually knows
+ * whether a plugin is installed, so the "run this to add it" message is now
+ * answered by the platform rather than inferred from an exception message.
  */
+
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
 const NATIVE_PACKAGES = [
   "@capacitor/file-transfer",
@@ -39,47 +69,63 @@ export class MissingNativePluginsError extends Error {
 }
 
 /**
- * Imports through a variable specifier, so a bundler cannot resolve it.
+ * The registered name of each plugin, and the package that provides it.
  *
- * `import("@capacitor/network")` written literally is statically analysable, and
- * Rolldown fails the *build* of any app that has not installed it:
- *
- *   Rolldown failed to resolve import "@capacitor/local-notifications"
- *   from ".../@capuchoo/updater/dist/vue.js"
- *
- * which defeats the entire point of an optional peer - an OTA-only app would
- * have to install four native plugins it never calls just to compile. Held in a
- * variable, resolution happens at runtime, where `load` already turns a miss
- * into a message naming what to install.
+ * The name is the one the native class declares in its `@CapacitorPlugin`
+ * annotation, not the npm package - `@capacitor/file-transfer` registers as
+ * `FileTransfer`. Getting one wrong produces a proxy that is happy to be called
+ * and rejects at the first call, so they are pinned by test.
  */
-async function importOptional<T>(specifier: string): Promise<T> {
-  return (await import(/* @vite-ignore */ specifier)) as T;
+const PLUGINS = {
+  fileTransfer: { name: "FileTransfer", package: "@capacitor/file-transfer" },
+  filesystem: { name: "Filesystem", package: "@capacitor/filesystem" },
+  network: { name: "Network", package: "@capacitor/network" },
+  fileOpener: { name: "FileOpener", package: "@capawesome-team/capacitor-file-opener" },
+} as const;
+
+function load<T>(key: keyof typeof PLUGINS): T {
+  const { name, package: pkg } = PLUGINS[key];
+  if (!Capacitor.isPluginAvailable(name)) throw new MissingNativePluginsError(pkg);
+  return registerPlugin<T>(name);
 }
 
-async function load<T>(specifier: string, importer: () => Promise<T>): Promise<T> {
-  try {
-    return await importer();
-  } catch (error) {
-    // A genuine runtime failure inside the plugin should not be reported as a
-    // missing install, so only a resolution failure is translated.
-    const message = error instanceof Error ? error.message : String(error);
-    if (/cannot find module|failed to resolve|module not found/i.test(message)) {
-      throw new MissingNativePluginsError(specifier);
-    }
-    throw error;
-  }
-}
+/**
+ * `Directory.Cache`, without importing the enum that declares it.
+ *
+ * The enum is plain JavaScript in `@capacitor/filesystem`, so reaching it means
+ * importing the package - the exact thing this file exists to avoid. The value
+ * is part of the plugin's wire contract and is what the native side switches
+ * on.
+ */
+const CACHE_DIRECTORY = "CACHE" as never;
 
-const optional =
-  <T>(specifier: string) =>
-  () =>
-    load(specifier, () => importOptional<T>(specifier));
+type FilesystemModule = typeof import("@capacitor/filesystem");
+type FileTransferModule = typeof import("@capacitor/file-transfer");
+type NetworkModule = typeof import("@capacitor/network");
+type FileOpenerModule = typeof import("@capawesome-team/capacitor-file-opener");
 
+/**
+ * The same shape the module namespaces had, so call sites read unchanged:
+ * `const { Directory, Filesystem } = await nativePlugins.filesystem()`.
+ */
 export const nativePlugins = {
-  fileTransfer: optional<typeof import("@capacitor/file-transfer")>("@capacitor/file-transfer"),
-  filesystem: optional<typeof import("@capacitor/filesystem")>("@capacitor/filesystem"),
-  network: optional<typeof import("@capacitor/network")>("@capacitor/network"),
-  fileOpener: optional<typeof import("@capawesome-team/capacitor-file-opener")>(
-    "@capawesome-team/capacitor-file-opener",
-  ),
+  filesystem: async (): Promise<{
+    Filesystem: FilesystemModule["Filesystem"];
+    Directory: { Cache: FilesystemModule["Directory"]["Cache"] };
+  }> => ({
+    Filesystem: load<FilesystemModule["Filesystem"]>("filesystem"),
+    Directory: { Cache: CACHE_DIRECTORY },
+  }),
+
+  fileTransfer: async (): Promise<{ FileTransfer: FileTransferModule["FileTransfer"] }> => ({
+    FileTransfer: load<FileTransferModule["FileTransfer"]>("fileTransfer"),
+  }),
+
+  network: async (): Promise<{ Network: NetworkModule["Network"] }> => ({
+    Network: load<NetworkModule["Network"]>("network"),
+  }),
+
+  fileOpener: async (): Promise<{ FileOpener: FileOpenerModule["FileOpener"] }> => ({
+    FileOpener: load<FileOpenerModule["FileOpener"]>("fileOpener"),
+  }),
 };
