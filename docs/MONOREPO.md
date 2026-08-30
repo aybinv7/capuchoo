@@ -224,7 +224,7 @@ Learned the hard way; each one was a live bug.
 
 ## Known gaps
 
-Verified 2026-08-22.
+Verified 2026-08-30.
 
 **Needs a decision or a credential**
 
@@ -234,21 +234,36 @@ Verified 2026-08-22.
 - iOS has no CI path: it needs a macOS runner, a signing certificate and a provisioning profile. The
   updater's native install path is Android-only by nature - an iOS binary cannot be side-loaded - so
   iOS gets OTA bundles and store builds, nothing else.
-- The Supabase `updates` bucket is **public**: `uploadFile` hands out `getPublicUrl`, and the
-  `createSignedUrl` path sits unused two lines above. Every bundle and APK URL is downloadable by
-  anyone holding the link.
 - No custom domain in front of the backend, so renaming the Render service again would strand every
   installed build. See [DEPLOY.md](./DEPLOY.md).
+- `capuchoo-back` on Render is configured by hand rather than from `render.yaml`, so its settings
+  are not in version control and nothing here can prove what they are.
 
 **Never exercised**
 
 - `deploy native --type release`: no app in this workspace has a `signingConfig` driven by
-  `CAPUCHOO_KEYSTORE_*`, so signing, the unsigned-APK refusal and the install have only been tested
-  by unit tests.
-- The native update flow on a device - `downloadNativeUpdate()`, `openNativeInstaller()`.
-- `POST /api/downloaded`, `/applied`, `/failed`: their action values are fixed but nothing calls
-  them yet, and OTA telemetry still depends on whatever the plugin posts to `statsUrl`. inspection,
-  but no Android or iOS build has compiled them.
+  `CAPUCHOO_KEYSTORE_*`, so signing and the unsigned-APK refusal have only been tested by unit
+  tests. Every device test so far has installed a debug build.
+- iOS anything.
+
+**Inert, and worth removing rather than wiring**
+
+- The channel page's **"Disable Auto-Update"** (none/major/minor/patch) and **"Under Native"**
+  switches. They exist in `models.ts`, in the dashboard's own types and in the page; no controller
+  writes them and no decision reads them. "Under Native" in particular promises the protection that
+  `min_update_version` and `assertNativeGateSatisfiable` now provide in code, so wiring it would
+  give two answers to one question - and the first person to set one and not the other gets to find
+  out which wins.
+- `/updates-bundles/:id`'s **Edit** and **Delete** buttons render and have no click handler.
+
+**Not shown anywhere**
+
+- `min_update_version` does not appear on the bundle detail page at all. It is a hideable table
+  column, filtered as a number range, whose cell renders `v{n}` for what is a build number.
+- A bundle gated behind a native that its channel cannot serve is now refused at upload and at
+  promote, but a gate that _becomes_ unsatisfiable later - by repointing the channel's native - has
+  nothing watching it.
+- `getBuiltinVersion()` is not reported: the server has no column for it.
 
 **Deliberately not done**
 
@@ -258,11 +273,21 @@ Verified 2026-08-22.
   the browser is visited once per account rather than once per app.
 - No `bundle` or `key` command group. Capgo has both (listing bundles, encryption keys); we have no
   bundle encryption at all, so there is nothing for `key` to manage yet.
-- `getBuiltinVersion()` is not reported: the server has no column for it.
 - The four `/api/dashboard/apps*` routes look unused, but the dashboard reads apps through Supabase
   directly, so confirm that before deleting them. `/api/apps/:id/channels` and `/:id/releases` _are_
   used - by the CLI.
 - TypeScript stays on 5.x: oclif's typings and `vue-tsc` are not validated on 7.x yet.
+
+**Closed since the last pass**
+
+- The Supabase `updates` bucket is private, and every artefact URL is a signed link with a one-hour
+  expiry.
+- The native update flow is exercised on real hardware: download, the Android installer, and the
+  install landing. A Redmi Note 14 went through optional OTA, required OTA, required native, and an
+  OTA held behind a native gate.
+- OTA telemetry no longer depends on what the plugin happens to post. The plugin only reports its
+  own auto-update flow, which this library does not use, so every OTA delivery was invisible; the
+  updater records them itself now.
 
 ## Conventions
 
