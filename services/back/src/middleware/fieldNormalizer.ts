@@ -43,42 +43,68 @@ const REVERSE_MAPPINGS: Record<string, string> = Object.entries(FIELD_MAPPINGS).
 );
 
 /**
+ * Normalizes one object's field names. Never an array - see below.
+ */
+function normalizeFields(body: Record<string, any>): Record<string, any> {
+  const normalized: Record<string, any> = { ...body };
+
+  // Convert snake_case to camelCase
+  for (const [snakeCase, camelCase] of Object.entries(FIELD_MAPPINGS)) {
+    if (snakeCase in normalized && !(camelCase in normalized)) {
+      normalized[camelCase] = normalized[snakeCase];
+    }
+  }
+
+  // Also keep original snake_case for compatibility
+  for (const [snakeCase, camelCase] of Object.entries(FIELD_MAPPINGS)) {
+    if (camelCase in normalized && !(snakeCase in normalized)) {
+      normalized[snakeCase] = normalized[camelCase];
+    }
+  }
+
+  // Special handling for 'action' vs 'status' in stats
+  // The plugin uses 'action', our legacy code uses 'status'
+  if (normalized.action && !normalized.status) {
+    normalized.status = normalized.action;
+  }
+  if (normalized.status && !normalized.action) {
+    normalized.action = normalized.status;
+  }
+
+  return normalized;
+}
+
+/**
  * Normalizes request body fields from snake_case (OTA plugin) to camelCase (backend)
  * Also handles both naming conventions for backwards compatibility
+ *
+ * An array body is mapped element-wise, and that is the whole point of the
+ * split above.
+ *
+ * `typeof [] === "object"`, so this middleware used to take the plugin's batch
+ * of statistics - a bare JSONArray, which is what `CapgoUpdater.java` posts -
+ * and spread it into `{ "0": {...}, "1": {...} }`. The array was gone before it
+ * reached the controller, so the `Array.isArray(req.body)` branch written to
+ * handle a batch could never run, `extractStatsRequest` found no device_id on
+ * an object of numeric keys, and every batch was answered 400.
+ *
+ * 400 is fatal there: `isTransientStatsFailure` retries only 408, 429 and 5xx,
+ * so the plugin logged "Dropping stats batch after permanent error" and threw
+ * the events away for good. That was diagnosed once as a missing batch branch
+ * in the controller, which was true and was fixed and changed nothing at all,
+ * because the body never arrived as a batch.
  */
 export function normalizeRequestFields(req: Request, res: Response, next: NextFunction): void {
-  if (req.body && typeof req.body === "object") {
-    const normalized: Record<string, any> = { ...req.body };
+  if (Array.isArray(req.body)) {
+    req.body = req.body.map((entry) =>
+      entry && typeof entry === "object" ? normalizeFields(entry) : entry,
+    );
 
-    // Convert snake_case to camelCase
-    for (const [snakeCase, camelCase] of Object.entries(FIELD_MAPPINGS)) {
-      if (snakeCase in normalized && !(camelCase in normalized)) {
-        normalized[camelCase] = normalized[snakeCase];
-      }
-    }
+    logger.debug("Normalized request batch", { entries: req.body.length });
+  } else if (req.body && typeof req.body === "object") {
+    req.body = normalizeFields(req.body);
 
-    // Also keep original snake_case for compatibility
-    for (const [snakeCase, camelCase] of Object.entries(FIELD_MAPPINGS)) {
-      if (camelCase in normalized && !(snakeCase in normalized)) {
-        normalized[snakeCase] = normalized[camelCase];
-      }
-    }
-
-    // Special handling for 'action' vs 'status' in stats
-    // The plugin uses 'action', our legacy code uses 'status'
-    if (normalized.action && !normalized.status) {
-      normalized.status = normalized.action;
-    }
-    if (normalized.status && !normalized.action) {
-      normalized.action = normalized.status;
-    }
-
-    req.body = normalized;
-
-    logger.debug("Normalized request fields", {
-      original: req.body,
-      normalized,
-    });
+    logger.debug("Normalized request fields");
   }
 
   // Also normalize query parameters
