@@ -127,3 +127,11 @@ export {
   type NativeGateFacts,
   type NativeGateVerdict,
 } from "./native-gate.js";
+
+export {
+  classifyUpdateEvent,
+  successRate,
+  summariseEvents,
+  type EventSummary,
+  type UpdateEventCategory,
+} from "./update-events.js";

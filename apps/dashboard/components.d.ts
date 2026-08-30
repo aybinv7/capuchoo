@@ -315,6 +315,7 @@ declare module 'vue' {
     Skeleton: typeof import('./src/components/ui/skeleton/Skeleton.vue')['default']
     Sonner: typeof import('./src/components/ui/sonner/Sonner.vue')['default']
     SquareGrids: typeof import('./src/components/vuebits/SquareGrids.vue')['default']
+    StatisticDetailDialog: typeof import('./src/modules/statistics/components/StatisticDetailDialog.vue')['default']
     Switch: typeof import('./src/components/ui/switch/Switch.vue')['default']
     Table: typeof import('./src/components/ui/table/Table.vue')['default']
     TableBody: typeof import('./src/components/ui/table/TableBody.vue')['default']

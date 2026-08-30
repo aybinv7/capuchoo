@@ -1,6 +1,7 @@
 {
   "globals": {
     "ALGERIAN_WILAYAS": true,
+    "ActionBreakdown": true,
     "Alert": true,
     "AlertDescription": true,
     "AlertTitle": true,
@@ -119,6 +120,7 @@
     "EmptyMedia": true,
     "EmptyMediaVariants": true,
     "EmptyTitle": true,
+    "EventSummary": true,
     "ExtractDefaultPropTypes": true,
     "ExtractPropTypes": true,
     "ExtractPublicPropTypes": true,
@@ -237,7 +239,9 @@
     "Skeleton": true,
     "Slot": true,
     "Slots": true,
+    "StatisticDetailDialog": true,
     "StatsDataPoint": true,
+    "StatsRange": true,
     "Switch": true,
     "THEMES": true,
     "Table": true,
@@ -263,6 +267,7 @@
     "TooltipTrigger": true,
     "UpdateAppInput": true,
     "UpdateDownloadsChart": true,
+    "UpdateEventCategory": true,
     "UpdateLog": true,
     "UpdateLogsFilters": true,
     "UpdateOrBundle": true,

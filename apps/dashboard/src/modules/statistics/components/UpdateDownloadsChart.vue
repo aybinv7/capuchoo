@@ -26,15 +26,23 @@ const props = defineProps<{
   description?: string;
 }>();
 
+/**
+ * Two real series: updates that landed, and updates that failed.
+ *
+ * The keys stay `desktop` and `mobile` because the gradients, legend and
+ * crosshair below are all keyed on them - renaming would mean rewriting the
+ * chart. What they *mean* is set in `chartConfig`, and it is no longer
+ * "desktop": this used to map `count` onto `desktop` with a hard-coded
+ * `mobile: 0` and a comment saying "to show SOMETHING", under a series legend
+ * that named device classes an update chart has no opinion about.
+ */
 const chartData = computed(() => {
   if (!props.data || props.data.length === 0) return [];
   return props.data.map((item) => ({
     ...item,
     date: new Date(item.date),
-    // Map 'count' from API to 'desktop' or similar if needed for this specific chart
-    // For now we'll just use 'count' as 'desktop' to show SOMETHING
-    desktop: item.count || 0,
-    mobile: 0, // Placeholder
+    desktop: item.delivered ?? item.count ?? 0,
+    mobile: item.failed ?? 0,
   }));
 });
 
@@ -45,11 +53,11 @@ const chartConfig = {
   //   label: 'Visitors',
   // },
   mobile: {
-    label: "Mobile",
+    label: "Failed",
     color: "var(--chart-2)",
   },
   desktop: {
-    label: "Desktop",
+    label: "Delivered",
     color: "var(--chart-1)",
   },
 } satisfies ChartConfig;

@@ -189,6 +189,7 @@ declare global {
   const SidebarSeparator: typeof import('./src/components/ui/sidebar/index').SidebarSeparator
   const SidebarTrigger: typeof import('./src/components/ui/sidebar/index').SidebarTrigger
   const Skeleton: typeof import('./src/components/ui/skeleton/index').Skeleton
+  const StatisticDetailDialog: typeof import('./src/modules/statistics/components/index').StatisticDetailDialog
   const Switch: typeof import('./src/components/ui/switch/index').Switch
   const THEMES: typeof import('./src/components/ui/chart/index').THEMES
   const Table: typeof import('./src/components/ui/table/index').Table
@@ -741,7 +742,10 @@ declare global {
   export type { Device } from './src/modules/devices/types/devices.types'
   import('./src/modules/devices/types/devices.types')
   // @ts-ignore
-  export type { DashboardStats, StatsDataPoint, DashboardStatsData } from './src/modules/statistics/types/statistics.types'
+  export type { StatsRange } from './src/modules/statistics/composables/useStatisticsQuery'
+  import('./src/modules/statistics/composables/useStatisticsQuery')
+  // @ts-ignore
+  export type { UpdateEventCategory, EventSummary, DashboardStats, StatsDataPoint, ActionBreakdown, DashboardStatsData } from './src/modules/statistics/types/statistics.types'
   import('./src/modules/statistics/types/statistics.types')
   // @ts-ignore
   export type { UpdateLogsFilters } from './src/modules/update-logs/composables/useUpdateLogsQuery'
@@ -944,6 +948,7 @@ declare module 'vue' {
     readonly SidebarSeparator: UnwrapRef<typeof import('./src/components/ui/sidebar/index')['SidebarSeparator']>
     readonly SidebarTrigger: UnwrapRef<typeof import('./src/components/ui/sidebar/index')['SidebarTrigger']>
     readonly Skeleton: UnwrapRef<typeof import('./src/components/ui/skeleton/index')['Skeleton']>
+    readonly StatisticDetailDialog: UnwrapRef<typeof import('./src/modules/statistics/components/index')['StatisticDetailDialog']>
     readonly Switch: UnwrapRef<typeof import('./src/components/ui/switch/index')['Switch']>
     readonly THEMES: UnwrapRef<typeof import('./src/components/ui/chart/index')['THEMES']>
     readonly Table: UnwrapRef<typeof import('./src/components/ui/table/index')['Table']>

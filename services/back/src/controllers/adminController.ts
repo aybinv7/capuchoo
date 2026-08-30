@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
-import { ENVIRONMENTS, isFlavour, type Environment } from "@capuchoo/core";
+import {
+  ENVIRONMENTS,
+  classifyUpdateEvent,
+  isFlavour,
+  successRate,
+  summariseEvents,
+  type Environment,
+} from "@capuchoo/core";
 import { AppError, ConflictError, ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
 import { assertFlavourMatchesChannel, insertTolerantOfFlavour } from "@/services/flavourGuard";
@@ -317,22 +324,31 @@ class AdminController {
       const { count: bundlesCount } = await bundlesQuery;
 
       // 2. Active Devices
-      let devicesQuery = this.supabaseService
-        .getClient()
-        .from("device_channels")
-        .select("device_id");
+      //
+      // `devices`, not `device_channels`. The join table only gains a row when a
+      // device is bound to a channel, and telemetry registers a device before
+      // that - so this reported 0 for an app with 12 live devices, sitting next
+      // to a chart drawn from the same events that proved they existed.
+      let devicesQuery = this.supabaseService.getClient().from("devices").select("device_id");
       if (appUuid) devicesQuery = devicesQuery.eq("app_id", appUuid);
       const { data: devicesData } = await devicesQuery;
       const devicesCount = devicesData ? new Set(devicesData.map((d: any) => d.device_id)).size : 0;
 
-      // 3. Total Downloads
-      let downloadsQuery = this.supabaseService
-        .getClient()
-        .from("update_logs")
-        .select("id", { count: "exact" })
-        .in("action", ["downloaded", "install"]);
-      if (appUuid) downloadsQuery = downloadsQuery.eq("app_id", appUuid);
-      const { count: downloadsCount } = await downloadsQuery;
+      // 3. Deliveries and how many of them worked.
+      //
+      // This used to filter `.in("action", ["downloaded", "install"])`, and
+      // "downloaded" is a name nothing has ever written - not the plugin, not
+      // our own updater. The card could only ever show 0, which reads as
+      // "nobody is updating" rather than "this is not plugged in".
+      //
+      // `classifyUpdateEvent` owns the vocabulary now, because two producers
+      // write to this table and neither shares names with the other.
+      let eventsQuery = this.supabaseService.getClient().from("update_logs").select("action");
+      if (appUuid) eventsQuery = eventsQuery.eq("app_id", appUuid);
+      const { data: eventRows } = await eventsQuery;
+
+      const summary = summariseEvents((eventRows ?? []).map((row: any) => row.action));
+      const downloadsCount = summary.delivered;
 
       // 4. Active Channels
       let channelsQuery = this.supabaseService
@@ -347,6 +363,11 @@ class AdminController {
         devices_count: devicesCount || 0,
         channels_count: channelsCount || 0,
         downloads_count: downloadsCount || 0,
+        // null when nothing has been attempted. The card used to hard-code
+        // "98.5%", which claimed a track record for an app that had never
+        // shipped an update.
+        success_rate: successRate(summary),
+        events: summary,
       };
 
       res.json(stats);
@@ -697,7 +718,7 @@ class AdminController {
       let query = this.supabaseService
         .getClient()
         .from("update_logs")
-        .select("created_at, action, device_id")
+        .select("created_at, action, device_id, platform")
         .gte("created_at", startDate.toISOString())
         .order("created_at", { ascending: true });
 
@@ -706,32 +727,71 @@ class AdminController {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Aggregate data by date
+      // Aggregate by date.
+      //
+      // The download series used to match `action === "downloaded"`, a name
+      // nothing writes, so it was always empty and the chart fell back to a
+      // hard-coded fixture from April 2024. `classifyUpdateEvent` decides now.
       const downloadsMap: Record<string, number> = {};
+      const failuresMap: Record<string, number> = {};
       const usersMap: Record<string, Set<string>> = {};
+      const platformCounts: Record<string, number> = {};
+      const actionCounts: Record<string, number> = {};
 
       (data || []).forEach((stat: any) => {
         const date = new Date(stat.created_at).toISOString().split("T")[0]!;
+        const category = classifyUpdateEvent(stat.action);
 
-        if (stat.action === "downloaded" || stat.action === "install") {
-          downloadsMap[date] = (downloadsMap[date] || 0) + 1;
-        }
+        if (category === "delivered") downloadsMap[date] = (downloadsMap[date] || 0) + 1;
+        if (category === "failed") failuresMap[date] = (failuresMap[date] || 0) + 1;
 
         if (!usersMap[date]) usersMap[date] = new Set();
         usersMap[date]!.add(stat.device_id);
+
+        const platform = stat.platform || "unknown";
+        platformCounts[platform] = (platformCounts[platform] || 0) + 1;
+
+        const action = stat.action || "unknown";
+        actionCounts[action] = (actionCounts[action] || 0) + 1;
       });
 
-      const downloads = Object.entries(downloadsMap).map(([date, count]) => ({
-        date,
-        count,
-      }));
+      const series = (map: Record<string, number>) =>
+        Object.entries(map).map(([date, count]) => ({ date, count }));
 
-      const active_users = Object.entries(usersMap).map(([date, set]) => ({
-        date,
-        count: set.size,
-      }));
+      const summary = summariseEvents((data || []).map((row: any) => row.action));
 
-      res.json({ downloads, active_users });
+      // Devices per channel, for the distribution chart. Read from `devices`
+      // rather than inferred from events: an event carries no channel, and the
+      // chart was showing invented numbers for channels that may not exist.
+      let channelQuery = this.supabaseService.getClient().from("devices").select("channel");
+      if (appUuid) channelQuery = channelQuery.eq("app_id", appUuid);
+      const { data: channelRows } = await channelQuery;
+
+      const channelCounts: Record<string, number> = {};
+      (channelRows ?? []).forEach((row: any) => {
+        const channel = row.channel || "unassigned";
+        channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+      });
+
+      res.json({
+        downloads: series(downloadsMap),
+        failures: series(failuresMap),
+        active_users: Object.entries(usersMap).map(([date, devices]) => ({
+          date,
+          count: devices.size,
+        })),
+        by_platform: Object.entries(platformCounts).map(([platform, count]) => ({
+          platform,
+          count,
+        })),
+        by_channel: Object.entries(channelCounts).map(([channel, count]) => ({ channel, count })),
+        by_action: Object.entries(actionCounts)
+          .map(([action, count]) => ({ action, count, category: classifyUpdateEvent(action) }))
+          .sort((a, b) => b.count - a.count),
+        summary,
+        success_rate: successRate(summary),
+        range: String(range),
+      });
     } catch (error) {
       logger.error("Stats data fetch failed", { error });
       res.status(500).json({ error: "Failed to fetch statistics data" });
