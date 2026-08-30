@@ -763,13 +763,21 @@ class AdminController {
       // Devices per channel, for the distribution chart. Read from `devices`
       // rather than inferred from events: an event carries no channel, and the
       // chart was showing invented numbers for channels that may not exist.
-      let channelQuery = this.supabaseService.getClient().from("devices").select("channel");
+      //
+      // Through the same join `getDevices` uses. `devices` has no `channel`
+      // column - the binding is `channel_id` - so selecting one returned rows
+      // with nothing in them and an empty chart, which looks exactly like
+      // "no devices" rather than "wrong column".
+      let channelQuery = this.supabaseService
+        .getClient()
+        .from("devices")
+        .select("channel_override, channels:channel_id ( name )");
       if (appUuid) channelQuery = channelQuery.eq("app_id", appUuid);
       const { data: channelRows } = await channelQuery;
 
       const channelCounts: Record<string, number> = {};
       (channelRows ?? []).forEach((row: any) => {
-        const channel = row.channel || "unassigned";
+        const channel = row.channels?.name || row.channel_override || "unassigned";
         channelCounts[channel] = (channelCounts[channel] || 0) + 1;
       });
 
