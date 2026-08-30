@@ -230,6 +230,17 @@ async function startDownload(): Promise<void> {
       return;
     }
 
+    // Recorded *before* applying, because applying reloads the WebView and
+    // nothing after this line ever runs. There is no "after" to report from.
+    //
+    // That is a real trade: if the apply fails, a delivery has been claimed for
+    // an update that did not land. The catch below logs `error` in that case,
+    // so the pair is visible, and the alternative is what this replaces -
+    // recording no OTA delivery at all, ever. The plugin does not report these:
+    // it only knows about its own auto-update flow, and this library exists
+    // because the app drives updates itself.
+    await logUpdateEvent("install", update);
+
     // Reloads the WebView on success, so nothing below runs.
     await applyOtaUpdate(update);
   } catch (error) {

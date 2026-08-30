@@ -167,19 +167,28 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
 }
 
 /**
- * Records a native update lifecycle event.
+ * Records an update lifecycle event, OTA or native.
  *
- * Best effort: analytics must never break an update. OTA events are reported
- * by the plugin itself through its `statsUrl`, so only native ones are sent
- * from here.
+ * This used to return early for anything that was not native, on the grounds
+ * that "OTA events are reported by the plugin itself through its statsUrl".
+ * They are not. The plugin reports its *own* auto-update flow, and this library
+ * exists precisely because the app drives updates instead - `autoUpdate` is
+ * "onlyDownload", `directUpdate` is false, and the app calls `set()` when the
+ * user agrees. Nothing in that path is the plugin's, so the plugin has nothing
+ * to report.
+ *
+ * The consequence was total: every OTA update ever applied was invisible. A
+ * real device took three bundles in an afternoon and the statistics showed
+ * `delivered: 0` beside `check: 31`, which reads as "everyone is checking and
+ * nobody is updating" - the shape of an outage, produced by a working system.
+ *
+ * Best effort either way: analytics must never break an update.
  */
 export async function logUpdateEvent(
   event: UpdateEvent,
   update: ResolvedUpdate,
   details?: { error?: string },
 ): Promise<void> {
-  if (update.kind !== "native") return;
-
   const config = getUpdaterConfig();
   if (!config.apiUrl) return;
 
@@ -192,7 +201,10 @@ export async function logUpdateEvent(
     device_id: await getDeviceId(),
     current_version_code: await getVersionCode(),
     new_version: update.version,
-    new_version_code: update.versionCode,
+    // An OTA bundle has no build number of its own - it is a web bundle, and
+    // the binary underneath is unchanged. Sending the device's own code would
+    // claim the update changed it.
+    ...(update.kind === "native" ? { new_version_code: update.versionCode } : {}),
     channel: config.channel,
     environment: String(config.environment),
     ...details,
