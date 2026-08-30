@@ -164,41 +164,22 @@
                   <Switch v-model="editForm.allow_dev" />
                 </div>
 
-                <Separator />
+                <!--
+                  "Auto-Update Constraints" lived here: a Disable Auto-Update
+                  select and an "Under Native - disable OTA if native version
+                  changed" switch. Both were written by nothing and read by
+                  nothing - not a controller, not the update decision - so an
+                  operator could set either and change no behaviour at all.
 
-                <div class="space-y-4 pt-2">
-                  <h4 class="text-sm font-medium">Auto-Update Constraints</h4>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                      <Label>Disable Auto-Update</Label>
-                      <Select v-model="editForm.disable_auto_update">
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None (Always update)</SelectItem>
-                          <SelectItem value="major">Major (Stop on X.0.0)</SelectItem>
-                          <SelectItem value="minor">Minor (Stop on 0.X.0)</SelectItem>
-                          <SelectItem value="patch">Patch (Stop on 0.0.X)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p class="text-[10px] text-muted-foreground">
-                        Control when the SDK should stop automatic updates based on semver.
-                      </p>
-                    </div>
-
-                    <div class="flex items-center justify-between space-x-2 border p-3 rounded-lg">
-                      <div class="space-y-0.5">
-                        <Label>Under Native</Label>
-                        <p class="text-[10px] text-muted-foreground">
-                          Disable OTA if native version changed
-                        </p>
-                      </div>
-                      <Switch v-model="editForm.disable_auto_update_under_native" />
-                    </div>
-                  </div>
-                </div>
+                  "Under Native" was the dangerous one. It named exactly the
+                  protection an operator would look for, and anyone who flipped
+                  it believed they were covered against a bundle landing on a
+                  binary too old to run it. That protection is real now, in
+                  `min_update_version` and the guards around it, and it applies
+                  whether or not anyone remembers a switch. Two controls for one
+                  question would disagree the first time someone set one and not
+                  the other.
+                -->
 
                 <Separator />
 
@@ -453,8 +434,6 @@ const editForm = ref({
   allow_device_self_set: false,
   allow_emulator: true,
   allow_dev: true,
-  disable_auto_update: "none" as "none" | "major" | "minor" | "patch",
-  disable_auto_update_under_native: false,
   current_version_id: "none",
   current_native_version_id: "none",
 });
@@ -512,8 +491,6 @@ watch(
         allow_device_self_set: newChannel.allow_device_self_set ?? false,
         allow_emulator: newChannel.allow_emulator ?? true,
         allow_dev: newChannel.allow_dev ?? true,
-        disable_auto_update: newChannel.disable_auto_update || "none",
-        disable_auto_update_under_native: newChannel.disable_auto_update_under_native ?? false,
         current_version_id: newChannel.current_version_id || "none",
         current_native_version_id: newChannel.current_native_version_id || "none",
       };

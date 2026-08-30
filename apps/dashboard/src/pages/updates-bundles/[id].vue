@@ -23,11 +23,16 @@
           <ILucideZap class="mr-2 h-4 w-4 text-yellow-500" />
           Promote
         </Button>
-        <Button variant="outline" size="sm">
+        <!--
+          Both of these rendered with no click handler. A destructive button
+          that does nothing is not harmless: it teaches that the page is
+          decorative, and the next dead control is believed too.
+        -->
+        <Button variant="outline" size="sm" @click="openEdit">
           <ILucidePencil class="mr-2 h-4 w-4" />
           Edit
         </Button>
-        <Button variant="destructive" size="sm">
+        <Button variant="destructive" size="sm" @click="deleteDialogOpen = true">
           <ILucideTrash2 class="mr-2 h-4 w-4" />
           Delete
         </Button>
@@ -58,6 +63,21 @@
         </Badge>
         <Badge v-if="item?.required" variant="destructive">Required</Badge>
       </div>
+      <!--
+        The native gate, which appeared nowhere on this page - only as a
+        hideable table column. It is the field that decides whether this bundle
+        is served at all, so a page about the bundle has to state it.
+      -->
+      <template v-if="item?.type !== 'native'">
+        <div class="w-px h-4 bg-border my-auto"></div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-muted-foreground">Needs native build:</span>
+          <Badge v-if="item?.min_native_version" variant="outline" class="font-mono">
+            {{ item.min_native_version }}
+          </Badge>
+          <span v-else class="text-sm text-muted-foreground">any</span>
+        </div>
+      </template>
     </div>
 
     <!-- Stats & Content Grid -->
@@ -248,6 +268,67 @@
       </div>
     </div>
 
+    <!-- Edit -->
+    <Dialog v-model:open="editDialogOpen">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit v{{ item?.version_name }}</DialogTitle>
+          <DialogDescription>
+            Changes apply to every device on the {{ item?.channel }} channel.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4 py-2">
+          <div class="flex items-center justify-between rounded-lg border p-3">
+            <div class="space-y-0.5">
+              <Label>Active</Label>
+              <p class="text-[10px] text-muted-foreground">Whether this artefact may be served.</p>
+            </div>
+            <Switch v-model="editForm.active" />
+          </div>
+
+          <div class="flex items-center justify-between rounded-lg border p-3">
+            <div class="space-y-0.5">
+              <Label>Required</Label>
+              <p class="text-[10px] text-muted-foreground">Users cannot postpone it.</p>
+            </div>
+            <Switch v-model="editForm.required" />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="release-notes">Release notes</Label>
+            <Input id="release-notes" v-model="editForm.release_notes" />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="editDialogOpen = false">Cancel</Button>
+          <Button :disabled="saving" @click="saveEdit">
+            {{ saving ? "Saving..." : "Save" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Delete -->
+    <Dialog v-model:open="deleteDialogOpen">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete v{{ item?.version_name }}?</DialogTitle>
+          <DialogDescription>
+            This removes the release. Devices already running it keep running it - deleting a
+            release does not roll anything back.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="deleteDialogOpen = false">Cancel</Button>
+          <Button variant="destructive" :disabled="deleting" @click="confirmDelete">
+            {{ deleting ? "Deleting..." : "Delete" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <!-- Promote Dialog -->
     <UpdatesBundlesTablePromoteDialog
       v-model:promote-dialog-open="promoteDialogOpen"
@@ -261,6 +342,12 @@
 import { toast } from "vue-sonner";
 import { apiClient } from "@/services/api.client";
 import UpdatesBundlesTablePromoteDialog from "@/modules/updates-bundles/components/UpdatesBundlesTable/UpdatesBundlesTablePromoteDialog.vue";
+import {
+  useDeleteBundleMutation,
+  useDeleteNativeUpdateMutation,
+  useUpdateBundleMutation,
+  useUpdateNativeUpdateMutation,
+} from "@/modules/updates-bundles/composables/useUpdatesBundlesQuery";
 
 const { id: updateId } = defineProps<{
   id: string;
@@ -269,6 +356,10 @@ const { id: updateId } = defineProps<{
 const promoteDialogOpen = ref(false);
 
 const route = useRoute();
+// `router`, not just `useRouter`: the auto-import provides the composable, not
+// an instance, and `router.push` would have been a ReferenceError the first
+// time anyone deleted a release.
+const router = useRouter();
 const type = route.query.type as "bundle" | "native" | undefined;
 
 const { data: items, refetch } = useUpdatesBundlesQuery();
@@ -397,6 +488,72 @@ const handlePromoted = async () => {
   promoteDialogOpen.value = false;
   await refetch();
 };
+
+const editDialogOpen = ref(false);
+const deleteDialogOpen = ref(false);
+const saving = ref(false);
+const deleting = ref(false);
+
+const editForm = ref({ active: false, required: false, release_notes: "" });
+
+function openEdit(): void {
+  editForm.value = {
+    active: Boolean(item.value?.active),
+    required: Boolean(item.value?.required),
+    release_notes: item.value?.release_notes ?? "",
+  };
+  editDialogOpen.value = true;
+}
+
+/**
+ * Native binaries and web bundles live in different tables and have different
+ * endpoints, so the row's own `type` picks the mutation. Getting this wrong
+ * would 404 on one of the two, which is how a button ends up looking broken
+ * rather than being wrong.
+ */
+const isNative = computed(() => item.value?.type === "native");
+
+const { mutateAsync: updateBundle } = useUpdateBundleMutation();
+const { mutateAsync: updateNative } = useUpdateNativeUpdateMutation();
+const { mutateAsync: deleteBundle } = useDeleteBundleMutation();
+const { mutateAsync: deleteNative } = useDeleteNativeUpdateMutation();
+
+async function saveEdit(): Promise<void> {
+  if (!item.value) return;
+
+  saving.value = true;
+  try {
+    const data = { ...editForm.value };
+    if (isNative.value) await updateNative({ id: item.value.id, data: data as never });
+    else await updateBundle({ id: item.value.id, data: data as never });
+
+    toast.success("Saved");
+    editDialogOpen.value = false;
+    await refetch();
+  } catch {
+    toast.error("Could not save the changes");
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function confirmDelete(): Promise<void> {
+  if (!item.value) return;
+
+  deleting.value = true;
+  try {
+    if (isNative.value) await deleteNative(item.value.id);
+    else await deleteBundle(item.value.id);
+
+    toast.success("Deleted");
+    deleteDialogOpen.value = false;
+    await router.push("/updates-bundles");
+  } catch {
+    toast.error("Could not delete this release");
+  } finally {
+    deleting.value = false;
+  }
+}
 
 definePage({
   meta: {

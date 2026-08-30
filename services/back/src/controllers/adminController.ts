@@ -10,7 +10,10 @@ import {
 import { AppError, ConflictError, ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
 import { assertFlavourMatchesChannel, insertTolerantOfFlavour } from "@/services/flavourGuard";
-import { assertNativeGateSatisfiable } from "@/services/nativeGateGuard";
+import {
+  assertChannelPointersConsistent,
+  assertNativeGateSatisfiable,
+} from "@/services/nativeGateGuard";
 import { SIGNED_URL_TTL_SECONDS, storageKeyFromUrl } from "@/services/signedDownload";
 import config from "@/config";
 import supabaseService from "@/services/supabaseService";
@@ -1167,6 +1170,11 @@ class AdminController {
       if (sanitizedData.current_version_id === "") {
         sanitizedData.current_version_id = null;
       }
+
+      // Before the write: moving either pointer can invalidate a gate that was
+      // valid when it was set, and the result is silent - devices are told an
+      // update is required and offered nothing.
+      await assertChannelPointersConsistent(id as string, sanitizedData);
 
       const result = await this.supabaseService.update(
         "channels",

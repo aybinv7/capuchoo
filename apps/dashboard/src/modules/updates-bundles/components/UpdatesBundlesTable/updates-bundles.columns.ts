@@ -156,17 +156,23 @@ export const updatesBundlesColumns: ColumnDef<UpdateOrBundle>[] = [
     },
   },
 
-  // Min Native Version Column (for OTA bundles only)
+  // The native build an OTA bundle needs before a device may run it.
+  //
+  // Rendered as `build N`, not `vN`. It is a `version_code`, compared against
+  // the device's own build number by `minimumNativeVersion` - and the `v`
+  // prefix invited exactly the mistake that cost a commit here: writing a
+  // version name into a column that parses as an integer, where "2.4.0" becomes
+  // 0 and the gate silently switches off.
   {
     accessorKey: "min_native_version",
     header: ({ column }) =>
-      h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Min Native" }),
+      h(UpdatesBundlesTableDataTableColumnHeader, { column, title: "Needs build" }),
     cell: ({ row }) => {
       const minNative = row.original.min_native_version;
       if (!minNative || row.original.type === "native") {
         return h("div", { class: "text-muted-foreground" }, "—");
       }
-      return h("div", { class: "font-mono" }, `v${minNative}`);
+      return h("div", { class: "font-mono" }, `build ${minNative}`);
     },
     enableSorting: true,
     enableHiding: true,

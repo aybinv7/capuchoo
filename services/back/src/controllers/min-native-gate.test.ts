@@ -122,3 +122,33 @@ describe("a gate the channel cannot satisfy is refused where it is set", () => {
     expect(branch).toBeLessThan(guard);
   });
 });
+
+/**
+ * A gate can also become unsatisfiable long after it was set.
+ *
+ * The upload and promote guards check a gate against its channel at the moment
+ * it is written. Nothing held afterwards: `updateChannel` writes whatever it is
+ * handed, so repointing the channel's native at an older binary - or its bundle
+ * at one the current binary cannot satisfy - rebuilds the stranded state one
+ * dropdown at a time, on a channel that was already correct.
+ */
+describe("moving a channel's pointers cannot strand its devices", () => {
+  it("checks before the write, not after", () => {
+    const handler = controller.slice(
+      controller.indexOf("async updateChannel"),
+      controller.indexOf("async updateChannel") + 2000,
+    );
+    const guard = handler.indexOf("assertChannelPointersConsistent");
+    const write = handler.indexOf("this.supabaseService.update");
+
+    expect(guard).toBeGreaterThan(-1);
+    expect(write).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(write);
+  });
+
+  it("passes the whole sanitized change, so either pointer is seen", () => {
+    // The channel page submits both in one request; checking only the field
+    // that moved would miss the pair that results.
+    expect(controller).toContain("assertChannelPointersConsistent(id as string, sanitizedData)");
+  });
+});
