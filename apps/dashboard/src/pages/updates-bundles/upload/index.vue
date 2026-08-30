@@ -355,7 +355,10 @@ const handleSubmit = async () => {
   try {
     const payload = new FormData();
 
-    payload.append("file", formData.value.file);
+    // "bundle", not "file". The server is `createMulterUpload().single("bundle")`
+    // for both endpoints, and multer rejects any other field name - so this
+    // upload could not have succeeded whichever endpoint it reached.
+    payload.append("bundle", formData.value.file);
     if (appStore.activeApp?.app_id) {
       payload.append("app_id", appStore.activeApp.app_id);
     }
@@ -387,8 +390,14 @@ const handleSubmit = async () => {
 
       await createNativeUpdateMutation.mutateAsync(payload);
     }
+    // Said nothing at all before - not on success, not on failure. The form
+    // simply sat there, so a rejected upload and a completed one looked
+    // identical.
+    toast.success(`v${formData.value.version_name} uploaded to ${formData.value.channel}`);
+    resetForm();
   } catch (error: any) {
-    console.error("Upload failed:", error);
+    const message = error?.response?.data?.error ?? error?.message ?? "The upload was rejected";
+    toast.error(message);
   } finally {
     isUploading.value = false;
   }

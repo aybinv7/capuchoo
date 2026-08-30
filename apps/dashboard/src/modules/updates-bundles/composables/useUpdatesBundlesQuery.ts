@@ -100,10 +100,22 @@ export function useCreateBundleMutation(
   });
 }
 
+/**
+ * `/admin/upload`, not `/dashboard/bundles`.
+ *
+ * `/dashboard/bundles` is `createBundle`, which does
+ * `insert("app_versions", [req.body])` and nothing else - no multer, no storage
+ * write, no checksum. Posting a multipart body at it could never store an
+ * artefact; at best it wrote a row pointing at no file, which is worse than
+ * failing, because a channel can then serve a release that does not exist.
+ *
+ * `/admin/upload` is the endpoint the CLI uses, and the one with a file behind
+ * it.
+ */
 export function useCreateBundleFormDataMutation(
   options?: Omit<UseMutationOptions<Bundle, Error, FormData>, "mutationFn">,
 ) {
-  return useApiFormDataMutation<Bundle, FormData>("/dashboard/bundles", "post", {
+  return useApiFormDataMutation<Bundle, FormData>("/admin/upload", "post", {
     ...options,
   });
 }

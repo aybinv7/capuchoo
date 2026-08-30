@@ -13,6 +13,11 @@
 </template>
 
 <script setup lang="ts">
+import { toast } from "vue-sonner";
+import {
+  useDeleteBundleMutation,
+  useDeleteNativeUpdateMutation,
+} from "@/modules/updates-bundles/composables/useUpdatesBundlesQuery";
 definePage({
   meta: {
     title: "Updates & Bundles - Capuchoo",
@@ -110,15 +115,47 @@ const filteredItems = computed(() => {
   });
 });
 
+const { mutateAsync: deleteBundle } = useDeleteBundleMutation();
+const { mutateAsync: deleteNative } = useDeleteNativeUpdateMutation();
+
+/**
+ * Deletes the row, which it did not do before.
+ *
+ * This read, in full:
+ *
+ *   // In a real implementation, you would call the appropriate delete mutation
+ *   // For now, we'll just trigger a refetch
+ *   console.warn("iddd", id, type);
+ *   await refetch();
+ *
+ * The dialog closed, the spinner ran, the table reloaded, and nothing was
+ * deleted. That is worse than a button with no handler: a dead button teaches
+ * you it is dead, while this one reported success every time. Anyone tidying a
+ * channel would have deleted the same release repeatedly and watched it come
+ * back, with no error to explain why.
+ *
+ * The mutations existed the whole time. Bundles and native binaries live in
+ * different tables behind different endpoints, so the row's own type picks one.
+ */
 const handleDelete = async (id: string, type: "bundle" | "native") => {
-  // In a real implementation, you would call the appropriate delete mutation
-  // For now, we'll just trigger a refetch
-  console.warn("iddd", id, type);
-  await refetch();
+  try {
+    if (type === "native") await deleteNative(id);
+    else await deleteBundle(id);
+
+    toast.success("Deleted");
+  } catch {
+    // Loudly: a failed delete that looks like a success is how this started.
+    toast.error("Could not delete that release");
+  } finally {
+    await refetch();
+  }
 };
 
-const handleUpdate = async (item: UpdateOrBundle) => {
-  console.warn("Update item:", item);
+/**
+ * Bulk edit and promote both report through here; the write has already been
+ * made by the dialog that raised it, so this only refreshes the table.
+ */
+const handleUpdate = async (_item: UpdateOrBundle) => {
   await refetch();
 };
 </script>
