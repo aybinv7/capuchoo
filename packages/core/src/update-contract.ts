@@ -190,8 +190,15 @@ export interface UpdateCheckResponse {
   /** Present when a native binary supersedes, or blocks, the OTA bundle. */
   native_update?: NativeUpdatePayload | null;
 
-  /** Remote configuration resolved for the channel's environment. */
-  config?: Record<string, string>;
+  /**
+   * Remote configuration resolved for the channel's environment.
+   *
+   * `unknown` values, not strings: this is the app row's JSONB column passed
+   * through untouched, so it holds whatever the operator stored - numbers,
+   * booleans, nested objects. Declaring it as strings made the renderer's own
+   * `RenderContext` incompatible with the response it builds, in ten places.
+   */
+  config?: Record<string, unknown>;
 }
 
 export type UpdateKind = "native" | "ota";
@@ -269,9 +276,14 @@ export function resolveUpdate(
  * Callers should surface these instead of showing "you are up to date".
  */
 export function isBlockingResponse(response: UpdateCheckResponse): boolean {
+  // `ENVIRONMENT_MISMATCH` used to be the second name here, and the rename to
+  // FLAVOUR_MISMATCH left this reading a key that no longer exists. That is not
+  // a dead branch: the comparison became `response.message === undefined`, so
+  // every response *without* a message - which is what an up-to-date device
+  // gets - was reported as a rejected build, under an empty error string.
   return (
     response.message === UpdateMessage.CHANNEL_NOT_FOUND ||
-    response.message === UpdateMessage.ENVIRONMENT_MISMATCH
+    response.message === UpdateMessage.FLAVOUR_MISMATCH
   );
 }
 

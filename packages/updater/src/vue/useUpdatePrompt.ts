@@ -24,7 +24,13 @@ export function useUpdatePrompt() {
   //
   // `init` guards on its own flag, so an app that already called it is
   // unaffected and calling this from several components is safe.
-  void updater.init();
+  //
+  // The rejection is caught rather than discarded: a bare `void` sent a real
+  // start-up failure nowhere, and the only symptom was a prompt that never
+  // appeared.
+  void updater.init().catch((error: unknown) => {
+    console.error("[capuchoo] the updater could not start", error);
+  });
 
   const update = updater.currentUpdate;
   const isNativeUpdate = computed(() => update.value?.kind === "native");

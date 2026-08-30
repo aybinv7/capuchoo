@@ -7,7 +7,7 @@
   "author": "aybinv7",
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build"
+    "ready": "vp check && vp run -r typecheck && vp run -r test && vp run -r build"
   },
   "devDependencies": {
     "@types/node": "catalog:",

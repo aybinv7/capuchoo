@@ -1,6 +1,6 @@
 {
   "name": "@capuchoo/updater",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "App-side runtime for Capucho OTA and native updates in Capacitor apps",
   "keywords": [
     "capacitor",
@@ -43,6 +43,7 @@
   },
   "scripts": {
     "build": "vp pack",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vp test --run"
   },
   "dependencies": {

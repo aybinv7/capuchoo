@@ -1,6 +1,6 @@
 {
   "name": "@capuchoo/core",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Shared contract between the Capucho CLI, backend, dashboard and app runtime",
   "keywords": [
     "capacitor",
@@ -34,6 +34,7 @@
   },
   "scripts": {
     "build": "vp pack",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vp test --run"
   },
   "devDependencies": {

@@ -134,8 +134,34 @@ describe("resolveUpdate", () => {
 describe("isBlockingResponse", () => {
   it("flags misconfiguration rather than reporting up to date", () => {
     expect(isBlockingResponse({ message: UpdateMessage.CHANNEL_NOT_FOUND })).toBe(true);
-    expect(isBlockingResponse({ message: UpdateMessage.ENVIRONMENT_MISMATCH })).toBe(true);
+    expect(isBlockingResponse({ message: UpdateMessage.FLAVOUR_MISMATCH })).toBe(true);
     expect(isBlockingResponse({ message: UpdateMessage.NO_UPDATE })).toBe(false);
+  });
+
+  /**
+   * The rename from ENVIRONMENT_MISMATCH to FLAVOUR_MISMATCH left this function
+   * comparing against `UpdateMessage.ENVIRONMENT_MISMATCH`, which is `undefined`.
+   * The branch did not become dead - it became `response.message === undefined`,
+   * and a response with no message is the ordinary case. Every such check was
+   * reported to the user as "the update service rejected this build", with an
+   * empty reason, because `UpdateCheckBlockedError` takes its message from a
+   * field that was not there.
+   *
+   * This test is the reason the whole workspace now runs `tsc`: the compiler
+   * knew, and nothing was asking it.
+   */
+  it("does not treat a response without a message as blocked", () => {
+    expect(isBlockingResponse({})).toBe(false);
+    expect(isBlockingResponse({ kind: "up_to_date" })).toBe(false);
+    expect(isBlockingResponse({ version_name: "1.2.0", url: "https://x/b.zip" })).toBe(false);
+  });
+
+  it("names only messages that exist", () => {
+    // A typo or a rename would otherwise be invisible again.
+    const named = [UpdateMessage.CHANNEL_NOT_FOUND, UpdateMessage.FLAVOUR_MISMATCH];
+
+    expect(named.every((message) => typeof message === "string")).toBe(true);
+    expect(named.every((message) => isBlockingResponse({ message }))).toBe(true);
   });
 });
 

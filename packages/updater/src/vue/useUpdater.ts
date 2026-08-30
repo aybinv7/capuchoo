@@ -9,7 +9,7 @@ import {
   logUpdateEvent,
 } from "../api.service.js";
 import { getUpdaterConfig } from "../config.js";
-import { isNative } from "../device.js";
+import { getVersionCode, isNative } from "../device.js";
 import {
   downloadNativeUpdate,
   findCachedApk,
@@ -283,15 +283,31 @@ async function init(): Promise<void> {
   if (!isNative() || initialised) return;
   initialised = true;
 
-  await notifyAppReady();
-  await attachPluginListeners();
+  // Start-up housekeeping, and nothing here may cost the check.
+  //
+  // It did once. `getVersionCode` was used below without being imported, so
+  // this threw a ReferenceError; `initialised` was already true, the caller
+  // discards the promise with `void`, and the result was an app that never
+  // asked for updates at all - a required update sat published while the device
+  // showed nothing and logged nothing. Reported by the device itself:
+  //
+  //   init THREW: getVersionCode is not defined
+  //
+  // The check now runs whatever happens above it, and a failure is loud.
+  try {
+    await notifyAppReady();
+    await attachPluginListeners();
 
-  // Delete APKs the device has outgrown. There is no callback from the Android
-  // installer, so this is where an installed binary's 47 MB finally goes: on
-  // the next launch the installed build number has passed it, which says the
-  // install landed. Anything newer is left alone - it is an update already
-  // downloaded and waiting, and deleting it would mean paying for it twice.
-  await pruneApkCache({ installedVersionCode: await getVersionCode() });
+    // Delete APKs the device has outgrown. There is no callback from the
+    // Android installer, so this is where an installed binary's 47 MB finally
+    // goes: on the next launch the installed build number has passed it, which
+    // says the install landed. Anything newer is left alone - it is an update
+    // already downloaded and waiting, and deleting it would mean paying for it
+    // twice.
+    await pruneApkCache({ installedVersionCode: await getVersionCode() });
+  } catch (error) {
+    console.error("[capuchoo] updater start-up step failed", error);
+  }
 
   await check(true);
 }
