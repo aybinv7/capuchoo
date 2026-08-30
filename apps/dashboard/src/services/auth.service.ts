@@ -134,6 +134,38 @@ export const authService = {
     return data;
   },
 
+  /**
+   * Changes the signed-in user's password.
+   *
+   * Added because the settings panel claimed to do this and did not: it
+   * compared the two fields, cleared the form and showed "Password updated"
+   * while calling nothing. Someone rotating a password they believed was
+   * exposed would have kept using the old one, told it had been replaced.
+   *
+   * Supabase re-checks the session server-side, so an expired session fails
+   * here rather than appearing to succeed.
+   */
+  async updatePassword(newPassword: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  /** Updates the display name held in the user's metadata. */
+  async updateProfile(fullName: string): Promise<User | null> {
+    const { data, error } = await supabase.auth.updateUser({
+      data: { full_name: fullName },
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data.user;
+  },
+
   onAuthStateChange(callback: (event: any, session: any) => void) {
     const {
       data: { subscription },

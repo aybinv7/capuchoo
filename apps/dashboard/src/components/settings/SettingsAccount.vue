@@ -30,7 +30,11 @@
         <div class="flex flex-col gap-1">
           <span class="text-sm font-medium">Profile Photo</span>
           <span class="text-xs text-muted-foreground">Supported file types: png, jpg, jpeg.</span>
-          <Button variant="outline" size="sm" class="mt-2 w-fit">Upload Photo</Button>
+          <!--
+            "Upload Photo" had no handler and there is no avatar upload behind
+            it - no endpoint, no storage bucket for it. Removed rather than
+            wired to something invented; the avatar falls back to initials.
+          -->
         </div>
       </div>
 
@@ -58,7 +62,9 @@
         </div>
 
         <div class="pt-2">
-          <Button type="submit" variant="default" size="sm">Update Profile</Button>
+          <Button type="submit" variant="default" size="sm" :disabled="savingProfile">
+            {{ savingProfile ? "Saving..." : "Update Profile" }}
+          </Button>
         </div>
       </form>
     </section>
@@ -109,7 +115,9 @@
         </div>
 
         <div class="pt-2">
-          <Button type="submit" variant="outline" size="sm">Change Password</Button>
+          <Button type="submit" variant="outline" size="sm" :disabled="changingPassword">
+            {{ changingPassword ? "Updating..." : "Change Password" }}
+          </Button>
         </div>
       </form>
     </section>
@@ -118,14 +126,35 @@
 
 <script setup lang="ts">
 import { useToast } from "@/composables/useToast";
+import { authService } from "@/services/auth.service";
+import { useAuthStore } from "@/stores/auth.store";
 import { Separator } from "@/components/ui/separator";
 
 const { showSuccess, showError } = useToast();
+const authStore = useAuthStore();
 
+/**
+ * The signed-in user, rather than a fixture.
+ *
+ * This was hard-coded to "Ahmed Benali / ahmed@example.com" with a generated
+ * avatar, so every account showed someone else's name and address on its own
+ * settings page - and the profile form edited that fixture.
+ */
 const profile = ref({
-  name: "Ahmed Benali",
-  email: "ahmed@example.com",
-  avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Ahmed+Benali",
+  name: "",
+  email: "",
+  avatar: "",
+});
+
+watchEffect(() => {
+  const user = authStore.user;
+  if (!user) return;
+
+  profile.value = {
+    name: (user.user_metadata?.full_name as string) ?? "",
+    email: user.email ?? "",
+    avatar: (user.user_metadata?.avatar_url as string) ?? "",
+  };
 });
 
 const password = ref({
@@ -133,6 +162,9 @@ const password = ref({
   new: "",
   confirm: "",
 });
+
+const savingProfile = ref(false);
+const changingPassword = ref(false);
 
 const getInitials = (name: string) =>
   name
@@ -142,16 +174,49 @@ const getInitials = (name: string) =>
     .toUpperCase()
     .substring(0, 2);
 
-const saveProfile = () => {
-  showSuccess("Profile updated");
+const saveProfile = async () => {
+  savingProfile.value = true;
+  try {
+    await authService.updateProfile(profile.value.name);
+    await authStore.init();
+    showSuccess("Profile updated");
+  } catch (error) {
+    showError(error instanceof Error ? error.message : "Could not update your profile");
+  } finally {
+    savingProfile.value = false;
+  }
 };
 
-const changePassword = () => {
+/**
+ * Actually changes the password.
+ *
+ * This compared the two fields, cleared the form and announced "Password
+ * updated" without calling anything. Of every fake success in this dashboard it
+ * is the one that could do real harm: someone rotating a password they believed
+ * was exposed would have walked away still using it, having been told
+ * otherwise.
+ */
+const changePassword = async () => {
   if (password.value.new !== password.value.confirm) {
     showError("Passwords do not match");
     return;
   }
-  showSuccess("Password updated");
-  password.value = { current: "", new: "", confirm: "" };
+  if (password.value.new.length < 8) {
+    showError("Use at least 8 characters");
+    return;
+  }
+
+  changingPassword.value = true;
+  try {
+    await authService.updatePassword(password.value.new);
+    showSuccess("Password updated");
+    password.value = { current: "", new: "", confirm: "" };
+  } catch (error) {
+    // Never cleared on failure: retyping a password you thought had been
+    // accepted is exactly the moment to keep what was typed.
+    showError(error instanceof Error ? error.message : "Could not update your password");
+  } finally {
+    changingPassword.value = false;
+  }
 };
 </script>
