@@ -120,3 +120,10 @@ export {
   roleRank,
   type AppRole,
 } from "./role-cap.js";
+
+export {
+  checkNativeGate,
+  type NativeGate,
+  type NativeGateFacts,
+  type NativeGateVerdict,
+} from "./native-gate.js";

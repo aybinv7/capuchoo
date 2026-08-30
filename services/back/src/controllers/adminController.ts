@@ -3,6 +3,7 @@ import { ENVIRONMENTS, isFlavour, type Environment } from "@capuchoo/core";
 import { AppError, ConflictError, ValidationError, IFileService, ISupabaseService } from "@/types";
 import fileService from "@/services/fileService";
 import { assertFlavourMatchesChannel, insertTolerantOfFlavour } from "@/services/flavourGuard";
+import { assertNativeGateSatisfiable } from "@/services/nativeGateGuard";
 import { SIGNED_URL_TTL_SECONDS, storageKeyFromUrl } from "@/services/signedDownload";
 import config from "@/config";
 import supabaseService from "@/services/supabaseService";
@@ -143,6 +144,11 @@ class AdminController {
       }
 
       await assertFlavourMatchesChannel(appUuid, channel || "prod", flavour);
+
+      // Before the artefact reaches storage: a bundle gated behind a build the
+      // channel does not serve freezes every device on it, silently. Refusing
+      // here is the only moment there is someone to tell.
+      await assertNativeGateSatisfiable(appUuid, channel || "prod", minUpdateVersion);
 
       const buffer = req.file!.buffer || fs.readFileSync(req.file!.path);
       const checksum = this.fileService.calculateChecksum(buffer);
@@ -870,6 +876,22 @@ class AdminController {
       }
 
       const { id: _, created_at: __, updated_at: ___, ...itemData } = sourceData;
+
+      // The gate travels with the bundle - `itemData` is a whole-row copy - and
+      // the target channel is a different channel with a different native.
+      //
+      // This is the one-click version of the problem: promoting dev to prod
+      // carries `min_update_version` across and immediately repoints
+      // `channels.current_version_id`, so a gate prod cannot satisfy stops every
+      // production device updating, with no crash to notice and nothing on the
+      // dashboard to see. Checked against the *target* channel, not the source.
+      if (promoteType === "bundle") {
+        await assertNativeGateSatisfiable(
+          targetApp.data.id,
+          target_channel,
+          sourceData.min_update_version,
+        );
+      }
 
       const targetTable = promoteType === "bundle" ? "app_versions" : "native_updates";
 

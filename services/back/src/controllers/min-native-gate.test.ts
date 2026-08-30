@@ -66,3 +66,59 @@ describe("an upload can declare the native version it needs", () => {
     expect(controller).toContain('min_update_version === ""');
   });
 });
+
+/**
+ * The gate's own failure mode, and where it has to be caught.
+ *
+ * If no native release at or above the line is assigned to the channel, the
+ * server looks for the binary to offer, finds none, and answers
+ * `native_update: null`. `resolveUpdate` reads that as "no update at all", so
+ * the device is not crashed - it is frozen. It never takes the bundle, is never
+ * told why, and the release still reads as published. Every device on the
+ * channel stops updating and nothing anywhere says so.
+ *
+ * Nothing can be done about it at serve time: there is no one to tell and no
+ * operation to refuse. So it is checked where the gate is written.
+ */
+describe("a gate the channel cannot satisfy is refused where it is set", () => {
+  it("checks the upload before the artefact reaches storage", () => {
+    const guard = controller.indexOf("assertNativeGateSatisfiable(appUuid");
+    const upload = controller.indexOf("this.fileService.uploadFile(fileName, buffer)");
+
+    expect(guard).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(upload);
+  });
+
+  /**
+   * Promote is the one-click version: it carries `min_update_version` across in
+   * a whole-row copy and then repoints `channels.current_version_id`, so a gate
+   * prod cannot satisfy takes out every production device at once.
+   */
+  it("checks a promote against the target channel, not the source", () => {
+    // `targetApp.data.id` and `target_channel`, not the source row's app and
+    // channel: the whole point is that the destination has a different native.
+    const promoteGuard = controller.slice(
+      controller.indexOf("promoteBundle"),
+      controller.indexOf("promoteBundle") + 4000,
+    );
+
+    expect(promoteGuard).toContain("assertNativeGateSatisfiable");
+    expect(promoteGuard).toContain("targetApp.data.id");
+    expect(promoteGuard).toContain("target_channel");
+    expect(promoteGuard).toContain("sourceData.min_update_version");
+  });
+
+  it("does not ask the question of a promoted native binary", () => {
+    // A binary carries no gate; only bundles have one, and reading
+    // `min_update_version` off a native row reads a column that is not there.
+    const promoteGuard = controller.slice(
+      controller.indexOf("promoteBundle"),
+      controller.indexOf("promoteBundle") + 4000,
+    );
+    const branch = promoteGuard.indexOf('promoteType === "bundle"');
+    const guard = promoteGuard.indexOf("assertNativeGateSatisfiable");
+
+    expect(branch).toBeGreaterThan(-1);
+    expect(branch).toBeLessThan(guard);
+  });
+});
