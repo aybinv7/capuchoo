@@ -382,6 +382,7 @@
 </template>
 
 <script setup lang="ts">
+import { useSdkSnippet } from "@/composables/useSdkSnippet";
 import {
   ArrowLeft,
   Loader2,
@@ -510,27 +511,18 @@ const saveSettings = async () => {
   }
 };
 
-const channelCount = computed(() => 0); // TODO: Fetch from API
+/**
+ * The channels this app has.
+ *
+ * This card read `computed(() => 0)` behind a TODO, so it showed a confident
+ * "0" next to real numbers - and 0 channels is not a neutral placeholder, it is
+ * the state in which nothing can ever be served. The query it needed already
+ * existed and is scoped to the active app.
+ */
+const { data: channels } = useChannelsQuery();
+const channelCount = computed(() => channels.value?.length ?? 0);
 
-const sdkSnippet = computed(() => {
-  const apiBase = window.location.origin.replace(/:\d+$/, ":3000") + "/api";
-  return `import { CapacitorConfig } from '@capacitor/cli';
-
-const config: CapacitorConfig = {
-  appId: '${app.value?.app_id || "com.example.app"}',
-  appName: '${app.value?.name || "My App"}',
-  webDir: 'dist',
-  plugins: {
-    CapacitorUpdater: {
-      autoUpdate: true,
-      statsUrl: '${apiBase}/stats',
-      updateUrl: '${apiBase}/update'
-    }
-  }
-};
-
-export default config;`;
-});
+const { snippet: sdkSnippet } = useSdkSnippet(computed(() => app.value?.app_id));
 
 const copySnippet = async () => {
   try {

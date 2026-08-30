@@ -17,11 +17,18 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm">
-          <ILucideRefreshCcw class="mr-2 h-4 w-4" />
-          Sync
+        <!--
+          "Sync" was here, with no handler and no endpoint behind it. There
+          cannot be one: a device polls us, we have no channel to push down, so
+          a button promising to reach it would be a lie however it was wired.
+          "Refresh" is what this page can actually do - re-read what the server
+          knows.
+        -->
+        <Button variant="outline" size="sm" :disabled="refreshing" @click="refresh">
+          <ILucideRefreshCcw class="mr-2 h-4 w-4" :class="refreshing && 'animate-spin'" />
+          Refresh
         </Button>
-        <Button variant="destructive" size="sm">
+        <Button variant="destructive" size="sm" @click="deleteDialogOpen = true">
           <ILucideTrash2 class="mr-2 h-4 w-4" />
           Delete
         </Button>
@@ -81,6 +88,24 @@
         <CardContent>
           <div class="text-2xl font-bold">
             {{ device?.version_os || "Unknown" }}
+
+            <Dialog v-model:open="deleteDialogOpen">
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Forget this device?</DialogTitle>
+                  <DialogDescription>
+                    This removes what we know about it. The device itself is untouched - if the app
+                    is still installed it will reappear on its next update check, under the same id.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" @click="deleteDialogOpen = false">Cancel</Button>
+                  <Button variant="destructive" :disabled="deleting" @click="confirmDelete">
+                    {{ deleting ? "Deleting..." : "Delete" }}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
           <p class="text-xs text-muted-foreground">
             <template v-if="device?.is_emulator">Emulator · </template>
@@ -210,13 +235,50 @@
 </template>
 
 <script setup lang="ts">
+// Explicit: `toast` is not in auto-imports.d.ts, unlike almost everything else
+// this file uses. Relying on the auto-import here is how `router.push` shipped
+// against an unbound `router` on the bundle page.
+import { toast } from "vue-sonner";
+
 const { id: deviceId } = defineProps<{
   id: string;
 }>();
 
-const { data: devices } = useDevicesQuery();
+const { data: devices, refetch } = useDevicesQuery();
 
 const device = computed(() => devices.value?.find((d) => String(d.id) === deviceId));
+
+const router = useRouter();
+const refreshing = ref(false);
+const deleting = ref(false);
+const deleteDialogOpen = ref(false);
+
+const { mutateAsync: deleteDevice } = useDeleteDeviceMutation();
+
+async function refresh(): Promise<void> {
+  refreshing.value = true;
+  try {
+    await refetch();
+  } finally {
+    refreshing.value = false;
+  }
+}
+
+async function confirmDelete(): Promise<void> {
+  if (!device.value) return;
+
+  deleting.value = true;
+  try {
+    await deleteDevice(device.value.id);
+    toast.success("Device forgotten");
+    deleteDialogOpen.value = false;
+    await router.push("/devices");
+  } catch {
+    toast.error("Could not delete this device");
+  } finally {
+    deleting.value = false;
+  }
+}
 
 /**
  * The device's real event history.

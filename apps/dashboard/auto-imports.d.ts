@@ -223,6 +223,7 @@ declare global {
   const asyncComputed: typeof import('@vueuse/core').asyncComputed
   const authService: typeof import('./src/services/auth.service').authService
   const autoResetRef: typeof import('@vueuse/core').autoResetRef
+  const backendOrigin: typeof import('./src/composables/useSdkSnippet').backendOrigin
   const badgeVariants: typeof import('./src/components/ui/badge/index').badgeVariants
   const buttonVariants: typeof import('./src/components/ui/button/index').buttonVariants
   const channelsColumns: typeof import('./src/modules/channels/components/ChannelsTable/channels.columns').channelsColumns
@@ -593,6 +594,7 @@ declare global {
   const useScriptTag: typeof import('@vueuse/core').useScriptTag
   const useScroll: typeof import('@vueuse/core').useScroll
   const useScrollLock: typeof import('@vueuse/core').useScrollLock
+  const useSdkSnippet: typeof import('./src/composables/useSdkSnippet').useSdkSnippet
   const useSendMessageMutation: typeof import("./src/composables/api/conversations/useMessagesQuery").useSendMessageMutation
   const useSessionStorage: typeof import('@vueuse/core').useSessionStorage
   const useShare: typeof import('@vueuse/core').useShare
@@ -980,6 +982,7 @@ declare module 'vue' {
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly authService: UnwrapRef<typeof import('./src/services/auth.service')['authService']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
+    readonly backendOrigin: UnwrapRef<typeof import('./src/composables/useSdkSnippet')['backendOrigin']>
     readonly badgeVariants: UnwrapRef<typeof import('./src/components/ui/badge/index')['badgeVariants']>
     readonly buttonVariants: UnwrapRef<typeof import('./src/components/ui/button/index')['buttonVariants']>
     readonly channelsColumns: UnwrapRef<typeof import('./src/modules/channels/components/ChannelsTable/channels.columns')['channelsColumns']>
@@ -1313,6 +1316,7 @@ declare module 'vue' {
     readonly useScriptTag: UnwrapRef<typeof import('@vueuse/core')['useScriptTag']>
     readonly useScroll: UnwrapRef<typeof import('@vueuse/core')['useScroll']>
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
+    readonly useSdkSnippet: UnwrapRef<typeof import('./src/composables/useSdkSnippet')['useSdkSnippet']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
     readonly useSidebar: UnwrapRef<typeof import('./src/components/ui/sidebar/utils')['useSidebar']>

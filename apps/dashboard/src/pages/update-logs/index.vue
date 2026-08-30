@@ -6,6 +6,7 @@ import { useUpdateLogsQuery } from "@/modules/update-logs/composables/useUpdateL
 import type { UpdateLog } from "@/modules/update-logs/types/update-logs.types";
 import UpdateLogsFilters from "@/modules/update-logs/components/UpdateLogsFilters.vue";
 import UpdateLogsList from "@/modules/update-logs/components/UpdateLogsList.vue";
+import { classifyUpdateEvent, summariseEvents } from "@capuchoo/core";
 
 definePage({
   meta: {
@@ -101,13 +102,26 @@ const filteredLogs = computed(() => {
 });
 
 // Stats from filtered logs
+/**
+ * Counted through the shared classifier, not by matching names.
+ *
+ * These read `action === "download"` and `action === "install"`, exact matches
+ * against names that are mostly not produced: the plugin's word for an applied
+ * bundle is `set`, and `download` on its own is a progress tick. So "Installs"
+ * showed 0 for every OTA update ever made, on a page whose whole purpose is to
+ * show that they happened.
+ *
+ * `classifyUpdateEvent` is the same function the statistics page and the server
+ * use, so the three cannot drift apart again.
+ */
 const stats = computed(() => {
-  const all = filteredLogs.value;
+  const summary = summariseEvents(filteredLogs.value.map((log) => log.action));
+
   return {
-    total: all.length,
-    downloads: all.filter((l) => l.action === "download").length,
-    installs: all.filter((l) => l.action === "install").length,
-    failures: all.filter((l) => l.action.includes("fail")).length,
+    total: summary.total,
+    downloads: summary.downloading,
+    installs: summary.delivered,
+    failures: summary.failed,
   };
 });
 
@@ -142,10 +156,42 @@ const handleExport = () => {
   URL.revokeObjectURL(url);
 };
 
+/**
+ * Opens the row in a dialog rather than a route.
+ *
+ * This logged to the console behind a TODO, so clicking a row did nothing
+ * visible. A modal keeps the filters, the scroll position and the loaded pages
+ * - a log table is somewhere you scan and dip into, and navigating away throws
+ * away the position that made the row interesting.
+ */
+const selectedLog = ref<UpdateLog | null>(null);
+const logDialogOpen = ref(false);
+
 const handleSelectLog = (log: UpdateLog) => {
-  // TODO: Open detail drawer/modal
-  console.warn("Selected log:", log);
+  selectedLog.value = log;
+  logDialogOpen.value = true;
 };
+
+const selectedCategory = computed(() =>
+  selectedLog.value ? classifyUpdateEvent(selectedLog.value.action) : null,
+);
+
+/** Only the fields that carry something, so an empty row is never shown. */
+const selectedRows = computed(() => {
+  const log = selectedLog.value;
+  if (!log) return [];
+
+  return [
+    { label: "Device", value: log.device_id },
+    { label: "App", value: log.app_id },
+    { label: "Platform", value: log.platform },
+    { label: "From version", value: log.current_version },
+    { label: "To version", value: log.new_version },
+    { label: "Status", value: log.status },
+  ].filter((row) => row.value !== null && row.value !== undefined && row.value !== "");
+});
+
+const formatDate = (value?: string) => (value ? new Date(value).toLocaleString() : "");
 </script>
 
 <template>
@@ -251,5 +297,34 @@ const handleSelectLog = (log: UpdateLog) => {
       @load-more="loadMore"
       @select-log="handleSelectLog"
     />
+
+    <!--
+      Row detail, in a dialog. Clicking a row used to `console.warn` behind a
+      TODO, so it did nothing visible at all.
+    -->
+    <Dialog v-model:open="logDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle class="font-mono text-base">{{ selectedLog?.action }}</DialogTitle>
+          <DialogDescription>
+            {{ selectedCategory }} event, {{ formatDate(selectedLog?.created_at) }}
+          </DialogDescription>
+        </DialogHeader>
+
+        <dl class="space-y-2 text-sm">
+          <div v-for="row in selectedRows" :key="row.label" class="flex gap-3">
+            <dt class="w-32 shrink-0 text-muted-foreground">{{ row.label }}</dt>
+            <dd class="flex-1 break-all font-mono text-xs">{{ row.value }}</dd>
+          </div>
+        </dl>
+
+        <p
+          v-if="selectedLog?.error_message"
+          class="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs"
+        >
+          {{ selectedLog.error_message }}
+        </p>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

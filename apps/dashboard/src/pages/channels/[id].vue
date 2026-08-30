@@ -396,6 +396,7 @@
 </template>
 
 <script setup lang="ts">
+import { useSdkSnippet } from "@/composables/useSdkSnippet";
 import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -464,18 +465,10 @@ const latestVersion = computed(() => {
   return recentUpdates.value[0]?.version_name;
 });
 
-const configSnippet = computed(() => {
-  return `// capacitor.config.ts
-{
-  plugins: {
-    CapacitorUpdater: {
-      appId: "${channel.value?.app_id || "YOUR_APP_ID"}",
-      channel: "${channel.value?.name || "prod"}",
-      autoUpdate: true
-    }
-  }
-}`;
-});
+const { snippet: configSnippet } = useSdkSnippet(
+  computed(() => channel.value?.app_id),
+  computed(() => channel.value?.name),
+);
 
 // Initialize form when data is loaded
 watch(

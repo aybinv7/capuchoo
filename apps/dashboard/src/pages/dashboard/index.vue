@@ -120,10 +120,17 @@
                 <pre class="overflow-x-auto"><code>{{ sdkSnippet }}</code></pre>
               </div>
 
+              <div class="rounded-lg bg-zinc-950 p-4 font-mono text-xs text-zinc-50">
+                <p class="mb-2 text-[10px] uppercase tracking-wider text-zinc-400">
+                  build/&lt;flavour&gt;/.env.&lt;flavour&gt;
+                </p>
+                <pre class="overflow-x-auto"><code>{{ sdkEnv }}</code></pre>
+              </div>
+
               <Alert>
                 <ILucideInfo />
                 <AlertTitle>
-                  Ensure you have the @capgo/capacitor-updater plugin installed in your project.
+                  Run `npx capuchoo setup` to install the plugin and wire this up for you.
                 </AlertTitle>
               </Alert>
             </CardContent>
@@ -171,6 +178,7 @@
 </template>
 
 <script setup lang="ts">
+import { useSdkSnippet } from "@/composables/useSdkSnippet";
 import { useAppStore } from "@/stores/app.store";
 import { toast } from "vue-sonner";
 
@@ -185,27 +193,18 @@ definePage({
   },
 });
 
-const channelCount = computed(() => 0); // TODO: Fetch from API context-aware
+/**
+ * The channels this app has.
+ *
+ * This card read `computed(() => 0)` behind a TODO, so it showed a confident
+ * "0" next to real numbers - and 0 channels is not a neutral placeholder, it is
+ * the state in which nothing can ever be served. The query it needed already
+ * existed and is scoped to the active app.
+ */
+const { data: channels } = useChannelsQuery();
+const channelCount = computed(() => channels.value?.length ?? 0);
 
-const sdkSnippet = computed(() => {
-  const apiBase = window.location.origin.replace(/:\d+$/, ":3000") + "/api";
-  return `import { CapacitorConfig } from '@capacitor/cli';
-
-const config: CapacitorConfig = {
-  appId: '${activeApp.value?.app_id || "com.example.app"}',
-  appName: '${activeApp.value?.name || "My App"}',
-  webDir: 'dist',
-  plugins: {
-    CapacitorUpdater: {
-      autoUpdate: true,
-      statsUrl: '${apiBase}/stats',
-      updateUrl: '${apiBase}/update'
-    }
-  }
-};
-
-export default config;`;
-});
+const { snippet: sdkSnippet, env: sdkEnv } = useSdkSnippet(computed(() => activeApp.value?.app_id));
 
 const copySnippet = async () => {
   try {
