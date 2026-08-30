@@ -32,8 +32,23 @@ export interface FileSnapshot {
  * Read before anything is written, so the contents are what the working tree had
  * when the operator asked for the deploy.
  */
-export function snapshotVersionFiles(appDir: string, versionCodeFile: string): FileSnapshot[] {
-  return [path.join(appDir, "package.json"), path.resolve(appDir, versionCodeFile)].map((file) => ({
+export function snapshotVersionFiles(
+  appDir: string,
+  versionCodeFile: string,
+  androidDir = "android",
+): FileSnapshot[] {
+  return [
+    path.join(appDir, "package.json"),
+    path.resolve(appDir, versionCodeFile),
+    // The native configuration step writes the version into the Gradle file and
+    // the app name into strings.xml. Both are tracked, and both were left
+    // claiming a release that was never published - a deploy that failed at the
+    // upload left `versionCode 8 / versionName "0.5.1"` behind for a version
+    // that does not exist. Less damaging than the package.json bump, because the
+    // next deploy rewrites them, but it is the same defect and the same fix.
+    path.join(appDir, androidDir, "app", "build.gradle"),
+    path.join(appDir, androidDir, "app", "src", "main", "res", "values", "strings.xml"),
+  ].map((file) => ({
     file,
     content: fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null,
   }));

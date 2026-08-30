@@ -336,7 +336,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
 
   // Read before anything is written, so a deploy that does not publish can put
   // the working tree back exactly as it was.
-  const versionFiles = snapshotVersionFiles(appDir, project.versionCodeFile);
+  const versionFiles = snapshotVersionFiles(appDir, project.versionCodeFile, project.androidDir);
 
   // Written before the build rather than after: an app may read its own
   // package.json version while building, and the restore on failure is what

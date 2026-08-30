@@ -23,13 +23,17 @@ const PKG = (version: string) => `{\n  "name": "app",\n  "version": "${version}"
 const CODES = `{\n  "dev": 1,\n  "staging": 6,\n  "prod": 1\n}\n`;
 
 describe("snapshotVersionFiles", () => {
-  it("captures both tracked files a deploy may rewrite", () => {
+  it("captures every tracked file a deploy may rewrite", () => {
     const dir = tempApp({ "package.json": PKG("5.0.0"), "version-code.json": CODES });
     const snapshots = snapshotVersionFiles(dir, "version-code.json");
 
+    // build.gradle and strings.xml are written by the native configuration step,
+    // and were left behind claiming a release that was never published.
     expect(snapshots.map((s) => path.basename(s.file))).toEqual([
       "package.json",
       "version-code.json",
+      "build.gradle",
+      "strings.xml",
     ]);
     expect(snapshots[0]!.content).toContain('"version": "5.0.0"');
     expect(snapshots[1]!.content).toContain('"staging": 6');
@@ -141,5 +145,58 @@ describe("the deploy wires it to the published/not-published fork", () => {
 
   it("no longer asks the operator to run git checkout", () => {
     expect(execute).not.toContain("git checkout -- ");
+  });
+});
+
+/**
+ * Observed on a real failed deploy: the upload could not reach the backend, the
+ * guard restored package.json and version-code.json, and build.gradle was left
+ * reading `versionCode 8 / versionName "0.5.1"` for a version that does not
+ * exist. The next deploy rewrites it, so it is less damaging than the
+ * package.json bump - but it is the same defect and deserves the same fix.
+ */
+describe("the native identity files are restored too", () => {
+  const GRADLE = (code: number, name: string) =>
+    `android {
+  defaultConfig {
+    versionCode ${code}
+    versionName "${name}"
+  }
+}
+`;
+
+  it("puts build.gradle back after a failed deploy", () => {
+    const dir = tempApp({
+      "package.json": PKG("5.0.0"),
+      "version-code.json": CODES,
+      "android/app/build.gradle": GRADLE(6, "0.4.0"),
+    });
+    const snapshots = snapshotVersionFiles(dir, "version-code.json");
+
+    fs.writeFileSync(path.join(dir, "android/app/build.gradle"), GRADLE(8, "0.5.1"), "utf8");
+
+    expect(restoreVersionFiles(snapshots)).toEqual(["build.gradle"]);
+    expect(fs.readFileSync(path.join(dir, "android/app/build.gradle"), "utf8")).toContain(
+      'versionName "0.4.0"',
+    );
+  });
+
+  it("follows the project's own androidDir", () => {
+    const dir = tempApp({
+      "package.json": PKG("1.0.0"),
+      "native/app/build.gradle": GRADLE(1, "1.0.0"),
+    });
+    const snapshots = snapshotVersionFiles(dir, "version-code.json", "native");
+
+    expect(snapshots.some((s) => s.file.includes("native"))).toBe(true);
+  });
+
+  it("says nothing about an app with no android project", () => {
+    const dir = tempApp({ "package.json": PKG("1.0.0") });
+    const snapshots = snapshotVersionFiles(dir, "version-code.json");
+
+    // Absent files snapshot as null and restore to nothing, so an iOS-only or
+    // web-only app is unaffected.
+    expect(restoreVersionFiles(snapshots)).toEqual([]);
   });
 });
