@@ -326,7 +326,7 @@ export class CloudClient {
     active: boolean;
     required: boolean;
     /**
-     * Native version this bundle needs before a device may run it.
+     * Native build number this bundle needs before a device may run it.
      *
      * A web bundle can depend on a native capability - a new plugin, a new
      * permission - that an older binary does not have. Serving it there means a

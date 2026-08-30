@@ -99,15 +99,24 @@ class AdminController {
         throw new ValidationError("Invalid platform. Must be: android, ios, web");
       }
 
-      // Validated rather than stored as typed: a malformed value here does not
-      // fail the upload, it silently disables the gate at decision time, and
-      // the release looks published.
+      // A build number, despite the column's name.
+      //
+      // `minimumNativeVersion` in @capuchoo/core parses this with
+      // `Number.parseInt` and compares it against the device's `version_code`.
+      // A semver string is not merely wrong here - `parseInt("0.6.0")` is 0,
+      // which the same function treats as "ungated", so the value that looks
+      // most like a version is exactly the one that silently switches the gate
+      // off and leaves the release looking published.
+      //
+      // Validated rather than stored as typed, for that reason.
       const minUpdateVersion =
         min_update_version === undefined || min_update_version === "" ? null : min_update_version;
 
-      if (minUpdateVersion !== null && !semver.valid(minUpdateVersion)) {
+      if (minUpdateVersion !== null && !/^[0-9]+$/.test(String(minUpdateVersion))) {
         throw new ValidationError(
-          `min_update_version must be a semver version, got "${minUpdateVersion}"`,
+          `min_update_version is a native build number, not a version name - got ` +
+            `"${minUpdateVersion}". Use the versionCode of the binary this bundle needs, ` +
+            `for example 10.`,
         );
       }
 

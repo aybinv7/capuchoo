@@ -38,13 +38,26 @@ describe("an upload can declare the native version it needs", () => {
   });
 
   /**
-   * A malformed value would not fail the upload - it would sit in the column
-   * and silently disable the gate at decision time, while the release looked
-   * published. `semver.satisfies` against "latest" is simply false.
+   * It is a build *number*, despite the column's name, and that is the trap.
+   *
+   * `minimumNativeVersion` parses the column with `Number.parseInt` and compares
+   * it to the device's `version_code`. `parseInt("0.6.0")` is 0, and the same
+   * function reads 0 as "ungated" - so a semver string, the value that looks
+   * most like a version and is the obvious thing to type, silently switches the
+   * gate off while the release still looks published. That is the exact failure
+   * this gate exists to prevent, arrived at by using the gate.
+   *
+   * Caught before shipping only because the first cut of the flag validated
+   * semver, which would have made `--min-native 0.6.0` mean "no gate at all".
    */
-  it("refuses a value that is not a version", () => {
-    expect(controller).toContain("semver.valid(minUpdateVersion)");
-    expect(controller).toContain("min_update_version must be a semver version");
+  it("refuses anything that is not a build number", () => {
+    expect(controller).toContain("/^[0-9]+$/");
+    expect(controller).toContain("native build number, not a version name");
+  });
+
+  it("says what to use instead, in the message", () => {
+    // "Invalid value" would leave someone to guess between 2.4.0, v10 and 10.
+    expect(controller).toContain("versionCode of the binary this bundle needs");
   });
 
   it("treats an empty field as absent rather than invalid", () => {

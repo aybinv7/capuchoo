@@ -10,7 +10,7 @@ export default class DeployOta extends BaseCommand {
     "<%= config.bin %> <%= command.id %> --channel staging",
     "<%= config.bin %> <%= command.id %> -c production -v patch -n 'Fixes the invoice total'",
     "<%= config.bin %> <%= command.id %> -c staging --dry-run",
-    "<%= config.bin %> <%= command.id %> -c dev --min-native 0.6.0",
+    "<%= config.bin %> <%= command.id %> -c dev --min-native 10",
   ];
 
   static override flags = {
@@ -25,10 +25,16 @@ export default class DeployOta extends BaseCommand {
      * request field. The one gate that stops a web bundle landing on a binary
      * too old to run it was unreachable from every supported path, which is a
      * feature that exists only in tests.
+     *
+     * A build *number*, not a version name: the decision parses the column with
+     * `Number.parseInt` and compares it to the device's version_code. Typed as
+     * an integer here so `--min-native 0.6.0` is refused at the flag rather
+     * than parsed to 0 - which reads as "ungated", and would have made this
+     * flag silently do the opposite of what it says.
      */
-    "min-native": Flags.string({
+    "min-native": Flags.integer({
       description:
-        "Native version this bundle needs. Devices below it are offered the binary instead.",
+        "Native build number this bundle needs. Devices below it are offered the binary instead.",
     }),
   };
 
