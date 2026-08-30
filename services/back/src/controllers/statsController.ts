@@ -18,7 +18,86 @@ class StatsController {
    *
    * Legacy code expects 'status' instead of 'action'
    */
+  /**
+   * Records a batch, and answers 200 unless nothing at all could be stored.
+   *
+   * One malformed event must not fail the batch. The plugin has no way to send
+   * a subset, so a 400 for one bad row would cost every good row beside it -
+   * permanently, given how it treats a 4xx. Failures are counted and logged
+   * instead, and only a batch where nothing landed is worth a 4xx.
+   */
+  private async logBatch(req: Request, res: Response, events: unknown[]): Promise<void> {
+    let stored = 0;
+    const problems: string[] = [];
+
+    for (const event of events) {
+      try {
+        const raw = (event ?? {}) as Record<string, any>;
+        const normalized = extractStatsRequest(raw);
+
+        if (!normalized.deviceId || !normalized.appId || !normalized.platform) {
+          problems.push("missing device_id, app_id or platform");
+          continue;
+        }
+
+        await this.updateService.logStats({
+          bundleId: normalized.bundleId,
+          action: normalized.action,
+          status: normalized.action,
+          deviceId: normalized.deviceId,
+          appId: normalized.appId,
+          platform: normalized.platform,
+          version: normalized.version,
+          version_name: normalized.version,
+          versionBuild: normalized.versionBuild,
+          isEmulator: normalized.isEmulator,
+          isProd: normalized.isProd,
+          ...(raw.channel ? { channel: raw.channel } : {}),
+          ...(raw.version_os || raw.versionOs
+            ? { versionOs: raw.version_os ?? raw.versionOs }
+            : {}),
+          ...(raw.plugin_version || raw.pluginVersion
+            ? { pluginVersion: raw.plugin_version ?? raw.pluginVersion }
+            : {}),
+          ...(raw.old_version_name || raw.oldVersionName
+            ? { oldVersionName: raw.old_version_name ?? raw.oldVersionName }
+            : {}),
+        });
+
+        stored += 1;
+      } catch (error) {
+        problems.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+
+    logger.info("Logged a stats batch", { received: events.length, stored, problems });
+
+    if (stored === 0 && events.length > 0) {
+      res.status(400).json({ error: "No event in the batch could be recorded", problems });
+      return;
+    }
+
+    res.status(200).json({ status: "success", stored, received: events.length });
+  }
+
   async logStats(req: Request, res: Response): Promise<void> {
+    // The plugin batches. `CapgoUpdater.java` builds a `JSONArray` of queued
+    // events and posts that, so the body is a bare array and every field this
+    // handler reads off `req.body` is undefined - a 400.
+    //
+    // 400 is fatal to the plugin: `isTransientStatsFailure` retries only 408,
+    // 429 and 5xx, so anything else drops the batch and never sends it again.
+    //
+    //   [CapgoUpdater] 🔴 Dropping stats batch after permanent error
+    //
+    // Which means every statistic the plugin has ever produced was discarded on
+    // arrival - the device's own foreground, background and download events,
+    // all of them, silently.
+    if (Array.isArray(req.body)) {
+      await this.logBatch(req, res, req.body as unknown[]);
+      return;
+    }
+
     try {
       // Extract normalized request (handles snake_case and camelCase)
       const normalized = extractStatsRequest(req.body);

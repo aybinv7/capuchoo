@@ -14,6 +14,18 @@ import { useUpdater } from "./useUpdater.js";
 export function useUpdatePrompt() {
   const updater = useUpdater();
 
+  // Started here, not left to the app.
+  //
+  // `useUpdater` is the low-level API and lets an app choose when to begin.
+  // This one exists to drive a prompt, and a prompt that never checks is
+  // furniture: mounting a component built on it and seeing nothing happen looks
+  // exactly like a broken update system. That is what it looked like on a real
+  // device - a required update published, waiting, and no dialog.
+  //
+  // `init` guards on its own flag, so an app that already called it is
+  // unaffected and calling this from several components is safe.
+  void updater.init();
+
   const update = updater.currentUpdate;
   const isNativeUpdate = computed(() => update.value?.kind === "native");
 
