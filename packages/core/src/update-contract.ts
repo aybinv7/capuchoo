@@ -133,6 +133,37 @@ export interface UpdateCheckRequest {
   isEmulator?: boolean;
   /** Caller-supplied label for this install, shown in the dashboard. */
   customId?: string;
+
+  /**
+   * Device diagnostics, in the same "stored but never decided with" category as
+   * versionOs and pluginVersion above. All optional, all omitted rather than
+   * sent empty when unknown - a placeholder would overwrite a better value an
+   * earlier, better-informed check had already stored.
+   *
+   * Deliberately absent: total device RAM and free/total device storage.
+   * `@capacitor/device` in the range this project supports (7-9) exposes only
+   * `memUsed` - the app's own memory footprint, not total RAM - and no disk
+   * figures at all. There is no officially supported plugin in this project's
+   * dependency set that reports either, so they are not sent rather than
+   * approximated from something that means a different thing.
+   */
+  deviceName?: string;
+  manufacturer?: string;
+  model?: string;
+  /** Bytes of memory the app itself is using. Not total device RAM - see above. */
+  memUsedBytes?: number;
+
+  /**
+   * On-device GPS. Sent only when the host app has opted in
+   * (`capuchooUpdaterConfig({ collectLocation: true })`) and the OS has already
+   * granted permission - never requested by a background update check. See
+   * `requestLocationPermission` in @capuchoo/updater, which is the only place a
+   * permission prompt is triggered, and only when the host app calls it.
+   */
+  latitude?: number;
+  longitude?: number;
+  /** Meters, as reported by the OS. */
+  locationAccuracy?: number;
 }
 
 /** A native binary (APK/IPA) the device should install. */

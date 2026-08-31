@@ -38,6 +38,14 @@ const OPTIONAL_PACKAGES = [
   "@capacitor/network",
   "@capawesome-team/capacitor-file-opener",
   "@capacitor/local-notifications",
+  // Both added the day this test would have caught them sooner. `device.ts`
+  // did `await import("@capacitor/device")` as a literal - the exact defect
+  // documented at length in optional-plugins.ts - and nothing here was
+  // watching that file, because it predates the fix and nobody had reason to
+  // touch it since. Geolocation is new with it, so it never had the chance to
+  // go wrong the same way.
+  "@capacitor/device",
+  "@capacitor/geolocation",
 ];
 
 /** The name each plugin registers natively, which is not its package name. */
@@ -47,6 +55,8 @@ const REGISTERED_NAMES = [
   "Network",
   "FileOpener",
   "LocalNotifications",
+  "Device",
+  "Geolocation",
 ];
 
 function sourceFiles(dir: string): string[] {

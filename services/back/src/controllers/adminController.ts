@@ -699,6 +699,17 @@ class AdminController {
           last_check: device.last_seen,
           created_at: device.created_at,
           updated_at: device.updated_at,
+          device_name: device.device_name ?? undefined,
+          manufacturer: device.manufacturer ?? undefined,
+          model: device.model ?? undefined,
+          mem_used_bytes: device.mem_used_bytes ?? undefined,
+          // Real coordinates only. The map used to fabricate a point from a
+          // hash of device_id for every device without one - this is the fix:
+          // a device with no reported location has none, not a fake one.
+          latitude: device.latitude ?? undefined,
+          longitude: device.longitude ?? undefined,
+          location_accuracy_m: device.location_accuracy_m ?? undefined,
+          location_reported_at: device.location_reported_at ?? undefined,
         })) || [];
 
       res.json(processedDevices);

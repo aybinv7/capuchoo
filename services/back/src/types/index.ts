@@ -24,6 +24,22 @@ export interface UpdateRequest {
   versionBuiltin?: string;
   /** Caller-supplied device label, shown in the dashboard */
   customId?: string;
+
+  /**
+   * Device diagnostics and location. Stored, never decided with - same
+   * category as versionOs/pluginVersion above. `memUsedBytes` is the app's own
+   * memory footprint, not total device RAM; there is no total-RAM or
+   * device-storage figure in this contract because no plugin in this project's
+   * supported dependency set reports either.
+   */
+  deviceName?: string;
+  manufacturer?: string;
+  model?: string;
+  memUsedBytes?: number;
+  /** On-device GPS, present only when the app opted in and the OS granted it. */
+  latitude?: number;
+  longitude?: number;
+  locationAccuracy?: number;
 }
 
 /**

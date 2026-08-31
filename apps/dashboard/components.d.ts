@@ -167,6 +167,7 @@ declare module 'vue' {
     ILucideLoader2: typeof import('~icons/lucide/loader2')['default']
     ILucideLock: typeof import('~icons/lucide/lock')['default']
     ILucideLogOut: typeof import('~icons/lucide/log-out')['default']
+    ILucideMapPinOff: typeof import('~icons/lucide/map-pin-off')['default']
     ILucideMoon: typeof import('~icons/lucide/moon')['default']
     ILucideMoreHorizontal: typeof import('~icons/lucide/more-horizontal')['default']
     ILucideNavigation: typeof import('~icons/lucide/navigation')['default']

@@ -1,6 +1,8 @@
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
+import { getUpdaterConfig } from "./config.js";
+import { diagnosticPlugins } from "./optional-plugins.js";
 
 /**
  * Facts about the running build that the server needs in order to decide
@@ -106,24 +108,126 @@ export async function getBuiltinVersion(): Promise<string | undefined> {
 }
 
 /**
- * OS version and emulator flag, from `@capacitor/device`.
+ * OS version, emulator flag and device diagnostics, from `@capacitor/device`.
  *
- * That package is an *optional* peer: it is a separate install, and an app that
- * does not have it should still be able to check for updates. So it is imported
- * dynamically and every failure - not installed, not registered, throwing on an
- * odd platform - resolves to `undefined`, which the request builder omits.
+ * That package is an *optional* peer, reached through `diagnosticPlugins.device()`
+ * rather than a literal `import("@capacitor/device")`. The literal form is
+ * statically analysable, so a bundler fails the *build* of any app that has not
+ * installed it - the same defect `optional-plugins.ts` documents at length for
+ * the native-update path, reproduced here because this function predates that
+ * fix and nothing had touched it since. `@capacitor/device` is in this
+ * project's own `OPTIONAL_PACKAGES` guard now specifically so it cannot happen
+ * a second time.
+ *
+ * Every failure - not installed, not registered, throwing on an odd platform -
+ * resolves to `{}`, which the request builder omits field by field.
+ *
+ * `memUsed` is the app's own memory footprint, not total device RAM, and is
+ * named `memUsedBytes` on the wire for that reason. Total RAM and free/total
+ * device storage are not included: `@capacitor/device` in the version range
+ * this project supports does not report either, and there is no other
+ * officially supported plugin in the dependency set that does.
  */
-export async function getOsFacts(): Promise<{ versionOs?: string; isEmulator?: boolean }> {
+export async function getOsFacts(): Promise<{
+  versionOs?: string;
+  isEmulator?: boolean;
+  deviceName?: string;
+  manufacturer?: string;
+  model?: string;
+  memUsedBytes?: number;
+}> {
   if (!Capacitor.isNativePlatform()) return {};
 
   try {
-    const { Device } = await import("@capacitor/device");
+    const Device = diagnosticPlugins.device();
+    if (!Device) return {};
+
     const info = await Device.getInfo();
     return {
       ...(info.osVersion ? { versionOs: info.osVersion } : {}),
       ...(typeof info.isVirtual === "boolean" ? { isEmulator: info.isVirtual } : {}),
+      ...(info.name ? { deviceName: info.name } : {}),
+      ...(info.manufacturer ? { manufacturer: info.manufacturer } : {}),
+      ...(info.model ? { model: info.model } : {}),
+      ...(typeof info.memUsed === "number" ? { memUsedBytes: info.memUsed } : {}),
     };
   } catch {
     return {};
+  }
+}
+
+/**
+ * On-device GPS, sent only when the app has opted in and permission is
+ * already granted.
+ *
+ * Two gates, both load-bearing:
+ *
+ *  1. `collectLocation` on the updater config. Precise location is personal
+ *     data, and collecting it is a decision the *host app* makes explicitly -
+ *     never a default this library turns on for anyone who installs the peer.
+ *  2. `checkPermissions()`, never `requestPermissions()`. A background update
+ *     check that popped a system location prompt out of nowhere would be
+ *     indistinguishable from malware. Asking is `requestLocationPermission()`,
+ *     exported separately, so the *app* decides when - onboarding, a settings
+ *     toggle - never this function.
+ *
+ * Best effort like everything else here: any failure, including "permission
+ * not yet granted", resolves to `{}`.
+ */
+export async function getLocationFacts(): Promise<{
+  latitude?: number;
+  longitude?: number;
+  locationAccuracy?: number;
+}> {
+  if (!Capacitor.isNativePlatform()) return {};
+  if (!getUpdaterConfig().collectLocation) return {};
+
+  try {
+    const Geolocation = diagnosticPlugins.geolocation();
+    if (!Geolocation) return {};
+
+    const status = await Geolocation.checkPermissions();
+    if (status.location !== "granted" && status.coarseLocation !== "granted") return {};
+
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: false,
+      timeout: 10_000,
+    });
+
+    return {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      ...(typeof position.coords.accuracy === "number"
+        ? { locationAccuracy: position.coords.accuracy }
+        : {}),
+    };
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Asks the OS for location permission, and only the OS - this never runs
+ * automatically. Call it from wherever the host app has decided to explain why
+ * it wants location (onboarding, a settings screen), not from a background
+ * check.
+ *
+ * Returns false without prompting when the app has not opted in via
+ * `collectLocation`, or when `@capacitor/geolocation` is not installed - asking
+ * for a permission the app is not configured to use would be a prompt with no
+ * purpose behind it.
+ */
+export async function requestLocationPermission(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  if (!getUpdaterConfig().collectLocation) return false;
+
+  try {
+    const Geolocation = diagnosticPlugins.geolocation();
+    if (!Geolocation) return false;
+
+    const status = await Geolocation.requestPermissions();
+    return status.location === "granted" || status.coarseLocation === "granted";
+  } catch {
+    return false;
   }
 }

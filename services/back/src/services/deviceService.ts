@@ -1,6 +1,25 @@
 import supabaseService from "./supabaseService";
-import { buildDeviceRow, DeviceObservation } from "./telemetry";
+import { buildDeviceRow, DEVICE_DIAGNOSTICS_COLUMNS, DeviceObservation } from "./telemetry";
 import logger from "@/utils/logger";
+
+/**
+ * Whether an error is PostgREST or PostgreSQL saying a column does not exist,
+ * rather than any other failure.
+ *
+ * Two shapes, because the write can be refused by either layer - the same
+ * pair `flavourGuard.insertTolerantOfFlavour` matches, generalised here
+ * because migration 009 ships nine columns at once rather than one:
+ *
+ *   42703    PostgreSQL undefined_column, if the statement reaches the database.
+ *   PGRST204 PostgREST, which checks its own schema cache first.
+ */
+function isMissingColumnError(error: unknown): boolean {
+  const code = (error as { code?: string })?.code;
+  if (code === "42703" || code === "PGRST204") return true;
+
+  const message = error instanceof Error ? error.message : String(error);
+  return /column/i.test(message) && /does not exist|could not find/i.test(message);
+}
 
 /**
  * Device identity and telemetry.
@@ -44,10 +63,8 @@ class DeviceService {
         return await this.findDevice(observation.appUuid, observation.deviceId);
       }
 
-      const result = await supabaseService.upsert("devices", buildDeviceRow(observation, now), {
-        onConflict: "app_id,device_id",
-        select: "id, channel_id",
-      });
+      const observedRow = buildDeviceRow(observation, now);
+      const result = await this.upsertDevice(observedRow);
 
       const row = Array.isArray(result) ? result[0] : result;
       if (!row?.id) {
@@ -66,6 +83,40 @@ class DeviceService {
         error,
       });
       return null;
+    }
+  }
+
+  /**
+   * Upserts a device row, dropping the diagnostics/location columns and
+   * retrying once if migration 009 has not run yet.
+   *
+   * This runs on every single update check - far higher frequency than the
+   * bundle upload `insertTolerantOfFlavour` protects - so a deploy that ships
+   * this code ahead of the migration must not turn every check into a 500.
+   * Every device already has a row; the retry loses only the new columns,
+   * never the rest of the observation.
+   */
+  private async upsertDevice(row: Record<string, unknown>): Promise<any> {
+    try {
+      return await supabaseService.upsert("devices", row, {
+        onConflict: "app_id,device_id",
+        select: "id, channel_id",
+      });
+    } catch (error) {
+      if (!isMissingColumnError(error)) throw error;
+
+      const hasNewColumns = DEVICE_DIAGNOSTICS_COLUMNS.some((column) => column in row);
+      if (!hasNewColumns) throw error;
+
+      logger.warn("Storing device without diagnostics/location - migration 009 has not run");
+
+      const stripped = { ...row };
+      for (const column of DEVICE_DIAGNOSTICS_COLUMNS) delete stripped[column];
+
+      return supabaseService.upsert("devices", stripped, {
+        onConflict: "app_id,device_id",
+        select: "id, channel_id",
+      });
     }
   }
 

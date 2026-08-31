@@ -81,36 +81,38 @@
           <CardTitle class="text-sm font-medium">OS</CardTitle>
           <Cpu class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <!-- This card said "Model / Unknown", hardcoded. Nothing stores a device
-             model: the runtime reports OS version, emulator and plugin version,
-             and those are what is shown. Adding a model means a field on the
-             contract, the runtime, the devices table and a migration. -->
         <CardContent>
-          <div class="text-2xl font-bold">
-            {{ device?.version_os || "Unknown" }}
-
-            <Dialog v-model:open="deleteDialogOpen">
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Forget this device?</DialogTitle>
-                  <DialogDescription>
-                    This removes what we know about it. The device itself is untouched - if the app
-                    is still installed it will reappear on its next update check, under the same id.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" @click="deleteDialogOpen = false">Cancel</Button>
-                  <Button variant="destructive" :disabled="deleting" @click="confirmDelete">
-                    {{ deleting ? "Deleting..." : "Delete" }}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <div class="text-2xl font-bold">{{ device?.version_os || "Unknown" }}</div>
           <p class="text-xs text-muted-foreground">
             <template v-if="device?.is_emulator">Emulator · </template>
             <template v-if="device?.plugin_version">plugin {{ device.plugin_version }}</template>
             <template v-else>{{ device?.platform }}</template>
+          </p>
+        </CardContent>
+      </Card>
+      <!--
+        Real now: name, manufacturer and model, from Device.getInfo() via
+        migration 009. "Model / Unknown" used to render here permanently -
+        nothing stored a model at all, and the fields below did not exist on
+        this table until this migration.
+      -->
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Device</CardTitle>
+          <Fingerprint class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold truncate" :title="device?.device_name">
+            {{ device?.device_name || "Unknown" }}
+          </div>
+          <p class="text-xs text-muted-foreground truncate">
+            <template v-if="device?.manufacturer || device?.model">
+              {{ [device?.manufacturer, device?.model].filter(Boolean).join(" · ") }}
+            </template>
+            <template v-else>Not reported</template>
+            <template v-if="device?.mem_used_bytes">
+              &middot; {{ formatBytes(device.mem_used_bytes) }} app memory
+            </template>
           </p>
         </CardContent>
       </Card>
@@ -197,14 +199,38 @@
         <!-- Mini Map -->
         <Card class="overflow-hidden border-border/50">
           <CardTitle class="text-sm font-medium">Location</CardTitle>
+          <CardDescription v-if="hasLocation">
+            {{ device?.latitude?.toFixed(5) }}, {{ device?.longitude?.toFixed(5) }}
+            <template v-if="device?.location_accuracy_m">
+              &middot; &plusmn;{{ Math.round(device.location_accuracy_m) }}m
+            </template>
+            &middot; reported {{ formatDate(device?.location_reported_at, true) }}
+          </CardDescription>
           <CardContent class="p-0">
-            <div class="h-[300px] relative">
+            <div v-if="hasLocation" class="h-[300px] relative">
               <DevicesMap
                 v-if="device"
                 :items="[device]"
                 :show-controls="false"
                 class="h-full w-full rounded-none"
               />
+            </div>
+            <!--
+              No fabricated fallback. This card used to always show a marker -
+              DevicesMap hashed device_id into a point inside a fixed geographic
+              box when latitude/longitude were absent, so two devices in the
+              same real place could land hundreds of km apart on the map. A
+              device with no reported location now shows that, plainly.
+            -->
+            <div
+              v-else
+              class="h-[200px] flex flex-col items-center justify-center gap-2 p-6 text-center"
+            >
+              <ILucideMapPinOff class="h-8 w-8 text-muted-foreground" />
+              <p class="text-sm text-muted-foreground">
+                No location reported. The app has not opted in, or the device has not granted
+                permission.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -231,6 +257,24 @@
         </Card>
       </div>
     </div>
+
+    <Dialog v-model:open="deleteDialogOpen">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Forget this device?</DialogTitle>
+          <DialogDescription>
+            This removes what we know about it. The device itself is untouched - if the app is still
+            installed it will reappear on its next update check, under the same id.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="deleteDialogOpen = false">Cancel</Button>
+          <Button variant="destructive" :disabled="deleting" @click="confirmDelete">
+            {{ deleting ? "Deleting..." : "Delete" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -239,6 +283,7 @@
 // this file uses. Relying on the auto-import here is how `router.push` shipped
 // against an unbound `router` on the bundle page.
 import { toast } from "vue-sonner";
+import { formatBytes } from "@/utils/tables.utils";
 
 const { id: deviceId } = defineProps<{
   id: string;
@@ -247,6 +292,19 @@ const { id: deviceId } = defineProps<{
 const { data: devices, refetch } = useDevicesQuery();
 
 const device = computed(() => devices.value?.find((d) => String(d.id) === deviceId));
+
+/**
+ * Whether there is a real location to show.
+ *
+ * `DevicesMap` used to render a marker unconditionally, hashing `device_id`
+ * into a point inside a fixed geographic box when latitude/longitude were
+ * absent - which is why two devices in the same real place could land
+ * hundreds of km apart. Gating the map on this is the fix: no coordinates
+ * means no marker, not an invented one.
+ */
+const hasLocation = computed(
+  () => typeof device.value?.latitude === "number" && typeof device.value?.longitude === "number",
+);
 
 const router = useRouter();
 const refreshing = ref(false);

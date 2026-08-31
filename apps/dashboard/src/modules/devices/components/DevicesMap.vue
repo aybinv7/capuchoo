@@ -1,5 +1,17 @@
 <template>
   <div class="relative w-full h-[600px] rounded-lg overflow-hidden border shadow-sm group">
+    <!--
+      Honest about having nothing to show. Until devices report real GPS
+      coordinates, this is empty rather than populated with the fabricated
+      points it used to show for every device.
+    -->
+    <div
+      v-if="devicesWithoutLocation > 0"
+      class="absolute bottom-4 left-4 z-[400] bg-background/95 backdrop-blur-md px-3 py-1.5 rounded-lg border text-xs text-muted-foreground shadow"
+    >
+      {{ devicesWithoutLocation }} device{{ devicesWithoutLocation === 1 ? "" : "s" }} with no
+      reported location, not shown
+    </div>
     <l-map
       ref="map"
       v-model:zoom="zoom"
@@ -40,7 +52,10 @@
               <Badge variant="outline" class="text-[10px] h-5">{{ device.platform }}</Badge>
             </div>
             <div class="text-xs text-muted-foreground space-y-1">
-              <div>Version: {{ device.current_bundle_id || "N/A" }}</div>
+              <!-- current_bundle_id is declared on the type and never returned by the
+                   API - see devices.types.ts. version_name is the field that is
+                   actually populated: the applied OTA bundle, or "builtin". -->
+              <div>Version: {{ device.version_name || "builtin" }}</div>
               <div>Last Seen: {{ formatDate(device.last_check) }}</div>
               <div>State: {{ device.custom_channel || device.channel || "Standard" }}</div>
             </div>
@@ -119,7 +134,7 @@ const { items, showControls } = defineProps<{
 const router = useRouter();
 const zoom = ref(5);
 const center = ref<[number, number]>([28.0, 3.0]);
-const filter = ref<"all" | "active" | "issue">("all");
+const filter = ref<"all" | "active" | "stale">("all");
 
 const mapOptions = {
   minZoom: 5,
@@ -135,7 +150,7 @@ const mapOptions = {
 const filterOptions = [
   { value: "all", label: "All Devices", color: "" },
   { value: "active", label: "Active", color: "bg-green-500" },
-  { value: "issue", label: "Issues", color: "bg-amber-500" },
+  { value: "stale", label: "Stale", color: "bg-slate-400" },
 ] as const;
 
 const algeriaCities = [
@@ -150,48 +165,56 @@ const flyTo = (coords: number[]) => {
   zoom.value = 10;
 };
 
-const getPseudoRandom = (seed: string) => {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    const char = seed.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  const x = Math.sin(hash) * 10000;
-  return x - Math.floor(x);
+/**
+ * A device counts as active if it has checked in recently. Same threshold as
+ * the single-device page's own health card, so the two screens cannot
+ * disagree about what "active" means.
+ */
+const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+
+const isStale = (d: Device): boolean => {
+  if (!d.last_check) return true;
+  return Date.now() - new Date(d.last_check).getTime() > STALE_AFTER_MS;
 };
+
+/**
+ * Real coordinates only.
+ *
+ * This used to hash `device_id` into a point inside a fixed geographic box
+ * whenever latitude/longitude were absent - `28 + rnd1 * 8`,
+ * `-2 + rnd2 * 12` - so a device with no reported location got a marker
+ * anyway, deterministic but meaningless. Two devices sitting in the same real
+ * place could land hundreds of km apart, because neither point meant
+ * anything. A device with no location now has no marker, not an invented one.
+ *
+ * `_isActive` used to be `index % 3 !== 0` and the "Issues" filter used to be
+ * `index % 5 === 0` - both a property of array position, not of the device.
+ * There is no "issue" signal returned by the API to replace that with, so the
+ * filter is gone rather than given a different fake; `_isActive` is real now,
+ * derived from the same staleness rule the device detail page already uses.
+ */
+type LocatedDevice = Device & { latitude: number; longitude: number };
+
+const hasCoordinates = (d: Device): d is LocatedDevice =>
+  typeof d.latitude === "number" && typeof d.longitude === "number";
 
 const mapDevices = computed(() => {
   return items
-    .map((d, index) => {
-      const seed = d.device_id || `device-${index}`;
-      const rnd1 = getPseudoRandom(seed + "lat");
-      const rnd2 = getPseudoRandom(seed + "lng");
-
-      const active = index % 3 !== 0;
-
-      const baseLat = 28 + rnd1 * 8;
-      const baseLng = -2 + rnd2 * 12;
-
-      const lat = d.latitude ?? baseLat;
-      const lng = d.longitude ?? baseLng;
-
-      const hasIssue = index % 5 === 0;
-
-      return {
-        ...d,
-        latitude: lat,
-        longitude: lng,
-        _hasIssue: hasIssue,
-        _isActive: active,
-      };
-    })
+    .filter(hasCoordinates)
+    .map((d) => ({ ...d, _isActive: !isStale(d) }))
     .filter((d) => {
       if (!showControls) return true;
-      if (filter.value === "issue") return d._hasIssue;
+      if (filter.value === "active") return d._isActive;
+      if (filter.value === "stale") return !d._isActive;
       return true;
     });
 });
+
+/** Devices with no reported location, for the "not shown" count below the map. */
+const devicesWithoutLocation = computed(
+  () =>
+    items.filter((d) => typeof d.latitude !== "number" || typeof d.longitude !== "number").length,
+);
 
 watch(
   () => mapDevices.value,
@@ -207,11 +230,8 @@ watch(
   { immediate: true },
 );
 
-const getStatusColor = (d: any) => {
-  if (d._hasIssue) return "bg-amber-500 border-amber-600";
-  if (d._isActive) return "bg-green-500 border-green-600";
-  return "bg-slate-400 border-slate-500";
-};
+const getStatusColor = (d: { _isActive?: boolean }) =>
+  d._isActive ? "bg-green-500 border-green-600" : "bg-slate-400 border-slate-500";
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return "Never";

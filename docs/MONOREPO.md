@@ -224,7 +224,7 @@ Learned the hard way; each one was a live bug.
 
 ## Known gaps
 
-Verified 2026-08-30.
+Verified 2026-08-31.
 
 **Needs a decision or a credential**
 
@@ -238,6 +238,10 @@ Verified 2026-08-30.
   installed build. See [DEPLOY.md](./DEPLOY.md).
 - `capuchoo-back` on Render is configured by hand rather than from `render.yaml`, so its settings
   are not in version control and nothing here can prove what they are.
+- Migration 009 (device diagnostics and location) has to be applied to the production database by
+  hand, same as every migration here. `deviceService.upsertDevice` retries without the new columns
+  on a missing-column error, so a check does not 500 in the gap - but nothing is stored until it
+  runs.
 
 **Never exercised**
 
@@ -245,24 +249,31 @@ Verified 2026-08-30.
   `CAPUCHOO_KEYSTORE_*`, so signing and the unsigned-APK refusal have only been tested by unit
   tests. Every device test so far has installed a debug build.
 - iOS anything.
+- On-device location end to end. `getLocationFacts`/`requestLocationPermission` are unit-tested and
+  the wire contract is proven, but no real device has had `@capacitor/geolocation` installed,
+  `collectLocation` turned on, and permission actually granted.
 
-**Inert, and worth removing rather than wiring**
+**Cannot be obtained from this project's plugin set - do not approximate**
 
-- The channel page's **"Disable Auto-Update"** (none/major/minor/patch) and **"Under Native"**
-  switches. They exist in `models.ts`, in the dashboard's own types and in the page; no controller
-  writes them and no decision reads them. "Under Native" in particular promises the protection that
-  `min_update_version` and `assertNativeGateSatisfiable` now provide in code, so wiring it would
-  give two answers to one question - and the first person to set one and not the other gets to find
-  out which wins.
-- `/updates-bundles/:id`'s **Edit** and **Delete** buttons render and have no click handler.
+- Total device RAM and free/total device storage. `@capacitor/device` in the 7-9 range this project
+  supports exposes only `memUsed` (the app's own memory footprint) and no disk figures at all; no
+  other plugin in the dependency set reports either. `mem_used_bytes` is real and stored; there is
+  no RAM or storage column because there is nothing honest to put in one. Getting either would mean
+  a community or native plugin outside this set - a real option, not attempted here because it
+  changes the dependency surface and was not asked for.
+- "How much the app itself is using" on disk. Same reason: no plugin in this set reports it, and
+  summing what `@capacitor/filesystem` can enumerate would cover only the OTA cache, not the
+  WebView's own storage or the SQLite databases most apps built on this stack use - a number that
+  looks precise while measuring the wrong thing.
 
 **Not shown anywhere**
 
 - `min_update_version` does not appear on the bundle detail page at all. It is a hideable table
-  column, filtered as a number range, whose cell renders `v{n}` for what is a build number.
-- A bundle gated behind a native that its channel cannot serve is now refused at upload and at
-  promote, but a gate that _becomes_ unsatisfiable later - by repointing the channel's native - has
-  nothing watching it.
+  column, filtered as a number range, whose cell renders `build N` for what is a build number.
+- A bundle gated behind a native that its channel cannot serve is refused at upload, at promote, and
+  at any later channel edit that would strand it (`assertChannelPointersConsistent`) - but deleting
+  the native build or bundle a channel is currently serving is the one write path that closed only
+  after being reachable: `deleteBundle`/`deleteNativeUpdate` now check for a serving channel first.
 - `getBuiltinVersion()` is not reported: the server has no column for it.
 
 **Deliberately not done**
@@ -273,6 +284,11 @@ Verified 2026-08-30.
   the browser is visited once per account rather than once per app.
 - No `bundle` or `key` command group. Capgo has both (listing bundles, encryption keys); we have no
   bundle encryption at all, so there is nothing for `key` to manage yet.
+- No CLI flag installs `@capacitor/geolocation` the way `setup --native` installs the download
+  path's four plugins. Deliberate: collecting location is meant to cost the host app a real decision
+  - `pnpm add`, `VITE_UPDATE_LOCATION=true`, and calling `requestLocationPermission()` from
+    somewhere the user has been told why - and a one-command installer would make that decision
+    easier to make by accident.
 - The four `/api/dashboard/apps*` routes look unused, but the dashboard reads apps through Supabase
   directly, so confirm that before deleting them. `/api/apps/:id/channels` and `/:id/releases` _are_
   used - by the CLI.
@@ -288,8 +304,18 @@ Verified 2026-08-30.
 - OTA telemetry no longer depends on what the plugin happens to post. The plugin only reports its
   own auto-update flow, which this library does not use, so every OTA delivery was invisible; the
   updater records them itself now.
+- `/updates-bundles/:id`'s Edit and Delete buttons are wired. Both endpoints existed the whole time.
+- The devices map showed a location for every device, real or not: `28 + hash(device_id) * 8` for
+  whichever device had none, so two devices in the same real place could land hundreds of km apart.
+  It shows real GPS now, from migration 009, or nothing for a device that has not reported one -
+  along with the "Active"/"Issues" filter, which was `index % 3` and `index % 5` and is now derived
+  from actual check-in recency (the "Issues" bucket had no real signal to replace it with, so it is
+  gone rather than re-faked).
+- `device.ts`'s `getOsFacts` did `await import("@capacitor/device")` as a literal - the exact defect
+  `optional-plugins.ts` documents at length for the native-update path, present here because this
+  function predates that fix. `@capacitor/device` is in `OPTIONAL_PACKAGES` now.
 
-## Conventions
+## Conventions## Conventions
 
 - Code, comments, commit messages and PR descriptions in English.
 - `.capuchoo/project.json` is committed - it identifies the app and is not a secret.

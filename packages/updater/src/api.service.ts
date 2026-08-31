@@ -12,6 +12,7 @@ import {
   getBuiltinVersion,
   getBundleVersion,
   getDeviceId,
+  getLocationFacts,
   getOsFacts,
   getPlatform,
   getPluginVersion,
@@ -86,6 +87,13 @@ export interface DeviceFacts {
   versionOs?: string | undefined;
   isEmulator?: boolean | undefined;
   customId?: string | undefined;
+  deviceName?: string | undefined;
+  manufacturer?: string | undefined;
+  model?: string | undefined;
+  memUsedBytes?: number | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+  locationAccuracy?: number | undefined;
 }
 
 /**
@@ -118,6 +126,19 @@ export function buildCheckRequest(facts: DeviceFacts): UpdateCheckRequest {
   if (facts.versionOs) request.versionOs = facts.versionOs;
   if (typeof facts.isEmulator === "boolean") request.isEmulator = facts.isEmulator;
   if (facts.customId) request.customId = facts.customId;
+  if (facts.deviceName) request.deviceName = facts.deviceName;
+  if (facts.manufacturer) request.manufacturer = facts.manufacturer;
+  if (facts.model) request.model = facts.model;
+  if (typeof facts.memUsedBytes === "number") request.memUsedBytes = facts.memUsedBytes;
+  // Sent together or not at all: a latitude with no longitude is not a
+  // location, and `getLocationFacts` never produces one without the other.
+  if (typeof facts.latitude === "number" && typeof facts.longitude === "number") {
+    request.latitude = facts.latitude;
+    request.longitude = facts.longitude;
+    if (typeof facts.locationAccuracy === "number") {
+      request.locationAccuracy = facts.locationAccuracy;
+    }
+  }
 
   return request;
 }
@@ -129,15 +150,23 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
   const problems = describeConfigProblems(config);
   if (problems.length > 0) throw new UpdaterConfigError(problems);
 
-  const [versionCode, versionName, deviceId, pluginVersion, versionBuiltin, osFacts] =
-    await Promise.all([
-      getVersionCode(),
-      getBundleVersion(),
-      getDeviceId(),
-      getPluginVersion(),
-      getBuiltinVersion(),
-      getOsFacts(),
-    ]);
+  const [
+    versionCode,
+    versionName,
+    deviceId,
+    pluginVersion,
+    versionBuiltin,
+    osFacts,
+    locationFacts,
+  ] = await Promise.all([
+    getVersionCode(),
+    getBundleVersion(),
+    getDeviceId(),
+    getPluginVersion(),
+    getBuiltinVersion(),
+    getOsFacts(),
+    getLocationFacts(),
+  ]);
 
   const request = buildCheckRequest({
     appId: config.appId,
@@ -150,6 +179,7 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     pluginVersion,
     versionBuiltin,
     ...osFacts,
+    ...locationFacts,
   });
 
   const response = await postJson<UpdateCheckResponse>(

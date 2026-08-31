@@ -466,6 +466,13 @@ class UpdateService implements IUpdateService {
         isProd: request.isProd,
         isEmulator: request.isEmulator,
         customId: request.customId,
+        deviceName: request.deviceName,
+        manufacturer: request.manufacturer,
+        model: request.model,
+        memUsedBytes: request.memUsedBytes,
+        latitude: request.latitude,
+        longitude: request.longitude,
+        locationAccuracy: request.locationAccuracy,
       });
 
       if (device) {

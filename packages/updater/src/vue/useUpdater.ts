@@ -9,7 +9,7 @@ import {
   logUpdateEvent,
 } from "../api.service.js";
 import { getUpdaterConfig } from "../config.js";
-import { getVersionCode, isNative } from "../device.js";
+import { getVersionCode, isNative, requestLocationPermission } from "../device.js";
 import {
   downloadNativeUpdate,
   findCachedApk,
@@ -366,6 +366,16 @@ export function useUpdater() {
     init,
     cleanup,
     getCurrentBundle,
+    /**
+     * Asks the OS for location permission. The only place that happens - never
+     * automatically, and only when the host app calls it, typically from
+     * onboarding or a settings screen where the user has been told why.
+     *
+     * Resolves to false without prompting if the app never opted in with
+     * `collectLocation` (VITE_UPDATE_LOCATION), so calling this from an app that
+     * has not configured location cannot pop a permission dialog to no purpose.
+     */
+    requestLocationPermission,
   };
 }
 

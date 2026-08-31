@@ -36,11 +36,13 @@ export {
   getBuiltinVersion,
   getBundleVersion,
   getDeviceId,
+  getLocationFacts,
   getOsFacts,
   getPlatform,
   getPluginVersion,
   getVersionCode,
   isNative,
+  requestLocationPermission,
 } from "./device.js";
 
 export {

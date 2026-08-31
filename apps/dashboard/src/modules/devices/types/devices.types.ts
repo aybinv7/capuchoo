@@ -31,8 +31,22 @@ export interface Device {
   last_check?: string;
   created_at?: string;
   updated_at?: string;
+  /**
+   * Real GPS, from migration 009 - present only for a device whose app opted
+   * into `collectLocation` and whose OS granted permission. Absent, not a
+   * fake value: `DevicesMap` used to fill this in with a hash of `device_id`
+   * mapped onto a fixed geographic box, so two devices in the same real place
+   * could land hundreds of km apart. There is no fallback here on purpose.
+   */
   latitude?: number;
   longitude?: number;
+  location_accuracy_m?: number;
+  location_reported_at?: string;
+  device_name?: string; // Device.getInfo().name, e.g. "Redmi Note 14"
+  manufacturer?: string;
+  model?: string; // e.g. "24117RN76G" - not human-readable, device_name is
+  /** The app's own memory footprint. Not total device RAM - no plugin reports that. */
+  mem_used_bytes?: number;
   // Version tracking
   version_name?: string; // Applied OTA bundle version, absent until one lands
   version_build?: string; // Native build number of the installed binary (e.g. "67")

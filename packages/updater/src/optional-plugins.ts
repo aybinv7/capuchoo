@@ -108,6 +108,38 @@ type FileOpenerModule = typeof import("@capawesome-team/capacitor-file-opener");
  * The same shape the module namespaces had, so call sites read unchanged:
  * `const { Directory, Filesystem } = await nativePlugins.filesystem()`.
  */
+/**
+ * Diagnostics plugins, outside the native-update path.
+ *
+ * `@capacitor/device` and `@capacitor/geolocation` are unrelated to downloading
+ * or installing an APK - they exist only so a device check can report the
+ * device's name/model/manufacturer and, if the host app has opted in, its
+ * location. Their absence is never an error the way a missing native-update
+ * plugin is: `MissingNativePluginsError` would be the wrong message here
+ * ("Native updates need @capacitor/device" is false), so a missing diagnostics
+ * plugin resolves to `null` and the caller reports less, exactly the way
+ * `getOsFacts()` already resolves to `{}` on any failure.
+ */
+const DIAGNOSTIC_PLUGINS = {
+  device: { name: "Device", package: "@capacitor/device" },
+  geolocation: { name: "Geolocation", package: "@capacitor/geolocation" },
+} as const;
+
+function loadOptional<T>(key: keyof typeof DIAGNOSTIC_PLUGINS): T | null {
+  const { name } = DIAGNOSTIC_PLUGINS[key];
+  if (!Capacitor.isPluginAvailable(name)) return null;
+  return registerPlugin<T>(name);
+}
+
+type DeviceModule = typeof import("@capacitor/device");
+type GeolocationModule = typeof import("@capacitor/geolocation");
+
+export const diagnosticPlugins = {
+  device: (): DeviceModule["Device"] | null => loadOptional<DeviceModule["Device"]>("device"),
+  geolocation: (): GeolocationModule["Geolocation"] | null =>
+    loadOptional<GeolocationModule["Geolocation"]>("geolocation"),
+};
+
 export const nativePlugins = {
   filesystem: async (): Promise<{
     Filesystem: FilesystemModule["Filesystem"];

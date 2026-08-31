@@ -21,7 +21,32 @@ export interface DeviceObservation {
   isProd?: boolean | undefined;
   isEmulator?: boolean | undefined;
   customId?: string | undefined;
+  deviceName?: string | undefined;
+  manufacturer?: string | undefined;
+  model?: string | undefined;
+  memUsedBytes?: number | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+  locationAccuracy?: number | undefined;
 }
+
+/**
+ * The columns migration 009 adds. Named here, once, so the tolerant-write
+ * retry in `deviceService` drops exactly these and nothing else when the
+ * migration has not run yet - the same shape as `flavourGuard`'s single-column
+ * tolerance, generalised because this ships nine columns at once rather than
+ * one.
+ */
+export const DEVICE_DIAGNOSTICS_COLUMNS = [
+  "device_name",
+  "manufacturer",
+  "model",
+  "mem_used_bytes",
+  "latitude",
+  "longitude",
+  "location_accuracy_m",
+  "location_reported_at",
+] as const;
 
 /**
  * `"builtin"` is the plugin's sentinel for "running the version shipped in the
@@ -81,7 +106,22 @@ export function buildDeviceRow(
     ["is_prod", observation.isProd],
     ["is_emulator", observation.isEmulator],
     ["custom_id", observation.customId],
+    ["device_name", observation.deviceName],
+    ["manufacturer", observation.manufacturer],
+    ["model", observation.model],
+    ["mem_used_bytes", observation.memUsedBytes],
   ];
+
+  // Both or neither: a latitude with no longitude is not a location, and
+  // writing one would put a point on the map that names half a place.
+  if (typeof observation.latitude === "number" && typeof observation.longitude === "number") {
+    row.latitude = observation.latitude;
+    row.longitude = observation.longitude;
+    row.location_reported_at = now;
+    if (typeof observation.locationAccuracy === "number") {
+      row.location_accuracy_m = observation.locationAccuracy;
+    }
+  }
 
   for (const [column, value] of optional) {
     if (value !== undefined && value !== null && value !== "") {

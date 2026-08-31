@@ -29,6 +29,19 @@ export interface UpdaterConfig {
    * Set VITE_UPDATE_NOTIFY=true, or pass it when configuring the updater.
    */
   notifyProgress: boolean;
+  /**
+   * Include the device's GPS location with each update check.
+   *
+   * Off unless asked, and for a reason with more weight than the notification
+   * flag above: precise location is personal data, and turning this on is a
+   * decision the *host app* makes deliberately - never a default this library
+   * turns on for anyone who happens to install `@capacitor/geolocation`.
+   *
+   * Also needs the OS permission granted, which this flag does not request by
+   * itself - see `requestLocationPermission` in device.ts. Set
+   * VITE_UPDATE_LOCATION=true, or pass it when configuring the updater.
+   */
+  collectLocation: boolean;
 }
 
 function env(key: string): string | undefined {
@@ -71,6 +84,9 @@ export function getUpdaterConfig(): UpdaterConfig {
     // Only the exact string, so a stray value cannot switch on a permission
     // prompt the app never intended to show.
     notifyProgress: overrides.notifyProgress ?? env("VITE_UPDATE_NOTIFY") === "true",
+    // Same exact-string guard as notifyProgress, for the same reason: a stray
+    // truthy value must not switch on collecting personal data.
+    collectLocation: overrides.collectLocation ?? env("VITE_UPDATE_LOCATION") === "true",
   };
 }
 
