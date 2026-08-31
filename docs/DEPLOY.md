@@ -116,6 +116,15 @@ the Supabase SQL editor; it is idempotent.
 behaviour until a capped one is issued — but `capuchoo auth issue --role developer` cannot work
 until it runs.
 
+`scripts/migrations/009_device_diagnostics.sql` — **not applied.** Adds device name, manufacturer,
+model, app memory usage and on-device GPS to `devices`. `deviceService.upsertDevice` already
+tolerates the missing columns — it retries the write with them stripped rather than failing the
+update check — so nothing is broken by this being unapplied. What that tolerance costs: every
+diagnostic and every location a device has sent since this shipped has been silently discarded,
+confirmed live against `/api/dashboard/devices` on a real device that had everything working on its
+end. Run it and the same devices start reporting on their very next check - there is nothing to
+resend, the data was simply never kept.
+
 Apply a migration by pasting it into **Supabase → SQL Editor → New query**. There is no migration
 runner in this repository, which is why this section exists — a file in `scripts/migrations/` has
 not necessarily been run against anything.
