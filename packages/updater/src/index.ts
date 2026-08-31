@@ -41,8 +41,10 @@ export {
   getPlatform,
   getPluginVersion,
   getVersionCode,
+  isLocationServicesDisabledError,
   isNative,
   requestLocationPermission,
+  type LocationPermissionResult,
 } from "./device.js";
 
 export {

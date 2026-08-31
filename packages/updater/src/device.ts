@@ -207,27 +207,57 @@ export async function getLocationFacts(): Promise<{
 }
 
 /**
+ * `@capacitor/geolocation` throws rather than returning a denied status when
+ * the OS's Location toggle itself is off - `checkPermissions` and
+ * `requestPermissions` both do this, undocumented, and the message is the only
+ * way to tell it apart from an actual refusal:
+ *
+ *   Error: Location services are not enabled.
+ *   code: OS-PLUG-GLOC-0007
+ *
+ * Found by testing this on a real device rather than assuming the API
+ * matched its types: the phone had Location off, `requestLocationPermission`
+ * reported "denied", and the user never saw a system prompt at all - which
+ * looks exactly like a permission problem this app cannot fix, when the actual
+ * fix is "turn Location on in Settings".
+ *
+ * Exported and pure so the distinction is under test without a device.
+ */
+export function isLocationServicesDisabledError(error: unknown): boolean {
+  const code = (error as { code?: string })?.code;
+  if (code === "OS-PLUG-GLOC-0007") return true;
+
+  const message = error instanceof Error ? error.message : String(error);
+  return /location services/i.test(message) && /not enabled|disabled/i.test(message);
+}
+
+export type LocationPermissionResult = "granted" | "denied" | "unavailable";
+
+/**
  * Asks the OS for location permission, and only the OS - this never runs
  * automatically. Call it from wherever the host app has decided to explain why
  * it wants location (onboarding, a settings screen), not from a background
  * check.
  *
- * Returns false without prompting when the app has not opted in via
- * `collectLocation`, or when `@capacitor/geolocation` is not installed - asking
- * for a permission the app is not configured to use would be a prompt with no
- * purpose behind it.
+ * "unavailable" without prompting when the app has not opted in via
+ * `collectLocation`, when `@capacitor/geolocation` is not installed, or when
+ * the OS's Location service is off system-wide - none of those are the user
+ * refusing anything, and telling them apart from "denied" is the point of not
+ * just returning a boolean.
  */
-export async function requestLocationPermission(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
-  if (!getUpdaterConfig().collectLocation) return false;
+export async function requestLocationPermission(): Promise<LocationPermissionResult> {
+  if (!Capacitor.isNativePlatform()) return "unavailable";
+  if (!getUpdaterConfig().collectLocation) return "unavailable";
 
   try {
     const Geolocation = diagnosticPlugins.geolocation();
-    if (!Geolocation) return false;
+    if (!Geolocation) return "unavailable";
 
     const status = await Geolocation.requestPermissions();
-    return status.location === "granted" || status.coarseLocation === "granted";
-  } catch {
-    return false;
+    return status.location === "granted" || status.coarseLocation === "granted"
+      ? "granted"
+      : "denied";
+  } catch (error) {
+    return isLocationServicesDisabledError(error) ? "unavailable" : "denied";
   }
 }

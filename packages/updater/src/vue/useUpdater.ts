@@ -371,9 +371,15 @@ export function useUpdater() {
      * automatically, and only when the host app calls it, typically from
      * onboarding or a settings screen where the user has been told why.
      *
-     * Resolves to false without prompting if the app never opted in with
-     * `collectLocation` (VITE_UPDATE_LOCATION), so calling this from an app that
-     * has not configured location cannot pop a permission dialog to no purpose.
+     * Resolves to "granted", "denied", or "unavailable" - not a boolean, because
+     * a device can fail to grant permission for reasons that are not the user
+     * refusing anything: the app never opted in with `collectLocation`
+     * (VITE_UPDATE_LOCATION), `@capacitor/geolocation` is not installed, or the
+     * OS's Location service is off system-wide. That last one throws rather than
+     * denying, undocumented - found on a real device, where it looked
+     * indistinguishable from a refusal until the error's own message said
+     * otherwise. "unavailable" tells the app to say "turn on Location", not
+     * "you said no".
      */
     requestLocationPermission,
   };
