@@ -231,6 +231,37 @@ export function isLocationServicesDisabledError(error: unknown): boolean {
   return /location services/i.test(message) && /not enabled|disabled/i.test(message);
 }
 
+/**
+ * Opens Android's own Location settings screen directly - one tap fewer than
+ * navigating Settings > Location by hand, though the user still flips the
+ * toggle and presses back themselves.
+ *
+ * Not the one-tap "Turn on?" dialog Maps or Uber show. That is a different
+ * system - Play Services' `SettingsClient` - and no Capacitor plugin wraps it;
+ * building it would mean a bespoke native Android plugin, a real and separate
+ * piece of work this project has not taken on. `capacitor-native-settings` is
+ * the honest middle ground: a real optional peer, same pattern as the others,
+ * that gets the user to the right screen without three menu taps first.
+ *
+ * Best effort like everything else here: not installed, not on this platform,
+ * or a native failure all resolve to false rather than throwing, so a missing
+ * optional peer cannot break the app that calls this from a settings screen of
+ * its own.
+ */
+export async function openLocationSettings(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+
+  try {
+    const NativeSettings = diagnosticPlugins.nativeSettings();
+    if (!NativeSettings) return false;
+
+    const result = await NativeSettings.openAndroid({ option: "location" as never });
+    return result.status;
+  } catch {
+    return false;
+  }
+}
+
 export type LocationPermissionResult = "granted" | "denied" | "unavailable";
 
 /**

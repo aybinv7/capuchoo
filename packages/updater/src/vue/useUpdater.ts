@@ -9,7 +9,12 @@ import {
   logUpdateEvent,
 } from "../api.service.js";
 import { getUpdaterConfig } from "../config.js";
-import { getVersionCode, isNative, requestLocationPermission } from "../device.js";
+import {
+  getVersionCode,
+  isNative,
+  openLocationSettings,
+  requestLocationPermission,
+} from "../device.js";
 import {
   downloadNativeUpdate,
   findCachedApk,
@@ -382,6 +387,14 @@ export function useUpdater() {
      * "you said no".
      */
     requestLocationPermission,
+    /**
+     * Opens Android's Location settings screen directly. Not the one-tap
+     * "Turn on?" dialog - a settings screen the user still has to act on and
+     * back out of - but closer than telling them to find it themselves. A
+     * reasonable thing to offer right after `requestLocationPermission`
+     * resolves "unavailable" because the service is off.
+     */
+    openLocationSettings,
   };
 }
 

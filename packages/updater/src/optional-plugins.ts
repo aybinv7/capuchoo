@@ -123,6 +123,7 @@ type FileOpenerModule = typeof import("@capawesome-team/capacitor-file-opener");
 const DIAGNOSTIC_PLUGINS = {
   device: { name: "Device", package: "@capacitor/device" },
   geolocation: { name: "Geolocation", package: "@capacitor/geolocation" },
+  nativeSettings: { name: "NativeSettings", package: "capacitor-native-settings" },
 } as const;
 
 function loadOptional<T>(key: keyof typeof DIAGNOSTIC_PLUGINS): T | null {
@@ -133,11 +134,14 @@ function loadOptional<T>(key: keyof typeof DIAGNOSTIC_PLUGINS): T | null {
 
 type DeviceModule = typeof import("@capacitor/device");
 type GeolocationModule = typeof import("@capacitor/geolocation");
+type NativeSettingsModule = typeof import("capacitor-native-settings");
 
 export const diagnosticPlugins = {
   device: (): DeviceModule["Device"] | null => loadOptional<DeviceModule["Device"]>("device"),
   geolocation: (): GeolocationModule["Geolocation"] | null =>
     loadOptional<GeolocationModule["Geolocation"]>("geolocation"),
+  nativeSettings: (): NativeSettingsModule["NativeSettings"] | null =>
+    loadOptional<NativeSettingsModule["NativeSettings"]>("nativeSettings"),
 };
 
 export const nativePlugins = {

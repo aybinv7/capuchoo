@@ -43,6 +43,7 @@ export {
   getVersionCode,
   isLocationServicesDisabledError,
   isNative,
+  openLocationSettings,
   requestLocationPermission,
   type LocationPermissionResult,
 } from "./device.js";

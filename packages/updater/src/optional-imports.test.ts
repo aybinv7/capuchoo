@@ -46,6 +46,7 @@ const OPTIONAL_PACKAGES = [
   // go wrong the same way.
   "@capacitor/device",
   "@capacitor/geolocation",
+  "capacitor-native-settings",
 ];
 
 /** The name each plugin registers natively, which is not its package name. */
@@ -57,6 +58,7 @@ const REGISTERED_NAMES = [
   "LocalNotifications",
   "Device",
   "Geolocation",
+  "NativeSettings",
 ];
 
 function sourceFiles(dir: string): string[] {
