@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Package } from "@lucide/vue";
 import { computed, ref } from "vue";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryParam } from "@/shared/composables/useQueryParam";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmptyState from "@/shared/components/EmptyState.vue";
 import ErrorNotice from "@/shared/components/ErrorNotice.vue";
@@ -15,21 +15,20 @@ import { useCatalog } from "@/shared/queries/useCatalog";
 import type { Artefact, Channel } from "@/shared/types/release";
 import DeleteReleaseDialog from "../components/DeleteReleaseDialog.vue";
 import EditReleaseSheet from "../components/EditReleaseSheet.vue";
-import ReleaseFiltersBar from "../components/ReleaseFiltersBar.vue";
 import ReleaseTable from "../components/ReleaseTable.vue";
 import { useReleaseMutations } from "../composables/useReleaseMutations";
-import { filterReleases } from "../lib/filter-releases";
-import type { ReleaseFilters } from "../types/releases.types";
 
-const { appId } = useCurrentApp();
-const { catalog, bundles, natives, isPending, error, refetch } = useCatalog(appId);
+const { appId, app } = useCurrentApp();
+const { catalog, bundles, natives, isPending, isFetching, error, refetch } = useCatalog(appId);
 const mutations = useReleaseMutations(appId);
 const dialogs = useDeliveryDialogs();
 
-const kind = ref<ArtefactKind>("ota");
-const filters = ref<ReleaseFilters>({ search: "", flavour: "all", platform: "all" });
-const items = computed(() =>
-  filterReleases(artefactsOfKind(catalog.value, kind.value), filters.value),
+const isKind = (value: string): value is ArtefactKind => value === "ota" || value === "native";
+const kind = useQueryParam<ArtefactKind>("kind", "ota", isKind);
+const search = useQueryParam("q", "");
+const items = computed(() => artefactsOfKind(catalog.value, kind.value));
+const nothingUploaded = computed(
+  () => !isPending.value && bundles.value.length === 0 && natives.value.length === 0,
 );
 
 const editing = ref<Artefact | null>(null);
@@ -61,46 +60,44 @@ function deliver(artefact: Artefact, channel: Channel) {
     <PageHeader
       title="Releases"
       description="Every uploaded OTA bundle and native build, and the channels serving each one."
-    />
-
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <Tabs :model-value="kind" @update:model-value="setKind">
-        <TabsList>
-          <TabsTrigger value="ota">
-            OTA bundles
-            <span class="text-muted-foreground ml-1 font-mono text-xs">{{ bundles.length }}</span>
-          </TabsTrigger>
-          <TabsTrigger value="native">
-            Native builds
-            <span class="text-muted-foreground ml-1 font-mono text-xs">{{ natives.length }}</span>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-      <ReleaseFiltersBar v-model="filters" />
-    </div>
+    >
+      <template #actions>
+        <Tabs :model-value="kind" @update:model-value="setKind">
+          <TabsList>
+            <TabsTrigger value="ota">
+              OTA bundles
+              <span class="text-muted-foreground ml-1 font-mono text-xs">{{ bundles.length }}</span>
+            </TabsTrigger>
+            <TabsTrigger value="native">
+              Native builds
+              <span class="text-muted-foreground ml-1 font-mono text-xs">{{ natives.length }}</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </template>
+    </PageHeader>
 
     <ErrorNotice v-if="error" :error="error" :retry="refetch" />
-    <div v-else-if="isPending" class="space-y-2">
-      <Skeleton v-for="index in 6" :key="index" class="h-12 w-full" />
-    </div>
     <EmptyState
-      v-else-if="items.length === 0"
+      v-else-if="nothingUploaded"
       :icon="Package"
-      :title="
-        (kind === 'ota' ? bundles : natives).length
-          ? 'No release matches the filters'
-          : 'Nothing uploaded yet'
-      "
+      title="Nothing uploaded yet"
       description="Releases appear here when capuchoo deploy uploads them."
     />
     <ReleaseTable
       v-else
+      v-model:search="search"
+      :kind="kind"
       :items="items"
       :catalog="catalog"
+      :loading="isPending"
+      :refreshing="isFetching && !isPending"
+      :app-name="app?.name ?? 'releases'"
       @deliver="deliver"
       @edit="edit"
       @download="mutations.download.mutate"
       @delete="askDelete"
+      @refresh="refetch"
     />
 
     <EditReleaseSheet v-model:open="editOpen" :artefact="editing" :update="mutations.update" />

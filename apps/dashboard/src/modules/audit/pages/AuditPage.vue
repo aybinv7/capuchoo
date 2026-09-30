@@ -1,80 +1,83 @@
 <script setup lang="ts">
 import { ScrollText } from "@lucide/vue";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
+import { computed } from "vue";
+import { DataTable, type DataTableFacet } from "@/shared/components/data-table";
 import EmptyState from "@/shared/components/EmptyState.vue";
 import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import PageContainer from "@/shared/components/PageContainer.vue";
 import PageHeader from "@/shared/components/PageHeader.vue";
 import RelativeTime from "@/shared/components/RelativeTime.vue";
-import VirtualRows from "@/shared/components/VirtualRows.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
+import { useQueryParam } from "@/shared/composables/useQueryParam";
 import { useAuditLog } from "../composables/useAuditLog";
-import { describeDetails, detailChannel } from "../lib/describe-details";
-import type { AuditEntry } from "../types/audit.types";
+import { AUDIT_COLUMNS } from "../lib/audit-columns";
 
-const COLUMNS = "8rem minmax(10rem,1fr) 11rem 8rem minmax(12rem,2fr)";
+const FACETS: DataTableFacet[] = [
+  { columnId: "action", title: "Action" },
+  { columnId: "actor", title: "Actor" },
+];
 
-const { appId } = useCurrentApp();
-const { entries, isPending, error, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
-  useAuditLog(appId);
+const { appId, app } = useCurrentApp();
+const {
+  entries,
+  isPending,
+  isFetching,
+  error,
+  refetch,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
+} = useAuditLog(appId);
+
+const search = useQueryParam("q", "");
+const empty = computed(() => !isPending.value && entries.value.length === 0);
 
 function loadMore() {
   if (hasNextPage.value && !isFetchingNextPage.value) void fetchNextPage();
 }
-
-const actor = (entry: AuditEntry) =>
-  entry.actor_email ?? (entry.actor_api_key_id ? "API key" : "system");
 </script>
 
 <template>
   <PageContainer width="wide">
     <PageHeader
       title="Audit log"
-      description="Every change to this app, who made it and from which credential. Admins only."
+      description="Every change to this app, who made it and from which credential. Admins only. Search and filters apply to the entries loaded so far."
     />
     <ErrorNotice v-if="error" :error="error" :retry="refetch" />
-    <div v-else-if="isPending" class="space-y-2">
-      <Skeleton v-for="index in 8" :key="index" class="h-10 w-full" />
-    </div>
-    <EmptyState v-else-if="entries.length === 0" :icon="ScrollText" title="Nothing recorded yet" />
-    <VirtualRows
+    <EmptyState v-else-if="empty" :icon="ScrollText" title="Nothing recorded yet" />
+    <DataTable
       v-else
-      :items="entries"
-      :row-height="44"
-      :columns="COLUMNS"
-      :item-key="(entry) => entry.id"
-      @reach-end="loadMore"
+      v-model:search="search"
+      :data="entries"
+      :columns="AUDIT_COLUMNS"
+      :get-row-id="(entry) => entry.id"
+      table-id="audit"
+      :export-name="`${app?.name ?? 'app'}-audit`"
+      :facets="FACETS"
+      search-placeholder="Search loaded entries"
+      :has-more="Boolean(hasNextPage)"
+      :loading="isPending"
+      :loading-more="isFetchingNextPage"
+      refreshable
+      :refreshing="isFetching && !isPending && !isFetchingNextPage"
+      @load-more="loadMore"
+      @refresh="refetch"
     >
-      <template #header>
-        <span>When</span>
-        <span>Actor</span>
-        <span>Action</span>
-        <span>Target</span>
-        <span>Details</span>
+      <template #cell-when="{ row }">
+        <span class="text-muted-foreground text-xs"><RelativeTime :value="row.created_at" /></span>
       </template>
-      <template #row="{ item }">
-        <span class="text-muted-foreground text-xs"><RelativeTime :value="item.created_at" /></span>
-        <span class="truncate text-xs">{{ actor(item) }}</span>
-        <span class="truncate font-mono text-xs">{{ item.action }}</span>
-        <span class="text-muted-foreground truncate font-mono text-xs">{{
-          detailChannel(item.details) ?? item.target_type
-        }}</span>
-        <span
-          class="text-muted-foreground truncate text-xs"
-          :title="describeDetails(item.details)"
-          >{{ describeDetails(item.details) }}</span
-        >
+      <template #cell-actor="{ value }">
+        <span class="truncate text-xs">{{ value }}</span>
       </template>
-      <template #footer>
-        <div
-          v-if="isFetchingNextPage"
-          class="text-muted-foreground flex items-center justify-center gap-2 py-3 text-xs"
-        >
-          <Spinner class="size-3" />
-          Loading older entries
-        </div>
+      <template #cell-action="{ value }">
+        <span class="font-mono text-xs">{{ value }}</span>
       </template>
-    </VirtualRows>
+      <template #cell-target="{ value }">
+        <span class="text-muted-foreground font-mono text-xs">{{ value }}</span>
+      </template>
+      <template #cell-details="{ value }">
+        <span class="text-muted-foreground text-xs" :title="String(value)">{{ value }}</span>
+      </template>
+    </DataTable>
   </PageContainer>
 </template>

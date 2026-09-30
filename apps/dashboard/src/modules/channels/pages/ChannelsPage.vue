@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Plus, RadioTower } from "@lucide/vue";
 import { ref } from "vue";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryParam } from "@/shared/composables/useQueryParam";
 import EmptyState from "@/shared/components/EmptyState.vue";
 import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import GateButton from "@/shared/components/GateButton.vue";
@@ -19,11 +19,12 @@ import CreateChannelDialog from "../components/CreateChannelDialog.vue";
 import DeleteChannelDialog from "../components/DeleteChannelDialog.vue";
 
 const { appId, app } = useCurrentApp();
-const { catalog, channels, isPending, error, refetch } = useCatalog(appId);
+const { catalog, channels, isPending, isFetching, error, refetch } = useCatalog(appId);
 const { byChannel } = useAppStats(appId);
 const permissions = useAppPermissions();
 const dialogs = useDeliveryDialogs();
 
+const search = useQueryParam("q", "");
 const creating = ref(false);
 const deleting = ref<Channel | null>(null);
 const deleteOpen = ref(false);
@@ -49,21 +50,23 @@ function askDelete(channel: Channel) {
     </PageHeader>
 
     <ErrorNotice v-if="error" :error="error" :retry="refetch" />
-    <div v-else-if="isPending" class="space-y-2">
-      <Skeleton v-for="index in 5" :key="index" class="h-11 w-full" />
-    </div>
     <EmptyState
-      v-else-if="channels.length === 0"
+      v-else-if="!isPending && channels.length === 0"
       :icon="RadioTower"
       title="No channels yet"
       description="The first capuchoo deploy creates dev, staging and prod. You can also create one here."
     />
     <ChannelsTable
       v-else
+      v-model:search="search"
       :catalog="catalog"
       :health="byChannel"
       :dialogs="dialogs"
+      :loading="isPending"
+      :refreshing="isFetching && !isPending"
+      :app-name="app?.name ?? 'app'"
       @delete="askDelete"
+      @refresh="refetch"
     />
 
     <CreateChannelDialog v-model:open="creating" :app-id="appId" :channels="channels" />
