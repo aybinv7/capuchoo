@@ -1,6 +1,6 @@
 {
   "name": "@capuchoo/cli",
-  "version": "0.15.2",
+  "version": "0.16.0",
   "description": "Builds and publishes OTA and native releases for Capacitor applications through Capucho.",
   "keywords": [
     "capacitor",
@@ -20,6 +20,7 @@
   "files": [
     "./bin",
     "./dist",
+    "./templates",
     "./oclif.manifest.json"
   ],
   "type": "module",
@@ -65,7 +66,10 @@
         "description": "Sign in, and manage this account's API keys"
       },
       "channel": {
-        "description": "Create and inspect an app's channels"
+        "description": "Create channels, and deliver, pause and roll back what they serve"
+      },
+      "ci": {
+        "description": "Generate CI pipelines that publish once and deliver to clients"
       },
       "config": {
         "description": "Inspect resolved configuration and detected tools"
@@ -73,8 +77,14 @@
       "deploy": {
         "description": "Build and publish a release"
       },
+      "keys": {
+        "description": "Create and inspect the release signing key"
+      },
       "org": {
         "description": "Create organizations and manage who is in them"
+      },
+      "release": {
+        "description": "List published bundles and native builds"
       },
       "version": {
         "description": "Manage the app version and native build numbers"

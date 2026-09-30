@@ -5,3 +5,4 @@
 
 export { useUpdater, type UpdaterState } from "./vue/useUpdater.js";
 export { useUpdatePrompt } from "./vue/useUpdatePrompt.js";
+export { INSTALL_ABANDONED_MESSAGE } from "./vue/installer-handoff.js";

@@ -54,6 +54,8 @@ export const UpdateMessage = {
   EMULATOR_BLOCKED: "Channel does not serve emulators",
   /** The channel refuses debuggable builds. */
   DEV_BUILD_BLOCKED: "Channel does not serve development builds",
+  /** An operator paused the channel; it serves nothing until resumed. */
+  CHANNEL_PAUSED: "Channel paused",
   /**
    * The channel exists but points at no bundle, and PLATFORM_MISMATCH means it
    * points at one built for another platform.
@@ -181,6 +183,10 @@ export interface NativeUpdatePayload {
    * translated it.
    */
   file_size?: number;
+  /** Lowercase hex SHA-256 of the binary. */
+  checksum?: string;
+  /** Release signature over the native claim; see `releaseSignaturePayload`. */
+  signature?: string;
 }
 
 /**
@@ -217,8 +223,17 @@ export interface UpdateCheckResponse {
   sessionKey?: string;
   release_notes?: string;
   required?: boolean;
+  /** Release signature over the OTA claim; see `releaseSignaturePayload`. */
+  signature?: string;
+  /** The app's primary bundle identifier, the one release signatures are made for. */
+  app_id?: string;
+  /** True when a rolled-back channel serves a bundle older than the device runs. */
+  downgrade?: boolean;
 
-  /** Present when a native binary supersedes, or blocks, the OTA bundle. */
+  /**
+   * A native binary. Without a top-level `url` it supersedes or blocks the OTA
+   * bundle; alongside one it is an optional offer the OTA does not wait for.
+   */
   native_update?: NativeUpdatePayload | null;
 
   /**
@@ -255,47 +270,70 @@ export interface ResolvedUpdate {
   fileSize?: number;
   /** Set once the OTA plugin has downloaded the bundle. */
   bundleId?: string;
+  /** Release signature the server attached, verified before anything is applied. */
+  signature?: string;
+  /** Primary bundle identifier the signature was made for. */
+  appId?: string;
+  /** An OTA bundle older than the running one, served by a rolled-back channel. */
+  downgrade?: boolean;
+  /** An optional native binary offered alongside this OTA bundle. */
+  nativeOffer?: ResolvedUpdate;
+}
+
+function resolveNative(
+  native: NativeUpdatePayload,
+  response: UpdateCheckResponse,
+  required: boolean,
+): ResolvedUpdate {
+  return {
+    kind: "native",
+    version: native.version_name,
+    versionCode: native.version_code,
+    downloadUrl: native.download_url,
+    releaseNotes: native.release_notes,
+    required,
+    platform: native.platform,
+    ...(typeof native.file_size === "number" ? { fileSize: native.file_size } : {}),
+    ...(native.checksum ? { checksum: native.checksum } : {}),
+    ...(native.signature ? { signature: native.signature } : {}),
+    ...(response.app_id ? { appId: response.app_id } : {}),
+  };
 }
 
 /**
  * Narrows a raw response into an update to act on, or `null` when there is
  * nothing to do.
  *
- * Native wins over OTA. The server can return both - a required native binary
- * alongside the OTA bundle that needs it - and installing the bundle first
- * would leave the device on a binary too old to run it.
+ * A required native binary wins over an OTA bundle: installing the bundle first
+ * would leave the device on a binary too old to run it. An optional native offer
+ * rides along with an OTA bundle as `nativeOffer` instead of hiding it.
  */
 export function resolveUpdate(
   response: UpdateCheckResponse | null | undefined,
 ): ResolvedUpdate | null {
   if (!response) return null;
 
-  const native = response.native_update;
-  if (native?.download_url) {
-    return {
-      kind: "native",
-      version: native.version_name,
-      versionCode: native.version_code,
-      downloadUrl: native.download_url,
-      releaseNotes: native.release_notes,
-      // A native update is mandatory when the server says the OTA bundle
-      // cannot run without it, whatever the record's own flag says.
-      required:
-        response.message === UpdateMessage.NATIVE_UPDATE_REQUIRED || (native.required ?? false),
-      platform: native.platform,
-      ...(typeof native.file_size === "number" ? { fileSize: native.file_size } : {}),
-    };
-  }
+  const native = response.native_update?.download_url ? response.native_update : null;
+  const nativeRequired =
+    native !== null &&
+    (response.message === UpdateMessage.NATIVE_UPDATE_REQUIRED || native.required === true);
+  const hasOta = Boolean(response.url && response.version_name);
 
-  if (response.url && response.version_name) {
+  if (native && (nativeRequired || !hasOta)) return resolveNative(native, response, nativeRequired);
+
+  if (hasOta) {
     return {
       kind: "ota",
-      version: response.version_name,
+      version: response.version_name!,
       downloadUrl: response.url,
       releaseNotes: response.release_notes,
       required: response.required ?? false,
       checksum: response.checksum,
       sessionKey: response.sessionKey,
+      ...(response.signature ? { signature: response.signature } : {}),
+      ...(response.app_id ? { appId: response.app_id } : {}),
+      ...(response.downgrade === true ? { downgrade: true } : {}),
+      ...(native ? { nativeOffer: resolveNative(native, response, false) } : {}),
     };
   }
 

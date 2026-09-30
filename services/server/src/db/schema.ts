@@ -1,0 +1,363 @@
+import type { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
+
+type Timestamp = ColumnType<Date, Date | string | undefined, Date | string>;
+type CreatedAt = ColumnType<Date, Date | string | undefined, never>;
+type Json = ColumnType<unknown, string | undefined, string>;
+type BigCount = ColumnType<string | number, number | bigint | undefined, number | bigint>;
+
+export type OrgRole = "owner" | "admin" | "member";
+export type AppRoleColumn = "admin" | "developer" | "tester" | "viewer";
+export type EnvironmentColumn = "dev" | "staging" | "prod";
+export type PlatformColumn = "android" | "ios" | "web";
+
+export interface UsersTable {
+  id: Generated<string>;
+  email: string;
+  password_hash: string | null;
+  full_name: string | null;
+  is_instance_admin: Generated<boolean>;
+  disabled_at: Timestamp | null;
+  last_login_at: Timestamp | null;
+  created_at: CreatedAt;
+  updated_at: Timestamp;
+}
+
+export interface SessionsTable {
+  id: Generated<string>;
+  user_id: string;
+  token_hash: string;
+  ip: string | null;
+  user_agent: string | null;
+  created_at: CreatedAt;
+  last_seen_at: Timestamp;
+  expires_at: Timestamp;
+}
+
+export interface OrganizationsTable {
+  id: Generated<string>;
+  name: string;
+  slug: string;
+  created_at: CreatedAt;
+  updated_at: Timestamp;
+}
+
+export interface OrganizationMembersTable {
+  organization_id: string;
+  user_id: string;
+  role: OrgRole;
+  created_at: CreatedAt;
+}
+
+export interface InvitationsTable {
+  id: Generated<string>;
+  organization_id: string;
+  email: string;
+  role: OrgRole;
+  token_hash: string;
+  invited_by: string | null;
+  created_at: CreatedAt;
+  expires_at: Timestamp;
+  accepted_at: Timestamp | null;
+}
+
+export interface AppsTable {
+  id: Generated<string>;
+  organization_id: string;
+  app_id: string;
+  name: string;
+  platform: Generated<string>;
+  icon_url: string | null;
+  public_key: string | null;
+  require_signature: Generated<boolean>;
+  prod_role: Generated<"admin" | "developer">;
+  created_at: CreatedAt;
+  updated_at: Timestamp;
+}
+
+export interface AppIdentifiersTable {
+  id: Generated<string>;
+  app_id: string;
+  bundle_id: string;
+  platform: Generated<"android" | "ios" | "all">;
+  flavour: EnvironmentColumn | null;
+  created_at: CreatedAt;
+}
+
+export interface AppPermissionsTable {
+  app_id: string;
+  user_id: string;
+  role: AppRoleColumn;
+  created_at: CreatedAt;
+}
+
+export interface ApiKeysTable {
+  id: Generated<string>;
+  user_id: string;
+  name: string;
+  key_hash: string;
+  key_prefix: string;
+  app_id: string | null;
+  role: AppRoleColumn | null;
+  created_at: CreatedAt;
+  last_used_at: Timestamp | null;
+  expires_at: Timestamp | null;
+  revoked_at: Timestamp | null;
+}
+
+export interface ChannelsTable {
+  id: Generated<string>;
+  app_id: string;
+  name: string;
+  environment: EnvironmentColumn;
+  kind: Generated<"release" | "client">;
+  base_channel_id: string | null;
+  allow_dev: Generated<boolean>;
+  allow_emulator: Generated<boolean>;
+  ios_enabled: Generated<boolean>;
+  android_enabled: Generated<boolean>;
+  allow_device_self_set: Generated<boolean>;
+  is_public: Generated<boolean>;
+  paused: Generated<boolean>;
+  allow_downgrade: Generated<boolean>;
+  current_bundle_id: string | null;
+  current_native_id: string | null;
+  created_at: CreatedAt;
+  updated_at: Timestamp;
+}
+
+export interface BundlesTable {
+  id: Generated<string>;
+  app_id: string;
+  platform: PlatformColumn;
+  version_name: string;
+  flavour: EnvironmentColumn;
+  storage_key: string;
+  size_bytes: BigCount;
+  checksum: string;
+  signature: string | null;
+  min_native_version: number | null;
+  required: Generated<boolean>;
+  release_notes: string | null;
+  uploaded_by: string | null;
+  api_key_id: string | null;
+  build_id: string | null;
+  created_at: CreatedAt;
+  deleted_at: Timestamp | null;
+}
+
+export interface NativeBuildsTable {
+  id: Generated<string>;
+  app_id: string;
+  platform: "android" | "ios";
+  version_name: string;
+  version_code: number;
+  flavour: EnvironmentColumn;
+  storage_key: string;
+  size_bytes: BigCount;
+  checksum: string;
+  signature: string | null;
+  signing_cert_sha256: string | null;
+  required: Generated<boolean>;
+  release_notes: string | null;
+  min_sdk: number | null;
+  uploaded_by: string | null;
+  api_key_id: string | null;
+  build_id: string | null;
+  created_at: CreatedAt;
+  deleted_at: Timestamp | null;
+}
+
+export type ChannelAction =
+  | "point_bundle"
+  | "point_native"
+  | "rollback_bundle"
+  | "rollback_native"
+  | "clear_bundle"
+  | "clear_native"
+  | "pause"
+  | "resume";
+
+export interface ChannelEventsTable {
+  id: Generated<string>;
+  channel_id: string;
+  app_id: string;
+  action: ChannelAction;
+  from_id: string | null;
+  to_id: string | null;
+  from_version: string | null;
+  to_version: string | null;
+  actor_user_id: string | null;
+  actor_api_key_id: string | null;
+  reason: string | null;
+  created_at: CreatedAt;
+}
+
+export interface DevicesTable {
+  id: Generated<string>;
+  app_id: string;
+  device_id: string;
+  custom_id: string | null;
+  platform: PlatformColumn;
+  is_prod: boolean | null;
+  is_emulator: boolean | null;
+  version_name: string | null;
+  version_builtin: string | null;
+  version_code: number | null;
+  version_os: string | null;
+  plugin_version: string | null;
+  reported_channel: string | null;
+  channel_id: string | null;
+  assigned_channel_id: string | null;
+  self_channel_id: string | null;
+  device_name: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  mem_used_bytes: BigCount | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_accuracy_m: number | null;
+  location_reported_at: Timestamp | null;
+  last_seen_at: Timestamp;
+  created_at: CreatedAt;
+  updated_at: Timestamp;
+}
+
+export interface DeviceEventsTable {
+  id: Generated<string>;
+  app_id: string;
+  device_uuid: string | null;
+  channel_id: string | null;
+  kind: "ota" | "native" | "check";
+  action: string;
+  status: string | null;
+  version_from: string | null;
+  version_to: string | null;
+  version_code_to: number | null;
+  error: string | null;
+  details: Json | null;
+  created_at: CreatedAt;
+}
+
+export type BuildStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+
+export interface BuildsTable {
+  id: Generated<string>;
+  app_id: string;
+  channel_id: string | null;
+  channel_name: string | null;
+  kind: "ota" | "native" | "pipeline";
+  status: BuildStatus;
+  version_name: string | null;
+  version_code: number | null;
+  flavour: EnvironmentColumn | null;
+  source: "cli" | "gitlab" | "github" | "other";
+  external_id: string | null;
+  commit_sha: string | null;
+  ref: string | null;
+  pipeline_url: string | null;
+  job_url: string | null;
+  actor_user_id: string | null;
+  actor_api_key_id: string | null;
+  bundle_id: string | null;
+  native_id: string | null;
+  error: string | null;
+  started_at: Timestamp | null;
+  finished_at: Timestamp | null;
+  created_at: CreatedAt;
+}
+
+export interface BuildEventsTable {
+  id: Generated<string>;
+  build_id: string;
+  step: string;
+  status: "running" | "succeeded" | "failed" | "skipped" | "info";
+  message: string | null;
+  created_at: CreatedAt;
+}
+
+export interface AuditLogTable {
+  id: Generated<string>;
+  organization_id: string | null;
+  app_id: string | null;
+  actor_user_id: string | null;
+  actor_api_key_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  details: Json | null;
+  ip: string | null;
+  created_at: CreatedAt;
+}
+
+export interface AppConfigTable {
+  id: Generated<string>;
+  app_id: string;
+  environment: "all" | EnvironmentColumn;
+  channel: string | null;
+  key: string;
+  value: string;
+  value_type: Generated<"string" | "number" | "boolean" | "json">;
+  created_at: CreatedAt;
+  updated_at: Timestamp;
+}
+
+export interface IntegrationsTable {
+  id: Generated<string>;
+  app_id: string;
+  kind: "gitlab";
+  secret_hash: string;
+  config: Json | null;
+  created_at: CreatedAt;
+  last_event_at: Timestamp | null;
+}
+
+export interface BlobsTable {
+  key: string;
+  size_bytes: BigCount;
+  content_type: string;
+  created_at: CreatedAt;
+}
+
+export interface BlobChunksTable {
+  key: string;
+  idx: number;
+  data: Buffer;
+}
+
+export interface Database {
+  users: UsersTable;
+  sessions: SessionsTable;
+  organizations: OrganizationsTable;
+  organization_members: OrganizationMembersTable;
+  invitations: InvitationsTable;
+  apps: AppsTable;
+  app_identifiers: AppIdentifiersTable;
+  app_permissions: AppPermissionsTable;
+  api_keys: ApiKeysTable;
+  channels: ChannelsTable;
+  bundles: BundlesTable;
+  native_builds: NativeBuildsTable;
+  channel_events: ChannelEventsTable;
+  devices: DevicesTable;
+  device_events: DeviceEventsTable;
+  builds: BuildsTable;
+  build_events: BuildEventsTable;
+  audit_log: AuditLogTable;
+  app_config: AppConfigTable;
+  integrations: IntegrationsTable;
+  blobs: BlobsTable;
+  blob_chunks: BlobChunksTable;
+}
+
+export type User = Selectable<UsersTable>;
+export type App = Selectable<AppsTable>;
+export type Channel = Selectable<ChannelsTable>;
+export type ChannelUpdate = Updateable<ChannelsTable>;
+export type Bundle = Selectable<BundlesTable>;
+export type NativeBuild = Selectable<NativeBuildsTable>;
+export type NewBundle = Insertable<BundlesTable>;
+export type NewNativeBuild = Insertable<NativeBuildsTable>;
+export type Device = Selectable<DevicesTable>;
+export type Build = Selectable<BuildsTable>;
+export type BuildEvent = Selectable<BuildEventsTable>;
+export type ApiKey = Selectable<ApiKeysTable>;

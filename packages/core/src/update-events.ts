@@ -62,7 +62,10 @@ const LIFECYCLE = new Set(["app_moved_to_foreground", "app_moved_to_background",
 const DOWNLOADING = /^download(_\d+)?$/;
 
 /** Anything that failed, whatever it was called. */
-const FAILED = /(fail|error|denied|rollback)/i;
+const FAILED = /(fail|error|denied|rollback|crash)/i;
+
+/** Host-app health the plugin reports alongside updates; a broken image is not a broken update. */
+const HOST_DIAGNOSTICS = /^(webview_|app_(launch|moved))/;
 
 export function classifyUpdateEvent(action: string | null | undefined): UpdateEventCategory {
   if (!action) return "other";
@@ -73,6 +76,7 @@ export function classifyUpdateEvent(action: string | null | undefined): UpdateEv
   // Failure first: `download_fail` and `set_fail` share a prefix with the
   // success cases, and reading them as deliveries would make a broken rollout
   // look like a perfect one.
+  if (HOST_DIAGNOSTICS.test(name)) return LIFECYCLE.has(name) ? "lifecycle" : "other";
   if (FAILED.test(name)) return "failed";
   if (DELIVERED.has(name)) return "delivered";
   if (DOWNLOADING.test(name)) return "downloading";

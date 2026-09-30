@@ -1,110 +1,146 @@
-<template>
-  <div class="space-y-4">
-    <DevicesTableBulkEdit
-      :selected-items="selectedItems"
-      @click:bulk-delete="handleBulkDelete"
-      @click:bulk-edit="handleBulkEdit"
-      @click:bulk-export="handleBulkExport"
-      @click:clear-selection="clearSelection"
-    />
-
-    <DevicesTableDataTable
-      ref="dataTableRef"
-      :columns="devicesColumns"
-      :data="items"
-      :is-loading="isLoading"
-      @selection-change="handleSelectionChange"
-      @row-click="handleRowClick"
-      @refresh="$emit('refresh')"
-    />
-
-    <DevicesDeleteDialog
-      v-model:delete-dialog-open="deleteDialogOpen"
-      :is-deleting="isDeleting"
-      :item-to-delete="itemToDelete"
-      :selected-items="selectedItems"
-      @click:handle-delete-confirm="handleDeleteConfirm"
-    />
-
-    <!-- We can add BulkEditDialog here if/when needed, similar to UpdatesBundles -->
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref } from "vue";
-import { devicesColumns } from "./DevicesTable/devices.columns";
-import type { Device } from "@/modules/devices/types/devices.types";
-import DevicesTableDataTable from "./DevicesTable/DevicesTableDataTable.vue";
-import DevicesTableBulkEdit from "./DevicesTable/DevicesTableBulkEdit.vue";
-import DevicesDeleteDialog from "./DevicesTable/DevicesDeleteDialog.vue";
+import { Bug, MonitorSmartphone, Pin } from "@lucide/vue";
+import type { ColumnFiltersState } from "@tanstack/vue-table";
+import { computed } from "vue";
+import { DataTable, type DataTableFacet } from "@/shared/components/data-table";
+import RelativeTime from "@/shared/components/RelativeTime.vue";
+import VersionTag from "@/shared/components/VersionTag.vue";
+import type { Channel } from "@/shared/types/release";
+import { DEVICE_COLUMNS, deviceTitle } from "../lib/device-columns";
+import type { Device } from "../types/devices.types";
+import DeviceRowActions from "./DeviceRowActions.vue";
 
-const dataTableRef = ref();
-const selectedItems = ref<Device[]>([]);
-const deleteDialogOpen = ref(false);
-const itemToDelete = ref<string | null>(null);
-const isDeleting = ref(false);
+const search = defineModel<string>("search", { required: true });
+const filters = defineModel<ColumnFiltersState>("filters", { required: true });
 
-const { items, isLoading } = defineProps<{
-  items: Device[];
-  isLoading?: boolean;
+const props = defineProps<{
+  devices: readonly Device[];
+  channels: readonly Channel[];
+  total: number;
+  hasMore: boolean;
+  loading: boolean;
+  loadingMore: boolean;
+  refreshing: boolean;
+  appName: string;
 }>();
-
 const emit = defineEmits<{
-  (e: "deleteItem", id: string): void;
-  (e: "refresh"): void;
+  assign: [device: Device];
+  remove: [device: Device];
+  loadMore: [];
+  refresh: [];
 }>();
 
-const handleSelectionChange = (selection: Device[]) => {
-  selectedItems.value = selection;
-};
-
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-
-const handleRowClick = (item: Device) => {
-  router.push(`/devices/${item.id}`);
-};
-
-const handleBulkEdit = () => {
-  console.warn("Bulk edit requested");
-};
-
-const handleBulkExport = () => {
-  console.warn("Bulk export requested");
-};
-
-const handleBulkDelete = () => {
-  itemToDelete.value = null;
-  deleteDialogOpen.value = true;
-};
-
-const handleDeleteConfirm = async () => {
-  isDeleting.value = true;
-  try {
-    if (itemToDelete.value) {
-      emit("deleteItem", itemToDelete.value);
-    } else {
-      selectedItems.value.forEach((item) => {
-        emit("deleteItem", item.device_id);
-      });
-    }
-    clearSelection();
-  } finally {
-    isDeleting.value = false;
-    deleteDialogOpen.value = false;
-    itemToDelete.value = null;
-  }
-};
-
-const clearSelection = () => {
-  if (dataTableRef.value) {
-    dataTableRef.value.clearSelection();
-  }
-  selectedItems.value = [];
-};
-
-defineExpose({
-  clearSelection,
-});
+const facets = computed<DataTableFacet[]>(() => [
+  {
+    columnId: "channel",
+    title: "Channel",
+    single: true,
+    options: props.channels.map((channel) => ({ value: channel.id, label: channel.name })),
+  },
+  {
+    columnId: "last_seen",
+    title: "Last seen",
+    single: true,
+    options: [
+      { value: "1", label: "In the last 24 hours" },
+      { value: "7", label: "In the last 7 days" },
+      { value: "30", label: "In the last 30 days" },
+    ],
+  },
+]);
 </script>
+
+<template>
+  <DataTable
+    v-model:search="search"
+    v-model:filters="filters"
+    :data="props.devices"
+    :columns="DEVICE_COLUMNS"
+    :get-row-id="(device) => device.id"
+    table-id="devices"
+    :export-name="`${props.appName}-devices`"
+    :facets="facets"
+    :features="{ selection: true }"
+    search-placeholder="Device id, custom id, model, name"
+    server-filtering
+    :total="props.total"
+    :has-more="props.hasMore"
+    :loading="props.loading"
+    :loading-more="props.loadingMore"
+    refreshable
+    :refreshing="props.refreshing"
+    @load-more="emit('loadMore')"
+    @refresh="emit('refresh')"
+  >
+    <template #toolbar>
+      <slot name="toolbar" />
+    </template>
+    <template #cell-device="{ row }">
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5">
+          <span class="truncate text-sm">{{ deviceTitle(row) }}</span>
+          <MonitorSmartphone
+            v-if="row.is_emulator"
+            class="text-muted-foreground size-3.5 shrink-0"
+            aria-label="Emulator"
+          />
+          <Bug
+            v-if="row.is_prod === false"
+            class="text-warning size-3.5 shrink-0"
+            aria-label="Debug build"
+          />
+        </div>
+        <div class="text-muted-foreground truncate font-mono text-[11px]" :title="row.device_id">
+          {{ row.custom_id ?? row.device_id }}
+        </div>
+      </div>
+    </template>
+    <template #cell-device_id="{ row }">
+      <span class="font-mono text-[11px]">{{ row.device_id }}</span>
+    </template>
+    <template #cell-platform="{ row }">
+      <div class="text-xs">
+        <div class="font-mono uppercase">{{ row.platform }}</div>
+        <div class="text-muted-foreground truncate">{{ row.version_os ?? "—" }}</div>
+      </div>
+    </template>
+    <template #cell-ota="{ row }">
+      <VersionTag kind="ota" :version="row.version_name" />
+    </template>
+    <template #cell-native="{ row }">
+      <VersionTag kind="native" :version="row.version_builtin" :code="row.version_code" />
+    </template>
+    <template #cell-channel="{ row }">
+      <div class="min-w-0 text-xs">
+        <div class="flex items-center gap-1">
+          <span class="truncate font-mono">{{
+            row.channel_name ?? row.reported_channel ?? "unresolved"
+          }}</span>
+          <Pin
+            v-if="row.assigned_channel_id"
+            class="text-primary size-3 shrink-0"
+            aria-label="Assigned from the dashboard"
+          />
+        </div>
+        <div
+          v-if="row.reported_channel && row.reported_channel !== row.channel_name"
+          class="text-muted-foreground truncate"
+        >
+          build says {{ row.reported_channel }}
+        </div>
+      </div>
+    </template>
+    <template #cell-emulator="{ row }">
+      <span class="text-xs">{{ row.is_emulator ? "Yes" : "No" }}</span>
+    </template>
+    <template #cell-last_seen="{ row }">
+      <span class="text-muted-foreground text-xs"><RelativeTime :value="row.last_seen_at" /></span>
+    </template>
+    <template #cell-first_seen="{ row }">
+      <span class="text-muted-foreground text-xs"><RelativeTime :value="row.created_at" /></span>
+    </template>
+    <template #cell-actions="{ row }">
+      <DeviceRowActions :device="row" @assign="emit('assign', row)" @remove="emit('remove', row)" />
+    </template>
+  </DataTable>
+</template>

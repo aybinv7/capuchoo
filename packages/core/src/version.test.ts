@@ -35,6 +35,25 @@ describe("compareVersions", () => {
     expect(compareVersions("1.0.0-beta", "1.0.0")).toBeLessThan(0);
   });
 
+  it.each([
+    ["1.0.0-beta.2", "1.0.0-beta.10"],
+    ["1.0.0-alpha", "1.0.0-alpha.1"],
+    ["1.0.0-alpha.1", "1.0.0-alpha.beta"],
+    ["1.0.0-alpha.beta", "1.0.0-beta"],
+    ["1.0.0-beta", "1.0.0-beta.2"],
+    ["1.0.0-beta.11", "1.0.0-rc.1"],
+    ["1.0.0-rc.1", "1.0.0"],
+    ["1.0.0-9", "1.0.0-10"],
+    ["1.0.0-99999999999999999999", "1.0.0-100000000000000000000"],
+  ])("orders prerelease %s before %s by semver precedence", (older, newer) => {
+    expect(compareVersions(older, newer)).toBeLessThan(0);
+    expect(compareVersions(newer, older)).toBeGreaterThan(0);
+  });
+
+  it("ignores build metadata", () => {
+    expect(compareVersions("1.0.0-beta.1+a", "1.0.0-beta.1+b")).toBe(0);
+  });
+
   it('treats the "builtin" sentinel as the oldest possible version', () => {
     // The app reports "builtin" until an OTA bundle has been applied. If this
     // did not sort oldest, a fresh install would never see the first update.

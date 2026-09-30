@@ -28,17 +28,19 @@ describe("OTA updates report themselves", () => {
     expect(api).not.toContain('if (update.kind !== "native") return;');
   });
 
+  const install = 'reportUpdateEvent("install", update, undefined, { keepalive: true })';
+
   it("records a delivery when a bundle is applied", () => {
-    expect(updater).toContain('await logUpdateEvent("install", update)');
+    expect(updater).toContain(install);
   });
 
   /**
    * Applying an OTA bundle reloads the WebView, so nothing after that call ever
-   * executes. An event logged afterwards is an event never sent - there is no
-   * "after" to report from.
+   * executes. The event is sent first, with `keepalive` so the request outlives
+   * the reload, and never awaited so a slow network cannot delay the apply.
    */
   it("records it before applying, because applying ends the JS context", () => {
-    const logged = updater.indexOf('await logUpdateEvent("install", update)');
+    const logged = updater.indexOf(install);
     const applied = updater.indexOf("await applyOtaUpdate(update)");
 
     expect(logged).toBeGreaterThan(-1);
@@ -46,12 +48,13 @@ describe("OTA updates report themselves", () => {
     expect(logged).toBeLessThan(applied);
   });
 
+  it("never waits on telemetry before applying or installing", () => {
+    expect(updater).not.toMatch(/await (logUpdateEvent|reportUpdateEvent)\(/);
+    expect(api).toContain(".catch(");
+  });
+
   it("still reports a failure, so a claimed delivery that did not land is visible", () => {
-    // The trade this makes: the delivery is claimed before the apply succeeds.
-    // The pair of events is what keeps it honest.
-    expect(updater).toContain(
-      'await logUpdateEvent("error", update, { error: state.value.error })',
-    );
+    expect(updater).toContain('reportUpdateEvent("error", update, { error: state.value.error })');
   });
 
   /**

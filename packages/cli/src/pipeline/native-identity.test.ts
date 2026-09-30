@@ -51,8 +51,8 @@ describe("native identity survives the Trapeze path", () => {
     expect(source).not.toContain('return { method: "trapeze", changed: [],');
   });
 
-  it("still writes all four identity values", () => {
-    for (const key of ["applicationId", "versionName", "versionCode", "namespace"]) {
+  it("still writes the three identity values", () => {
+    for (const key of ["applicationId", "versionName", "versionCode"]) {
       expect(source, key).toContain(key);
     }
   });

@@ -135,3 +135,26 @@ export {
   type EventSummary,
   type UpdateEventCategory,
 } from "./update-events.js";
+
+export {
+  canPoint,
+  type ArtefactKind,
+  type ChannelKind,
+  type PointerArtefact,
+  type PointerChannel,
+  type PointerFacts,
+  type PointerRefusal,
+  type PointerVerdict,
+} from "./channel-pointer.js";
+
+export {
+  generateReleaseKeyPair,
+  pemBody,
+  publicKeyFingerprint,
+  publicKeyFor,
+  releaseSignaturePayload,
+  signRelease,
+  verifyRelease,
+  type ReleaseClaim,
+  type ReleaseKind,
+} from "./release-signing.js";

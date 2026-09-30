@@ -27,6 +27,42 @@ There is no `--environment` flag, because there is nothing to get wrong. A chann
 environment set is rejected, and so is a channel whose environment disagrees with the flavour's
 `VITE_APP_ID` - the server enforces the same rule, and finding out client-side saves a 40 MB upload.
 
+## Flavour isolation
+
+A build sees only its flavour file. Every key in `build/<env>/.env.<env>` is passed to the web
+build, Trapeze and `cap sync` explicitly, with `VITE_LIVE_RELOAD=false`. A deploy is refused when
+`.env`, `.env.local`, `.env.<mode>` or `.env.<mode>.local` define a `VITE_*` key the flavour file
+does not, because Vite (and a `capacitor.config.ts` that loads `.env.local`) would ship this
+machine's value. Set the key in the flavour file, or pass `--allow-local-env` to accept it.
+
+Keys that must never come from anywhere else go in `.capuchoo/project.json`:
+
+```json
+{ "requiredEnv": ["VITE_DB_FILENAME", "VITE_API_URL"] }
+```
+
+A flavour file that omits one, or leaves it empty, is refused before anything is built.
+
+## Build once, deliver many
+
+A deploy uploads to a release channel (`dev`, `staging`, `prod`). Every other delivery moves a
+channel's pointer to an artefact that already exists, so nothing is rebuilt:
+
+```sh
+capuchoo channel create prod-acme --client --base prod   # follows prod, takes no uploads
+capuchoo release list --channel prod
+capuchoo channel point prod-acme --version 2.4.0 --yes
+capuchoo channel point prod --version 2.4.0 --native 57 --yes
+capuchoo channel point prod --version 2.3.1 --rollback --reason "crash on login" --yes
+capuchoo channel pause prod-acme --yes
+capuchoo channel resume prod-acme
+capuchoo channel history prod-acme
+```
+
+A client channel only points at what its base has served. The server decides every move with
+`canPoint`; a refusal prints its message and reason code, and under `--json` becomes
+`{ "ok": false, "error", "reason", "status" }` on stdout with exit code 1.
+
 ## Versions
 
 `package.json` owns the semantic version. `version-code.json` owns the monotonically increasing
@@ -56,7 +92,7 @@ For an application in its own repository, use the composite action:
     project-directory: apps/presalio
     channel: staging
     type: ota
-    cli-version: 0.2.0 # pin this in production
+    cli-version: 0.16.0 # pin this in production
     release-notes: Presalio v20.0.1
   env:
     CAPUCHOO_ENDPOINT: ${{ secrets.CAPUCHOO_ENDPOINT }}
@@ -69,6 +105,29 @@ the action directory on every invocation.
 
 Point production deploys at a protected GitHub environment so they need an approval, and scope its
 `CAPUCHOO_API_KEY` to that app.
+
+## GitLab CI
+
+```sh
+capuchoo ci init --gitlab --clients acme,globex
+```
+
+writes `.gitlab-ci.yml` (`--output` to put it elsewhere, e.g. a monorepo root, then set `APP_DIR`)
+from `templates/gitlab-ci.yml`. An existing file is diffed and only replaced after a confirmation or
+`--yes`. The pipeline runs on the default branch and on tags:
+
+- `check` - `deploy ota --channel prod --dry-run`, the whole pipeline except the upload.
+- `publish:prod` - `deploy $CAPUCHOO_DEPLOY_KIND --channel prod` (`ota` or `native`), keeping
+  `capuchoo-release.json` as an artifact.
+- `deliver:<client>` - one manual job per client running
+  `capuchoo channel point prod-<client> --version <published version>`. Create each channel first
+  with `capuchoo channel create prod-<client> --client --base prod`.
+
+The image is `eclipse-temurin:21-jdk` with Node 22 and pnpm (corepack) and the Android SDK installed
+and cached by the job. Protected variables: `CAPUCHOO_ENDPOINT`, `CAPUCHOO_API_KEY` (masked),
+`CAPUCHOO_SIGNING_KEY` (masked), and for native builds `ANDROID_KEYSTORE_BASE64` (a masked File
+variable holding the base64 keystore) with `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD`.
 
 ## Native builds
 
@@ -83,10 +142,35 @@ signing material through the environment:
 `android/app/build.gradle` attaches its release `signingConfig` only when `CAPUCHOO_KEYSTORE_FILE`
 is set, so a developer can still build an unsigned APK locally to inspect it.
 
-Use `--type debug` when you do not need a signed artefact, or `--allow-unsigned` if signing happens
-in a later pipeline stage. The second one has to be asked for explicitly.
+Incomplete release signing is a hard error for `--type release` and for every prod or client
+channel: a debug-signed APK cannot upgrade a release install. Without `--type`, a dev or staging
+channel falls back to debug with a warning. `--type debug` is refused on prod and client channels,
+and `--allow-unsigned` publishes to dev channels only.
+
+After the build the CLI reads the APK signing certificate (`apksigner verify --print-certs`, then
+`keytool -printcert -jarfile`), sends it as `signing_cert_sha256`, and refuses to upload when it
+differs from the previous native release of the same flavour. `--allow-cert-change` overrides that,
+for a deliberate re-key where every device is reinstalled.
 
 iOS is not driven by the CLI yet: archive through Xcode and register the build in the dashboard.
+
+## Release signing
+
+Every OTA bundle and APK can carry an ECDSA P-256 signature the server and the updater verify.
+
+```sh
+capuchoo keys init   # writes .capuchoo/signing-key.pem (owner-only, git-ignored), uploads the public key
+capuchoo keys show   # fingerprint, and whether each flavour bakes the public key
+```
+
+`keys init` offers to add the key path to `.gitignore` (with a diff) before writing anything, and
+prints the `VITE_UPDATE_PUBLIC_KEY=...` line to add to each flavour file. It reuses an existing key;
+`--force` rotates it, which makes installed builds reject everything the new key signs.
+
+In CI, set `CAPUCHOO_SIGNING_KEY` to the base64 PKCS#8 body of that file (masked, protected). A
+deploy signs the artefact's SHA-256 and sends `signature`. It refuses before building when the app
+requires signatures and no key is available, when the key is not the one the server holds, or when
+the flavour's `VITE_UPDATE_PUBLIC_KEY` belongs to another key.
 
 ## Machine-readable output
 

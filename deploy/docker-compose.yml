@@ -1,0 +1,103 @@
+name: capuchoo
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: capuchoo
+      POSTGRES_USER: capuchoo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U capuchoo -d capuchoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: capuchoo/server:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://capuchoo:${POSTGRES_PASSWORD}@postgres:5432/capuchoo
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env (openssl rand -base64 48)}
+      PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL in .env}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-fs}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      TRUST_PROXY: "true"
+      COOKIE_SECURE: "true"
+    volumes:
+      - artefacts:/data
+    networks: [internal, edge]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
+      traefik.http.routers.capuchoo-api.rule: Host(`${CAPUCHOO_HOST:?set CAPUCHOO_HOST in .env}`) && (PathPrefix(`/api`) || Path(`/health`) || Path(`/ready`))
+      traefik.http.routers.capuchoo-api.priority: "100"
+      traefik.http.routers.capuchoo-api.entrypoints: websecure
+      traefik.http.routers.capuchoo-api.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      traefik.http.routers.capuchoo-api.service: capuchoo-api
+      traefik.http.services.capuchoo-api.loadbalancer.server.port: "3000"
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: deploy/dashboard/Dockerfile
+    image: capuchoo/dashboard:latest
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks: [edge]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
+      traefik.http.routers.capuchoo-dashboard.rule: Host(`${CAPUCHOO_HOST}`)
+      traefik.http.routers.capuchoo-dashboard.priority: "1"
+      traefik.http.routers.capuchoo-dashboard.entrypoints: websecure
+      traefik.http.routers.capuchoo-dashboard.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      traefik.http.routers.capuchoo-dashboard.service: capuchoo-dashboard
+      traefik.http.services.capuchoo-dashboard.loadbalancer.server.port: "8080"
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: capuchoo
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: capuchoo
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - backups:/backups
+      - ./backup.sh:/usr/local/bin/backup.sh:ro
+    entrypoint:
+      ["/bin/sh", "-c", "while true; do /bin/sh /usr/local/bin/backup.sh; sleep 86400; done"]
+    networks: [internal]
+
+volumes:
+  postgres:
+  artefacts:
+  backups:
+
+networks:
+  internal:
+  edge:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}

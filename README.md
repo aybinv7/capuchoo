@@ -6,13 +6,13 @@ dashboard to manage it.
 
 ## What is in here
 
-| Path               | Package               | What it does                                                     |
-| ------------------ | --------------------- | ---------------------------------------------------------------- |
-| `packages/core`    | `@capuchoo/core`      | The update contract, shared by every other package. No deps.     |
-| `packages/updater` | `@capuchoo/updater`   | App-side runtime: checks, downloads, applies, prompts.           |
-| `packages/cli`     | `@capuchoo/cli`       | Builds and publishes OTA and native releases.                    |
-| `apps/dashboard`   | `@capuchoo/dashboard` | Organizations, apps, channels, releases.                         |
-| `services/back`    | `@capuchoo/back`      | Update server. Owns channels, artefacts and the update decision. |
+| Path               | Package               | What it does                                                    |
+| ------------------ | --------------------- | --------------------------------------------------------------- |
+| `packages/core`    | `@capuchoo/core`      | The update contract, shared by every other package. No deps.    |
+| `packages/updater` | `@capuchoo/updater`   | App-side runtime: checks, downloads, applies, prompts.          |
+| `packages/cli`     | `@capuchoo/cli`       | Builds and publishes OTA and native releases.                   |
+| `apps/dashboard`   | `@capuchoo/dashboard` | Release console: canvas, channels, devices, builds, audit.      |
+| `services/server`  | `@capuchoo/server`    | Update server on PostgreSQL. API only; the dashboard is static. |
 
 ## Getting started
 
@@ -104,7 +104,8 @@ whether it can be dismissed - so each app writes only its own markup. The apps s
 
 - [docs/ADDING-AN-APP.md](./docs/ADDING-AN-APP.md) - putting an existing app onto Capuchoo, end to
   end.
-- [docs/MONOREPO.md](./docs/MONOREPO.md) - layout, toolchain, adding a package, releasing.
+- [docs/SERVER.md](./docs/SERVER.md) - delivery model, roles, signing, API.
+- [docs/SELF-HOSTING.md](./docs/SELF-HOSTING.md) - running it: Docker, PostgreSQL, backups.
 - [docs/MONOREPO.md](./docs/MONOREPO.md) - layout, toolchain, the invariants that bite, and the
   known gaps.
 - [packages/cli/docs/ci-releases.md](./packages/cli/docs/ci-releases.md) - CI credentials and

@@ -28,6 +28,7 @@ import {
   type VersionState,
 } from "./flavour.js";
 import { applyNativeConfig, builtinConfigLimitations } from "./native-config.js";
+import { describeEnvIsolationProblems, readLocalEnvSources } from "./env-isolation.js";
 import { detectToolchain } from "./toolchain.js";
 import { bundleFileName, createBundleZip } from "./zip.js";
 
@@ -68,6 +69,10 @@ export interface DeployRequest {
    * check below would then warn on every deploy against an older backend.
    */
   identifiers?: RegisteredIdentifier[] | undefined;
+  /** `--allow-local-env`: accept `VITE_*` keys the flavour omits being filled from local env files. */
+  allowLocalEnv?: boolean | undefined;
+  /** Whether the artefact is checked and signed after the build, as the `sign` step. */
+  seal?: boolean | undefined;
 }
 
 export interface RegisteredIdentifier {
@@ -96,7 +101,7 @@ export interface DeployOutcome {
   skipped: Array<{ step: string; reason: string }>;
 }
 
-const LOG_FILE = "capuchoo-deploy.log";
+export const DEPLOY_LOG_FILE = "capuchoo-deploy.log";
 
 /**
  * Builds the step list for a request.
@@ -122,6 +127,10 @@ export function planSteps(request: DeployRequest): Step[] {
       : { id: "compile", label: `Compiling ${request.platform} (${request.buildType})` },
   );
 
+  if (request.seal) {
+    steps.push({ id: "sign", label: "Checking and signing the artefact" });
+  }
+
   if (!request.dryRun) {
     steps.push({ id: "upload", label: "Uploading to Capuchoo" });
   }
@@ -139,6 +148,18 @@ export function planSteps(request: DeployRequest): Step[] {
  */
 export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour): string[] {
   const problems = describeFlavourProblems(flavour);
+
+  if (flavour.envFile) {
+    problems.push(
+      ...describeEnvIsolationProblems({
+        envFileLabel: flavour.config.envFile,
+        required: request.project.requiredEnv,
+        flavourEnv: flavour.fileEnv,
+        sources: readLocalEnvSources(envRoots(request), flavour),
+        allowLocalEnv: request.allowLocalEnv ?? false,
+      }),
+    );
+  }
 
   const declaredAppId = flavour.fileEnv.VITE_APP_ID;
 
@@ -192,6 +213,15 @@ export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour
   return problems;
 }
 
+/** Directories Vite may load dotenv files from: the app, and the build directory when it differs. */
+function envRoots(request: DeployRequest): string[] {
+  const appDir = path.resolve(request.appDir);
+  const buildDir = request.project.build.cwd
+    ? path.resolve(appDir, request.project.build.cwd)
+    : appDir;
+  return buildDir === appDir ? [appDir] : [appDir, buildDir];
+}
+
 export async function runDeploy(
   request: DeployRequest,
   reporter: Reporter,
@@ -221,7 +251,7 @@ export async function runDeploy(
 
   const env = buildEnvironment(flavour, state);
   const runOptions: Omit<RunOptions, "cwd" | "env"> = {
-    logFile: path.join(request.appDir, LOG_FILE),
+    logFile: path.join(request.appDir, DEPLOY_LOG_FILE),
     verbose: request.verbose,
   };
   const context: StepContext = { toolchain, flavour, env, runOptions };
@@ -388,7 +418,7 @@ export function formatBytes(bytes: number): string {
 /** Turns a pipeline failure into something worth printing. */
 export function describeFailure(error: unknown, appDir: string): string {
   if (error instanceof CommandError) {
-    return `${error.message}\n\n  Full output: ${path.join(appDir, LOG_FILE)}`;
+    return `${error.message}\n\n  Full output: ${path.join(appDir, DEPLOY_LOG_FILE)}`;
   }
   return error instanceof Error ? error.message : String(error);
 }
