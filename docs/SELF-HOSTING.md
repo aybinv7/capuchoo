@@ -58,6 +58,14 @@ ADMIN_EMAIL=you@company.com ADMIN_PASSWORD='at least 12 characters' node server/
 In the Docker image that is `docker compose exec server node server/dist/admin.mjs` with the two
 variables passed through `-e`.
 
+## Demo data
+
+`pnpm --filter @capuchoo/server run seed:demo` creates a fictional organization, Northwind
+Distribution, with an app on three flavours, client channels, signed releases, a rollback in the
+history, 140 tablets with 28 days of activity, builds and audit entries. It needs `DATABASE_URL`,
+`DEMO_EMAIL` and `DEMO_PASSWORD`, replaces the organization on every run, and refuses to run with
+`NODE_ENV=production` unless `ALLOW_DEMO_SEED=true`. It is what the landing page screenshots show.
+
 ## Operations
 
 | Concern          | How                                                                                                                   |
