@@ -1,50 +1,47 @@
 # @capuchoo/dashboard
 
-The Capuchoo web dashboard: organizations, apps, channels, releases, devices and update logs.
+The Capuchoo release console: channels, releases, the release canvas, builds, devices, statistics,
+the audit log and settings. It is `private: true` and is not published to npm.
 
-Deployed as a static site from the workspace root - see [docs/DEPLOY.md](../../docs/DEPLOY.md). It
-is `private: true` and is not published to npm.
+`@capuchoo/server` serves the built dashboard from the same origin (`DASHBOARD_DIR`). There is no
+API URL to configure and no key in the bundle: the API is the relative `/api`, and the session is
+the httpOnly cookie `POST /api/auth/login` sets. Nothing is kept in `localStorage` except UI
+preferences (theme, last organization).
 
 ## Running it
 
 ```sh
 vp install                  # from the workspace root
+vp run libs                 # @capuchoo/core is imported from its dist
 vp -C apps/dashboard dev
 ```
 
-It needs three variables, and they are inlined into the bundle at build time - so a change needs a
-rebuild, not a restart:
+The dev server proxies `/api` to `http://localhost:3000` (override with `CAPUCHOO_API_TARGET`). The
+proxy keeps the browser's `Host` and `Origin`, which the server's CSRF check compares for every
+cookie-authenticated write.
 
-```
-VITE_SUPABASE_URL=…
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
-VITE_API_URL=https://your-backend.example.com
-```
+## Layout
 
-`VITE_SUPABASE_PUBLISHABLE_KEY` is the low-privilege key and is subject to row level security. Never
-put an `sb_secret_…` key in a `VITE_` variable: Vite writes it into the bundle every visitor
-downloads. See [docs/SUPABASE-KEYS.md](../../docs/SUPABASE-KEYS.md).
+- `src/modules/<feature>` - self-contained features (auth, apps, canvas, channels, releases, builds,
+  devices, statistics, audit, settings), each with its pages, components, composables, services,
+  types and `routes.ts`. A module never imports another module.
+- `src/shared` - what modules share: the API client and error mapping, query keys, the session and
+  role gates, the live stream reducer, and the delivery dialogs (Deliver, Roll back, Pause).
+- `src/components/ui` - shadcn-vue primitives.
 
-## How it talks to the backend
+## Rules that matter
 
-Two paths, deliberately:
-
-- **Supabase directly** for authentication and for reads that row level security already governs.
-- **The Capuchoo API** (`VITE_API_URL`) for everything that needs a privileged decision - creating
-  apps and channels, uploading artefacts, reading device and update history.
-
-## The one rule worth knowing
-
-A channel's **environment** decides which `.env` flavour the CLI builds and which bundles the server
-serves. Its _name_ is only a label. A channel named `prod` sitting on the `staging` environment
-serves staging bundles to production devices, and nothing errors - so the channel forms refuse to
-default it, require an explicit choice, and warn when a name and an environment disagree.
+- Channel pointers move only through the delivery actions. Every dialog previews the move with
+  `canPoint` from `@capuchoo/core`, from the same facts the server loads, and shows the server's
+  `{ error, reason }` when it still refuses.
+- Role gates (`src/shared/lib/roles.ts`) mirror the server policy to decide what to offer. They
+  grant nothing; `prod_role` on the app decides who delivers to prod.
+- The live stream (`GET /api/apps/:id/stream`) updates the query cache through
+  `src/shared/live/stream-reducer.ts`, a pure function with its own tests.
 
 ## Testing
 
 ```sh
 vp -C apps/dashboard test
+vp -C apps/dashboard run typecheck
 ```
-
-There is one shared helper under test here today; the channel-environment rules moved to
-`@capuchoo/core` so the CLI and the server share one implementation.

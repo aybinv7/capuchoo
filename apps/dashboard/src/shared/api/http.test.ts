@@ -3,7 +3,7 @@ import { ApiError } from "./errors";
 import { buildUrl, onUnauthorized, request } from "./http";
 
 function respond(status: number, body: unknown, headers: Record<string, string> = {}) {
-  return vi.fn(
+  return vi.fn<() => Promise<Response>>(
     async () =>
       new Response(body === undefined ? null : JSON.stringify(body), {
         status,
@@ -62,7 +62,7 @@ describe("request", () => {
   });
 
   it("tells the unauthorized listener about a 401", async () => {
-    const listener = vi.fn();
+    const listener = vi.fn<() => void>();
     onUnauthorized(listener);
     vi.stubGlobal(
       "fetch",

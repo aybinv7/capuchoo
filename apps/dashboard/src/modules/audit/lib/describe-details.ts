@@ -2,8 +2,9 @@ const HIDDEN = new Set(["channel"]);
 
 function show(value: unknown): string {
   if (value === null || value === undefined) return "none";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return `${value}`;
+  return JSON.stringify(value) ?? "";
 }
 
 /** `from 1.2.0 · to 1.1.0 · reason crash` from an audit row's details, whatever shape it has. */

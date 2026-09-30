@@ -49,7 +49,7 @@ describe("buildCanvasGraph", () => {
     const data = byId.get("channel:prod")?.data as ChannelNodeData;
     expect(data.bundle?.id).toBe("b-1");
     expect(data.stats?.devices).toBe(10);
-    expect((byId.get("channel:dev")?.data as ChannelNodeData).stats).toBeNull();
+    expect((byId.get("channel:dev")?.data as ChannelNodeData | undefined)?.stats).toBeNull();
   });
 
   it("links promotion, client-to-base and build-to-channel", () => {

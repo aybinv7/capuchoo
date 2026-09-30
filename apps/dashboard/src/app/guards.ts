@@ -43,7 +43,7 @@ export function installGuards(router: Router, client: QueryClient): void {
 
   onUnauthorized(() => {
     const current = router.currentRoute.value;
-    if (current.meta.public) return;
+    if (current.meta.public || current.matched.length === 0) return;
     client.clear();
     void router.replace({ name: RouteName.login, query: { redirect: current.fullPath } });
   });

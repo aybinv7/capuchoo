@@ -1,3 +1,4 @@
+import type { PointerVerdict } from "@capuchoo/core";
 import { describe, expect, it } from "vite-plus/test";
 import { bundle, catalog, channel, native } from "../../testing/fixtures";
 import {
@@ -7,6 +8,9 @@ import {
   previewPointer,
   servedByBaseIds,
 } from "./eligibility";
+
+/** The refusal reason of a verdict, or null when it was accepted. */
+const refusal = (verdict: PointerVerdict) => (verdict.ok ? null : verdict.reason);
 
 const v1 = bundle({ id: "b-1", version_name: "1.0.0" });
 const v2 = bundle({ id: "b-2", version_name: "1.1.0" });
@@ -31,7 +35,7 @@ describe("previewPointer", () => {
     const facts = { channel: prod, artefact: v1, catalog: catalog({ bundles: [v1, v2] }) };
     const forward = previewPointer(facts);
     expect(forward.verdict.ok).toBe(false);
-    if (!forward.verdict.ok) expect(forward.verdict.reason).toBe("downgrade-needs-rollback");
+    expect(refusal(forward.verdict)).toBe("downgrade-needs-rollback");
     expect(previewPointer({ ...facts, rollback: true }).verdict).toEqual({
       ok: true,
       direction: "downgrade",
@@ -47,7 +51,7 @@ describe("previewPointer", () => {
       rollback: true,
     });
     expect(preview.verdict.ok).toBe(false);
-    if (!preview.verdict.ok) expect(preview.verdict.reason).toBe("rollback-not-lower");
+    expect(refusal(preview.verdict)).toBe("rollback-not-lower");
   });
 
   it("refuses an artefact built from another flavour", () => {
@@ -57,7 +61,7 @@ describe("previewPointer", () => {
       catalog: catalog({ bundles: [staging] }),
     });
     expect(preview.verdict.ok).toBe(false);
-    if (!preview.verdict.ok) expect(preview.verdict.reason).toBe("flavour-mismatch");
+    expect(refusal(preview.verdict)).toBe("flavour-mismatch");
   });
 
   it("refuses a platform the channel does not serve", () => {
@@ -67,7 +71,7 @@ describe("previewPointer", () => {
       catalog: catalog({ bundles: [v1] }),
     });
     expect(preview.verdict.ok).toBe(false);
-    if (!preview.verdict.ok) expect(preview.verdict.reason).toBe("platform-disabled");
+    expect(refusal(preview.verdict)).toBe("platform-disabled");
   });
 
   it("gates a bundle on the channel's native build", () => {
@@ -80,7 +84,7 @@ describe("previewPointer", () => {
       catalog: catalog({ bundles: [gated], natives: [old] }),
     });
     expect(preview.verdict.ok).toBe(false);
-    if (!preview.verdict.ok) expect(preview.verdict.reason).toBe("native-gate");
+    expect(refusal(preview.verdict)).toBe("native-gate");
   });
 
   it("compares native builds by build number", () => {
@@ -126,7 +130,7 @@ describe("previewPointer", () => {
     expect(previewPointer({ ...facts, artefact: v2, servedByBase: served }).verdict.ok).toBe(true);
     const never = previewPointer({ ...facts, artefact: v3, servedByBase: served });
     expect(never.verdict.ok).toBe(false);
-    if (!never.verdict.ok) expect(never.verdict.reason).toBe("not-on-base");
+    expect(refusal(never.verdict)).toBe("not-on-base");
     expect(previewPointer({ ...facts, artefact: v2 }).verdict.ok).toBe(false);
   });
 });
