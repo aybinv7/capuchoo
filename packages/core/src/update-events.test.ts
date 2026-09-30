@@ -138,3 +138,23 @@ describe("the success rate", () => {
     expect(successRate(of({ delivered: 2, failed: 1 }))).toBe(66.7);
   });
 });
+
+describe("host diagnostics are not update outcomes", () => {
+  it.each([
+    "webview_resource_error",
+    "webview_unclean_restart",
+    "webview_dom_content_loaded",
+    "app_launch_start",
+  ])("%s is not a failure", (action) => {
+    expect(classifyUpdateEvent(action)).toBe("other");
+  });
+
+  it("keeps foreground and background as lifecycle", () => {
+    expect(classifyUpdateEvent("app_moved_to_foreground")).toBe("lifecycle");
+  });
+
+  it("still counts a crash and a failed download as failures", () => {
+    expect(classifyUpdateEvent("app_crash")).toBe("failed");
+    expect(classifyUpdateEvent("download_fail")).toBe("failed");
+  });
+});
