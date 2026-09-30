@@ -158,9 +158,6 @@ function patchAndroid(input: NativeConfigInput): string[] {
     const before = gradle;
 
     if (appId) {
-      // Both forms appear in a Capacitor project: `namespace = "..."` and
-      // `applicationId "..."`. Quote style varies, so match either.
-      gradle = gradle.replace(/(\bnamespace\s*=\s*)["'][^"']*["']/, `$1"${appId}"`);
       gradle = gradle.replace(/(\bapplicationId\s*=?\s*)["'][^"']*["']/, `$1"${appId}"`);
     }
     if (version) {
