@@ -1,110 +1,94 @@
-<template>
-  <div class="space-y-4">
-    <DevicesTableBulkEdit
-      :selected-items="selectedItems"
-      @click:bulk-delete="handleBulkDelete"
-      @click:bulk-edit="handleBulkEdit"
-      @click:bulk-export="handleBulkExport"
-      @click:clear-selection="clearSelection"
-    />
-
-    <DevicesTableDataTable
-      ref="dataTableRef"
-      :columns="devicesColumns"
-      :data="items"
-      :is-loading="isLoading"
-      @selection-change="handleSelectionChange"
-      @row-click="handleRowClick"
-      @refresh="$emit('refresh')"
-    />
-
-    <DevicesDeleteDialog
-      v-model:delete-dialog-open="deleteDialogOpen"
-      :is-deleting="isDeleting"
-      :item-to-delete="itemToDelete"
-      :selected-items="selectedItems"
-      @click:handle-delete-confirm="handleDeleteConfirm"
-    />
-
-    <!-- We can add BulkEditDialog here if/when needed, similar to UpdatesBundles -->
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref } from "vue";
-import { devicesColumns } from "./DevicesTable/devices.columns";
-import type { Device } from "@/modules/devices/types/devices.types";
-import DevicesTableDataTable from "./DevicesTable/DevicesTableDataTable.vue";
-import DevicesTableBulkEdit from "./DevicesTable/DevicesTableBulkEdit.vue";
-import DevicesDeleteDialog from "./DevicesTable/DevicesDeleteDialog.vue";
+import { Bug, MonitorSmartphone, Pin } from "@lucide/vue";
+import RelativeTime from "@/shared/components/RelativeTime.vue";
+import VersionTag from "@/shared/components/VersionTag.vue";
+import VirtualRows from "@/shared/components/VirtualRows.vue";
+import type { Device } from "../types/devices.types";
+import DeviceRowActions from "./DeviceRowActions.vue";
 
-const dataTableRef = ref();
-const selectedItems = ref<Device[]>([]);
-const deleteDialogOpen = ref(false);
-const itemToDelete = ref<string | null>(null);
-const isDeleting = ref(false);
+defineProps<{ devices: readonly Device[] }>();
+const emit = defineEmits<{ assign: [device: Device]; remove: [device: Device]; reachEnd: [] }>();
 
-const { items, isLoading } = defineProps<{
-  items: Device[];
-  isLoading?: boolean;
-}>();
+const COLUMNS =
+  "minmax(12rem,1.6fr) 7rem minmax(7rem,1fr) minmax(7rem,1fr) minmax(9rem,1.2fr) 7rem 2.5rem";
 
-const emit = defineEmits<{
-  (e: "deleteItem", id: string): void;
-  (e: "refresh"): void;
-}>();
-
-const handleSelectionChange = (selection: Device[]) => {
-  selectedItems.value = selection;
-};
-
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-
-const handleRowClick = (item: Device) => {
-  router.push(`/devices/${item.id}`);
-};
-
-const handleBulkEdit = () => {
-  console.warn("Bulk edit requested");
-};
-
-const handleBulkExport = () => {
-  console.warn("Bulk export requested");
-};
-
-const handleBulkDelete = () => {
-  itemToDelete.value = null;
-  deleteDialogOpen.value = true;
-};
-
-const handleDeleteConfirm = async () => {
-  isDeleting.value = true;
-  try {
-    if (itemToDelete.value) {
-      emit("deleteItem", itemToDelete.value);
-    } else {
-      selectedItems.value.forEach((item) => {
-        emit("deleteItem", item.device_id);
-      });
-    }
-    clearSelection();
-  } finally {
-    isDeleting.value = false;
-    deleteDialogOpen.value = false;
-    itemToDelete.value = null;
-  }
-};
-
-const clearSelection = () => {
-  if (dataTableRef.value) {
-    dataTableRef.value.clearSelection();
-  }
-  selectedItems.value = [];
-};
-
-defineExpose({
-  clearSelection,
-});
+const title = (device: Device) =>
+  device.device_name ||
+  [device.manufacturer, device.model].filter(Boolean).join(" ") ||
+  "Unknown device";
 </script>
+
+<template>
+  <VirtualRows
+    :items="devices"
+    :row-height="52"
+    :columns="COLUMNS"
+    :item-key="(device) => device.id"
+    @reach-end="emit('reachEnd')"
+  >
+    <template #header>
+      <span>Device</span>
+      <span>Platform</span>
+      <span>OTA bundle</span>
+      <span>Native</span>
+      <span>Channel</span>
+      <span class="text-right">Last seen</span>
+      <span />
+    </template>
+    <template #row="{ item }">
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5">
+          <span class="truncate text-sm">{{ title(item) }}</span>
+          <MonitorSmartphone
+            v-if="item.is_emulator"
+            class="text-muted-foreground size-3.5 shrink-0"
+            aria-label="Emulator"
+          />
+          <Bug
+            v-if="item.is_prod === false"
+            class="text-warning size-3.5 shrink-0"
+            aria-label="Debug build"
+          />
+        </div>
+        <div class="text-muted-foreground truncate font-mono text-[11px]" :title="item.device_id">
+          {{ item.custom_id ?? item.device_id }}
+        </div>
+      </div>
+      <div class="text-xs">
+        <div class="font-mono uppercase">{{ item.platform }}</div>
+        <div class="text-muted-foreground truncate">{{ item.version_os ?? "—" }}</div>
+      </div>
+      <VersionTag kind="ota" :version="item.version_name" />
+      <VersionTag kind="native" :version="item.version_builtin" :code="item.version_code" />
+      <div class="min-w-0 text-xs">
+        <div class="flex items-center gap-1">
+          <span class="truncate font-mono">{{
+            item.channel_name ?? item.reported_channel ?? "unresolved"
+          }}</span>
+          <Pin
+            v-if="item.assigned_channel_id"
+            class="text-primary size-3 shrink-0"
+            aria-label="Assigned from the dashboard"
+          />
+        </div>
+        <div
+          v-if="item.reported_channel && item.reported_channel !== item.channel_name"
+          class="text-muted-foreground truncate"
+        >
+          build says {{ item.reported_channel }}
+        </div>
+      </div>
+      <span class="text-muted-foreground text-right text-xs"
+        ><RelativeTime :value="item.last_seen_at"
+      /></span>
+      <DeviceRowActions
+        :device="item"
+        @assign="emit('assign', item)"
+        @remove="emit('remove', item)"
+      />
+    </template>
+    <template #footer>
+      <slot name="footer" />
+    </template>
+  </VirtualRows>
+</template>

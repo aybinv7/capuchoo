@@ -2,7 +2,7 @@
 import type { AcceptableValue } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 import { reactiveOmit, useVModel } from "@vueuse/core";
-import { ChevronDownIcon } from "lucide-vue-next";
+import { ChevronDownIcon } from "@lucide/vue";
 import { cn } from "@/lib/utils";
 
 defineOptions({
@@ -15,7 +15,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "update:modelValue": AcceptableValue;
+  "update:modelValue": [value: AcceptableValue];
 }>();
 
 const modelValue = useVModel(props, "modelValue", emit, {

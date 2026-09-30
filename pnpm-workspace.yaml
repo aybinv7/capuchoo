@@ -78,6 +78,9 @@ catalog:
   multer: ^2.2.0
   express-rate-limit: ^8.6.2
   "@types/multer": ^2.2.0
+  reka-ui: ^2.10.3
+  "@vueuse/core": ^14.4.0
+  "@lucide/vue": ^1.48.0
 
 overrides:
   vite: "catalog:"

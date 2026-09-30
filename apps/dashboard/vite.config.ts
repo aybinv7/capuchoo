@@ -1,114 +1,46 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite-plus";
 
-import vue from "@vitejs/plugin-vue";
-import vueDevTools from "vite-plugin-vue-devtools";
-import Layouts from "vite-plugin-vue-layouts";
-
-import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import tailwindcss from "@tailwindcss/vite";
-import { resolve } from "path";
-import AutoImport from "unplugin-auto-import/vite";
-import IconsResolver from "unplugin-icons/resolver";
-import Icons from "unplugin-icons/vite";
-import TurboConsole from "unplugin-turbo-console/vite";
-import Components from "unplugin-vue-components/vite";
-import { VueRouterAutoImports } from "unplugin-vue-router";
-import VueRouter from "unplugin-vue-router/vite";
+import vue from "@vitejs/plugin-vue";
 
+const API_TARGET = process.env.CAPUCHOO_API_TARGET ?? "http://localhost:3000";
+
+/**
+ * The dashboard is served by `@capuchoo/server` from the same origin in production, so the API is
+ * the relative `/api`. In development the proxy keeps that true: `changeOrigin` stays off so the
+ * server sees the dev host in both `Host` and `Origin` and its CSRF check passes for cookie writes.
+ */
 export default defineConfig({
-  plugins: [
-    VueRouter({
-      exclude: [
-        "src/pages/**/components/",
-        // Parked, not deleted: the canvas is not part of the product yet, and a
-        // route that exists is a route someone reaches by typing the URL. Drop
-        // this line to bring it back.
-        "src/pages/canvas.vue",
-      ],
-    }),
-    vue(),
-
-    vueDevTools(),
-    Layouts({
-      layoutsDirs: "src/layouts",
-      defaultLayout: "Authenticated",
-    }),
-    tailwindcss(),
-    TurboConsole(),
-    VueI18nPlugin({
-      include: "src/locales/**",
-    }),
-    AutoImport({
-      include: [/\.[tj]sx?$/, /\.vue$/, /\.vue\?vue/, /\.md$/],
-      imports: ["vue", "pinia", VueRouterAutoImports, "@vueuse/core", "vue-i18n"],
-      dirs: [
-        "src/utils/**/**",
-        "src/lib/**/**",
-        "src/services/**/**",
-        "src/types/**/**",
-        "src/composables/**/**/**/**",
-        "src/stores/**/**",
-        "src/components/**/**",
-        "src/pages/**/components/**",
-        "src/pages/components/**",
-        "src/modules/**/**",
-      ],
-      dts: "auto-imports.d.ts",
-      vueTemplate: true,
-      viteOptimizeDeps: true,
-      injectAtEnd: true,
-      dirsScanOptions: { types: true },
-      eslintrc: {
-        enabled: true,
-        filepath: "./.eslintrc-auto-import.json",
-      },
-    }),
-    Components({
-      dts: "components.d.ts",
-      dirs: [
-        "src/components/**",
-        "src/pages/**/components/**",
-        "src/pages/components/**",
-        "src/modules/**/components/**",
-      ],
-      extensions: ["vue"],
-      deep: true,
-      directoryAsNamespace: true,
-      resolvers: [IconsResolver({ prefix: "i" })],
-    }),
-    Icons({
-      autoInstall: true,
-      defaultClass: "icon-global",
-    }),
-    // Imagemin({
-    //   cache: false,
-    //   compress: {
-    //     jpg: { quality: 80, progressive: true },
-    //     jpeg: { quality: 80, progressive: true },
-    //     png: { quality: 0.8 },
-    //     webp: { quality: 80 },
-    //   },
-    //   conversion: [
-    //     { from: 'png', to: 'webp' },
-    //     { from: 'jpg', to: 'webp' },
-    //   ],
-    // }),
-  ],
+  plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@pages": resolve(__dirname, "./src/pages"),
-      "@assets": resolve(__dirname, "./src/assets"),
-      "@modules": resolve(__dirname, "./src/modules"),
     },
   },
-
+  server: {
+    proxy: {
+      "/api": {
+        target: API_TARGET,
+        changeOrigin: false,
+        ws: false,
+      },
+    },
+  },
   build: {
     cssCodeSplit: true,
-  },
-
-  optimizeDeps: {
-    include: ["vue", "vue-router", "pinia", "@vueuse/core"],
+    target: "es2022",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("@vue-flow")) return "vue-flow";
+          if (id.includes("leaflet")) return "leaflet";
+          if (id.includes("reka-ui") || id.includes("@floating-ui")) return "reka";
+          if (/[\\/](vue|@vue|vue-router|pinia|@tanstack)[\\/]/.test(id)) return "framework";
+          return undefined;
+        },
+      },
+    },
   },
 });
