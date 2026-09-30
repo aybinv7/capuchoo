@@ -9,6 +9,8 @@ export interface UploadInput {
   artifact: DeployArtifact;
   outcome: DeployOutcome;
   seal: Seal;
+  cloudAppId: string;
+  /** The app's primary bundle identifier. */
   appId: string;
   channel: string;
   platform: "android" | "ios";

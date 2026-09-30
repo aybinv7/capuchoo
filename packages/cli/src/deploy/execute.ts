@@ -10,7 +10,7 @@ import { BuildTracker } from "./build-tracker.js";
 import { detectCiContext } from "./ci-context.js";
 import { releasePreflight } from "./preflight.js";
 import { needsSeal, sealArtefact, type Seal } from "./seal.js";
-import { uploadRelease } from "./upload.js";
+import { publishRelease, UnconfirmedUploadError } from "./publish.js";
 import {
   DEPLOY_LOG_FILE,
   describeFailure,
@@ -431,11 +431,12 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     if (!flags["dry-run"]) {
       reporter.begin("upload");
 
-      const { result, artefactId } = await uploadRelease({
+      const published = await publishRelease({
         cloud,
         artifact,
         outcome,
         seal,
+        cloudAppId: project.cloudAppId,
         appId: project.appId,
         channel: channel.name,
         platform,
@@ -447,9 +448,10 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         buildId: await tracker.buildId(),
       });
 
-      uploaded = result.status >= 200 && result.status < 300;
-      publishedId = artefactId;
+      uploaded = true;
+      publishedId = published.artefactId;
       reporter.note(`${formatBytes(artifact.byteSize)} accepted`);
+      if (published.warning) outcome.warnings.push(published.warning);
 
       // The OTA archive is a build artefact; the APK is not - it may be needed
       // for a store submission, so it stays.
@@ -518,6 +520,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
             "were left as they are.\n",
         ),
       );
+    } else if (error instanceof UnconfirmedUploadError) {
+      process.stderr.write(chalk.yellow("\n! The version files were kept.\n"));
     } else {
       // Nothing was published, so nothing should have changed. Done here rather
       // than by telling the operator to run git checkout: a tool that knows it
