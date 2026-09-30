@@ -87,3 +87,7 @@ peerDependencyRules:
     - vite
   allowedVersions:
     vite: "*"
+
+minimumReleaseAgeExclude:
+  - '@hono/node-server@2.1.3'
+  - hono@4.13.11
