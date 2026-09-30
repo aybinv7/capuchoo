@@ -3,9 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
-import { validateRequest, type DeployRequest } from "./deploy.js";
+import { requestWarnings, validateRequest, type DeployRequest } from "./deploy.js";
 import {
-  describeEnvIsolationProblems,
+  assessEnvIsolation,
   findLeakedKeys,
   missingRequiredKeys,
   readLocalEnvSources,
@@ -90,6 +90,22 @@ describe("local env leaks", () => {
     expect(problems()[0]).toContain("VITE_FEATURE (.env.prod.local)");
   });
 
+  it("warns instead of refusing outside prod", () => {
+    write("build/dev/.env.dev", FLAVOUR);
+    write(".env.local", "VITE_DB_FILENAME=laptop.db\n");
+    const deploy = request({ channel: "dev", environment: "dev" });
+    const flavour = resolveFlavour(appDir, deploy.project, "dev");
+    expect(validateRequest(deploy, flavour)).toEqual([]);
+    const warnings = requestWarnings(deploy, flavour);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("VITE_DB_FILENAME (.env.local)");
+  });
+
+  it("ignores live-reload settings, which a deploy switches off", () => {
+    write(".env.local", "VITE_LIVE_RELOAD_HOST=laptop.test\nVITE_LIVE_RELOAD_PORT=5174\n");
+    expect(problems()).toEqual([]);
+  });
+
   it("accepts the local values with --allow-local-env", () => {
     write(".env.local", "VITE_DB_FILENAME=laptop.db\n");
     expect(problems({ allowLocalEnv: true })).toEqual([]);
@@ -143,16 +159,17 @@ describe("pure helpers", () => {
     expect(missingRequiredKeys(["B", "A"], { C: "1" })).toEqual(["B", "A"]);
   });
 
-  it("describeEnvIsolationProblems is empty for an isolated flavour", () => {
+  it("assessEnvIsolation is empty for an isolated flavour", () => {
     expect(
-      describeEnvIsolationProblems({
+      assessEnvIsolation({
         envFileLabel: "f",
         required: [],
         flavourEnv: { VITE_X: "1" },
         sources: [{ label: ".env", keys: ["VITE_X"] }],
         allowLocalEnv: false,
+        strict: true,
       }),
-    ).toEqual([]);
+    ).toEqual({ problems: [], warnings: [] });
   });
 
   it("readLocalEnvSources lists keys only for the files that exist", () => {

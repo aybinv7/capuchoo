@@ -28,7 +28,7 @@ import {
   type VersionState,
 } from "./flavour.js";
 import { applyNativeConfig, builtinConfigLimitations } from "./native-config.js";
-import { describeEnvIsolationProblems, readLocalEnvSources } from "./env-isolation.js";
+import { assessEnvIsolation, readLocalEnvSources, type EnvIsolation } from "./env-isolation.js";
 import { detectToolchain } from "./toolchain.js";
 import { bundleFileName, createBundleZip } from "./zip.js";
 
@@ -149,17 +149,7 @@ export function planSteps(request: DeployRequest): Step[] {
 export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour): string[] {
   const problems = describeFlavourProblems(flavour);
 
-  if (flavour.envFile) {
-    problems.push(
-      ...describeEnvIsolationProblems({
-        envFileLabel: flavour.config.envFile,
-        required: request.project.requiredEnv,
-        flavourEnv: flavour.fileEnv,
-        sources: readLocalEnvSources(envRoots(request), flavour),
-        allowLocalEnv: request.allowLocalEnv ?? false,
-      }),
-    );
-  }
+  problems.push(...envIsolation(request, flavour).problems);
 
   const declaredAppId = flavour.fileEnv.VITE_APP_ID;
 
@@ -213,6 +203,23 @@ export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour
   return problems;
 }
 
+/** What the request should hear before the build, without being refused. */
+export function requestWarnings(request: DeployRequest, flavour: ResolvedFlavour): string[] {
+  return envIsolation(request, flavour).warnings;
+}
+
+function envIsolation(request: DeployRequest, flavour: ResolvedFlavour): EnvIsolation {
+  if (!flavour.envFile) return { problems: [], warnings: [] };
+  return assessEnvIsolation({
+    envFileLabel: flavour.config.envFile,
+    required: request.project.requiredEnv,
+    flavourEnv: flavour.fileEnv,
+    sources: readLocalEnvSources(envRoots(request), flavour),
+    allowLocalEnv: request.allowLocalEnv ?? false,
+    strict: request.environment === "prod",
+  });
+}
+
 /** Directories Vite may load dotenv files from: the app, and the build directory when it differs. */
 function envRoots(request: DeployRequest): string[] {
   const appDir = path.resolve(request.appDir);
@@ -261,6 +268,10 @@ export async function runDeploy(
     `${request.environment} flavour, v${state.version} (build ${state.versionCode}), ` +
       `${toolchain.packageManager} workspace`,
   );
+  for (const warning of requestWarnings(request, flavour)) {
+    reporter.note(chalk.yellow(warning));
+    warnings.push(warning);
+  }
 
   let nativeConfigMethod = "not run";
 

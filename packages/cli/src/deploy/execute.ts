@@ -92,7 +92,7 @@ export const commonDeployFlags = {
   "allow-local-env": Flags.boolean({
     default: false,
     description:
-      "Build even when .env / .env.local define VITE_* keys the flavour file does not, shipping this machine's values",
+      "Build prod even when .env / .env.local define VITE_* keys the flavour file does not, shipping this machine's values",
   }),
 } as const;
 

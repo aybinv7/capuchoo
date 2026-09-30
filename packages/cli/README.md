@@ -84,6 +84,7 @@ USAGE
 - [`capuchoo org members`](#capuchoo-org-members)
 - [`capuchoo release list`](#capuchoo-release-list)
 - [`capuchoo setup`](#capuchoo-setup)
+- [`capuchoo unlink`](#capuchoo-unlink)
 - [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
 - [`capuchoo version sync`](#capuchoo-version-sync)
 
@@ -482,7 +483,7 @@ Deliver an already published release to a channel by moving its pointer; nothing
 
 ```
 USAGE
-  $ capuchoo channel point CHANNEL --version <value> [--native <value>] [--platform android|ios] [--rollback]
+  $ capuchoo channel point CHANNEL [--version <value>] [--native <value>] [--platform android|ios] [--rollback]
     [--reason <value>] [-y] [--json]
 
 ARGUMENTS
@@ -491,12 +492,12 @@ ARGUMENTS
 FLAGS
   -y, --yes                Do not ask for confirmation
       --json               Machine-readable output
-      --native=<value>     Native build number (versionCode) to deliver as well
+      --native=<value>     Native build number (versionCode) to deliver, alone or with --version
       --platform=<option>  [default: android]
                            <options: android|ios>
       --reason=<value>     Why, recorded in the channel history
       --rollback           Move to a lower version; devices accept the downgrade
-      --version=<value>    (required) Version to deliver. Selects the OTA bundle, and the native build with --native
+      --version=<value>    OTA bundle version to deliver
 
 DESCRIPTION
   Deliver an already published release to a channel by moving its pointer; nothing is rebuilt
@@ -505,6 +506,8 @@ EXAMPLES
   $ capuchoo channel point prod-acme --version 2.4.0
 
   $ capuchoo channel point prod --version 2.4.0 --native 57
+
+  $ capuchoo channel point prod-acme --native 57
 
   $ capuchoo channel point prod --version 2.3.1 --rollback --reason "crash on login"
 ```
@@ -1010,6 +1013,36 @@ EXAMPLES
 
   $ capuchoo init --create --name "My App" --app-id com.acme.app
 ```
+
+## `capuchoo unlink`
+
+Undo init here: remove the server link, optionally delete the app on the server
+
+```
+USAGE
+  $ capuchoo unlink [--delete-app] [--sign-out] [--forget-signing-key] [--dry-run] [-y]
+
+FLAGS
+  -y, --yes                 Skip the confirmations
+      --delete-app          Also delete the linked app on the server, with its channels and releases
+      --dry-run             Show what would change, change nothing
+      --forget-signing-key  Also delete .capuchoo/signing-key.pem. Installed builds will refuse releases signed by a new
+                            key
+      --sign-out            Also forget this machine's API key and server address
+
+DESCRIPTION
+  Undo init here: remove the server link, optionally delete the app on the server
+
+EXAMPLES
+  $ capuchoo unlink
+
+  $ capuchoo unlink --delete-app --sign-out
+
+  $ capuchoo unlink --dry-run
+```
+
+_See code:
+[src/commands/unlink.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/unlink.ts)_
 
 ## `capuchoo version bump TYPE`
 

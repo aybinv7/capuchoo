@@ -30,10 +30,12 @@ environment set is rejected, and so is a channel whose environment disagrees wit
 ## Flavour isolation
 
 A build sees only its flavour file. Every key in `build/<env>/.env.<env>` is passed to the web
-build, Trapeze and `cap sync` explicitly, with `VITE_LIVE_RELOAD=false`. A deploy is refused when
-`.env`, `.env.local`, `.env.<mode>` or `.env.<mode>.local` define a `VITE_*` key the flavour file
-does not, because Vite (and a `capacitor.config.ts` that loads `.env.local`) would ship this
-machine's value. Set the key in the flavour file, or pass `--allow-local-env` to accept it.
+build, Trapeze and `cap sync` explicitly, with `VITE_LIVE_RELOAD=false`. When `.env`, `.env.local`,
+`.env.<mode>` or `.env.<mode>.local` define a `VITE_*` key the flavour file does not, Vite (and a
+`capacitor.config.ts` that loads `.env.local`) would ship this machine's value. A dev or staging
+deploy says so and continues; a prod deploy is refused. Set the key in the flavour file, or pass
+`--allow-local-env` to accept it. `VITE_LIVE_RELOAD_*` keys are ignored: they only matter while live
+reload is on, and a deploy turns it off.
 
 Keys that must never come from anywhere else go in `.capuchoo/project.json`:
 
