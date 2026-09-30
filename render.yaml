@@ -14,7 +14,6 @@ services:
     region: frankfurt
     rootDir: .
     buildCommand: >-
-      corepack enable &&
       pnpm install --frozen-lockfile &&
       pnpm --filter "{services/server}..." run build
     startCommand: pnpm --filter "{services/server}" run start
@@ -51,7 +50,6 @@ services:
     runtime: static
     rootDir: .
     buildCommand: >-
-      corepack enable &&
       pnpm install --frozen-lockfile &&
       pnpm --filter "{apps/dashboard}..." run build
     staticPublishPath: apps/dashboard/dist
