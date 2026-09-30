@@ -12,9 +12,10 @@ capuchoo/
 │   ├── updater/        @capuchoo/updater       app-side runtime
 │   ├── cli/            @capuchoo/cli          build and publish releases
 ├── apps/
-│   └── dashboard/      @capuchoo/dashboard     orgs, apps, channels, releases
+│   └── dashboard/      @capuchoo/dashboard     release console, served by the server
 ├── services/
-│   └── back/           @capuchoo/back          update server
+│   └── server/         @capuchoo/server        Hono + Kysely over PostgreSQL
+├── deploy/             Dockerfile, compose with Postgres, Traefik labels and backups
 ├── vite.config.ts      lint, format, and the fan-out tasks
 ├── pnpm-workspace.yaml membership, catalog, build-script approvals
 └── tsconfig.base.json  compiler options packages extend
@@ -105,13 +106,9 @@ breaks every subsequent pnpm command.
    `sig/presalio-monorepo` and `ayb/capubridge`.
 6. `vp install`.
 
-`services/back` and `apps/dashboard` are the exception to step 5: they rely on the root install and
-declare no `vite-plus` of their own. Both pin an older `@types/node` than the catalog resolves for,
-so a direct dependency made pnpm install a _second_ `@voidzero-dev/vite-plus-core` under a different
-peer set - and the dashboard's `vite.config.ts` then mixed types from both copies, failing `vue-tsc`
-with `TS2321: Excessive stack depth`. `vite-plus/test` resolves from the root either way, so
-`"test": "vp test --run"` works without the dependency. Bump their `@types/node` before adding it
-back.
+`apps/dashboard` relies on the root install and declares no `vite-plus` of its own: a direct
+dependency once made pnpm install a second `@voidzero-dev/vite-plus-core`, and `vue-tsc` failed with
+`TS2321: Excessive stack depth`. `vite-plus/test` resolves from the root either way.
 
 Do not add a `check` script - `vp check` covers the workspace in one pass, and a per-package one
 would run the linter N times over the same files.
@@ -195,13 +192,20 @@ Learned the hard way; each one was a live bug.
 - **One endpoint decides updates: `POST /api/update`.** It is the only one that consults the
   channel's native version and an OTA bundle's `min_update_version`. Send the real current bundle
   version, never a constant.
-- **`channels.current_version_id` decides what is served.** `active` on a version row only means the
-  artefact _may_ be served. An upload that does not move the channel pointer serves nothing.
-- **`devices` is the authoritative device row**, and `device_channels` is only a binding. Read the
-  former for anything a dashboard shows.
-- **The backend needs the Supabase _secret_ key.** Its own writes target tables with row level
-  security whose policies assume an authenticated user; a publishable key is silently rejected. See
-  [SUPABASE-KEYS.md](./SUPABASE-KEYS.md).
+- **A channel is a pointer, and only `canPoint` moves it.** Upload, promote, dashboard and CLI all
+  go through `services/server/src/services/delivery.ts`. A request naming a bundle and a native
+  build moves both in one transaction, native first, so a gated bundle is judged against the build
+  it will run on.
+- **Device endpoints are public, credential-free and CORS-open; everything else is same-origin.**
+  The dashboard is served by the server, so its session is an httpOnly cookie and there is no CORS
+  for the management API.
+- **On a device, updater requests go through native HTTP.** The WebView's `fetch` from
+  `https://localhost` hits CORS and mixed-content rules the plugin's own native stack never sees.
+- **Never resolve a promise with a Capacitor plugin proxy.** Every property is a native call, `then`
+  included, so `return proxy` from an async function or `await proxy` never settles. It hung the
+  updater's `init()` on a real device.
+- **A flavour changes `applicationId`, never the Gradle `namespace`.** The namespace is where
+  `.MainActivity` resolves; rewriting it crashed the APK at launch.
 - **OTA archives** need forward-slash entry names and `index.html` at the root; the Android unzip
   rejects a backslash outright.
 - **An unsigned release APK will not install.** The CLI refuses to publish one without
@@ -209,111 +213,40 @@ Learned the hard way; each one was a live bug.
 - **Check the row, not the code.** Three separate defects here read correctly in the source and were
   only visible in the database: a dashboard endpoint reading the wrong table, missing snake_case
   field mappings, and the unset channel pointer. Verify against the live system.
-- **A route that takes an `:id` needs an ownership check, not just `authenticate`.** The channel and
-  bundle routes filtered by `id` alone, so any authenticated account could read, edit or delete
-  another organization's resource by uuid. `checkResourceAccess` resolves the row's app and applies
-  the same rules as `checkAppAccess`. `createChannel` did check the key scope, which is what made
-  the omission on its siblings easy to miss - consistency is the whole defence here.
-- **A credential may never issue a credential broader than itself.** `POST /api-keys` took `app_id`
-  from the body and ignored the caller's own scope, so an app-scoped key could mint an unscoped one.
-  Any check the deploy endpoints enforce is worthless if the key-minting route does not.
-- **An app-scoped key still reads like an unscoped one.** `/auth/me` lists every app the account
-  owns; only the publishing endpoints refuse. So a scope mismatch is invisible until an upload
-  returns 403 after a full build - `canPublishTo()` is why `init` and `doctor` say it first. This
-  also explains `/api/apps` "losing" apps: it applies the scope and `/auth/me` does not.
+- **Every app route goes through `requireApp`.** It honours an API key's app restriction and role
+  cap, and answers 404 for an app the caller cannot see, so ids cannot be probed. The cross-tenant
+  cases are pinned in `services/server/test/authorization.test.ts`.
+- **A credential may never issue a credential broader than itself** (`canIssueCap`).
 
 ## Known gaps
 
-Verified 2026-08-31.
+Verified 2026-09-30 on a Redmi Note 14 against the server on PostgreSQL 18.
 
-**Needs a decision or a credential**
+**Needs you**
 
-- `deploy-app.yml` cannot run: the repository has **no secrets configured at all**. It needs
-  `CAPUCHOO_ENDPOINT`, `CAPUCHOO_API_KEY`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
-  `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
-- iOS has no CI path: it needs a macOS runner, a signing certificate and a provisioning profile. The
-  updater's native install path is Android-only by nature - an iOS binary cannot be side-loaded - so
-  iOS gets OTA bundles and store builds, nothing else.
-- No custom domain in front of the backend, so renaming the Render service again would strand every
-  installed build. See [DEPLOY.md](./DEPLOY.md).
-- `capuchoo-back` on Render is configured by hand rather than from `render.yaml`, so its settings
-  are not in version control and nothing here can prove what they are.
-- Migration 009 (device diagnostics and location) has to be applied to the production database by
-  hand, same as every migration here. `deviceService.upsertDevice` retries without the new columns
-  on a missing-column error, so a check does not 500 in the gap - but nothing is stored until it
-  runs.
+- A permanent hostname for the server before any production APK ships (see
+  [SELF-HOSTING.md](./SELF-HOSTING.md)); the URL is compiled into every build.
+- A release keystore run: every device test so far installed debug builds. The CLI refuses unsigned
+  or debug builds on prod and client channels, and pins the certificate, but a release-signed APK
+  has not been built on this machine.
+- Installing an APK from inside the app needs "Install unknown apps" allowed for that app on each
+  tablet (Android asks once). That is a device policy decision, not something the app can grant.
+- Law 18-07 obligations for device telemetry are with Direction (see the escalation note).
+- The new package versions (`@capuchoo/core` 0.11, `updater` 0.13, `cli` 0.16) are not published;
+  releasing them is a human step ([RELEASING.md](./RELEASING.md)).
 
-**Never exercised**
+**Not yet exercised**
 
-- `deploy native --type release`: no app in this workspace has a `signingConfig` driven by
-  `CAPUCHOO_KEYSTORE_*`, so signing and the unsigned-APK refusal have only been tested by unit
-  tests. Every device test so far has installed a debug build.
+- A GitLab runner executing `packages/cli/templates/gitlab-ci.yml`.
+- The Docker image and compose stack (no Docker on the development machine).
+- S3 storage against a real bucket; `fs` and `postgres` storage are exercised.
 - iOS anything.
-- On-device location end to end. `getLocationFacts`/`requestLocationPermission` are unit-tested and
-  the wire contract is proven, but no real device has had `@capacitor/geolocation` installed,
-  `collectLocation` turned on, and permission actually granted.
-
-**Cannot be obtained from this project's plugin set - do not approximate**
-
-- Total device RAM and free/total device storage. `@capacitor/device` in the 7-9 range this project
-  supports exposes only `memUsed` (the app's own memory footprint) and no disk figures at all; no
-  other plugin in the dependency set reports either. `mem_used_bytes` is real and stored; there is
-  no RAM or storage column because there is nothing honest to put in one. Getting either would mean
-  a community or native plugin outside this set - a real option, not attempted here because it
-  changes the dependency surface and was not asked for.
-- "How much the app itself is using" on disk. Same reason: no plugin in this set reports it, and
-  summing what `@capacitor/filesystem` can enumerate would cover only the OTA cache, not the
-  WebView's own storage or the SQLite databases most apps built on this stack use - a number that
-  looks precise while measuring the wrong thing.
-
-**Not shown anywhere**
-
-- `min_update_version` does not appear on the bundle detail page at all. It is a hideable table
-  column, filtered as a number range, whose cell renders `build N` for what is a build number.
-- A bundle gated behind a native that its channel cannot serve is refused at upload, at promote, and
-  at any later channel edit that would strand it (`assertChannelPointersConsistent`) - but deleting
-  the native build or bundle a channel is currently serving is the one write path that closed only
-  after being reachable: `deleteBundle`/`deleteNativeUpdate` now check for a serving channel first.
-- `getBuiltinVersion()` is not reported: the server has no column for it.
 
 **Deliberately not done**
 
-- The dashboard cannot upload an OTA bundle. Deploys are CLI-only by choice.
-- Signup has no CLI path, and will not get one: it needs email verification and a human accepting
-  terms. Everything after it - organizations, apps, channels, deploys - is CLI-only reachable, so
-  the browser is visited once per account rather than once per app.
-- No `bundle` or `key` command group. Capgo has both (listing bundles, encryption keys); we have no
-  bundle encryption at all, so there is nothing for `key` to manage yet.
-- No CLI flag installs `@capacitor/geolocation` the way `setup --native` installs the download
-  path's four plugins. Deliberate: collecting location is meant to cost the host app a real decision
-  - `pnpm add`, `VITE_UPDATE_LOCATION=true`, and calling `requestLocationPermission()` from
-    somewhere the user has been told why - and a one-command installer would make that decision
-    easier to make by accident.
-- The four `/api/dashboard/apps*` routes look unused, but the dashboard reads apps through Supabase
-  directly, so confirm that before deleting them. `/api/apps/:id/channels` and `/:id/releases` _are_
-  used - by the CLI.
-- TypeScript stays on 5.x: oclif's typings and `vue-tsc` are not validated on 7.x yet.
-
-**Closed since the last pass**
-
-- The Supabase `updates` bucket is private, and every artefact URL is a signed link with a one-hour
-  expiry.
-- The native update flow is exercised on real hardware: download, the Android installer, and the
-  install landing. A Redmi Note 14 went through optional OTA, required OTA, required native, and an
-  OTA held behind a native gate.
-- OTA telemetry no longer depends on what the plugin happens to post. The plugin only reports its
-  own auto-update flow, which this library does not use, so every OTA delivery was invisible; the
-  updater records them itself now.
-- `/updates-bundles/:id`'s Edit and Delete buttons are wired. Both endpoints existed the whole time.
-- The devices map showed a location for every device, real or not: `28 + hash(device_id) * 8` for
-  whichever device had none, so two devices in the same real place could land hundreds of km apart.
-  It shows real GPS now, from migration 009, or nothing for a device that has not reported one -
-  along with the "Active"/"Issues" filter, which was `index % 3` and `index % 5` and is now derived
-  from actual check-in recency (the "Issues" bucket had no real signal to replace it with, so it is
-  gone rather than re-faked).
-- `device.ts`'s `getOsFacts` did `await import("@capacitor/device")` as a literal - the exact defect
-  `optional-plugins.ts` documents at length for the native-update path, present here because this
-  function predates that fix. `@capacitor/device` is in `OPTIONAL_PACKAGES` now.
+- The dashboard cannot upload artefacts; publishing is CLI-only.
+- No open sign-up by default (`SIGNUP=closed`); accounts come from invitations.
+- No bundle encryption; releases are signed (authenticity), not encrypted (secrecy).
 
 ## Conventions## Conventions
 

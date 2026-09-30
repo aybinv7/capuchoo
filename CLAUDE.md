@@ -41,8 +41,8 @@ local `vite-plus` package. Use `vp why <package>` to show the package-manager de
 Capuchoo delivers over-the-air and native updates to Capacitor applications. Read
 [docs/MONOREPO.md](./docs/MONOREPO.md) for the layout, its "Invariants that bite" section for the
 rules that are answers to specific live bugs, and its "Known gaps" for what is deliberately
-unfinished. [docs/DEPLOY.md](./docs/DEPLOY.md) covers hosting the backend and dashboard,
-[docs/SUPABASE-KEYS.md](./docs/SUPABASE-KEYS.md) which Supabase key belongs where, and
+unfinished. [docs/SERVER.md](./docs/SERVER.md) is the server contract (delivery model, roles,
+signing, API), [docs/SELF-HOSTING.md](./docs/SELF-HOSTING.md) how to run it,
 [docs/RELEASING.md](./docs/RELEASING.md) how the packages reach npm, and
 [docs/ADDING-AN-APP.md](./docs/ADDING-AN-APP.md) what onboarding an app involves.
 
@@ -69,6 +69,10 @@ believed.
   No other platform infers this - Expo keys updates to a project id, CodePush compiles a
   per-deployment key in. The invariant that replaces it is _every artefact on a channel came from
   one flavour_, enforced at upload where the flavour is known for certain.
+- **A channel pointer moves only through `canPoint` (`packages/core/src/channel-pointer.ts`).** The
+  server's `services/delivery.ts` is the single writer; uploads, the dashboard and
+  `capuchoo channel point` all call it. Artefacts belong to an app and a flavour; channels only
+  point at them.
 - **The update decision lives in `packages/core/src/update-decision.ts`, and nowhere else.**
   `decideUpdate` is pure and total over a closed set of outcomes; `renderUpdateResponse` is the only
   place a wire response is shaped. The backend gathers facts and calls them - it must never branch

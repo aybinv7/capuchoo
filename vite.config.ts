@@ -73,7 +73,7 @@ export default defineConfig({
       {
         // A CLI's entire job is writing to stdout, the backend logs to it, and
         // a release script's whole output is the report it prints.
-        files: ["packages/cli/**", "services/back/**", "scripts/**"],
+        files: ["packages/cli/**", "services/server/**", "scripts/**"],
         env: { node: true },
         rules: {
           "no-console": "off",
