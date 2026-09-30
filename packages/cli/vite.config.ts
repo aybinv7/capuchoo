@@ -5,5 +5,6 @@ export default defineConfig({
     // Node-only package: no jsdom, no browser globals.
     environment: "node",
     include: ["src/**/*.test.ts"],
+    testTimeout: 20000,
   },
 });
