@@ -7,6 +7,7 @@ import {
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { writeFileAtomic, writePrivateFile } from "./secure-file.js";
 
 /**
  * Configuration and credential storage.
@@ -60,9 +61,8 @@ function readJson<T>(file: string): T | null {
   }
 }
 
-function writeJson(file: string, value: unknown): void {
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+function serialise(value: unknown): string {
+  return `${JSON.stringify(value, null, 2)}\n`;
 }
 
 export function readGlobalConfig(): GlobalConfig {
@@ -70,16 +70,7 @@ export function readGlobalConfig(): GlobalConfig {
 }
 
 export function writeGlobalConfig(config: GlobalConfig): void {
-  const file = globalConfigPath();
-  writeJson(file, config);
-
-  // The file holds an API key. Restrict it where the platform supports it;
-  // Windows ACLs are not modelled by chmod, so failure is not fatal.
-  try {
-    fs.chmodSync(file, 0o600);
-  } catch {
-    /* best effort */
-  }
+  writePrivateFile(globalConfigPath(), serialise(config));
 }
 
 export function updateGlobalConfig(patch: Partial<GlobalConfig>): GlobalConfig {
@@ -127,7 +118,7 @@ export function readProjectConfig(appDir: string): ProjectConfig | null {
 }
 
 export function writeProjectConfig(appDir: string, config: ProjectConfig): void {
-  writeJson(projectConfigPath(appDir), config);
+  writeFileAtomic(projectConfigPath(appDir), serialise(config));
 }
 
 /**
