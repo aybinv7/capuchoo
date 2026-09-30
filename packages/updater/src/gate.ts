@@ -42,6 +42,11 @@ export interface GateFacts {
   downloaded: boolean;
   /** The APK has gone to the Android package installer. */
   handedToInstaller: boolean;
+  /**
+   * Installing this native version failed repeatedly, so it can no longer be
+   * insisted on: the gate opens and the prompt may be dismissed.
+   */
+  installAbandoned?: boolean;
 }
 
 export interface Gate {
@@ -55,7 +60,7 @@ export interface Gate {
 const OPEN: Gate = { state: "open", blocked: false, reason: "" };
 
 export function updateGate(facts: GateFacts): Gate {
-  if (!facts.available || !facts.required) return OPEN;
+  if (!facts.available || !facts.required || facts.installAbandoned) return OPEN;
 
   // Checked before `downloading`: the handoff happens after a download, and an
   // app that also kicked off a background check could otherwise read as busy.
@@ -95,7 +100,7 @@ export function updateGate(facts: GateFacts): Gate {
  */
 export function isDismissible(facts: GateFacts): boolean {
   if (!facts.available) return false;
-  if (facts.required) return false;
+  if (facts.required && !facts.installAbandoned) return false;
 
   return !facts.downloading && !facts.installing && !facts.handedToInstaller;
 }

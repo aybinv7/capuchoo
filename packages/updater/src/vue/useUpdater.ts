@@ -1,292 +1,339 @@
 import type { PluginListenerHandle } from "@capacitor/core";
-import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import type { ResolvedUpdate } from "@capuchoo/core";
-import { computed, readonly, ref } from "vue";
+import { computed, readonly } from "vue";
 import {
   UpdateCheckBlockedError,
   UpdaterConfigError,
   checkForUpdate,
-  logUpdateEvent,
+  reportUpdateEvent,
 } from "../api.service.js";
+import { ApkIntegrityError, checkApkIntegrity } from "../apk-integrity.js";
+import {
+  clearChannel as forgetChannel,
+  getChannel,
+  getChannelOverride,
+  setChannel as chooseChannel,
+} from "../channel.service.js";
+import { isExpiredLinkError, isTransientError } from "../check-errors.js";
 import { getUpdaterConfig } from "../config.js";
 import {
+  getPlatform,
   getVersionCode,
   isNative,
   openLocationSettings,
   requestLocationPermission,
 } from "../device.js";
 import {
+  apkCacheFileName,
+  discardCachedApk,
   downloadNativeUpdate,
   findCachedApk,
   pruneApkCache,
   type DownloadProgress,
 } from "../download.service.js";
+import { HttpError } from "../http.js";
 import { openNativeInstaller } from "../install.service.js";
-import { applyOtaUpdate, getCurrentBundle, notifyAppReady } from "../ota.service.js";
+import { watchLifecycle } from "../lifecycle.js";
 import { canNotify, clearProgress, showProgress } from "../notification.service.js";
+import { applyOtaUpdate, getCurrentBundle, notifyAppReady } from "../ota.service.js";
+import { verifyUpdateSignature } from "../release-verification.js";
+import { isSameArtefact } from "../update-merge.js";
+import {
+  forgetOvertakenInstall,
+  restoreInstallAttempts,
+  settleInstallerHandoff,
+} from "./installer-handoff.js";
+import { attachPluginListeners } from "./plugin-listeners.js";
+import {
+  __resetPublishState,
+  isVerifiedPath,
+  markVerifiedPath,
+  publishUpdate,
+  updateAge,
+  withdrawUpdate,
+} from "./publish-update.js";
+import {
+  DONE_PROGRESS,
+  NO_PROGRESS,
+  initialState,
+  isBusy,
+  state,
+  type UpdaterState,
+} from "./updater-state.js";
 
-export interface UpdaterState {
-  checking: boolean;
-  downloading: boolean;
-  installing: boolean;
-  updateAvailable: boolean;
-  currentUpdate: ResolvedUpdate | null;
-  progress: DownloadProgress;
-  /** Local path of a downloaded APK, ready to install. */
-  cachedPath: string | null;
-  /**
-   * True once the APK has been handed to the Android package installer.
-   *
-   * Android shows its own confirmation dialog for a sideloaded APK and there is
-   * no way around it - it is an OS security boundary, not a styling choice. The
-   * handoff returns as soon as the intent is fired, long before the user has
-   * decided, so `installing` flips back to false while that dialog is still on
-   * screen and the prompt underneath reverted to offering an install the user
-   * was already being asked about. This keeps the app honest about what it is
-   * waiting for.
-   */
-  handedToInstaller: boolean;
-  error: string | null;
-  /** Transient status for the current operation. */
-  statusMessage: string;
-  /** Result of the last check, shown when no update is pending. */
-  lastCheckMessage: string;
-}
+export type { UpdaterState } from "./updater-state.js";
 
-const NO_PROGRESS: DownloadProgress = { loaded: 0, total: 0, percent: 0 };
-const DONE_PROGRESS: DownloadProgress = { loaded: 100, total: 100, percent: 100 };
-
-/**
- * Module-level state: one updater per app, shared by every component that calls
- * `useUpdater()`. Two independent copies would race over the same download.
- */
-const state = ref<UpdaterState>({
-  checking: false,
-  downloading: false,
-  installing: false,
-  updateAvailable: false,
-  currentUpdate: null,
-  progress: { ...NO_PROGRESS },
-  cachedPath: null,
-  handedToInstaller: false,
-  error: null,
-  statusMessage: "",
-  lastCheckMessage: "",
-});
+const SIGNED_LINK_REFRESH_MS = 45 * 60_000;
+const CHECKING = "Checking for updates...";
 
 const listeners: PluginListenerHandle[] = [];
 let initialised = false;
+let inflightCheck: Promise<boolean> | null = null;
+let checkErrorShown = false;
+let launchingInstaller = false;
+let resumedWhileLaunching = false;
 
-function publish(update: ResolvedUpdate): void {
-  // A pending native update outranks an OTA bundle: the bundle may well be the
-  // one that needs the new binary. Do not let a plugin event downgrade it.
-  if (state.value.currentUpdate?.kind === "native" && update.kind === "ota") return;
-
-  state.value.currentUpdate = update;
-  state.value.updateAvailable = true;
-  state.value.cachedPath = null;
-  state.value.handedToInstaller = false;
-  state.value.progress = { ...NO_PROGRESS };
-  state.value.error = null;
-  state.value.lastCheckMessage = `Version ${update.version} is available`;
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
-async function attachPluginListeners(): Promise<void> {
-  listeners.push(
-    // Raised when the plugin's own background check finds a bundle. With
-    // autoUpdate: "onlyDownload" it has already been fetched, so the id is
-    // enough to apply it without downloading again.
-    await CapacitorUpdater.addListener("updateAvailable", ({ bundle }) => {
-      publish({
-        kind: "ota",
-        version: bundle.version,
-        bundleId: bundle.id,
-        required: false,
-      });
-    }),
-
-    await CapacitorUpdater.addListener("download", ({ percent }) => {
-      if (state.value.currentUpdate?.kind !== "ota") return;
-      state.value.downloading = true;
-      state.value.progress = { loaded: percent, total: 100, percent };
-    }),
-
-    await CapacitorUpdater.addListener("downloadComplete", ({ bundle }) => {
-      if (state.value.currentUpdate?.kind !== "ota") return;
-      state.value.downloading = false;
-      state.value.currentUpdate.bundleId = bundle.id;
-      state.value.progress = { ...DONE_PROGRESS };
-      state.value.statusMessage = "Ready to install";
-    }),
-
-    await CapacitorUpdater.addListener("downloadFailed", () => {
-      state.value.downloading = false;
-      state.value.error = "The update could not be downloaded";
-    }),
-
-    await CapacitorUpdater.addListener("updateFailed", () => {
-      const { appName } = getUpdaterConfig();
-      state.value.error = `The update failed, so ${appName} restored the previous version`;
-    }),
-  );
+function showCheckError(message: string): void {
+  state.value.error = message;
+  checkErrorShown = true;
 }
 
-/**
- * Checks for an update.
- *
- * @param silent suppresses console noise for background checks.
- * @returns whether an update is now pending.
- */
-async function check(silent = false): Promise<boolean> {
-  if (!isNative() || state.value.checking) return false;
+function recordCheckFailure(error: unknown, silent: boolean): void {
+  if (error instanceof UpdaterConfigError) {
+    showCheckError("Updates are not configured for this build");
+    console.error("[capuchoo]", error.problems.join("; "));
+    return;
+  }
+  if (error instanceof UpdateCheckBlockedError) {
+    showCheckError(`The update service rejected this build: ${error.message}`);
+    console.error("[capuchoo]", error.message, error.response);
+    return;
+  }
+  if (error instanceof HttpError && !isTransientError(error)) {
+    showCheckError(
+      `The update service refused this request: ${error.serverMessage ?? `HTTP ${error.status}`}`,
+    );
+    console.error("[capuchoo]", error.message);
+    return;
+  }
 
+  state.value.lastCheckError = errorMessage(error, "The update check failed");
+  if (!isTransientError(error)) console.error("[capuchoo] update check failed", error);
+  else if (!silent) console.warn("[capuchoo] update check did not get an answer", error);
+}
+
+async function runCheck(silent: boolean): Promise<boolean> {
   state.value.checking = true;
-  state.value.error = null;
-  state.value.lastCheckMessage = "";
-  state.value.statusMessage = "Checking for updates...";
+  if (!isBusy()) state.value.statusMessage = CHECKING;
 
   try {
     const update = await checkForUpdate();
 
-    if (update) {
-      publish(update);
+    state.value.lastCheckedAt = Date.now();
+    state.value.lastCheckError = null;
+    if (checkErrorShown) {
+      state.value.error = null;
+      checkErrorShown = false;
+    }
 
-      // A previous run may already have paid for this binary. Asking the
-      // filesystem is what survives a restart; `cachedPath` alone does not, so
-      // relaunching used to re-download a file that was already on disk.
-      if (update.kind === "native") {
-        state.value.cachedPath = await findCachedApk(update);
+    if (!update) {
+      if (!state.value.updateAvailable) {
+        state.value.lastCheckMessage = `${getUpdaterConfig().appName} is up to date`;
+      }
+      return false;
+    }
+
+    const action = publishUpdate(update, "server");
+    const current = state.value.currentUpdate;
+
+    if (action === "replace" && current?.kind === "native") {
+      await restoreInstallAttempts(current);
+      if (!state.value.cachedPath) {
+        state.value.cachedPath = await findCachedApk(current);
         if (state.value.cachedPath) {
           state.value.progress = { ...DONE_PROGRESS };
           state.value.statusMessage = "Ready to install.";
         }
       }
-
-      await logUpdateEvent("check", update);
-      return true;
     }
 
-    if (!state.value.updateAvailable) {
-      const { appName } = getUpdaterConfig();
-      state.value.lastCheckMessage = `${appName} is up to date`;
-    }
-    return false;
+    reportUpdateEvent("check", update);
+    return true;
   } catch (error) {
-    // Configuration and channel errors are the developer's problem, not the
-    // user's, but reporting "up to date" would hide them completely.
-    if (error instanceof UpdaterConfigError) {
-      state.value.error = "Updates are not configured for this build";
-      console.error("[capuchoo]", error.problems.join("; "));
-    } else if (error instanceof UpdateCheckBlockedError) {
-      state.value.error = `The update service rejected this build: ${error.message}`;
-      console.error("[capuchoo]", error.message, error.response);
-    } else {
-      state.value.error = "Could not reach the update service";
-      if (!silent) console.error("[capuchoo] update check failed", error);
-    }
+    recordCheckFailure(error, silent);
     return false;
   } finally {
     state.value.checking = false;
-    state.value.statusMessage = "";
+    if (state.value.statusMessage === CHECKING) state.value.statusMessage = "";
   }
+}
+
+/**
+ * Checks for an update. Offline and 5xx answers are retried with backoff and
+ * never reach `error`; only a server refusal does. A check while one is
+ * running joins it.
+ *
+ * @param silent suppresses console noise for background checks.
+ * @returns whether an update is now pending.
+ */
+function check(silent = false): Promise<boolean> {
+  if (!isNative()) return Promise.resolve(false);
+  inflightCheck ??= runCheck(silent).finally(() => {
+    inflightCheck = null;
+  });
+  return inflightCheck;
+}
+
+async function freshUpdate(update: ResolvedUpdate, force: boolean): Promise<ResolvedUpdate> {
+  if (!force && updateAge() < SIGNED_LINK_REFRESH_MS) return update;
+
+  await check(true);
+  const current = state.value.currentUpdate;
+  return current && isSameArtefact(current, update) ? current : update;
+}
+
+async function downloadApk(
+  update: ResolvedUpdate,
+  onProgress: (progress: DownloadProgress) => void,
+): Promise<{ path: string; update: ResolvedUpdate }> {
+  try {
+    return { path: await downloadNativeUpdate(update, onProgress), update };
+  } catch (error) {
+    if (!isExpiredLinkError(error)) throw error;
+    const renewed = await freshUpdate(update, true);
+    if (renewed.downloadUrl === update.downloadUrl) throw error;
+    return { path: await downloadNativeUpdate(renewed, onProgress), update: renewed };
+  }
+}
+
+async function verifyApk(update: ResolvedUpdate, path: string): Promise<void> {
+  if (isVerifiedPath(path)) return;
+
+  const config = getUpdaterConfig();
+  await verifyUpdateSignature(update, config, getPlatform());
+  await checkApkIntegrity(update, apkCacheFileName(update), {
+    requireHash: config.requireSignature,
+  });
+  markVerifiedPath(path);
+}
+
+async function rejectApk(update: ResolvedUpdate, error: unknown): Promise<void> {
+  if (!(error instanceof ApkIntegrityError) || !error.corrupt) return;
+  await discardCachedApk(update);
+  state.value.cachedPath = null;
+  state.value.progress = { ...NO_PROGRESS };
+  markVerifiedPath(null);
+}
+
+async function downloadNative(update: ResolvedUpdate, notify: boolean): Promise<void> {
+  const { appName } = getUpdaterConfig();
+  const { path, update: downloaded } = await downloadApk(update, (progress) => {
+    state.value.progress = progress;
+    if (notify) {
+      void showProgress({
+        title: `Downloading ${appName} ${update.version}`,
+        percent: progress.percent,
+        body: `${progress.percent}%`,
+      });
+    }
+  });
+
+  state.value.cachedPath = path;
+  if (notify) await clearProgress();
+
+  try {
+    await verifyApk(downloaded, path);
+  } catch (error) {
+    await rejectApk(downloaded, error);
+    throw error;
+  }
+
+  state.value.progress = { ...DONE_PROGRESS };
+  state.value.statusMessage = "Download complete. Tap Install to continue.";
+  reportUpdateEvent("download_complete", downloaded);
+}
+
+async function applyOta(update: ResolvedUpdate): Promise<void> {
+  await verifyUpdateSignature(update, getUpdaterConfig(), getPlatform());
+  reportUpdateEvent("install", update, undefined, { keepalive: true });
+  await applyOtaUpdate(update);
 }
 
 /** Downloads the pending update. For native updates, install is a second step. */
 async function startDownload(): Promise<void> {
-  const update = state.value.currentUpdate;
-  if (!update || state.value.downloading || state.value.installing) return;
+  const pending = state.value.currentUpdate;
+  if (!pending || isBusy()) return;
 
   state.value.error = null;
+  checkErrorShown = false;
 
-  // Already on disk - go straight to the installer.
-  if (update.kind === "native" && state.value.cachedPath) {
+  if (pending.kind === "native" && state.value.cachedPath) {
     await installNativeUpdate();
     return;
   }
 
   state.value.downloading = true;
   state.value.statusMessage =
-    update.kind === "native" ? "Downloading the new version..." : "Downloading update...";
+    pending.kind === "native" ? "Downloading the new version..." : "Downloading update...";
 
-  // Asked for once, here, rather than at start-up: a permission prompt out of
-  // context is one people decline, and an app that never downloads an update
-  // should never see it at all.
-  const notify = getUpdaterConfig().notifyProgress ? await canNotify() : false;
+  const notify =
+    pending.kind === "native" && getUpdaterConfig().notifyProgress ? await canNotify() : false;
+  let update = pending;
 
   try {
+    update = await freshUpdate(pending, false);
     if (update.kind === "native") {
-      state.value.cachedPath = await downloadNativeUpdate(update, (progress) => {
-        state.value.progress = progress;
-
-        // The whole point of a backgrounded download: the app may not be on
-        // screen, and a download with no visible sign of life gets cancelled.
-        if (notify) {
-          void showProgress({
-            title: `Downloading ${getUpdaterConfig().appName} ${update.version}`,
-            percent: progress.percent,
-            body: `${progress.percent}%`,
-          });
-        }
-      });
-      state.value.progress = { ...DONE_PROGRESS };
-      state.value.statusMessage = "Download complete. Tap Install to continue.";
-      if (notify) await clearProgress();
-      await logUpdateEvent("download_complete", update);
+      await verifyUpdateSignature(update, getUpdaterConfig(), getPlatform());
+      await downloadNative(update, notify);
       return;
     }
-
-    // Recorded *before* applying, because applying reloads the WebView and
-    // nothing after this line ever runs. There is no "after" to report from.
-    //
-    // That is a real trade: if the apply fails, a delivery has been claimed for
-    // an update that did not land. The catch below logs `error` in that case,
-    // so the pair is visible, and the alternative is what this replaces -
-    // recording no OTA delivery at all, ever. The plugin does not report these:
-    // it only knows about its own auto-update flow, and this library exists
-    // because the app drives updates itself.
-    await logUpdateEvent("install", update);
-
-    // Reloads the WebView on success, so nothing below runs.
-    await applyOtaUpdate(update);
+    await applyOta(update);
   } catch (error) {
-    state.value.error = error instanceof Error ? error.message : "The update failed";
-    // Cleared on failure too, or an ongoing notification outlives the download
-    // it was reporting and sits there claiming progress forever.
+    state.value.error = errorMessage(error, "The update failed");
     if (notify) await clearProgress();
-    await logUpdateEvent("error", update, { error: state.value.error });
+    reportUpdateEvent("error", update, { error: state.value.error });
   } finally {
     state.value.downloading = false;
     if (!state.value.cachedPath) state.value.statusMessage = "";
   }
 }
 
-/** Hands the downloaded APK to the Android installer. */
+/** Verifies the downloaded APK, then hands it to the Android installer. */
 async function installNativeUpdate(): Promise<void> {
   const update = state.value.currentUpdate;
   const path = state.value.cachedPath;
-  if (!update || update.kind !== "native" || !path) return;
+  if (!update || update.kind !== "native" || !path || state.value.installing) return;
 
   state.value.installing = true;
   state.value.error = null;
+  if (!isVerifiedPath(path)) state.value.statusMessage = "Verifying the update...";
 
   try {
+    await verifyApk(update, path);
+
+    launchingInstaller = true;
+    resumedWhileLaunching = false;
     await openNativeInstaller(path);
 
-    // Fired, not finished. Android now shows its own confirmation dialog and
-    // there is no callback for what the user does with it, so the prompt has to
-    // say what it is waiting for rather than silently offering the install
-    // again underneath.
     state.value.handedToInstaller = true;
     state.value.statusMessage = "Confirm the installation to finish updating.";
-
-    await logUpdateEvent("install", update);
+    reportUpdateEvent("install", update);
+    if (resumedWhileLaunching) void settleInstallerHandoff();
   } catch (error) {
     state.value.handedToInstaller = false;
-    state.value.error = error instanceof Error ? error.message : "Installation failed";
-    await logUpdateEvent("error", update, { error: state.value.error });
+    state.value.error = errorMessage(error, "Installation failed");
+    state.value.statusMessage = "";
+    await rejectApk(update, error);
+    reportUpdateEvent("error", update, { error: state.value.error });
   } finally {
+    launchingInstaller = false;
     state.value.installing = false;
   }
+}
+
+function isStale(): boolean {
+  const last = state.value.lastCheckedAt;
+  return last === null || Date.now() - last >= getUpdaterConfig().recheckIntervalMs;
+}
+
+function onResume(): void {
+  if (launchingInstaller) {
+    resumedWhileLaunching = true;
+    return;
+  }
+  if (state.value.handedToInstaller) {
+    void settleInstallerHandoff();
+    return;
+  }
+  if (isStale()) void check(true);
+}
+
+function onReconnect(): void {
+  if (state.value.lastCheckError !== null || isStale()) void check(true);
 }
 
 /**
@@ -299,28 +346,15 @@ async function init(): Promise<void> {
   if (!isNative() || initialised) return;
   initialised = true;
 
-  // Start-up housekeeping, and nothing here may cost the check.
-  //
-  // It did once. `getVersionCode` was used below without being imported, so
-  // this threw a ReferenceError; `initialised` was already true, the caller
-  // discards the promise with `void`, and the result was an app that never
-  // asked for updates at all - a required update sat published while the device
-  // showed nothing and logged nothing. Reported by the device itself:
-  //
-  //   init THREW: getVersionCode is not defined
-  //
-  // The check now runs whatever happens above it, and a failure is loud.
   try {
     await notifyAppReady();
-    await attachPluginListeners();
+    listeners.push(...(await attachPluginListeners(() => void check(true))));
+    listeners.push(...(await watchLifecycle({ onResume, onReconnect })));
+    state.value.channelOverride = await getChannelOverride();
 
-    // Delete APKs the device has outgrown. There is no callback from the
-    // Android installer, so this is where an installed binary's 47 MB finally
-    // goes: on the next launch the installed build number has passed it, which
-    // says the install landed. Anything newer is left alone - it is an update
-    // already downloaded and waiting, and deleting it would mean paying for it
-    // twice.
-    await pruneApkCache({ installedVersionCode: await getVersionCode() });
+    const installedVersionCode = await getVersionCode();
+    await forgetOvertakenInstall(installedVersionCode);
+    await pruneApkCache({ installedVersionCode });
   } catch (error) {
     console.error("[capuchoo] updater start-up step failed", error);
   }
@@ -333,17 +367,33 @@ async function cleanup(): Promise<void> {
   initialised = false;
 }
 
-/** Dismisses a pending update. Refuses for required updates and mid-download. */
+/** Dismisses a pending update. Refuses mid-flight, and for a required update that can still install. */
 async function dismiss(): Promise<void> {
   const update = state.value.currentUpdate;
-  if (!update || update.required || state.value.downloading) return;
+  if (!update || isBusy()) return;
+  if (update.required && !state.value.installAbandoned) return;
 
-  await logUpdateEvent("cancel", update);
-  state.value.updateAvailable = false;
-  state.value.currentUpdate = null;
-  state.value.cachedPath = null;
-  state.value.statusMessage = "";
-  state.value.progress = { ...NO_PROGRESS };
+  reportUpdateEvent("cancel", update);
+  withdrawUpdate();
+}
+
+/**
+ * Moves this device to another channel, remembered across launches and sent
+ * with every check, then checks it. Throws when the server refuses.
+ */
+async function setChannel(name: string): Promise<void> {
+  await chooseChannel(name);
+  state.value.channelOverride = await getChannelOverride();
+  if (!isBusy()) withdrawUpdate();
+  await check(true);
+}
+
+/** Returns to the build's default channel, then checks it. */
+async function clearChannel(): Promise<void> {
+  await forgetChannel();
+  state.value.channelOverride = null;
+  if (!isBusy()) withdrawUpdate();
+  await check(true);
 }
 
 export function useUpdater() {
@@ -357,12 +407,20 @@ export function useUpdater() {
     progress: computed(() => state.value.progress),
     cachedPath: computed(() => state.value.cachedPath),
     error: computed(() => state.value.error),
+    /** Why the last check got no answer. Diagnostic; never shown as an update problem. */
+    lastCheckError: computed(() => state.value.lastCheckError),
     statusMessage: computed(() => state.value.statusMessage),
     lastCheckMessage: computed(() => state.value.lastCheckMessage),
     /** True when the user may not postpone the update. */
-    isRequired: computed(() => state.value.currentUpdate?.required === true),
+    isRequired: computed(
+      () => state.value.currentUpdate?.required === true && !state.value.installAbandoned,
+    ),
     /** True while Android's own install dialog is waiting on the user. */
     handedToInstaller: computed(() => state.value.handedToInstaller),
+    /** True once installing this native version has failed too often to keep insisting on. */
+    installAbandoned: computed(() => state.value.installAbandoned),
+    /** The channel chosen at run time, or null when following the build's default. */
+    channelOverride: computed(() => state.value.channelOverride),
 
     check,
     startDownload,
@@ -371,29 +429,17 @@ export function useUpdater() {
     init,
     cleanup,
     getCurrentBundle,
+    setChannel,
+    /** The channel every check asks: the runtime choice, else the build's default. */
+    getChannel,
+    clearChannel,
     /**
-     * Asks the OS for location permission. The only place that happens - never
-     * automatically, and only when the host app calls it, typically from
-     * onboarding or a settings screen where the user has been told why.
-     *
-     * Resolves to "granted", "denied", or "unavailable" - not a boolean, because
-     * a device can fail to grant permission for reasons that are not the user
-     * refusing anything: the app never opted in with `collectLocation`
-     * (VITE_UPDATE_LOCATION), `@capacitor/geolocation` is not installed, or the
-     * OS's Location service is off system-wide. That last one throws rather than
-     * denying, undocumented - found on a real device, where it looked
-     * indistinguishable from a refusal until the error's own message said
-     * otherwise. "unavailable" tells the app to say "turn on Location", not
-     * "you said no".
+     * Asks the OS for location permission - never automatically, only when the
+     * host app calls it. Resolves "granted", "denied", or "unavailable" (not
+     * opted in, plugin missing, or Location off system-wide).
      */
     requestLocationPermission,
-    /**
-     * Opens Android's Location settings screen directly. Not the one-tap
-     * "Turn on?" dialog - a settings screen the user still has to act on and
-     * back out of - but closer than telling them to find it themselves. A
-     * reasonable thing to offer right after `requestLocationPermission`
-     * resolves "unavailable" because the service is off.
-     */
+    /** Opens Android's Location settings screen, when `capacitor-native-settings` is installed. */
     openLocationSettings,
   };
 }
@@ -402,17 +448,10 @@ export function useUpdater() {
 export function __resetUpdaterState(): void {
   listeners.length = 0;
   initialised = false;
-  state.value = {
-    checking: false,
-    downloading: false,
-    installing: false,
-    updateAvailable: false,
-    currentUpdate: null,
-    progress: { ...NO_PROGRESS },
-    cachedPath: null,
-    handedToInstaller: false,
-    error: null,
-    statusMessage: "",
-    lastCheckMessage: "",
-  };
+  inflightCheck = null;
+  checkErrorShown = false;
+  launchingInstaller = false;
+  resumedWhileLaunching = false;
+  __resetPublishState();
+  state.value = initialState() satisfies UpdaterState;
 }

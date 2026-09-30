@@ -127,3 +127,16 @@ describe("isDismissible", () => {
     expect(isDismissible({ ...idle, available: false })).toBe(false);
   });
 });
+
+describe("an install that keeps failing", () => {
+  const abandoned = { ...required, downloaded: true, installAbandoned: true };
+
+  it("stops blocking the app", () => {
+    expect(updateGate(abandoned)).toMatchObject({ state: "open", blocked: false });
+  });
+
+  it("may be dismissed, but not mid-flight", () => {
+    expect(isDismissible(abandoned)).toBe(true);
+    expect(isDismissible({ ...abandoned, installing: true })).toBe(false);
+  });
+});
