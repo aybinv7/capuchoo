@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { build, bundle, catalog, channel } from "@/shared/testing/fixtures";
 import type { ChannelStats } from "@/shared/types/stats";
 import type { ChannelNodeData } from "../types/canvas.types";
-import { buildCanvasGraph } from "./layout";
+import { LAYOUT, buildCanvasGraph, stackColumns } from "./layout";
 
 const dev = channel({ id: "dev", name: "dev", environment: "dev" });
 const staging = channel({ id: "staging", name: "staging", environment: "staging" });
@@ -78,5 +78,42 @@ describe("buildCanvasGraph", () => {
       .nodes.filter((node) => node.type === "lane")
       .map((node) => node.id);
     expect(lanes).toEqual(["lane:builds", "lane:prod"]);
+  });
+});
+
+describe("stackColumns", () => {
+  const graph = buildCanvasGraph({
+    catalog: catalog({
+      channels: [
+        prod,
+        acme,
+        channel({ id: "beta", name: "prod-beta", kind: "client", base_channel_id: "prod" }),
+      ],
+    }),
+    stats: new Map(),
+    builds: [build({ id: "b1" }), build({ id: "b2" })],
+  });
+  const y = (nodes: ReturnType<typeof stackColumns>, id: string) =>
+    nodes.find((node) => node.id === id)?.position.y;
+
+  it("stacks each column by measured height, keeping the order", () => {
+    const stacked = stackColumns(
+      graph.nodes,
+      new Map([
+        ["build:b1", 300],
+        ["channel:acme", 250],
+      ]),
+    );
+    expect(y(stacked, "build:b1")).toBe(LAYOUT.contentTop);
+    expect(y(stacked, "build:b2")).toBe(LAYOUT.contentTop + 300 + LAYOUT.rowGap);
+    expect(y(stacked, "channel:beta")).toBe(LAYOUT.contentTop + 250 + LAYOUT.rowGap);
+  });
+
+  it("falls back to the estimate before anything is measured and leaves lanes alone", () => {
+    const stacked = stackColumns(graph.nodes, new Map());
+    expect(y(stacked, "build:b2")).toBe(LAYOUT.contentTop + LAYOUT.buildHeight + LAYOUT.rowGap);
+    expect(stacked.filter((node) => node.type === "lane")).toEqual(
+      graph.nodes.filter((node) => node.type === "lane"),
+    );
   });
 });

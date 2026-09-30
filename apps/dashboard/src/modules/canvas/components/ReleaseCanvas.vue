@@ -7,7 +7,7 @@ import { watch } from "vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
-import type { CanvasGraph } from "../lib/layout";
+import { stackColumns, type CanvasGraph } from "../lib/layout";
 import type { BuildNodeData, ChannelNodeData, LaneNodeData } from "../types/canvas.types";
 import ArtefactShelf from "./ArtefactShelf.vue";
 import CanvasLegend from "./CanvasLegend.vue";
@@ -17,11 +17,47 @@ import LaneNode from "./nodes/LaneNode.vue";
 
 const props = defineProps<{ graph: CanvasGraph; flowId: string }>();
 
-const { fitView } = useVueFlow(props.flowId);
+const { fitView, getNodes, findNode } = useVueFlow(props.flowId);
+
+/**
+ * Moves Vue Flow's own nodes to the positions `stackColumns` gives for their measured heights.
+ * Mutating positions in place keeps the nodes initialised; the pass is idempotent, so the watch
+ * settles after one move and runs again only when a height or an incoming position changes.
+ */
+function restack() {
+  const graphNodes = getNodes.value;
+  const heights = new Map(
+    graphNodes
+      .filter((node) => node.dimensions.height > 0)
+      .map((node) => [node.id, node.dimensions.height] as const),
+  );
+  if (heights.size === 0) return;
+  for (const placed of stackColumns(graphNodes, heights)) {
+    const node = findNode(placed.id);
+    if (node && Math.abs(node.position.y - placed.position.y) > 0.5)
+      node.position = { x: node.position.x, y: placed.position.y };
+  }
+}
 
 watch(
-  () => props.graph.nodes.length,
-  () => requestAnimationFrame(() => void fitView({ padding: 0.15, maxZoom: 1 })),
+  () =>
+    getNodes.value
+      .map(
+        (node) => `${node.id}:${Math.round(node.dimensions.height)}:${Math.round(node.position.y)}`,
+      )
+      .join("|"),
+  restack,
+);
+
+let fittedFor = -1;
+watch(
+  () =>
+    [props.graph.nodes.length, getNodes.value.every((node) => node.dimensions.height > 0)] as const,
+  ([count, measured]) => {
+    if (!measured || fittedFor === count) return;
+    fittedFor = count;
+    requestAnimationFrame(() => void fitView({ padding: 0.15, maxZoom: 1 }));
+  },
 );
 
 const minimapColor = (node: { type?: string }) =>

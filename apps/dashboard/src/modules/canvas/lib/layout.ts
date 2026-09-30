@@ -181,3 +181,45 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
 
   return { nodes, edges };
 }
+
+interface Placed {
+  id: string;
+  type?: string;
+  position: { x: number; y: number };
+}
+
+const estimatedHeight = (node: Placed) =>
+  node.type === "build" ? LAYOUT.buildHeight : LAYOUT.channelHeight;
+
+/**
+ * Re-stacks every column with the heights the canvas measured, keeping each column's order. The
+ * layout above estimates heights; a running build that lists its steps, or a channel with badges,
+ * renders taller, and stacking by the estimate would overlap them.
+ */
+export function stackColumns<T extends Placed>(
+  nodes: readonly T[],
+  heights: ReadonlyMap<string, number>,
+): T[] {
+  const columns = new Map<number, T[]>();
+  for (const node of nodes) {
+    if (node.type === "lane") continue;
+    const column = columns.get(node.position.x);
+    if (column) column.push(node);
+    else columns.set(node.position.x, [node]);
+  }
+  const placed = new Map<string, number>();
+  for (const column of columns.values()) {
+    column.sort((a, b) => a.position.y - b.position.y);
+    let cursor = LAYOUT.contentTop;
+    for (const node of column) {
+      placed.set(node.id, cursor);
+      cursor += (heights.get(node.id) ?? estimatedHeight(node)) + LAYOUT.rowGap;
+    }
+  }
+  return nodes.map((node) => {
+    const y = placed.get(node.id);
+    return y === undefined || y === node.position.y
+      ? node
+      : { ...node, position: { x: node.position.x, y } };
+  });
+}
