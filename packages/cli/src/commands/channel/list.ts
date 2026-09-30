@@ -50,9 +50,19 @@ export default class ChannelList extends BaseCommand {
         ? chalk.dim(`(${channel.environment})`)
         : chalk.red("(no environment - not deployable)");
 
+      const base =
+        channel.kind === "client"
+          ? chalk.dim(
+              ` client of ${channels.find((c) => c.id === channel.base_channel_id)?.name ?? "?"}`,
+            )
+          : "";
+      const paused = channel.paused ? chalk.yellow(" paused") : "";
+
       this.log(
         `  ${channel.name.padEnd(16)} ${environment} ` +
-          chalk.dim(channel.public ? "public" : "private"),
+          chalk.dim(channel.public ? "public" : "private") +
+          base +
+          paused,
       );
     }
 

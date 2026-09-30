@@ -4,7 +4,15 @@ import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";
+import path from "node:path";
+import type { ReleaseKey } from "../signing/release-key.js";
+import { BuildTracker } from "./build-tracker.js";
+import { detectCiContext } from "./ci-context.js";
+import { releasePreflight } from "./preflight.js";
+import { needsSeal, sealArtefact, type Seal } from "./seal.js";
+import { publishRelease, UnconfirmedUploadError } from "./publish.js";
 import {
+  DEPLOY_LOG_FILE,
   describeFailure,
   formatBytes,
   runDeploy,
@@ -81,6 +89,11 @@ export const commonDeployFlags = {
     default: false,
     description: "Accept every prompt - required in CI",
   }),
+  "allow-local-env": Flags.boolean({
+    default: false,
+    description:
+      "Build even when .env / .env.local define VITE_* keys the flavour file does not, shipping this machine's values",
+  }),
 } as const;
 
 export interface DeployFlags {
@@ -98,6 +111,8 @@ export interface DeployFlags {
   platform?: string;
   type?: string;
   "allow-unsigned"?: boolean;
+  "allow-cert-change"?: boolean;
+  "allow-local-env": boolean;
   /** OTA only: the native build number a device needs before this bundle is served. */
   "min-native"?: number;
   flavor?: string;
@@ -120,6 +135,14 @@ function fail(command: Command, message: string): never {
   throw new Error(message); // unreachable
 }
 
+function describeSeal(seal: Seal, key: ReleaseKey | null): string {
+  const parts = [
+    seal.signingCertSha256 ? `certificate ${seal.signingCertSha256.slice(0, 16)}...` : null,
+    key && seal.signature ? `signed with ${key.fingerprint}` : "not signed",
+  ];
+  return parts.filter(Boolean).join(", ");
+}
+
 export async function executeDeploy(options: DeployCommandOptions): Promise<void> {
   const { kind, command, flags } = options;
   const appDir = process.cwd();
@@ -127,7 +150,11 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
 
   // In JSON mode stdout carries only the result document, so every human-facing
   // line goes to stderr. Non-interactive shells get the same treatment.
-  const reporter = new Reporter({ quiet: json || !process.stdout.isTTY });
+  let tracker = BuildTracker.disabled();
+  const reporter = new Reporter({
+    quiet: json || !process.stdout.isTTY,
+    onStep: (id, status, message) => tracker.step(id, status, message),
+  });
 
   const project = requireProjectConfig(appDir);
 
@@ -259,10 +286,13 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     appDir,
     kind,
     platform,
+    channel,
     interactive,
     requested: flags.type as "debug" | "release" | undefined,
     allowUnsigned: flags["allow-unsigned"] ?? false,
-  });
+  }).catch((error: unknown) =>
+    fail(command, error instanceof Error ? error.message : String(error)),
+  );
 
   if (!signing) {
     command.log(chalk.dim("Cancelled."));
@@ -319,6 +349,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     verbose: flags.verbose,
     quiet: json,
     identifiers,
+    allowLocalEnv: flags["allow-local-env"],
   };
 
   // Validated before package.json is written, not after.
@@ -330,7 +361,20 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   // were acceptable. `validateRequest` reads files and does no work, so there is
   // no reason for it to run second. runDeploy checks again, for its other
   // callers.
-  const problems = validateRequest(request, resolveFlavour(appDir, project, environment));
+  const flavour = resolveFlavour(appDir, project, environment);
+  const preflight = await releasePreflight({
+    appDir,
+    cloudAppId: project.cloudAppId,
+    kind,
+    platform,
+    channel,
+    flavour,
+    profile,
+    cloud,
+  });
+  request.seal = needsSeal(kind, platform, preflight.key);
+
+  const problems = [...validateRequest(request, flavour), ...preflight.problems];
   if (problems.length > 0) {
     const detail = problems.map((problem) => `  - ${problem}`).join("\n");
     fail(command, `This deploy cannot proceed:\n${detail}\n\nNothing was changed.`);
@@ -348,46 +392,66 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   // Hoisted so the failure path can tell "nothing was published, put it back"
   // from "it published, and the files have to stay".
   let uploaded = false;
+  let publishedId: string | null = null;
+
+  if (!flags["dry-run"]) {
+    tracker = BuildTracker.start(cloud, project.cloudAppId, {
+      kind,
+      channel: channel.name,
+      version,
+      ...detectCiContext(),
+    });
+  }
 
   try {
     const outcome = await runDeploy(request, reporter);
     const artifact = outcome.artifact;
     if (!artifact) throw new Error("The pipeline produced no artefact");
 
+    let seal: Seal = { warnings: [] };
+    if (request.seal) {
+      reporter.begin("sign");
+      seal = await sealArtefact({
+        artifact,
+        channel,
+        platform,
+        androidDir: path.resolve(appDir, project.androidDir),
+        artefacts: preflight.artefacts,
+        allowCertChange: flags["allow-cert-change"] ?? false,
+        logFile: path.join(appDir, DEPLOY_LOG_FILE),
+        key: preflight.key,
+        appId: project.appId,
+        version: outcome.version,
+        versionCode: outcome.versionCode,
+      });
+      reporter.note(describeSeal(seal, preflight.key));
+      outcome.warnings.push(...seal.warnings);
+    }
+
     if (!flags["dry-run"]) {
       reporter.begin("upload");
 
-      const result =
-        kind === "ota"
-          ? await cloud.uploadBundle({
-              filePath: artifact.filePath,
-              appId: project.appId,
-              channel: channel.name,
-              platform,
-              versionName: outcome.version,
-              releaseNotes: note ?? "",
-              active,
-              required,
-              ...(flags["min-native"] === undefined
-                ? {}
-                : { minNativeVersion: String(flags["min-native"]) }),
-              flavour: environment,
-            })
-          : await cloud.uploadNative({
-              filePath: artifact.filePath,
-              appId: project.appId,
-              channel: channel.name,
-              platform,
-              versionName: outcome.version,
-              versionCode: outcome.versionCode,
-              releaseNotes: note ?? "",
-              active,
-              required,
-              flavour: environment,
-            });
+      const published = await publishRelease({
+        cloud,
+        artifact,
+        outcome,
+        seal,
+        cloudAppId: project.cloudAppId,
+        appId: project.appId,
+        channel: channel.name,
+        platform,
+        notes: note ?? "",
+        active,
+        required,
+        minNative: flags["min-native"],
+        allowCertChange: flags["allow-cert-change"] ?? false,
+        buildId: await tracker.buildId(),
+      });
 
-      uploaded = result.status >= 200 && result.status < 300;
+      uploaded = true;
+      publishedId = published.artefactId;
       reporter.note(`${formatBytes(artifact.byteSize)} accepted`);
+      if (published.warning) outcome.warnings.push(published.warning);
 
       // The OTA archive is a build artefact; the APK is not - it may be needed
       // for a store submission, so it stays.
@@ -401,6 +465,10 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         ? `Dry run complete - v${outcome.version} was built but not uploaded`
         : `v${outcome.version} published to "${channel.name}"`,
     );
+    await tracker.finish({
+      status: "succeeded",
+      ...(publishedId ? { [kind === "ota" ? "bundle_id" : "native_id"]: publishedId } : {}),
+    });
 
     for (const warning of outcome.warnings) {
       process.stderr.write(`${chalk.yellow("!")} ${warning}\n`);
@@ -425,6 +493,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
               bytes: artifact.byteSize,
               files: artifact.fileCount,
               signed: artifact.signed,
+              releaseSignature: Boolean(seal.signature),
+              signingCertSha256: seal.signingCertSha256,
             },
             nativeConfig: outcome.nativeConfigMethod,
             skipped: outcome.skipped,
@@ -437,13 +507,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     }
   } catch (error) {
     const message = describeFailure(error, appDir);
-    reporter.fail("Deploy failed");
-
-    if (json) {
-      command.log(JSON.stringify({ ok: false, error: message }, null, 2));
-      process.exitCode = 1;
-      return;
-    }
+    reporter.fail("Deploy failed", message);
+    await tracker.finish({ status: "failed", error: message });
 
     if (uploaded) {
       // Published, so the files must stay: the version on disk is the version
@@ -455,6 +520,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
             "were left as they are.\n",
         ),
       );
+    } else if (error instanceof UnconfirmedUploadError) {
+      process.stderr.write(chalk.yellow("\n! The version files were kept.\n"));
     } else {
       // Nothing was published, so nothing should have changed. Done here rather
       // than by telling the operator to run git checkout: a tool that knows it
@@ -470,6 +537,12 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
           ),
         );
       }
+    }
+
+    if (json) {
+      command.log(JSON.stringify({ ok: false, error: message }, null, 2));
+      process.exitCode = 1;
+      return;
     }
 
     command.error(message);

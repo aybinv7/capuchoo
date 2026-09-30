@@ -15,6 +15,11 @@ import ora, { type Ora } from "ora";
  * single spinner.
  */
 
+/** How a step ended, or that it started; emitted to `onStep` for live build status. */
+export type StepStatus = "running" | "succeeded" | "failed" | "skipped";
+
+export type StepListener = (id: string, status: StepStatus, message: string) => void;
+
 export interface Step {
   /** Stable identifier, used in JSON output. */
   id: string;
@@ -27,11 +32,22 @@ export class Reporter {
   private index = -1;
   private readonly quiet: boolean;
   private startedAt = 0;
+  private readonly onStep: StepListener | undefined;
+  /** The step that is running and has not yet been reported as ended. */
+  private active: string | null = null;
 
-  constructor(options: { quiet?: boolean } = {}) {
+  constructor(options: { quiet?: boolean; onStep?: StepListener } = {}) {
     // JSON mode and non-interactive terminals get plain lines instead of a
     // spinner, so CI logs stay readable and machine output stays parseable.
     this.quiet = options.quiet ?? false;
+    this.onStep = options.onStep;
+  }
+
+  private end(status: Exclude<StepStatus, "running">, message = ""): void {
+    if (this.active === null) return;
+    const id = this.active;
+    this.active = null;
+    this.onStep?.(id, status, message);
   }
 
   /** Declares the steps that will run. Skipped work is never listed. */
@@ -48,12 +64,15 @@ export class Reporter {
   /** Advances to the next planned step. */
   begin(id: string, detail?: string): void {
     this.settle();
+    this.end("succeeded");
 
     const found = this.steps.findIndex((step) => step.id === id);
     this.index = found >= 0 ? found : this.index + 1;
 
     const step = this.steps[this.index];
     const label = detail ?? step?.label ?? id;
+    this.active = id;
+    this.onStep?.(id, "running", label);
     const text = `${chalk.dim(`[${this.index + 1}/${this.total}]`)} ${label}`;
 
     if (this.quiet) {
@@ -94,6 +113,7 @@ export class Reporter {
 
   /** Marks the current step as skipped, with the reason. */
   skip(reason: string): void {
+    this.end("skipped", reason);
     if (this.spinner) {
       this.spinner.stopAndPersist({
         symbol: chalk.yellow("-"),
@@ -121,14 +141,16 @@ export class Reporter {
   /** Completes the run. */
   finish(message: string): void {
     this.settle();
+    this.end("succeeded");
     const seconds = ((Date.now() - this.startedAt) / 1000).toFixed(1);
     process.stderr.write(
       `\n${chalk.green("✓")} ${chalk.bold(message)} ${chalk.dim(`(${seconds}s)`)}\n`,
     );
   }
 
-  /** Fails the run, attributing the failure to the step that actually failed. */
-  fail(message: string): void {
+  /** Fails the run, attributing the failure to the step that actually failed; `detail` is the cause. */
+  fail(message: string, detail?: string): void {
+    this.end("failed", detail ?? message);
     const step = this.steps[this.index];
     const where = step ? ` during ${step.label}` : "";
 

@@ -20,16 +20,35 @@ export class TimeoutError extends Error {
   }
 }
 
+/** An upload that did not finish in time. The server may still have stored it. */
+export class UploadTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`The upload did not finish within ${Math.round(timeoutMs / 60_000)} minutes`);
+    this.name = "UploadTimeoutError";
+  }
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
+  /** Machine-readable refusal code from a `{ error, reason }` body, e.g. `not-on-base`. */
+  readonly reason: string | null;
 
   constructor(message: string, status: number, body: unknown) {
     super(message);
     this.name = "HttpError";
     this.status = status;
     this.body = body;
+    this.reason = refusalCode(body);
   }
+}
+
+const REFUSAL_CODE = /^[a-z][a-z0-9_-]*$/;
+
+function refusalCode(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const reason = (body as Record<string, unknown>).reason;
+  return typeof reason === "string" && REFUSAL_CODE.test(reason) ? reason : null;
 }
 
 export interface HttpOptions {
@@ -69,7 +88,8 @@ function messageFrom(body: unknown, fallback: string): string {
     const category = ["message", "error"]
       .map((key) => record[key])
       .find((value): value is string => typeof value === "string" && value.length > 0);
-    const reason = ["details", "detail"]
+    const prose = typeof record.reason === "string" && !REFUSAL_CODE.test(record.reason);
+    const reason = ["details", "detail", ...(prose ? ["reason"] : [])]
       .map((key) => record[key])
       .find((value): value is string => typeof value === "string" && value.length > 0);
 
@@ -213,8 +233,9 @@ export async function uploadArtifact(
   const blob = await openAsBlob(filePath);
   form.append(options.fileField ?? "bundle", blob, path.basename(filePath));
 
+  const timeoutMs = options.timeoutMs ?? 15 * 60 * 1000;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 15 * 60 * 1000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(`${options.endpoint}${pathname}`, {
@@ -240,7 +261,7 @@ export async function uploadArtifact(
   } catch (error) {
     if (error instanceof HttpError) throw error;
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("The upload timed out");
+      throw new UploadTimeoutError(timeoutMs);
     }
     throw error;
   } finally {
