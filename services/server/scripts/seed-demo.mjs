@@ -349,7 +349,7 @@ async function seed({ url, email, password }) {
         [
           channels[channel].id,
           app.id,
-          downgrade ? "rollback" : "point",
+          downgrade ? "rollback_bundle" : "point_bundle",
           bundles[from]?.id ?? null,
           bundles[to]?.id ?? null,
           from,
@@ -373,6 +373,28 @@ async function seed({ url, email, password }) {
         ],
       );
     }
+    const nativeMoves = [
+      ["staging", null, "staging-190", 18.5],
+      ["prod", "prod-170", "prod-190", 15],
+      ["prod-contoso", "prod-170", "prod-190", 14.5],
+      ["prod-fabrikam", "prod-170", "prod-190", 6.2],
+    ];
+    for (const [channel, from, to, days] of nativeMoves)
+      await q(
+        `INSERT INTO channel_events (channel_id, app_id, action, from_id, to_id, from_version, to_version,
+           actor_user_id, created_at)
+         VALUES ($1, $2, 'point_native', $3, $4, $5, $6, $7, $8)`,
+        [
+          channels[channel].id,
+          app.id,
+          from ? natives[from].id : null,
+          natives[to].id,
+          from ? `${natives[from].version} (${natives[from].code})` : null,
+          `${natives[to].version} (${natives[to].code})`,
+          karim,
+          ago(days * DAY),
+        ],
+      );
     for (const spec of bundleSpecs)
       await q(
         `INSERT INTO audit_log (organization_id, app_id, actor_user_id, action, target_type, target_id, details, created_at)
