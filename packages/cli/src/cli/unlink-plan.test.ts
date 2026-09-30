@@ -25,6 +25,12 @@ describe("stripUpdateLink", () => {
     expect(stripUpdateLink(APP_ENV)).toEqual({ content: null, removed: [] });
   });
 
+  it("keeps the file's line endings", () => {
+    const windows =
+      "VITE_APP_ID=a\r\nVITE_UPDATE_API_URL=x\r\nVITE_UPDATE_CHANNEL=prod\r\nOTHER=1\r\n";
+    expect(stripUpdateLink(windows).content).toBe("VITE_APP_ID=a\r\nOTHER=1\r\n");
+  });
+
   it("leaves a comment alone when it is not the one init wrote above the link", () => {
     const content = "# my note\nVITE_UPDATE_API_URL=x\nOTHER=1\n";
     expect(stripUpdateLink(content).content).toBe("# my note\nOTHER=1\n");

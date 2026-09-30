@@ -41,11 +41,12 @@ export function stripUpdateLink(content: string): EnvUnlink {
     kept.push(line);
   }
 
+  const eol = content.includes("\r\n") ? "\r\n" : "\n";
   const collapsed = kept
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\s*$/, "\n");
-  return { content: collapsed, removed };
+  return { content: eol === "\n" ? collapsed : collapsed.replace(/\n/g, eol), removed };
 }
 
 export interface UnlinkOptions {
