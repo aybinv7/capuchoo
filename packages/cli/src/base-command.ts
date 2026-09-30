@@ -23,7 +23,7 @@ export abstract class BaseCommand extends Command {
 
       // Say what the status actually means for the caller, rather than leaving
       // them to interpret a bare number.
-      const hint = describeStatus(error.status);
+      const hint = error.reason ? `Refused: ${error.reason}` : describeStatus(error.status);
       if (hint) process.stderr.write(chalk.dim(`  ${hint}\n`));
       process.stderr.write("\n");
       process.exit(1);

@@ -1,13 +1,22 @@
 import type {
   AppRole,
   CloudApp,
-  CloudChannel,
   CloudOrganization,
   CloudRelease,
   Environment,
   UserProfile,
 } from "@capuchoo/core";
 import { HttpError, del, get, post, put, uploadArtifact, type HttpOptions } from "../utils/http.js";
+import type {
+  AppArtefacts,
+  AppRecord,
+  BuildFinish,
+  BuildStart,
+  BuildStep,
+  BuildStepStatus,
+  ChannelRecord,
+  PointerMove,
+} from "./wire.js";
 
 export type OrgRole = "owner" | "admin" | "member";
 export type { AppRole } from "@capuchoo/core";
@@ -237,8 +246,11 @@ export class CloudClient {
     app_id: string;
     name: string;
     environment: Environment;
-  }): Promise<CloudChannel> {
-    return post<CloudChannel>("/api/dashboard/channels", input, this.options);
+    /** `client` channels follow `base_channel_id` and take no uploads. */
+    kind?: "release" | "client";
+    base_channel_id?: string;
+  }): Promise<ChannelRecord> {
+    return post<ChannelRecord>("/api/dashboard/channels", input, this.options);
   }
 
   /** Scoped by app as well as id, so a stale id cannot delete another app's channel. */
@@ -249,8 +261,8 @@ export class CloudClient {
     );
   }
 
-  channels(cloudAppId: string): Promise<CloudChannel[]> {
-    return get<CloudChannel[]>(`/api/apps/${cloudAppId}/channels`, this.options);
+  channels(cloudAppId: string): Promise<ChannelRecord[]> {
+    return get<ChannelRecord[]>(`/api/apps/${cloudAppId}/channels`, this.options);
   }
 
   /**
@@ -267,6 +279,64 @@ export class CloudClient {
     );
   }
 
+  /** Every uploaded bundle and native build of an app, with the channels each may be pointed at. */
+  async artefacts(cloudAppId: string): Promise<AppArtefacts> {
+    const response = await get<Partial<AppArtefacts> | null>(
+      `/api/apps/${cloudAppId}/artefacts`,
+      this.options,
+    );
+    return { bundles: response?.bundles ?? [], native_builds: response?.native_builds ?? [] };
+  }
+
+  /** Moves a channel's pointers. The server runs `canPoint` and answers `{ error, reason }` on refusal. */
+  pointChannel(
+    channelId: string,
+    input: { bundle_id?: string; native_id?: string; rollback?: boolean; reason?: string },
+  ): Promise<ChannelRecord> {
+    return post<ChannelRecord>(`/api/channels/${channelId}/point`, input, this.options);
+  }
+
+  pauseChannel(channelId: string): Promise<ChannelRecord> {
+    return post<ChannelRecord>(`/api/channels/${channelId}/pause`, {}, this.options);
+  }
+
+  resumeChannel(channelId: string): Promise<ChannelRecord> {
+    return post<ChannelRecord>(`/api/channels/${channelId}/resume`, {}, this.options);
+  }
+
+  channelHistory(channelId: string): Promise<PointerMove[]> {
+    return get<PointerMove[]>(`/api/channels/${channelId}/history`, this.options);
+  }
+
+  /** Stores the app's release public key; with `require_signature`, unsigned uploads are refused. */
+  setSigning(
+    cloudAppId: string,
+    input: { public_key: string; require_signature: boolean },
+  ): Promise<AppRecord> {
+    return put<AppRecord>(`/api/apps/${cloudAppId}/signing`, input, this.options);
+  }
+
+  /** Build tracking is best-effort, so these calls take a short timeout and never wake a sleeping host. */
+  createBuild(cloudAppId: string, input: BuildStart, timeoutMs: number): Promise<{ id: string }> {
+    return post<{ id: string }>(`/api/apps/${cloudAppId}/builds`, input, this.quick(timeoutMs));
+  }
+
+  buildEvent(
+    buildId: string,
+    input: { step: BuildStep; status: BuildStepStatus; message: string },
+    timeoutMs: number,
+  ): Promise<unknown> {
+    return post(`/api/builds/${buildId}/events`, input, this.quick(timeoutMs));
+  }
+
+  finishBuild(buildId: string, input: BuildFinish, timeoutMs: number): Promise<unknown> {
+    return post(`/api/builds/${buildId}/finish`, input, this.quick(timeoutMs));
+  }
+
+  private quick(timeoutMs: number): HttpOptions {
+    return { endpoint: this.options.endpoint, apiKey: this.options.apiKey, timeoutMs };
+  }
+
   releases(cloudAppId: string, channel?: string): Promise<CloudRelease[]> {
     const query = channel ? `?channel=${encodeURIComponent(channel)}` : "";
     return get<CloudRelease[]>(`/api/apps/${cloudAppId}/releases${query}`, this.options);
@@ -279,7 +349,7 @@ export class CloudClient {
    * selects the build flavour, so there would be nothing to build. The old code
    * checked this at two separate call sites with slightly different messages.
    */
-  async requireChannel(cloudAppId: string, name: string): Promise<CloudChannel> {
+  async requireChannel(cloudAppId: string, name: string): Promise<ChannelRecord> {
     const channels = await this.channels(cloudAppId);
     const channel = channels.find((candidate) => candidate.name === name);
 
@@ -316,27 +386,29 @@ export class CloudClient {
     return del(`/api/apps/${cloudAppId}/identifiers/${encodeURIComponent(bundleId)}`, this.options);
   }
 
-  uploadBundle(input: {
-    filePath: string;
-    appId: string;
-    channel: string;
-    platform: string;
-    versionName: string;
-    releaseNotes: string;
-    active: boolean;
-    required: boolean;
-    /**
-     * Native build number this bundle needs before a device may run it.
-     *
-     * A web bundle can depend on a native capability - a new plugin, a new
-     * permission - that an older binary does not have. Serving it there means a
-     * crash on launch and a rollback, and the device asks again on the next
-     * check. The server holds the OTA back and offers the binary instead.
-     */
-    minNativeVersion?: string | undefined;
-    /** The flavour this artefact was built from; the server refuses a mismatch. */
-    flavour?: string | undefined;
-  }) {
+  uploadBundle(
+    input: {
+      filePath: string;
+      appId: string;
+      channel: string;
+      platform: string;
+      versionName: string;
+      releaseNotes: string;
+      active: boolean;
+      required: boolean;
+      /**
+       * Native build number this bundle needs before a device may run it.
+       *
+       * A web bundle can depend on a native capability - a new plugin, a new
+       * permission - that an older binary does not have. Serving it there means a
+       * crash on launch and a rollback, and the device asks again on the next
+       * check. The server holds the OTA back and offers the binary instead.
+       */
+      minNativeVersion?: string | undefined;
+      /** The flavour this artefact was built from; the server refuses a mismatch. */
+      flavour?: string | undefined;
+    } & ReleaseProvenance,
+  ) {
     return uploadArtifact(
       "/api/admin/upload",
       input.filePath,
@@ -350,23 +422,30 @@ export class CloudClient {
         required: String(input.required),
         ...(input.minNativeVersion ? { min_update_version: input.minNativeVersion } : {}),
         ...(input.flavour ? { flavour: input.flavour } : {}),
+        ...provenanceFields(input),
       },
-      { ...this.options, fileField: "bundle" },
+      { ...this.options, fileField: "bundle", ...uploadTimeout(input) },
     );
   }
 
-  uploadNative(input: {
-    filePath: string;
-    appId: string;
-    channel: string;
-    platform: string;
-    versionName: string;
-    versionCode: number;
-    releaseNotes: string;
-    active: boolean;
-    required: boolean;
-    flavour?: string | undefined;
-  }) {
+  uploadNative(
+    input: {
+      filePath: string;
+      appId: string;
+      channel: string;
+      platform: string;
+      versionName: string;
+      versionCode: number;
+      releaseNotes: string;
+      active: boolean;
+      required: boolean;
+      flavour?: string | undefined;
+      /** Lowercase hex SHA-256 of the APK signing certificate. */
+      signingCertSha256?: string | undefined;
+      /** Sent only when the operator passed `--allow-cert-change`; the server still requires an admin. */
+      allowCertChange?: boolean | undefined;
+    } & ReleaseProvenance,
+  ) {
     return uploadArtifact(
       "/api/admin/native-upload",
       input.filePath,
@@ -380,8 +459,31 @@ export class CloudClient {
         active: String(input.active),
         required: String(input.required),
         ...(input.flavour ? { flavour: input.flavour } : {}),
+        ...(input.signingCertSha256 ? { signing_cert_sha256: input.signingCertSha256 } : {}),
+        ...(input.allowCertChange ? { allow_cert_change: "true" } : {}),
+        ...provenanceFields(input),
       },
-      { ...this.options, fileField: "bundle" },
+      { ...this.options, fileField: "bundle", ...uploadTimeout(input) },
     );
   }
+}
+
+/** Fields both upload endpoints accept to tie an artefact to its signature and its build record. */
+export interface ReleaseProvenance {
+  /** base64url P1363 ECDSA signature over the release claim. */
+  signature?: string | undefined;
+  buildId?: string | undefined;
+  /** Upload timeout override, for tests. */
+  timeoutMs?: number | undefined;
+}
+
+function uploadTimeout(input: ReleaseProvenance): { timeoutMs?: number } {
+  return input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs };
+}
+
+function provenanceFields(input: ReleaseProvenance): Record<string, string> {
+  return {
+    ...(input.signature ? { signature: input.signature } : {}),
+    ...(input.buildId ? { build_id: input.buildId } : {}),
+  };
 }

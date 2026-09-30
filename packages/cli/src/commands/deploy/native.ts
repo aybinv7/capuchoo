@@ -22,16 +22,22 @@ export default class DeployNative extends BaseCommand {
     }),
     type: Flags.string({
       char: "t",
-      default: "release",
       options: ["debug", "release"],
-      description: "Gradle variant to assemble",
+      description:
+        "Gradle variant to assemble. Defaults to release; debug is refused on prod and client channels",
     }),
     flavor: Flags.string({
       description: "Gradle product flavour to build, when the project has more than one",
     }),
     "allow-unsigned": Flags.boolean({
       default: false,
-      description: "Publish a release build with no signature. Android will refuse to install it.",
+      description:
+        "Publish a release build with no signature, to a dev channel only. Android will refuse to install it.",
+    }),
+    "allow-cert-change": Flags.boolean({
+      default: false,
+      description:
+        "Publish an APK signed with a different certificate than the previous release. Installed devices cannot upgrade to it.",
     }),
   };
 

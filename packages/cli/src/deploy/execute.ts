@@ -4,7 +4,11 @@ import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";
+import path from "node:path";
+import { loadArtefacts } from "./artefact-index.js";
+import { sealArtefact, type Seal } from "./seal.js";
 import {
+  DEPLOY_LOG_FILE,
   describeFailure,
   formatBytes,
   runDeploy,
@@ -98,6 +102,7 @@ export interface DeployFlags {
   platform?: string;
   type?: string;
   "allow-unsigned"?: boolean;
+  "allow-cert-change"?: boolean;
   /** OTA only: the native build number a device needs before this bundle is served. */
   "min-native"?: number;
   flavor?: string;
@@ -259,10 +264,13 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     appDir,
     kind,
     platform,
+    channel,
     interactive,
     requested: flags.type as "debug" | "release" | undefined,
     allowUnsigned: flags["allow-unsigned"] ?? false,
-  });
+  }).catch((error: unknown) =>
+    fail(command, error instanceof Error ? error.message : String(error)),
+  );
 
   if (!signing) {
     command.log(chalk.dim("Cancelled."));
@@ -319,6 +327,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     verbose: flags.verbose,
     quiet: json,
     identifiers,
+    seal: kind === "native" && platform === "android",
   };
 
   // Validated before package.json is written, not after.
@@ -335,6 +344,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     const detail = problems.map((problem) => `  - ${problem}`).join("\n");
     fail(command, `This deploy cannot proceed:\n${detail}\n\nNothing was changed.`);
   }
+
+  const artefacts = request.seal ? await loadArtefacts(cloud, project.cloudAppId) : null;
 
   // Read before anything is written, so a deploy that does not publish can put
   // the working tree back exactly as it was.
@@ -353,6 +364,23 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     const outcome = await runDeploy(request, reporter);
     const artifact = outcome.artifact;
     if (!artifact) throw new Error("The pipeline produced no artefact");
+
+    let seal: Seal = { warnings: [] };
+    if (request.seal) {
+      reporter.begin("sign");
+      seal = await sealArtefact({
+        artifact,
+        channel,
+        platform,
+        androidDir: path.resolve(appDir, project.androidDir),
+        artefacts,
+        allowCertChange: flags["allow-cert-change"] ?? false,
+        logFile: path.join(appDir, DEPLOY_LOG_FILE),
+      });
+      if (seal.signingCertSha256)
+        reporter.note(`certificate ${seal.signingCertSha256.slice(0, 16)}...`);
+      outcome.warnings.push(...seal.warnings);
+    }
 
     if (!flags["dry-run"]) {
       reporter.begin("upload");
@@ -384,6 +412,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
               active,
               required,
               flavour: environment,
+              signingCertSha256: seal.signingCertSha256,
+              allowCertChange: flags["allow-cert-change"] ?? false,
             });
 
       uploaded = result.status >= 200 && result.status < 300;

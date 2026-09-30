@@ -83,8 +83,15 @@ signing material through the environment:
 `android/app/build.gradle` attaches its release `signingConfig` only when `CAPUCHOO_KEYSTORE_FILE`
 is set, so a developer can still build an unsigned APK locally to inspect it.
 
-Use `--type debug` when you do not need a signed artefact, or `--allow-unsigned` if signing happens
-in a later pipeline stage. The second one has to be asked for explicitly.
+Incomplete release signing is a hard error for `--type release` and for every prod or client
+channel: a debug-signed APK cannot upgrade a release install. Without `--type`, a dev or staging
+channel falls back to debug with a warning. `--type debug` is refused on prod and client channels,
+and `--allow-unsigned` publishes to dev channels only.
+
+After the build the CLI reads the APK signing certificate (`apksigner verify --print-certs`, then
+`keytool -printcert -jarfile`), sends it as `signing_cert_sha256`, and refuses to upload when it
+differs from the previous native release of the same flavour. `--allow-cert-change` overrides that,
+for a deliberate re-key where every device is reinstalled.
 
 iOS is not driven by the CLI yet: archive through Xcode and register the build in the dashboard.
 
