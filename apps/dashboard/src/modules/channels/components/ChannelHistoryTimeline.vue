@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ArrowRight, CirclePause, CirclePlay, CircleX, History, Rocket } from "@lucide/vue";
+import {
+  ArrowRight,
+  CircleDot,
+  CirclePause,
+  CirclePlay,
+  CircleX,
+  History,
+  Rocket,
+} from "@lucide/vue";
 import type { Component } from "vue";
 import RelativeTime from "@/shared/components/RelativeTime.vue";
 import { cn } from "@/lib/utils";
@@ -33,6 +41,14 @@ const VIEW: Record<ChannelAction, { label: string; icon: Component; tone: string
   pause: { label: "Paused", icon: CirclePause, tone: "text-destructive bg-danger-soft" },
   resume: { label: "Resumed", icon: CirclePlay, tone: "text-info bg-info-soft" },
 };
+
+/** A newer server may record actions this build does not know; show them instead of failing. */
+const viewOf = (action: string) =>
+  VIEW[action as ChannelAction] ?? {
+    label: action.replace(/_/g, " "),
+    icon: CircleDot,
+    tone: "text-muted-foreground bg-muted",
+  };
 </script>
 
 <template>
@@ -43,15 +59,15 @@ const VIEW: Record<ChannelAction, { label: string; icon: Component; tone: string
         :class="
           cn(
             'relative grid size-7 shrink-0 place-items-center rounded-full',
-            VIEW[entry.action].tone,
+            viewOf(entry.action).tone,
           )
         "
       >
-        <component :is="VIEW[entry.action].icon" class="size-3.5" />
+        <component :is="viewOf(entry.action).icon" class="size-3.5" />
       </span>
       <div class="min-w-0 flex-1 pt-0.5 text-sm">
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span class="font-medium">{{ VIEW[entry.action].label }}</span>
+          <span class="font-medium">{{ viewOf(entry.action).label }}</span>
           <span
             v-if="entry.from_version || entry.to_version"
             class="flex items-center gap-1 font-mono text-xs"
