@@ -4,11 +4,11 @@ import { Flags } from "@oclif/core";
 import chalk from "chalk";
 import ora from "ora";
 import { CloudClient } from "../../services/cloud.js";
-import { TimeoutError } from "../../utils/http.js";
+import { HttpError, TimeoutError } from "../../utils/http.js";
 import { readGlobalConfig, updateGlobalConfig } from "../../utils/config.js";
 import { BaseCommand } from "../../base-command.js";
 
-const DEFAULT_ENDPOINT = "https://capuchoo-back.onrender.com";
+const ENDPOINT_EXAMPLE = "https://updates.your-company.com";
 
 export default class AuthLogin extends BaseCommand {
   static override description = "Sign in to a Capuchoo backend";
@@ -43,8 +43,8 @@ export default class AuthLogin extends BaseCommand {
 
     const endpoint = (
       flagEndpoint ??
-      (await askText("Backend URL", {
-        initial: existing.endpoint ?? DEFAULT_ENDPOINT,
+      (await askText("Server URL", {
+        ...(existing.endpoint ? { initial: existing.endpoint } : { placeholder: ENDPOINT_EXAMPLE }),
         flag: "--endpoint",
         validate: (value) =>
           /^https?:\/\/.+/.test(value.trim()) ? undefined : "Must start with http:// or https://",
@@ -78,32 +78,28 @@ export default class AuthLogin extends BaseCommand {
   }
 
   /**
-   * Turns a sign-in failure into something actionable.
-   *
-   * There is deliberately no `capuchoo auth register`: confirming an email is a
-   * browser round-trip, so a CLI signup could only ever end with "now go and
-   * check your email". Accounts are created in the dashboard, and an unconfirmed
-   * one is the state most likely to bring someone here confused.
+   * Turns a sign-in failure into something actionable. The server answers a wrong password and a
+   * disabled account the same way, on purpose, so the message cannot say which it was.
    */
   static explainSignInFailure(error: unknown): string {
-    const message = error instanceof Error ? error.message : String(error);
-
-    if (/not confirmed/i.test(message)) {
+    if (error instanceof HttpError && error.status === 401) {
       return (
-        "That account exists but its email has not been confirmed yet. Open the " +
-        "link in the sign-up email, then run this again."
+        "That email and password were not accepted. There is no sign-up: accounts come from " +
+        "the server's first admin or from an invitation to an organization. Ask whoever runs " +
+        "this server, or check the password by signing in to its dashboard."
       );
     }
-
-    if (/invalid login credentials/i.test(message)) {
+    if (error instanceof HttpError && error.status === 429) {
+      const retry = (error.body as { retry_after?: unknown } | null)?.retry_after;
+      const minutes = typeof retry === "number" ? Math.max(1, Math.ceil(retry / 60)) : null;
       return (
-        "That email and password were not accepted. If you have not signed up yet, " +
-        "create the account in the dashboard first - there is no signup here, " +
-        "because confirming an email needs a browser."
+        "Too many sign-in attempts from here. " +
+        (minutes
+          ? `Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`
+          : "Try again later.")
       );
     }
-
-    return message;
+    return error instanceof Error ? error.message : String(error);
   }
 
   /**
@@ -114,7 +110,7 @@ export default class AuthLogin extends BaseCommand {
    * so a new user had no way to reach a working state from the terminal at all.
    *
    * The token from `/auth/login` is used once, to mint a key, and then dropped.
-   * A JWT expires; a key does not, so you sign in once per machine.
+   * A session expires; a key does not, so you sign in once per machine.
    */
   private static async obtainKey(endpoint: string): Promise<string> {
     if (!isInteractive()) {
