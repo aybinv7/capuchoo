@@ -1,4 +1,9 @@
-import { ENVIRONMENTS, environmentMismatchWarning, suggestEnvironment } from "@capuchoo/core";
+import {
+  ENVIRONMENTS,
+  environmentMismatchWarning,
+  suggestEnvironment,
+  type Environment,
+} from "@capuchoo/core";
 import { Args, Flags } from "@oclif/core";
 import chalk from "chalk";
 import { BaseCommand } from "../../base-command.js";
@@ -6,6 +11,7 @@ import { confirm, isInteractive, log, selectOne } from "../../cli/prompts.js";
 import { CloudClient } from "../../services/cloud.js";
 import { requireProjectConfig, resolveCredentials } from "../../utils/config.js";
 import { runnable } from "../../cli/invocation.js";
+import { planClientChannel } from "../../delivery/client-channel.js";
 
 /**
  * Creating a channel used to be dashboard-only, which broke the CLI story: a
@@ -24,6 +30,7 @@ export default class ChannelCreate extends BaseCommand {
     "<%= config.bin %> channel create staging",
     "<%= config.bin %> channel create beta --environment staging",
     "<%= config.bin %> channel create prod --environment prod --yes",
+    "<%= config.bin %> channel create prod-acme --client --base prod",
   ];
 
   static override args = {
@@ -40,6 +47,14 @@ export default class ChannelCreate extends BaseCommand {
       char: "y",
       default: false,
       description: "Accept the environment even when it disagrees with the name",
+    }),
+    client: Flags.boolean({
+      default: false,
+      description: "A client channel: takes no uploads, only releases its base channel has served",
+    }),
+    base: Flags.string({
+      description: "Release channel a client channel follows, e.g. prod",
+      dependsOn: ["client"],
     }),
     json: Flags.boolean({ default: false, description: "Machine-readable output" }),
   };
@@ -62,13 +77,48 @@ export default class ChannelCreate extends BaseCommand {
 
     // A duplicate name is a 409 from the server; catching it here names the
     // existing channel's environment, which is usually what the user wanted.
-    const existing = await cloud.channels(project.cloudAppId).catch(() => []);
+    const existing = await cloud.channels(project.cloudAppId).catch((error: unknown) => {
+      if (flags.client) throw error;
+      return [];
+    });
     const clash = existing.find((channel) => channel.name === name);
     if (clash) {
       this.error(
         `${project.appName} already has a channel called "${name}" ` +
           `on the ${clash.environment} environment.`,
       );
+    }
+
+    if (flags.client) {
+      const plan = planClientChannel({
+        name,
+        baseName: flags.base,
+        environment: flags.environment as Environment | undefined,
+        channels: existing,
+      });
+      const channel = await cloud.createChannel({
+        app_id: project.cloudAppId,
+        name,
+        environment: plan.environment,
+        kind: "client",
+        base_channel_id: plan.base.id,
+      });
+
+      if (flags.json) {
+        this.log(JSON.stringify(channel, null, 2));
+        return;
+      }
+
+      this.log("");
+      this.log(
+        `  ${chalk.green("Created")} ${channel.name} ${chalk.dim(`(client of ${plan.base.name}, ${plan.environment})`)}`,
+      );
+      this.log(
+        chalk.dim(
+          `  Deliver to it with: capuchoo channel point ${channel.name} --version <version>`,
+        ) + "\n",
+      );
+      return;
     }
 
     const suggested = suggestEnvironment(name);

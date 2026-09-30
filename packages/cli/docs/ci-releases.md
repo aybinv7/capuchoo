@@ -43,6 +43,26 @@ Keys that must never come from anywhere else go in `.capuchoo/project.json`:
 
 A flavour file that omits one, or leaves it empty, is refused before anything is built.
 
+## Build once, deliver many
+
+A deploy uploads to a release channel (`dev`, `staging`, `prod`). Every other delivery moves a
+channel's pointer to an artefact that already exists, so nothing is rebuilt:
+
+```sh
+capuchoo channel create prod-acme --client --base prod   # follows prod, takes no uploads
+capuchoo release list --channel prod
+capuchoo channel point prod-acme --version 2.4.0 --yes
+capuchoo channel point prod --version 2.4.0 --native 57 --yes
+capuchoo channel point prod --version 2.3.1 --rollback --reason "crash on login" --yes
+capuchoo channel pause prod-acme --yes
+capuchoo channel resume prod-acme
+capuchoo channel history prod-acme
+```
+
+A client channel only points at what its base has served. The server decides every move with
+`canPoint`; a refusal prints its message and reason code, and under `--json` becomes
+`{ "ok": false, "error", "reason", "status" }` on stdout with exit code 1.
+
 ## Versions
 
 `package.json` owns the semantic version. `version-code.json` owns the monotonically increasing

@@ -65,7 +65,7 @@
         "description": "Sign in, and manage this account's API keys"
       },
       "channel": {
-        "description": "Create and inspect an app's channels"
+        "description": "Create channels, and deliver, pause and roll back what they serve"
       },
       "config": {
         "description": "Inspect resolved configuration and detected tools"
@@ -78,6 +78,9 @@
       },
       "org": {
         "description": "Create organizations and manage who is in them"
+      },
+      "release": {
+        "description": "List published bundles and native builds"
       },
       "version": {
         "description": "Manage the app version and native build numbers"
