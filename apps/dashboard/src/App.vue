@@ -1,19 +1,20 @@
-<template>
-  <ConfigProvider :locale="language" :dir="langDirection">
-    <Sonner rich-colors class="pointer-events-auto" />
-    <router-view />
-  </ConfigProvider>
-</template>
 <script setup lang="ts">
-import { ConfigProvider } from "reka-ui";
-import "vue-sonner/style.css";
+import { useColorMode } from "@vueuse/core";
+import { RouterView } from "vue-router";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-const authStore = useAuthStore();
-const languageStore = useLanguageStore();
-
-const { langDirection, language } = storeToRefs(languageStore);
-
-onMounted(() => {
-  authStore.init();
-});
+const mode = useColorMode({ storageKey: "capuchoo.theme" });
 </script>
+
+<template>
+  <TooltipProvider :delay-duration="250">
+    <RouterView />
+    <Toaster
+      rich-colors
+      close-button
+      position="bottom-right"
+      :theme="mode === 'dark' ? 'dark' : 'light'"
+    />
+  </TooltipProvider>
+</template>
