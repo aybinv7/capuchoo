@@ -48,7 +48,9 @@ describe("ensureInstanceAdmin", () => {
   });
 
   it("refuses a weak password and a malformed email without writing", async () => {
-    await expect(ensureInstanceAdmin(db, { email: "a@b.co", password: "short" })).rejects.toThrow();
+    await expect(ensureInstanceAdmin(db, { email: "a@b.co", password: "short" })).rejects.toThrow(
+      "at least",
+    );
     await expect(
       ensureInstanceAdmin(db, { email: "not-an-email", password: PASSWORD }),
     ).rejects.toThrow("not an email");
