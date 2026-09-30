@@ -18,12 +18,23 @@ export interface DownloadProgress {
 
 const DONE = { loaded: 0, total: 0, percent: 100 };
 
-function fileNameFor(update: ResolvedUpdate): string {
+/** Cache-relative file name of an update's APK. */
+export function apkCacheFileName(update: ResolvedUpdate): string {
   const { appId, appName } = getUpdaterConfig();
   return apkFileName(appId || appName, {
     version: update.version,
     versionCode: update.versionCode ?? 0,
   });
+}
+
+/** Deletes an update's cached APK. Best effort: a file already gone is the goal. */
+export async function discardCachedApk(update: ResolvedUpdate): Promise<void> {
+  try {
+    const { Directory, Filesystem } = await nativePlugins.filesystem();
+    await Filesystem.deleteFile({ directory: Directory.Cache, path: apkCacheFileName(update) });
+  } catch (error) {
+    console.warn("[capuchoo] could not delete the cached APK", error);
+  }
 }
 
 /** Every APK in the cache that belongs to this app. */
@@ -55,7 +66,7 @@ async function listCachedApks(): Promise<CachedApk[]> {
  * survives a restart.
  */
 export async function findCachedApk(update: ResolvedUpdate): Promise<string | null> {
-  const fileName = fileNameFor(update);
+  const fileName = apkCacheFileName(update);
 
   try {
     const { Directory, Filesystem } = await nativePlugins.filesystem();
@@ -99,7 +110,7 @@ export async function downloadNativeUpdate(
     throw new Error("Connect to the internet to download this update");
   }
 
-  const fileName = fileNameFor(update);
+  const fileName = apkCacheFileName(update);
 
   // Make room, but never for the file being written. APKs are tens of megabytes
   // and the OS can evict from a full cache mid-download.
@@ -132,6 +143,16 @@ export async function downloadNativeUpdate(
       connectTimeout: 60_000,
       readTimeout: 300_000,
     });
+
+    if (update.fileSize) {
+      const stat = await Filesystem.stat({ directory: Directory.Cache, path: fileName });
+      if (!isCompleteDownload({ size: stat.size }, update.fileSize)) {
+        await discardCachedApk(update);
+        throw new Error(
+          `The download was incomplete (${stat.size} of ${update.fileSize} bytes). Try again.`,
+        );
+      }
+    }
 
     return result.path || destination.uri;
   } finally {
