@@ -90,14 +90,45 @@ export function compareVersions(a: string, b: string): number {
   if (left.minor !== right.minor) return left.minor - right.minor;
   if (left.patch !== right.patch) return left.patch - right.patch;
 
-  // 1.0.0-beta precedes 1.0.0.
   if (left.prerelease && !right.prerelease) return -1;
   if (!left.prerelease && right.prerelease) return 1;
   if (left.prerelease && right.prerelease) {
-    return left.prerelease < right.prerelease ? -1 : left.prerelease > right.prerelease ? 1 : 0;
+    return comparePrerelease(left.prerelease, right.prerelease);
   }
 
   return 0;
+}
+
+const NUMERIC_IDENTIFIER = /^\d+$/;
+
+/** SemVer 2.0.0 §11.4: identifier by identifier, numeric below alphanumeric, shorter set first. */
+function comparePrerelease(a: string, b: string): number {
+  const left = a.split(".");
+  const right = b.split(".");
+  const length = Math.min(left.length, right.length);
+
+  for (let index = 0; index < length; index += 1) {
+    const order = compareIdentifier(left[index]!, right[index]!);
+    if (order !== 0) return order;
+  }
+
+  return left.length - right.length;
+}
+
+function compareIdentifier(a: string, b: string): number {
+  const numericA = NUMERIC_IDENTIFIER.test(a);
+  const numericB = NUMERIC_IDENTIFIER.test(b);
+
+  if (numericA && numericB) {
+    const x = a.replace(/^0+(?=\d)/, "");
+    const y = b.replace(/^0+(?=\d)/, "");
+    if (x.length !== y.length) return x.length - y.length;
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  if (numericA) return -1;
+  if (numericB) return 1;
+
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 export type VersionCodes = Record<Environment, number>;
