@@ -4,7 +4,6 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { ResolvedFlavour } from "../pipeline/flavour.js";
-import type { CloudClient } from "../services/cloud.js";
 import type { ChannelRecord } from "../services/wire.js";
 import { writeReleaseKey } from "../signing/release-key.js";
 import { releasePreflight, type PreflightInput } from "./preflight.js";
@@ -52,7 +51,7 @@ function input(overrides: Partial<PreflightInput> = {}): PreflightInput {
     channel: channel(),
     flavour: FLAVOUR,
     profile: profile(),
-    cloud: { artefacts: vi.fn(async () => ({ bundles: [], native_builds: [] })) } as never,
+    artefacts: { bundles: [], native_builds: [] },
     ...overrides,
   };
 }
@@ -81,18 +80,14 @@ describe("releasePreflight", () => {
     expect(result.problems[0]).toContain("only accepts signed releases");
   });
 
-  it("loads the key and fetches history only for native Android", async () => {
+  it("loads the key and keeps the history only for native Android", async () => {
     writeReleaseKey(appDir, (await generateReleaseKeyPair()).privateKey);
-    const cloud = { artefacts: vi.fn(async () => ({ bundles: [], native_builds: [] })) };
 
-    const ota = await releasePreflight(input({ cloud: cloud as unknown as CloudClient }));
+    const ota = await releasePreflight(input());
     expect(ota.key?.source).toBe("file");
     expect(ota.artefacts).toBeNull();
-    expect(cloud.artefacts).not.toHaveBeenCalled();
 
-    const native = await releasePreflight(
-      input({ kind: "native", cloud: cloud as unknown as CloudClient }),
-    );
+    const native = await releasePreflight(input({ kind: "native" }));
     expect(native.artefacts).toEqual({ bundles: [], native_builds: [] });
   });
 

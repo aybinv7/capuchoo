@@ -1,10 +1,8 @@
 import type { UserProfile } from "@capuchoo/core";
 import type { ResolvedFlavour } from "../pipeline/flavour.js";
-import type { CloudClient } from "../services/cloud.js";
 import type { AppArtefacts, AppRecord, ChannelRecord } from "../services/wire.js";
 import { loadReleaseKey, PUBLIC_KEY_ENV, type ReleaseKey } from "../signing/release-key.js";
 import { describeSigningProblems } from "../signing/signing-policy.js";
-import { loadArtefacts } from "./artefact-index.js";
 
 export interface PreflightInput {
   appDir: string;
@@ -14,13 +12,14 @@ export interface PreflightInput {
   channel: ChannelRecord;
   flavour: ResolvedFlavour;
   profile: UserProfile;
-  cloud: CloudClient;
+  /** Loaded once by the caller, which also needs them to choose the version. */
+  artefacts: AppArtefacts | null;
 }
 
 export interface Preflight {
   problems: string[];
   key: ReleaseKey | null;
-  /** Earlier releases, fetched for native Android deploys; null when not needed or unsupported. */
+  /** Earlier releases, kept for native Android deploys; null otherwise or when unsupported. */
   artefacts: AppArtefacts | null;
 }
 
@@ -58,7 +57,7 @@ export async function releasePreflight(input: PreflightInput): Promise<Preflight
   );
 
   const needsHistory = input.kind === "native" && input.platform === "android";
-  const artefacts = needsHistory ? await loadArtefacts(input.cloud, input.cloudAppId) : null;
+  const artefacts = needsHistory ? input.artefacts : null;
 
   return { problems, key, artefacts };
 }

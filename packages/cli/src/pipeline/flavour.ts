@@ -167,7 +167,9 @@ export function writeVersionCodes(
  *
  * `bumpCode` should be true for a native build - Android refuses an APK whose
  * versionCode did not increase - and false for an OTA bundle, which does not
- * change the installed binary.
+ * change the installed binary. `minCode` is the lowest build number the server has not taken,
+ * so a checkout whose version-code.json never received the last bump - every CI clone - cannot
+ * build a number that is already published.
  */
 export function resolveVersionState(
   appDir: string,
@@ -175,9 +177,12 @@ export function resolveVersionState(
   environment: Environment,
   version: string,
   bumpCode: boolean,
+  minCode = 0,
 ): VersionState {
   const current = readVersionCodes(appDir, project);
-  const codes = bumpCode ? nextVersionCode(current, environment) : current;
+  const next = bumpCode ? nextVersionCode(current, environment) : current;
+  const codes =
+    bumpCode && next[environment] < minCode ? { ...next, [environment]: minCode } : next;
 
   return { version, versionCode: codes[environment], codes };
 }

@@ -75,9 +75,22 @@ capuchoo version sync                              # show what each flavour woul
 capuchoo version bump patch --environment staging  # raise both
 ```
 
-Neither commits nor tags. A deploy can bump on its own with `-v patch|minor|major`; only a native
-deploy consumes a build number, and only after the artefact exists, so a failed build does not burn
-one.
+Neither commits nor tags. A deploy takes its version from `-v`:
+
+- `patch`, `minor`, `major` - bump `package.json` and publish that.
+- `1.2.0` or `v1.2.0` - publish exactly that, e.g. a git tag's version.
+- `auto` - on dev and staging, a prerelease of the next patch numbered after the highest one the
+  server holds: `0.1.10` publishes `0.1.11-dev.1`, then `0.1.11-dev.2`. It sorts above what devices
+  run and below the `0.1.11` a prod release will take, and needs no commit, so every CI push gets a
+  fresh version. On prod it publishes `package.json` as-is, because a prod version is a decision.
+
+Bundle versions are unique per app across every flavour. A deploy whose version the server already
+holds is refused before anything is built; a dry run says so and continues.
+
+Only a native deploy consumes a build number, and only after the artefact exists, so a failed build
+does not burn one. The number is the next one in `version-code.json`, or the one after the highest
+the server holds for that flavour when that is higher, so a CI clone whose file never received the
+last bump cannot collide.
 
 The env files are read, never written.
 
@@ -116,17 +129,23 @@ capuchoo ci init --gitlab --clients acme,globex
 
 writes `.gitlab-ci.yml` (`--output` to put it elsewhere, e.g. a monorepo root, then set `APP_DIR`)
 from `templates/gitlab-ci.yml`. An existing file is diffed and only replaced after a confirmation or
-`--yes`. A release branch publishes to the channel of its environment: the default branch and tags
-to `prod`, `$CAPUCHOO_STAGING_BRANCH` (`staging`) to `staging`, `$CAPUCHOO_DEV_BRANCH` (`dev`) to
-`dev`.
+`--yes`.
 
-- `check` - `deploy ota --channel <channel> --dry-run`, the whole pipeline except the upload. It
-  also runs on a merge request into a release branch, when `CAPUCHOO_API_KEY` is visible to it.
-- `publish:ota` - `deploy ota` on every push, keeping `capuchoo-ota.json` as an artifact. It runs in
-  a Node image with no Android SDK.
+| Ref                                    | Channel                  | Version                        |
+| -------------------------------------- | ------------------------ | ------------------------------ |
+| `$CAPUCHOO_DEV_BRANCH` (`dev`)         | `dev`                    | `-v auto`, e.g. `0.1.11-dev.4` |
+| `$CAPUCHOO_STAGING_BRANCH` (`staging`) | `staging`                | `-v auto`                      |
+| a tag `v1.2.0`                         | `prod`                   | `1.2.0`                        |
+| the default branch                     | rehearsal against `prod` | -                              |
+
+- `check` - `deploy ota --dry-run`, the whole pipeline except the upload. It also runs on the
+  default branch and on a merge request into a release branch, when `CAPUCHOO_API_KEY` is visible to
+  it.
+- `publish:ota` - `deploy ota` on a push to dev or staging and on a tag, keeping `capuchoo-ota.json`
+  as an artifact. It runs in a Node image with no Android SDK.
 - `publish:native` - manual. `deploy native --type=release` in a JDK 21 image with the Android SDK
   installed and cached, keeping `capuchoo-native.json`.
-- `deliver:<client>` - one manual job per client, on prod only, running
+- `deliver:<client>` - one manual job per client, on tags only, running
   `capuchoo channel point prod-<client> --version <published version>`, with `--native` when the
   native job ran. Create each channel first with
   `capuchoo channel create prod-<client> --client --base prod`.

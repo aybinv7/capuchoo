@@ -538,7 +538,8 @@ _See code:
 
 ## `capuchoo ci init`
 
-Write a GitLab pipeline that publishes to prod once and delivers to each client by hand
+Write a GitLab pipeline that publishes each release branch to its channel and delivers prod to each
+client by hand
 
 ```
 USAGE
@@ -552,7 +553,7 @@ FLAGS
       --output=<value>   [default: .gitlab-ci.yml] Where to write the pipeline
 
 DESCRIPTION
-  Write a GitLab pipeline that publishes to prod once and delivers to each client by hand
+  Write a GitLab pipeline that publishes each release branch to its channel and delivers prod to each client by hand
 
 EXAMPLES
   $ capuchoo ci init --gitlab
@@ -613,7 +614,7 @@ Build and publish a native binary (APK). Users install it through the OS.
 
 ```
 USAGE
-  $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets]
+  $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch|auto] [-a] [-r] [--skip-assets]
     [--skip-build] [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [-p android|ios] [-t debug|release]
     [--flavor <value>] [--allow-unsigned] [--allow-cert-change]
 
@@ -626,8 +627,9 @@ FLAGS
   -r, --[no-]required      Users cannot postpone this release
   -t, --type=<option>      Gradle variant to assemble. Defaults to release; debug is refused on prod and client channels
                            <options: debug|release>
-  -v, --version=<option>   Bump the app version before publishing
-                           <options: major|minor|patch>
+  -v, --version=<option>   Bump the app version before publishing. auto: a prerelease of the next patch on dev and
+                           staging, package.json as-is on prod
+                           <options: major|minor|patch|auto>
   -y, --yes                Accept every prompt - required in CI
       --allow-cert-change  Publish an APK signed with a different certificate than the previous release. Installed
                            devices cannot upgrade to it.
@@ -662,7 +664,7 @@ Publish a web bundle over the air. Does not change the installed binary.
 
 ```
 USAGE
-  $ capuchoo deploy ota [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets]
+  $ capuchoo deploy ota [-c <value>] [-n <value>] [-v major|minor|patch|auto] [-a] [-r] [--skip-assets]
     [--skip-build] [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [--min-native <value>]
 
 FLAGS
@@ -670,8 +672,9 @@ FLAGS
   -c, --channel=<value>     Channel to publish to. Its environment selects the flavour.
   -n, --note=<value>        Release notes shown to users
   -r, --[no-]required       Users cannot postpone this release
-  -v, --version=<option>    Bump the app version before publishing
-                            <options: major|minor|patch>
+  -v, --version=<option>    Bump the app version before publishing. auto: a prerelease of the next patch on dev and
+                            staging, package.json as-is on prod
+                            <options: major|minor|patch|auto>
   -y, --yes                 Accept every prompt - required in CI
       --allow-local-env     Build prod even when .env / .env.local define VITE_* keys the flavour file does not,
                             shipping this machine's values

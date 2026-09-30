@@ -71,6 +71,8 @@ export interface DeployRequest {
   identifiers?: RegisteredIdentifier[] | undefined;
   /** `--allow-local-env`: accept `VITE_*` keys the flavour omits being filled from local env files. */
   allowLocalEnv?: boolean | undefined;
+  /** Native: the lowest build number the server has not taken for this flavour. */
+  minVersionCode?: number | undefined;
   /** Whether the artefact is checked and signed after the build, as the `sign` step. */
   seal?: boolean | undefined;
 }
@@ -254,6 +256,7 @@ export async function runDeploy(
     request.environment,
     request.version,
     request.kind === "native",
+    request.minVersionCode,
   );
 
   const env = buildEnvironment(flavour, state);

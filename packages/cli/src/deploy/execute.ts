@@ -1,6 +1,6 @@
 import { resolveSigning } from "./signing.js";
 import { askText, confirm, isInteractive, selectOne, whileWaiting } from "../cli/prompts.js";
-import { bumpVersion, type BumpType, type Environment } from "@capuchoo/core";
+import type { Environment } from "@capuchoo/core";
 import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";
@@ -8,6 +8,7 @@ import path from "node:path";
 import type { ReleaseKey } from "../signing/release-key.js";
 import { BuildTracker } from "./build-tracker.js";
 import { detectCiContext } from "./ci-context.js";
+import { loadArtefacts } from "./artefact-index.js";
 import { releasePreflight } from "./preflight.js";
 import { needsSeal, sealArtefact, type Seal } from "./seal.js";
 import { publishRelease, UnconfirmedUploadError } from "./publish.js";
@@ -29,6 +30,14 @@ import {
   writeAppVersion,
 } from "../utils/config.js";
 import { Reporter } from "../utils/reporter.js";
+import {
+  describeTakenVersion,
+  describeVersionRequestProblem,
+  nextPublishedCode,
+  publishedBundleVersions,
+  resolveReleaseVersion,
+  type VersionRequest,
+} from "./release-version.js";
 import { restoreVersionFiles, snapshotVersionFiles } from "./version-guard.js";
 import { runnable } from "../cli/invocation.js";
 
@@ -51,8 +60,8 @@ export const commonDeployFlags = {
   note: Flags.string({ char: "n", description: "Release notes shown to users" }),
   version: Flags.string({
     char: "v",
-    description: "Bump the app version before publishing",
-    options: ["major", "minor", "patch"],
+    description:
+      "major, minor or patch bumps package.json; auto publishes a prerelease of the next patch on dev and staging and package.json as-is on prod; 1.2.3 or v1.2.3 publishes exactly that",
   }),
   active: Flags.boolean({
     char: "a",
@@ -238,6 +247,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   // failure - an older backend has no such endpoint, and treating that as "none
   // registered" would warn on every deploy.
   const identifiers = await cloud.identifiers(project.cloudAppId).catch(() => undefined);
+  const artefacts = await loadArtefacts(cloud, project.cloudAppId);
 
   // --- release options -------------------------------------------------------
 
@@ -252,8 +262,11 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     flags.required ??
     (interactive ? await confirm("Mark as required?", { default: false }) : false);
 
-  let bump = flags.version as BumpType | undefined;
-  if (!bump && interactive) {
+  const versionProblem = flags.version ? describeVersionRequestProblem(flags.version) : null;
+  if (versionProblem) fail(command, versionProblem);
+
+  let requested = flags.version as VersionRequest | undefined;
+  if (!requested && interactive) {
     const answer = await selectOne<string>(
       "Bump the version?",
       [
@@ -261,10 +274,13 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         { value: "patch", label: "patch" },
         { value: "minor", label: "minor" },
         { value: "major", label: "major" },
+        ...(environment === "prod"
+          ? []
+          : [{ value: "auto", label: "auto", hint: `next ${environment} prerelease` }]),
       ],
       "--version",
     );
-    bump = answer === "" ? undefined : (answer as BumpType);
+    requested = answer === "" ? undefined : (answer as VersionRequest);
   }
 
   const note =
@@ -277,10 +293,15 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         })
       : "");
 
-  const currentVersion = readAppVersion(appDir);
-  const version = bump ? bumpVersion(currentVersion, bump) : currentVersion;
-
   const platform = (flags.platform ?? "android") as "android" | "ios";
+  const resolution = resolveReleaseVersion({
+    current: readAppVersion(appDir),
+    request: requested,
+    environment,
+    published: publishedBundleVersions(artefacts, platform),
+  });
+  const version = resolution.version;
+  const bump = requested !== undefined && requested !== "auto";
 
   const signing = await resolveSigning({
     appDir,
@@ -308,7 +329,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     command.log(chalk.dim("  ─────────────────────────────────────────"));
     command.log(`  channel      ${chalk.green(channel.name)} (${environment})`);
     command.log(
-      `  version      ${chalk.green(version)}${bump ? chalk.dim(` (${bump} from ${currentVersion})`) : ""}`,
+      `  version      ${chalk.green(version)}${resolution.origin ? chalk.dim(` (${resolution.origin})`) : ""}`,
     );
     if (kind === "native") {
       const signedNote =
@@ -350,6 +371,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     quiet: json,
     identifiers,
     allowLocalEnv: flags["allow-local-env"],
+    minVersionCode:
+      kind === "native" ? nextPublishedCode(artefacts, platform, environment) : undefined,
   };
 
   // Validated before package.json is written, not after.
@@ -370,11 +393,18 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     channel,
     flavour,
     profile,
-    cloud,
+    artefacts,
   });
   request.seal = needsSeal(kind, platform, preflight.key);
 
-  const problems = [...validateRequest(request, flavour), ...preflight.problems];
+  const taken = describeTakenVersion({ kind, version, platform, environment, artefacts });
+  if (taken && flags["dry-run"])
+    process.stderr.write(`${chalk.yellow("!")} ${taken} A real deploy stops here.\n`);
+  const problems = [
+    ...validateRequest(request, flavour),
+    ...preflight.problems,
+    ...(taken && !flags["dry-run"] ? [taken] : []),
+  ];
   if (problems.length > 0) {
     const detail = problems.map((problem) => `  - ${problem}`).join("\n");
     fail(command, `This deploy cannot proceed:\n${detail}\n\nNothing was changed.`);
