@@ -139,6 +139,11 @@ export const FAQ: readonly Question[] = [
       "The server decides each device's channel: a dashboard assignment first, then the channel the device chose (when allowed), then the one its build reports. The binary is the same for every customer.",
   },
   {
+    question: "Can a native-only Android app use it?",
+    answer:
+      "Not today. The CLI builds through a Capacitor project and the updater runs in its WebView. The server speaks plain HTTP, so a Kotlin client and publishing an APK built by any Gradle project are what native-only support would need.",
+  },
+  {
     question: "Does it support iOS?",
     answer:
       "The delivery model and the updater are platform-neutral, but Android is what runs in production today. Native iOS builds are not produced by the CLI.",

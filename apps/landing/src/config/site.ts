@@ -16,6 +16,7 @@ export const SITE = {
 export const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
   { label: "Channels", href: "#channels" },
+  { label: "Tour", href: "#tour" },
   { label: "Features", href: "#features" },
   { label: "CLI", href: "#cli" },
   { label: "Self-host", href: "#self-host" },
