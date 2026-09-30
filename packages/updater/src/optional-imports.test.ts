@@ -47,6 +47,7 @@ const OPTIONAL_PACKAGES = [
   "@capacitor/device",
   "@capacitor/geolocation",
   "capacitor-native-settings",
+  "@capacitor/preferences",
 ];
 
 /** The name each plugin registers natively, which is not its package name. */
@@ -59,6 +60,7 @@ const REGISTERED_NAMES = [
   "Device",
   "Geolocation",
   "NativeSettings",
+  "Preferences",
 ];
 
 function sourceFiles(dir: string): string[] {
@@ -133,7 +135,9 @@ describe("they are reached through Capacitor's registry", () => {
     // notification while one downloads - so naming it in "native updates need
     // X" would be untrue. The CLI installs it with the rest; the runtime treats
     // its absence as "no notification" and carries on.
-    const required = OPTIONAL_PACKAGES.filter((pkg) => pkg !== "@capacitor/local-notifications");
+    const required = OPTIONAL_PACKAGES.filter(
+      (pkg) => pkg !== "@capacitor/local-notifications" && pkg !== "@capacitor/preferences",
+    );
 
     for (const pkg of required) {
       expect(code, pkg).toContain(pkg);

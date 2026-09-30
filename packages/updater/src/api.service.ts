@@ -7,6 +7,8 @@ import {
   type UpdateEvent,
   type UpdateEventPayload,
 } from "@capuchoo/core";
+import { getChannel } from "./channel.service.js";
+import { isTransientError } from "./check-errors.js";
 import { getUpdaterConfig, describeConfigProblems } from "./config.js";
 import {
   getBuiltinVersion,
@@ -19,6 +21,8 @@ import {
   getVersionCode,
   isNative,
 } from "./device.js";
+import { requestJson } from "./http.js";
+import { withRetry } from "./retry.js";
 
 /** Raised when the updater is misconfigured, rather than reporting "up to date". */
 export class UpdaterConfigError extends Error {
@@ -39,28 +43,6 @@ export class UpdateCheckBlockedError extends Error {
     super(response.message ?? "The update service rejected this request");
     this.name = "UpdateCheckBlockedError";
     this.response = response;
-  }
-}
-
-async function postJson<T>(url: string, body: unknown, timeoutMs: number): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`${url} responded ${response.status} ${response.statusText}`);
-    }
-
-    return (await response.json()) as T;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -158,6 +140,7 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     versionBuiltin,
     osFacts,
     locationFacts,
+    channel,
   ] = await Promise.all([
     getVersionCode(),
     getBundleVersion(),
@@ -166,12 +149,13 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     getBuiltinVersion(),
     getOsFacts(),
     getLocationFacts(),
+    getChannel(),
   ]);
 
   const request = buildCheckRequest({
     appId: config.appId,
     platform: getPlatform(),
-    channel: config.channel,
+    channel,
     isProd: config.environment === "prod",
     versionCode,
     versionName,
@@ -182,10 +166,20 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     ...locationFacts,
   });
 
-  const response = await postJson<UpdateCheckResponse>(
-    `${config.apiUrl}/api/update`,
-    request,
-    config.timeoutMs,
+  const response = await withRetry(
+    () =>
+      requestJson<UpdateCheckResponse>(`${config.apiUrl}/api/update`, {
+        body: request,
+        timeoutMs: config.timeoutMs,
+      }),
+    {
+      policy: {
+        attempts: config.checkAttempts,
+        baseDelayMs: config.retryBaseDelayMs,
+        maxDelayMs: config.retryBaseDelayMs * 8,
+      },
+      shouldRetry: isTransientError,
+    },
   );
 
   // "Channel not found" and "Environment mismatch" are deployment mistakes.
@@ -218,6 +212,7 @@ export async function logUpdateEvent(
   event: UpdateEvent,
   update: ResolvedUpdate,
   details?: { error?: string },
+  options?: { keepalive?: boolean },
 ): Promise<void> {
   const config = getUpdaterConfig();
   if (!config.apiUrl) return;
@@ -235,14 +230,33 @@ export async function logUpdateEvent(
     // the binary underneath is unchanged. Sending the device's own code would
     // claim the update changed it.
     ...(update.kind === "native" ? { new_version_code: update.versionCode } : {}),
-    channel: config.channel,
+    channel: await getChannel(),
     environment: String(config.environment),
     ...details,
   };
 
   try {
-    await postJson(`${config.apiUrl}/api/native-updates/log`, payload, config.timeoutMs);
+    await requestJson(`${config.apiUrl}/api/native-updates/log`, {
+      body: payload,
+      timeoutMs: config.timeoutMs,
+      ...(options?.keepalive ? { keepalive: true } : {}),
+    });
   } catch (error) {
     console.warn("[capuchoo] could not record update event", error);
   }
+}
+
+/**
+ * `logUpdateEvent` without waiting: telemetry must never delay applying an
+ * update or opening the installer. Every failure is caught here.
+ */
+export function reportUpdateEvent(
+  event: UpdateEvent,
+  update: ResolvedUpdate,
+  details?: { error?: string },
+  options?: { keepalive?: boolean },
+): void {
+  logUpdateEvent(event, update, details, options).catch((error: unknown) => {
+    console.warn("[capuchoo] could not record update event", error);
+  });
 }

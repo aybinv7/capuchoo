@@ -17,8 +17,24 @@ export interface UpdaterConfig {
   channel: string;
   /** Free-form: an app may use flavours beyond dev/staging/prod. */
   environment: string;
-  /** Milliseconds before an update check is abandoned. */
+  /** Milliseconds before a single request attempt is abandoned. */
   timeoutMs: number;
+  /** Attempts per update check, including the first. Only offline and 5xx failures are retried. */
+  checkAttempts: number;
+  /** Delay before the first retry; doubles per attempt, with jitter. */
+  retryBaseDelayMs: number;
+  /** A resume or reconnect re-checks when the last check is older than this. */
+  recheckIntervalMs: number;
+  /**
+   * Release signing public key: base64 SPKI or PEM. Baked into the build
+   * (VITE_UPDATE_PUBLIC_KEY) so a compromised server cannot sign for it.
+   */
+  publicKey: string | undefined;
+  /**
+   * Refuse any update that carries no valid signature. Defaults to true when a
+   * public key is set (VITE_UPDATE_REQUIRE_SIGNATURE=false opts out).
+   */
+  requireSignature: boolean;
   /**
    * Show an ongoing notification with download progress.
    *
@@ -70,8 +86,21 @@ export function resetUpdaterConfig(): void {
   overrides = {};
 }
 
+function positive(value: number | undefined, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function requireSignatureFrom(publicKey: string | undefined): boolean {
+  if (typeof overrides.requireSignature === "boolean") return overrides.requireSignature;
+  const flag = env("VITE_UPDATE_REQUIRE_SIGNATURE");
+  if (flag === "true") return true;
+  if (flag === "false") return false;
+  return Boolean(publicKey);
+}
+
 export function getUpdaterConfig(): UpdaterConfig {
   const apiUrl = overrides.apiUrl ?? env("VITE_UPDATE_API_URL") ?? "";
+  const publicKey = (overrides.publicKey ?? env("VITE_UPDATE_PUBLIC_KEY"))?.trim() || undefined;
 
   return {
     apiUrl: stripTrailingSlash(apiUrl),
@@ -80,7 +109,12 @@ export function getUpdaterConfig(): UpdaterConfig {
     channel: overrides.channel ?? env("VITE_UPDATE_CHANNEL") ?? "prod",
     environment:
       overrides.environment ?? env("VITE_ENVIRONMENT") ?? (env("PROD") === "true" ? "prod" : "dev"),
-    timeoutMs: overrides.timeoutMs ?? 30_000,
+    timeoutMs: positive(overrides.timeoutMs, 15_000),
+    checkAttempts: Math.floor(positive(overrides.checkAttempts, 3)),
+    retryBaseDelayMs: positive(overrides.retryBaseDelayMs, 1_000),
+    recheckIntervalMs: positive(overrides.recheckIntervalMs, 30 * 60_000),
+    publicKey,
+    requireSignature: requireSignatureFrom(publicKey),
     // Only the exact string, so a stray value cannot switch on a permission
     // prompt the app never intended to show.
     notifyProgress: overrides.notifyProgress ?? env("VITE_UPDATE_NOTIFY") === "true",
@@ -106,6 +140,11 @@ export function describeConfigProblems(config: UpdaterConfig): string[] {
   }
   if (!config.appId) {
     problems.push("VITE_APP_ID is not set, so the server cannot identify this build");
+  }
+  if (config.requireSignature && !config.publicKey) {
+    problems.push(
+      "Signed updates are required but VITE_UPDATE_PUBLIC_KEY is not set, so no update can be verified",
+    );
   }
   return problems;
 }
