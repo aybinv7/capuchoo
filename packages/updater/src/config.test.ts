@@ -63,4 +63,41 @@ describe("describeConfigProblems", () => {
     configureUpdater({ apiUrl: "https://x.example", appId: "com.x.y" });
     expect(describeConfigProblems(getUpdaterConfig())).toEqual([]);
   });
+
+  it("refuses to run when signatures are required and there is no key to check them", () => {
+    configureUpdater({ apiUrl: "https://x.example", appId: "com.x.y", requireSignature: true });
+    expect(describeConfigProblems(getUpdaterConfig()).join(" ")).toContain(
+      "VITE_UPDATE_PUBLIC_KEY",
+    );
+  });
+});
+
+describe("resilience and signing defaults", () => {
+  it("retries three times, fifteen seconds an attempt, and re-checks after thirty minutes", () => {
+    expect(getUpdaterConfig()).toMatchObject({
+      timeoutMs: 15_000,
+      checkAttempts: 3,
+      retryBaseDelayMs: 1_000,
+      recheckIntervalMs: 30 * 60_000,
+    });
+  });
+
+  it("ignores a non-positive override rather than disabling the timeout", () => {
+    configureUpdater({ timeoutMs: 0, checkAttempts: -1, recheckIntervalMs: Number.NaN });
+    expect(getUpdaterConfig()).toMatchObject({
+      timeoutMs: 15_000,
+      checkAttempts: 3,
+      recheckIntervalMs: 30 * 60_000,
+    });
+  });
+
+  it("requires signatures once a public key is set, unless told otherwise", () => {
+    expect(getUpdaterConfig().requireSignature).toBe(false);
+
+    configureUpdater({ publicKey: "  MFkw  " });
+    expect(getUpdaterConfig()).toMatchObject({ publicKey: "MFkw", requireSignature: true });
+
+    configureUpdater({ requireSignature: false });
+    expect(getUpdaterConfig().requireSignature).toBe(false);
+  });
 });

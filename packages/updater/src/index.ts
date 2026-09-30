@@ -22,8 +22,51 @@ export {
   buildCheckRequest,
   checkForUpdate,
   logUpdateEvent,
+  reportUpdateEvent,
   type DeviceFacts,
 } from "./api.service.js";
+
+export {
+  ChannelChangeError,
+  clearChannel,
+  getChannel,
+  getChannelOverride,
+  setChannel,
+} from "./channel.service.js";
+
+export { HttpError, NetworkError } from "./http.js";
+
+export { isExpiredLinkError, isTransientError } from "./check-errors.js";
+
+export {
+  ReleaseVerificationError,
+  releaseClaim,
+  verifyUpdateSignature,
+  type SignatureVerdict,
+} from "./release-verification.js";
+
+export { ApkIntegrityError, checkApkIntegrity, type ApkIntegrity } from "./apk-integrity.js";
+
+export { hashCachedFile, type ApkHash } from "./apk-hash.js";
+
+export { Sha256 } from "./sha256.js";
+
+export {
+  MAX_FAILED_INSTALLS,
+  isInstallAbandoned,
+  settleInstall,
+  type InstallRecord,
+  type InstallSettlement,
+} from "./install-attempts.js";
+
+export {
+  isSameArtefact,
+  mergeUpdate,
+  type MergeResult,
+  type UpdateSource,
+} from "./update-merge.js";
+
+export { backoffDelay, withRetry, type RetryOptions, type RetryPolicy } from "./retry.js";
 
 export {
   configureUpdater,
@@ -49,6 +92,8 @@ export {
 } from "./device.js";
 
 export {
+  apkCacheFileName,
+  discardCachedApk,
   downloadNativeUpdate,
   findCachedApk,
   pruneApkCache,

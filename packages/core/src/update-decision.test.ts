@@ -115,10 +115,47 @@ describe("which outcome fires", () => {
   });
 
   it("serves a native binary newer than the installed one", () => {
-    expect(decideUpdate(facts({ native: android, ota: bundle }))).toMatchObject({
+    expect(decideUpdate(facts({ native: android }))).toMatchObject({
       kind: "native",
       release: { version_code: 67 },
     });
+  });
+
+  it("serves a required native binary ahead of a servable bundle", () => {
+    expect(
+      decideUpdate(facts({ native: { ...android, required: true }, ota: bundle })),
+    ).toMatchObject({ kind: "native", release: { version_code: 67 } });
+  });
+
+  it("serves the bundle and attaches an optional native binary", () => {
+    expect(decideUpdate(facts({ native: android, ota: bundle }))).toMatchObject({
+      kind: "ota",
+      release: { version_name: "1.0.55" },
+      native: { version_code: 67 },
+    });
+  });
+
+  it.each([
+    ["is up to date", { ...facts().device, versionName: "9.9.9" }, bundle],
+    ["is gated behind a newer binary", facts().device, { ...bundle, min_update_version: "67" }],
+  ])("offers an optional native binary alone when the bundle %s", (_label, device, ota) => {
+    expect(decideUpdate(facts({ device, native: android, ota }))).toMatchObject({
+      kind: "native",
+      release: { version_code: 67 },
+    });
+  });
+
+  it("does not offer a native binary to a device that reports no build number", () => {
+    const device = { ...facts().device, versionCode: 0 };
+
+    expect(decideUpdate(facts({ device, native: android }))).toEqual({ kind: "no-bundle" });
+    expect(decideUpdate(facts({ device, native: android, ota: bundle }))).toEqual({
+      kind: "ota",
+      release: bundle,
+    });
+    expect(
+      decideUpdate(facts({ device, native: { ...android, required: true }, ota: bundle })),
+    ).toEqual({ kind: "ota", release: bundle });
   });
 
   it.each([
@@ -197,10 +234,62 @@ describe("which outcome fires", () => {
     expect(decision).toMatchObject({ kind: "up-to-date" });
   });
 
-  // "builtin" is not a semantic version, and must sort behind every release -
-  // a device that has never taken an update is behind all of them.
-  it("treats builtin as older than any published bundle", () => {
-    expect(decideUpdate(facts({ ota: bundle }))).toMatchObject({ kind: "ota" });
+  describe("a device on its builtin bundle", () => {
+    const onBuiltin = (builtinVersion: string | undefined, versionCode = 70) =>
+      facts({
+        device: {
+          appId: "com.efficy.app",
+          platform: "android",
+          versionCode,
+          versionName: "builtin",
+          builtinVersion,
+        },
+        ota: { ...bundle, version_name: "1.4.0" },
+      });
+
+    it.each([
+      ["an older bundle after a native install", "1.5.0", { kind: "up-to-date", version: "1.5.0" }],
+      ["the bundle equal to its binary", "1.4.0", { kind: "up-to-date", version: "1.4.0" }],
+      ["a newer bundle after a native install", "1.3.9", { kind: "ota" }],
+      ["a bundle when the binary version is unparseable", "1.5", { kind: "ota" }],
+      ["a bundle when the binary version is absent", undefined, { kind: "ota" }],
+      ["a bundle when the binary version is blank", "  ", { kind: "ota" }],
+    ])("is served %s accordingly", (_label, builtinVersion, expected) => {
+      expect(decideUpdate(onBuiltin(builtinVersion))).toMatchObject(expected);
+    });
+
+    it("ignores builtinVersion once a bundle has been applied", () => {
+      const decision = decideUpdate(
+        facts({
+          device: {
+            appId: "com.efficy.app",
+            platform: "android",
+            versionCode: 70,
+            versionName: "1.3.0",
+            builtinVersion: "1.5.0",
+          },
+          ota: { ...bundle, version_name: "1.4.0" },
+        }),
+      );
+
+      expect(decision).toMatchObject({ kind: "ota" });
+    });
+  });
+
+  it("orders prerelease identifiers numerically", () => {
+    const decision = decideUpdate(
+      facts({
+        device: {
+          appId: "com.efficy.app",
+          platform: "android",
+          versionCode: 60,
+          versionName: "1.0.55-beta.2",
+        },
+        ota: { ...bundle, version_name: "1.0.55-beta.10" },
+      }),
+    );
+
+    expect(decision).toMatchObject({ kind: "ota" });
   });
 
   it("orders a prerelease before its final version", () => {
@@ -315,7 +404,11 @@ describe("the contract the Capacitor plugin actually enforces", () => {
         ota: bundle,
       }),
     ],
-    ["native", facts({ native: android, ota: bundle })],
+    [
+      "channel-paused",
+      facts({ channel: { name: "production", environment: "prod", paused: true }, ota: bundle }),
+    ],
+    ["native", facts({ native: android })],
     ["native-required", facts({ ota: { ...bundle, min_update_version: "67" } })],
     ["ota", facts({ ota: bundle })],
     ["no-bundle", facts()],
@@ -396,10 +489,20 @@ describe("the contract the Capacitor plugin actually enforces", () => {
     }).toMatchObject({ mirrored: true });
   });
 
-  it("an OTA response satisfies everything the plugin reads to download", () => {
-    const response = render(facts({ ota: bundle }));
+  it.each([
+    ["a plain bundle", facts({ ota: bundle })],
+    ["a bundle with an optional native offer", facts({ native: android, ota: bundle })],
+    [
+      "a downgrade",
+      facts({
+        device: { ...facts().device, versionName: "1.0.56" },
+        channel: { name: "production", environment: "prod", allowDowngrade: true },
+        ota: bundle,
+      }),
+    ],
+  ])("an OTA response for %s satisfies everything the plugin reads", (_label, input) => {
+    const response = render(input);
 
-    // The four the download path touches, in order: 4515, 4551, 4609.
     expect(response.kind).toBeUndefined();
     expect(response.error).toBeUndefined();
     expect(response.version).toBe("1.0.55");
@@ -416,7 +519,7 @@ describe("the wire response", () => {
    * Every curl test passed, because curl downloads an APK quite happily.
    */
   it("never puts a native binary in the OTA url field", () => {
-    const response = render(facts({ native: android, ota: bundle }));
+    const response = render(facts({ native: android }));
 
     expect(response.url).toBeUndefined();
     expect(response.native_update?.download_url).toBe(android.download_url);
@@ -548,7 +651,7 @@ describe("the wire response", () => {
  */
 describe("what the client resolves each response to", () => {
   it("acts on a native offer as a native install", () => {
-    const resolved = resolveUpdate(render(facts({ native: android, ota: bundle })));
+    const resolved = resolveUpdate(render(facts({ native: android })));
 
     expect(resolved).toMatchObject({
       kind: "native",
@@ -650,5 +753,183 @@ describe("what the client resolves each response to", () => {
     ],
   ])("takes no action on %s", (_label, input) => {
     expect(resolveUpdate(render(input))).toBeNull();
+  });
+});
+
+describe("pause and rollback", () => {
+  const paused = { name: "production", environment: "prod" as const, paused: true };
+  const rolledBack = { name: "production", environment: "prod" as const, allowDowngrade: true };
+  const onVersion = (versionName: string) => ({ ...facts().device, versionName });
+
+  it("serves nothing from a paused channel, not even a required native binary", () => {
+    const decision = decideUpdate(
+      facts({ channel: paused, native: { ...android, required: true }, ota: bundle }),
+    );
+
+    expect(decision).toMatchObject({ kind: "channel-paused" });
+  });
+
+  it("checks pause before the device gates", () => {
+    const decision = decideUpdate(
+      facts({
+        device: { ...facts().device, isEmulator: true },
+        channel: { ...paused, allowEmulators: false, androidEnabled: false },
+        ota: bundle,
+      }),
+    );
+
+    expect(decision.kind).toBe("channel-paused");
+  });
+
+  it("renders a pause as blocked, with config and nothing to download", () => {
+    const config = { API_URL: "https://api.test" };
+    const response = renderUpdateResponse(decideUpdate(facts({ channel: paused, ota: bundle })), {
+      config,
+    });
+
+    expect(response).toEqual({ message: UpdateMessage.CHANNEL_PAUSED, kind: "blocked", config });
+    expect(resolveUpdate(response)).toBeNull();
+  });
+
+  it("serves an older bundle as a downgrade on a rolled-back channel", () => {
+    const decision = decideUpdate(
+      facts({ device: onVersion("1.0.56"), channel: rolledBack, ota: bundle }),
+    );
+
+    expect(decision).toEqual({ kind: "ota", release: bundle, downgrade: true });
+  });
+
+  it("keeps the device where it is on a channel that does not allow downgrades", () => {
+    expect(decideUpdate(facts({ device: onVersion("1.0.56"), ota: bundle }))).toMatchObject({
+      kind: "up-to-date",
+    });
+  });
+
+  it("treats an equal version as up to date even when downgrades are allowed", () => {
+    expect(
+      decideUpdate(facts({ device: onVersion("1.0.55"), channel: rolledBack, ota: bundle })),
+    ).toMatchObject({ kind: "up-to-date" });
+  });
+
+  it("never downgrades a binary's own builtin bundle", () => {
+    const device = { ...facts().device, versionCode: 70, builtinVersion: "1.0.60" };
+
+    expect(decideUpdate(facts({ device, channel: rolledBack, ota: bundle }))).toMatchObject({
+      kind: "up-to-date",
+    });
+  });
+
+  it("still applies the native gate to a downgrade", () => {
+    const decision = decideUpdate(
+      facts({
+        device: onVersion("1.0.56"),
+        channel: rolledBack,
+        ota: { ...bundle, min_update_version: "67" },
+      }),
+    );
+
+    expect(decision.kind).toBe("native-required");
+  });
+
+  it("marks the wire response and the resolved update as a downgrade", () => {
+    const response = render(
+      facts({ device: onVersion("1.0.56"), channel: rolledBack, ota: bundle }),
+    );
+
+    expect(response.downgrade).toBe(true);
+    expect(resolveUpdate(response)).toMatchObject({ kind: "ota", downgrade: true });
+    expect("downgrade" in render(facts({ ota: bundle }))).toBe(false);
+  });
+});
+
+describe("signatures and the optional native offer on the wire", () => {
+  const sha = "a".repeat(64);
+  const signedBundle: OtaRelease = {
+    ...bundle,
+    checksum: sha,
+    signature: "ota-sig",
+    app_id: "com.efficy.app",
+  };
+  const signedNative: NativeRelease = {
+    ...android,
+    checksum: "b".repeat(64),
+    signature: "apk-sig",
+  };
+
+  it("carries the OTA signature and primary bundle id", () => {
+    const response = render(facts({ ota: signedBundle }));
+
+    expect(response).toMatchObject({
+      signature: "ota-sig",
+      app_id: "com.efficy.app",
+      checksum: sha,
+    });
+    expect(resolveUpdate(response)).toMatchObject({
+      kind: "ota",
+      signature: "ota-sig",
+      appId: "com.efficy.app",
+      checksum: sha,
+    });
+  });
+
+  it("prefers the context's primary bundle id over the release's", () => {
+    const response = renderUpdateResponse(decideUpdate(facts({ ota: signedBundle })), {
+      config: {},
+      appId: "com.efficy.primary",
+    });
+
+    expect(response.app_id).toBe("com.efficy.primary");
+  });
+
+  it("carries the native checksum and signature, and the primary bundle id", () => {
+    const response = renderUpdateResponse(decideUpdate(facts({ native: signedNative })), {
+      config: {},
+      appId: "com.efficy.app",
+    });
+
+    expect(response.native_update).toMatchObject({
+      checksum: "b".repeat(64),
+      signature: "apk-sig",
+    });
+    expect(response.app_id).toBe("com.efficy.app");
+    expect(resolveUpdate(response)).toMatchObject({
+      kind: "native",
+      checksum: "b".repeat(64),
+      signature: "apk-sig",
+      appId: "com.efficy.app",
+    });
+  });
+
+  it("carries the gate's checksum and signature on a native-required response", () => {
+    const decision = decideUpdate(facts({ ota: { ...bundle, min_update_version: "67" } }));
+    const response = renderUpdateResponse(decision, {
+      config: {},
+      gate: signedNative,
+      appId: "com.efficy.app",
+    });
+
+    expect(response.native_update).toMatchObject({ signature: "apk-sig" });
+    expect(response.app_id).toBe("com.efficy.app");
+  });
+
+  it("omits every signing field when nothing was signed", () => {
+    const response = render(facts({ ota: bundle }));
+
+    expect("signature" in response).toBe(false);
+    expect("app_id" in response).toBe(false);
+    expect("checksum" in nativePayload(android)).toBe(false);
+    expect("signature" in nativePayload(android)).toBe(false);
+  });
+
+  it("offers an optional native binary alongside the bundle it does not hide", () => {
+    const response = render(facts({ native: signedNative, ota: signedBundle }));
+
+    expect(response.url).toBe(bundle.url);
+    expect(response.native_update).toMatchObject({ version_code: 67, required: false });
+    expect(resolveUpdate(response)).toMatchObject({
+      kind: "ota",
+      version: "1.0.55",
+      nativeOffer: { kind: "native", versionCode: 67, required: false, signature: "apk-sig" },
+    });
   });
 });

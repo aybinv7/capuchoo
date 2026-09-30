@@ -43,6 +43,7 @@ export function useUpdatePrompt() {
     installing: updater.isInstalling.value,
     downloaded: updater.cachedPath.value !== null,
     handedToInstaller: updater.handedToInstaller.value,
+    installAbandoned: updater.installAbandoned.value,
   }));
 
   return {

@@ -22,11 +22,22 @@ be reported to the user as "you are up to date".
 ```ts
 import { resolveUpdate, isBlockingResponse } from "@capuchoo/core";
 
-const resolved = resolveUpdate(response); // native outranks OTA - the server may return both
+const resolved = resolveUpdate(response);
 if (isBlockingResponse(response)) {
   // Channel not found / environment mismatch: surface it, do not swallow it.
 }
 ```
+
+A required native binary outranks an OTA bundle. An optional one rides along as
+`resolved.nativeOffer`, so it never hides a bundle the installed binary can run. OTA responses may
+carry `signature`, `app_id` and `downgrade`; native offers carry `checksum` and `signature`.
+
+**The update decision** — `decideUpdate()` and `renderUpdateResponse()`. A device on its builtin
+bundle is compared by `builtinVersion` (the binary's `versionName`), so a fresh APK is never served
+an older OTA. A `paused` channel serves nothing; an `allowDowngrade` channel serves an older bundle
+to devices that have applied a newer one, never over a binary's builtin bundle. A device that
+reports no build number is never offered a native binary. Prerelease versions follow SemVer
+precedence (`beta.10` > `beta.2`).
 
 **Project configuration** — `normaliseProjectConfig()`, `validateProjectConfig()`,
 `defaultFlavour()` and the `ENVIRONMENTS` list, so the CLI and the server agree on what a flavour

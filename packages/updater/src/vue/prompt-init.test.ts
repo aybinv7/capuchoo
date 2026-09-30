@@ -74,7 +74,8 @@ describe("init", () => {
    * entire purpose, and it used to sit behind all of them with no guard.
    */
   it("checks for an update even when a start-up step fails", () => {
-    const body = withoutComments(updater);
+    const source = withoutComments(updater);
+    const body = source.slice(source.indexOf("async function init("));
     const guard = body.indexOf("try {");
     const prune = body.indexOf("await pruneApkCache");
     const rescue = body.indexOf("} catch (error) {", prune);

@@ -118,6 +118,61 @@ describe("resolveUpdate", () => {
     expect(update?.required).toBe(true);
   });
 
+  it("keeps the OTA bundle and attaches an optional native offer", () => {
+    const update = resolveUpdate({
+      version_name: "2.0.0",
+      url: "https://example.test/bundle.zip",
+      app_id: "com.x",
+      native_update: {
+        version_name: "2.1.0",
+        version_code: 50,
+        download_url: "https://example.test/app.apk",
+        required: false,
+        checksum: "c".repeat(64),
+      },
+    });
+
+    expect(update).toMatchObject({
+      kind: "ota",
+      version: "2.0.0",
+      nativeOffer: {
+        kind: "native",
+        versionCode: 50,
+        required: false,
+        checksum: "c".repeat(64),
+        appId: "com.x",
+      },
+    });
+  });
+
+  it("lets a native binary flagged required win over a bundle", () => {
+    const update = resolveUpdate({
+      version_name: "2.0.0",
+      url: "https://example.test/bundle.zip",
+      native_update: {
+        version_name: "2.1.0",
+        version_code: 50,
+        download_url: "https://example.test/app.apk",
+        required: true,
+      },
+    });
+
+    expect(update).toMatchObject({ kind: "native", required: true });
+    expect(update?.nativeOffer).toBeUndefined();
+  });
+
+  it("reads signature, app_id and downgrade off an OTA response", () => {
+    expect(
+      resolveUpdate({
+        version_name: "1.0.0",
+        url: "https://example.test/bundle.zip",
+        signature: "sig",
+        app_id: "com.x",
+        downgrade: true,
+      }),
+    ).toMatchObject({ signature: "sig", appId: "com.x", downgrade: true });
+  });
+
   it("falls back to the OTA bundle when native_update has no url", () => {
     // The server returns `native_update: null` when it cannot find the record
     // matching min_update_version.
