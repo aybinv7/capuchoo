@@ -327,8 +327,10 @@ export async function runDeploy(
         `Built-in configuration (${nativeConfig.reason}): ` +
           `${nativeConfig.changed.length} file(s) updated`,
       );
-      for (const limitation of builtinConfigLimitations(request.platform)) {
-        warnings.push(limitation);
+      if (flavour.trapezeConfig || request.platform === "ios") {
+        for (const limitation of builtinConfigLimitations(request.platform)) {
+          warnings.push(limitation);
+        }
       }
     }
 
