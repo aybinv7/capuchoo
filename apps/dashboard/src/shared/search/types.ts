@@ -20,6 +20,8 @@ export interface SearchItem {
   /** Extra text matched by the query but not shown. */
   keywords?: readonly string[];
   icon?: Component;
+  /** Epoch ms; among equal matches the most recent comes first. */
+  recency?: number;
   shortcut?: string;
   to?: RouteLocationRaw;
   run?: () => void | Promise<void>;
