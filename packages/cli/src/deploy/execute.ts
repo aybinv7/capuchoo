@@ -5,8 +5,10 @@ import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import fs from "node:fs";
 import path from "node:path";
-import { loadArtefacts } from "./artefact-index.js";
-import { sealArtefact, type Seal } from "./seal.js";
+import type { ReleaseKey } from "../signing/release-key.js";
+import { releasePreflight } from "./preflight.js";
+import { needsSeal, sealArtefact, type Seal } from "./seal.js";
+import { uploadRelease } from "./upload.js";
 import {
   DEPLOY_LOG_FILE,
   describeFailure,
@@ -129,6 +131,14 @@ export interface DeployCommandOptions {
 function fail(command: Command, message: string): never {
   command.error(message);
   throw new Error(message); // unreachable
+}
+
+function describeSeal(seal: Seal, key: ReleaseKey | null): string {
+  const parts = [
+    seal.signingCertSha256 ? `certificate ${seal.signingCertSha256.slice(0, 16)}...` : null,
+    key && seal.signature ? `signed with ${key.fingerprint}` : "not signed",
+  ];
+  return parts.filter(Boolean).join(", ");
 }
 
 export async function executeDeploy(options: DeployCommandOptions): Promise<void> {
@@ -334,7 +344,6 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     quiet: json,
     identifiers,
     allowLocalEnv: flags["allow-local-env"],
-    seal: kind === "native" && platform === "android",
   };
 
   // Validated before package.json is written, not after.
@@ -346,13 +355,24 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   // were acceptable. `validateRequest` reads files and does no work, so there is
   // no reason for it to run second. runDeploy checks again, for its other
   // callers.
-  const problems = validateRequest(request, resolveFlavour(appDir, project, environment));
+  const flavour = resolveFlavour(appDir, project, environment);
+  const preflight = await releasePreflight({
+    appDir,
+    cloudAppId: project.cloudAppId,
+    kind,
+    platform,
+    channel,
+    flavour,
+    profile,
+    cloud,
+  });
+  request.seal = needsSeal(kind, platform, preflight.key);
+
+  const problems = [...validateRequest(request, flavour), ...preflight.problems];
   if (problems.length > 0) {
     const detail = problems.map((problem) => `  - ${problem}`).join("\n");
     fail(command, `This deploy cannot proceed:\n${detail}\n\nNothing was changed.`);
   }
-
-  const artefacts = request.seal ? await loadArtefacts(cloud, project.cloudAppId) : null;
 
   // Read before anything is written, so a deploy that does not publish can put
   // the working tree back exactly as it was.
@@ -380,48 +400,35 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         channel,
         platform,
         androidDir: path.resolve(appDir, project.androidDir),
-        artefacts,
+        artefacts: preflight.artefacts,
         allowCertChange: flags["allow-cert-change"] ?? false,
         logFile: path.join(appDir, DEPLOY_LOG_FILE),
+        key: preflight.key,
+        appId: project.appId,
+        version: outcome.version,
+        versionCode: outcome.versionCode,
       });
-      if (seal.signingCertSha256)
-        reporter.note(`certificate ${seal.signingCertSha256.slice(0, 16)}...`);
+      reporter.note(describeSeal(seal, preflight.key));
       outcome.warnings.push(...seal.warnings);
     }
 
     if (!flags["dry-run"]) {
       reporter.begin("upload");
 
-      const result =
-        kind === "ota"
-          ? await cloud.uploadBundle({
-              filePath: artifact.filePath,
-              appId: project.appId,
-              channel: channel.name,
-              platform,
-              versionName: outcome.version,
-              releaseNotes: note ?? "",
-              active,
-              required,
-              ...(flags["min-native"] === undefined
-                ? {}
-                : { minNativeVersion: String(flags["min-native"]) }),
-              flavour: environment,
-            })
-          : await cloud.uploadNative({
-              filePath: artifact.filePath,
-              appId: project.appId,
-              channel: channel.name,
-              platform,
-              versionName: outcome.version,
-              versionCode: outcome.versionCode,
-              releaseNotes: note ?? "",
-              active,
-              required,
-              flavour: environment,
-              signingCertSha256: seal.signingCertSha256,
-              allowCertChange: flags["allow-cert-change"] ?? false,
-            });
+      const { result } = await uploadRelease({
+        cloud,
+        artifact,
+        outcome,
+        seal,
+        appId: project.appId,
+        channel: channel.name,
+        platform,
+        notes: note ?? "",
+        active,
+        required,
+        minNative: flags["min-native"],
+        allowCertChange: flags["allow-cert-change"] ?? false,
+      });
 
       uploaded = result.status >= 200 && result.status < 300;
       reporter.note(`${formatBytes(artifact.byteSize)} accepted`);
@@ -462,6 +469,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
               bytes: artifact.byteSize,
               files: artifact.fileCount,
               signed: artifact.signed,
+              releaseSignature: Boolean(seal.signature),
+              signingCertSha256: seal.signingCertSha256,
             },
             nativeConfig: outcome.nativeConfigMethod,
             skipped: outcome.skipped,

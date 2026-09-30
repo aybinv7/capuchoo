@@ -111,6 +111,24 @@ for a deliberate re-key where every device is reinstalled.
 
 iOS is not driven by the CLI yet: archive through Xcode and register the build in the dashboard.
 
+## Release signing
+
+Every OTA bundle and APK can carry an ECDSA P-256 signature the server and the updater verify.
+
+```sh
+capuchoo keys init   # writes .capuchoo/signing-key.pem (owner-only, git-ignored), uploads the public key
+capuchoo keys show   # fingerprint, and whether each flavour bakes the public key
+```
+
+`keys init` offers to add the key path to `.gitignore` (with a diff) before writing anything, and
+prints the `VITE_UPDATE_PUBLIC_KEY=...` line to add to each flavour file. It reuses an existing key;
+`--force` rotates it, which makes installed builds reject everything the new key signs.
+
+In CI, set `CAPUCHOO_SIGNING_KEY` to the base64 PKCS#8 body of that file (masked, protected). A
+deploy signs the artefact's SHA-256 and sends `signature`. It refuses before building when the app
+requires signatures and no key is available, when the key is not the one the server holds, or when
+the flavour's `VITE_UPDATE_PUBLIC_KEY` belongs to another key.
+
 ## Machine-readable output
 
 `--json` puts a single result document on stdout and every human-facing line on stderr:

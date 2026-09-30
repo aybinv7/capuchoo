@@ -73,6 +73,9 @@
       "deploy": {
         "description": "Build and publish a release"
       },
+      "keys": {
+        "description": "Create and inspect the release signing key"
+      },
       "org": {
         "description": "Create organizations and manage who is in them"
       },
