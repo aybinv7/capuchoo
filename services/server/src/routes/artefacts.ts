@@ -97,6 +97,8 @@ export function artefactRoutes(): Hono<AppEnv> {
     return c.json(
       {
         status: "success",
+        id: result.bundle.id,
+        bundle_id: result.bundle.id,
         bundle: serializeBundle(result.bundle),
         channel: result.channel?.name ?? null,
       },
@@ -113,6 +115,8 @@ export function artefactRoutes(): Hono<AppEnv> {
     return c.json(
       {
         status: "success",
+        id: result.native.id,
+        native_id: result.native.id,
         native: serializeNative(result.native),
         channel: result.channel?.name ?? null,
       },

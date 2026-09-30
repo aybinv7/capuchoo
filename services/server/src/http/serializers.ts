@@ -14,6 +14,7 @@ export function serializeApp(app: App, role?: AppRole | null) {
     icon_url: app.icon_url ?? undefined,
     require_signature: app.require_signature,
     has_public_key: Boolean(app.public_key),
+    signing_public_key: app.public_key,
     prod_role: app.prod_role,
     created_at: iso(app.created_at),
     updated_at: iso(app.updated_at),

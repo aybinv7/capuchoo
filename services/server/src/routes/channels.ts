@@ -329,8 +329,19 @@ export function channelRoutes(): Hono<AppEnv> {
 
   router.get("/channels/:id/history", async (c) => {
     const { channel } = await channelAccess(c, c.req.param("id"), "viewer", "Reading history");
+    const rows = await channelHistory(
+      c.get("deps").db,
+      channel.id,
+      queryInt(c, "limit", 50, 1, 500),
+    );
     return c.json(
-      await channelHistory(c.get("deps").db, channel.id, queryInt(c, "limit", 50, 1, 500)),
+      rows.map((row) => ({
+        ...row,
+        created_at: new Date(row.created_at).toISOString(),
+        bundle_id: row.action.endsWith("_bundle") ? row.to_id : null,
+        native_id: row.action.endsWith("_native") ? row.to_id : null,
+        version_name: row.to_version,
+      })),
     );
   });
 

@@ -65,7 +65,8 @@ services:
     volumes:
       - backups:/backups
       - ./backup.sh:/usr/local/bin/backup.sh:ro
-    entrypoint: ["/bin/sh", "-c", "while true; do /bin/sh /usr/local/bin/backup.sh; sleep 86400; done"]
+    entrypoint:
+      ["/bin/sh", "-c", "while true; do /bin/sh /usr/local/bin/backup.sh; sleep 86400; done"]
     networks: [internal]
 
 volumes:

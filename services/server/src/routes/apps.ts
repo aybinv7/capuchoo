@@ -332,9 +332,23 @@ export function appRoutes(): Hono<AppEnv> {
       listNativeBuilds(deps.db, access.app.id),
       listChannels(deps.db, access.app.id),
     ]);
+    const servedBy = (id: string) =>
+      channels
+        .filter((channel) => channel.current_bundle_id === id || channel.current_native_id === id)
+        .map((channel) => channel.name);
+    const nativeRows = natives.map((row) => ({
+      ...serializeNative(row),
+      sha256: row.checksum,
+      channels: servedBy(row.id),
+    }));
     return c.json({
-      bundles: bundles.map(serializeBundle),
-      natives: natives.map(serializeNative),
+      bundles: bundles.map((row) => ({
+        ...serializeBundle(row),
+        sha256: row.checksum,
+        channels: servedBy(row.id),
+      })),
+      natives: nativeRows,
+      native_builds: nativeRows,
       channels: channels.map(serializeChannel),
     });
   });

@@ -21,20 +21,20 @@ docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build
 remove it from `.env` once you have signed in. Sign-up is closed; invite everyone else from the
 dashboard.
 
-The compose file expects an existing Traefik on the external `traefik` network with a
-`letsencrypt` resolver. Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for several
-instances use `STORAGE_DRIVER=s3` against MinIO or R2.
+The compose file expects an existing Traefik on the external `traefik` network with a `letsencrypt`
+resolver. Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for several instances use
+`STORAGE_DRIVER=s3` against MinIO or R2.
 
 ## Operations
 
-| Concern | How |
-| --- | --- |
-| Migrations | Applied on boot (`MIGRATE_ON_BOOT=true`), or `node server/dist/migrate.mjs` before rollout |
-| Health | `GET /health` liveness, `GET /ready` database + storage |
-| Backups | The `backup` service writes `pg_dump -Fc` daily to the `backups` volume, kept 14 days |
-| Restore | `pg_restore --clean --no-owner -d capuchoo capuchoo-<stamp>.dump`, then restart `server` |
-| Logs | JSON lines on stdout with `request_id`; secrets, tokens and coordinates are redacted |
-| Retention | Device events older than `DEVICE_EVENT_RETENTION_DAYS` (90) are purged hourly |
+| Concern          | How                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Migrations       | Applied on boot (`MIGRATE_ON_BOOT=true`), or `node server/dist/migrate.mjs` before rollout                            |
+| Health           | `GET /health` liveness, `GET /ready` database + storage                                                               |
+| Backups          | The `backup` service writes `pg_dump -Fc` daily to the `backups` volume, kept 14 days                                 |
+| Restore          | `pg_restore --clean --no-owner -d capuchoo capuchoo-<stamp>.dump`, then restart `server`                              |
+| Logs             | JSON lines on stdout with `request_id`; secrets, tokens and coordinates are redacted                                  |
+| Retention        | Device events older than `DEVICE_EVENT_RETENTION_DAYS` (90) are purged hourly                                         |
 | Artefact backups | Back up the `artefacts` volume (or the S3 bucket) with the database; a restored row without its file cannot be served |
 
 Test a restore before you need one. A backup that has never been restored is a hope.

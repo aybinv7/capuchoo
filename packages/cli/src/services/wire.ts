@@ -51,7 +51,7 @@ export interface AppArtefacts {
 export interface PointerMove {
   id: string;
   created_at: string;
-  action: "point" | "rollback" | "pause" | "resume";
+  action: string;
   bundle_id?: string | null;
   native_id?: string | null;
   version_name?: string | null;
