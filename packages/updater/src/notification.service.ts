@@ -24,7 +24,8 @@ interface LocalNotificationsPlugin {
   checkPermissions?(): Promise<{ display: string }>;
 }
 
-async function plugin(): Promise<LocalNotificationsPlugin | null> {
+/** Synchronous on purpose: a Capacitor plugin proxy is thenable, so awaiting or async-returning it never settles. */
+function plugin(): LocalNotificationsPlugin | null {
   if (Capacitor.getPlatform() === "web") return null;
 
   // Through Capacitor's registry, not a module import: a bare specifier hidden
@@ -44,7 +45,7 @@ async function plugin(): Promise<LocalNotificationsPlugin | null> {
  * will not use, and a permission prompt out of context is one people decline.
  */
 export async function canNotify(): Promise<boolean> {
-  const notifications = await plugin();
+  const notifications = plugin();
   if (!notifications) return false;
 
   try {
@@ -72,7 +73,7 @@ export interface ProgressNotification {
  * someone swiping it away and then wondering whether anything is happening.
  */
 export async function showProgress(input: ProgressNotification): Promise<void> {
-  const notifications = await plugin();
+  const notifications = plugin();
   if (!notifications) return;
 
   try {
@@ -98,7 +99,7 @@ export async function showProgress(input: ProgressNotification): Promise<void> {
 
 /** Removes it. Called on completion, on failure, and on cancellation alike. */
 export async function clearProgress(): Promise<void> {
-  const notifications = await plugin();
+  const notifications = plugin();
   if (!notifications) return;
 
   try {

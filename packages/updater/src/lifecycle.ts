@@ -23,7 +23,7 @@ export async function watchLifecycle(handlers: LifecycleHandlers): Promise<Plugi
     console.warn("[capuchoo] could not listen for app resume", error);
   }
 
-  const network = await optionalNetwork();
+  const network = (await optionalNetwork())?.Network;
   if (!network) return handles;
 
   try {
@@ -42,9 +42,10 @@ export async function watchLifecycle(handlers: LifecycleHandlers): Promise<Plugi
   return handles;
 }
 
+/** Resolves to the module-shaped wrapper, never the proxy itself: a plugin proxy is thenable. */
 async function optionalNetwork() {
   try {
-    return (await nativePlugins.network()).Network;
+    return await nativePlugins.network();
   } catch {
     return null;
   }
