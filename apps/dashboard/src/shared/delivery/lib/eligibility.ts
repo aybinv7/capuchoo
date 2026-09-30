@@ -45,7 +45,7 @@ export function channelCurrent(channel: Channel, catalog: ReleaseCatalog): Chann
  */
 export function servedByBaseIds(
   base: Channel | undefined,
-  history: readonly ChannelHistoryEntry[] = [],
+  history: readonly Pick<ChannelHistoryEntry, "to_id">[] = [],
 ): Set<string> {
   const ids = new Set<string>();
   if (!base) return ids;

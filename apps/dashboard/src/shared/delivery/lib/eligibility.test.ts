@@ -112,20 +112,7 @@ describe("previewPointer", () => {
       channel: client,
       catalog: catalog({ bundles: [v1, v2, v3], channels: [base, client] }),
     };
-    const served = servedByBaseIds(base, [
-      {
-        id: "1",
-        action: "point_bundle",
-        from_id: null,
-        to_id: "b-1",
-        from_version: null,
-        to_version: "1.0.0",
-        reason: null,
-        created_at: "2026-09-01T00:00:00.000Z",
-        actor_api_key_id: null,
-        actor_email: null,
-      },
-    ]);
+    const served = servedByBaseIds(base, [{ to_id: "b-1" }]);
     expect([...served].sort()).toEqual(["b-1", "b-2"]);
     expect(previewPointer({ ...facts, artefact: v2, servedByBase: served }).verdict.ok).toBe(true);
     const never = previewPointer({ ...facts, artefact: v3, servedByBase: served });

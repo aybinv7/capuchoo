@@ -10,6 +10,12 @@ export const fetchChannel = (channelId: string, signal?: AbortSignal) =>
 export const fetchChannelHistory = (channelId: string, limit = 100, signal?: AbortSignal) =>
   http.get<ChannelHistoryEntry[]>(`/channels/${channelId}/history`, { limit }, signal);
 
+/** Every artefact id a channel has ever pointed at. */
+export const fetchServedArtefacts = (channelId: string, signal?: AbortSignal) =>
+  http
+    .get<{ artefact_ids: string[] }>(`/channels/${channelId}/served`, undefined, signal)
+    .then((response) => response.artefact_ids);
+
 export interface PointInput {
   bundle_id?: string;
   native_id?: string;

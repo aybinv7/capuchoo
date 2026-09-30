@@ -2,13 +2,12 @@ import { useQueries } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { queryKeys } from "@/shared/api/query-keys";
 import { servedByBaseIds } from "@/shared/delivery/lib/eligibility";
-import { HISTORY_LIMIT } from "@/shared/queries/useChannelQueries";
-import { fetchChannelHistory } from "@/shared/services/release.service";
+import { fetchServedArtefacts } from "@/shared/services/release.service";
 import type { Channel } from "@/shared/types/release";
 
 /**
- * What each base channel has served, for every base some client channel follows. One history
- * request per base, shared with the channel pages through the query cache.
+ * What each base channel has served, for every base some client channel follows. One request
+ * per base, shared with the channel pages through the query cache.
  */
 export function useServedByBases(channels: MaybeRefOrGetter<readonly Channel[]>) {
   const baseIds = computed(() => [
@@ -22,9 +21,8 @@ export function useServedByBases(channels: MaybeRefOrGetter<readonly Channel[]>)
   const histories = useQueries({
     queries: computed(() =>
       baseIds.value.map((id) => ({
-        queryKey: queryKeys.channelHistory(id),
-        queryFn: ({ signal }: { signal: AbortSignal }) =>
-          fetchChannelHistory(id, HISTORY_LIMIT, signal),
+        queryKey: queryKeys.channelServed(id),
+        queryFn: ({ signal }: { signal: AbortSignal }) => fetchServedArtefacts(id, signal),
       })),
     ),
   });
@@ -34,7 +32,14 @@ export function useServedByBases(channels: MaybeRefOrGetter<readonly Channel[]>)
     const all = toValue(channels);
     baseIds.value.forEach((id, index) => {
       const base = all.find((channel) => channel.id === id);
-      map.set(id, servedByBaseIds(base, histories.value[index]?.data ?? []));
+      const ids = histories.value[index]?.data ?? [];
+      map.set(
+        id,
+        servedByBaseIds(
+          base,
+          ids.map((artefactId) => ({ to_id: artefactId })),
+        ),
+      );
     });
     return map;
   });

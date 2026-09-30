@@ -6,6 +6,7 @@ import type { Deps } from "../http/context";
 import { badRequest, conflict, notFound } from "../lib/errors";
 import { findBundle, findNativeBuild } from "../repositories/artefacts";
 import { writeAudit } from "../repositories/audit";
+import { publishChannel } from "./live-events";
 import {
   findChannel,
   recordChannelEvent,
@@ -77,11 +78,6 @@ export async function evaluatePointer(
     servedByBase,
     rollback,
   });
-}
-
-function publishChannel(deps: Deps, channel: Channel): void {
-  deps.cache.invalidate(`app:${channel.app_id}`);
-  deps.hub.publish({ type: "channel", appId: channel.app_id, data: channel });
 }
 
 interface Move {

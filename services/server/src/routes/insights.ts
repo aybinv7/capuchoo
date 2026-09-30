@@ -4,7 +4,7 @@ import { requireApp, requireDeliverRole } from "../access/app-access";
 import { queryInt, readJson } from "../http/body";
 import { principal, type AppEnv } from "../http/context";
 import { notFound } from "../lib/errors";
-import { findAppByBundleId } from "../repositories/apps";
+import { appCounts, findAppByBundleId } from "../repositories/apps";
 import { listAudit } from "../repositories/audit";
 import { listBuildEvents, listBuilds, findBuild } from "../repositories/builds";
 import { findChannel, listChannels } from "../repositories/channels";
@@ -22,6 +22,7 @@ import {
 } from "../repositories/devices";
 import { appendBuildEvent, finishBuild, openBuild } from "../services/builds";
 import type { HubEvent } from "../services/event-hub";
+import { publishDevice } from "../services/live-events";
 
 const HEARTBEAT_MS = 25_000;
 
@@ -80,10 +81,17 @@ export function insightRoutes(): Hono<AppEnv> {
       channelId = channel.id;
     }
     const updated = await assignDeviceChannel(deps.db, device.id, channelId);
-    deps.hub.publish({
-      type: "device",
-      appId: access.app.id,
-      data: { id: updated.id, assigned_channel_id: channelId },
+    publishDevice(deps, access.app.id, {
+      device_uuid: updated.id,
+      device_id: updated.device_id,
+      channel_id: updated.channel_id,
+      assigned_channel_id: channelId,
+      event: "assigned",
+      status: null,
+      version: updated.version_name,
+      version_code: updated.version_code,
+      model: updated.model,
+      at: deps.now().toISOString(),
     });
     return c.json(updated);
   });
@@ -128,11 +136,12 @@ export function insightRoutes(): Hono<AppEnv> {
     );
     const days = queryInt(c, "days", 30, 1, 365);
     const since = new Date(deps.now().getTime() - days * 86_400_000);
-    const [daily, versions, health, channels] = await Promise.all([
+    const [daily, versions, health, channels, deviceTotal] = await Promise.all([
       dailyActivity(deps.db, access.app.id, since),
       versionDistribution(deps.db, access.app.id, since),
       channelHealth(deps.db, access.app.id, deps.now()),
       listChannels(deps.db, access.app.id),
+      appCounts(deps.db, access.app.id).then((counts) => counts.devices),
     ]);
     const totals = daily.reduce(
       (sum, day) => ({
@@ -146,7 +155,7 @@ export function insightRoutes(): Hono<AppEnv> {
       days,
       totals: {
         ...totals,
-        devices: health.reduce((sum, row) => sum + row.devices, 0),
+        devices: deviceTotal,
         active_24h: health.reduce((sum, row) => sum + row.active_24h, 0),
         success_rate:
           totals.installs + totals.failures

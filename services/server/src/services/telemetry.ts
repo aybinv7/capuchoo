@@ -5,6 +5,7 @@ import { listChannels } from "../repositories/channels";
 import { insertDeviceEvents, type NewDeviceEvent } from "../repositories/device-events";
 import { upsertDevice } from "../repositories/devices";
 import { parseDeviceRequest, requestedChannel } from "./device-request";
+import { publishDevice } from "./live-events";
 
 export const MAX_BATCH = 100;
 
@@ -68,6 +69,7 @@ export async function recordEvents(
 
   const now = deps.now();
   const events: NewDeviceEvent[] = [];
+  const devices: string[] = [];
   for (const item of normalised) {
     const identity = await deps.cache.get("identity", item.bundleId, () =>
       findAppByBundleId(deps.db, item.bundleId),
@@ -94,20 +96,22 @@ export async function recordEvents(
     const channelId =
       device.channel_id ?? channels.find((channel) => channel.name === reported)?.id ?? null;
     events.push({ ...item.event, appId: identity.app.id, deviceUuid: device.id, channelId });
+    devices.push(device.device_id);
   }
 
   await insertDeviceEvents(deps.db, events);
-  for (const event of events) {
-    deps.hub.publish({
-      type: "device",
-      appId: event.appId,
-      data: {
-        event: event.action,
-        status: event.status,
-        version: event.versionTo,
-        channel_id: event.channelId,
-        device_uuid: event.deviceUuid,
-      },
+  const at = now.toISOString();
+  for (const [index, event] of events.entries()) {
+    publishDevice(deps, event.appId, {
+      device_uuid: event.deviceUuid ?? "",
+      device_id: devices[index] ?? null,
+      channel_id: event.channelId,
+      event: event.action,
+      status: event.status ?? null,
+      version: event.versionTo ?? null,
+      version_code: event.versionCodeTo ?? null,
+      model: null,
+      at,
     });
   }
   return { received: items.length, stored: events.length };

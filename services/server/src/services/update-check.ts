@@ -18,6 +18,7 @@ import { findDevice, upsertDevice } from "../repositories/devices";
 import { artefactUrl } from "./artefact-links";
 import { resolveDeviceChannel, type ChannelSource } from "./channel-resolution";
 import { requestedChannel, type DeviceRequest } from "./device-request";
+import { publishDevice } from "./live-events";
 
 export interface UpdateCheckResult {
   response: UpdateCheckResponse;
@@ -215,19 +216,16 @@ export async function checkForUpdate(
             details: { outcome: decision.kind, source },
           },
         ]).then(() => {
-          deps.hub.publish({
-            type: "device",
-            appId: app.id,
-            data: {
-              id: row.id,
-              device_id: row.device_id,
-              channel_id: row.channel_id,
-              version_name: row.version_name,
-              version_code: row.version_code,
-              model: row.model,
-              last_seen_at: row.last_seen_at,
-              outcome: decision.kind,
-            },
+          publishDevice(deps, app.id, {
+            device_uuid: row.id,
+            device_id: row.device_id,
+            channel_id: row.channel_id,
+            event: "check",
+            status: decision.kind,
+            version: row.version_name,
+            version_code: row.version_code,
+            model: row.model,
+            at: now.toISOString(),
           });
         }),
       ),

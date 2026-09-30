@@ -11,7 +11,7 @@ import { Hono } from "hono";
 import { requireApp, requireOrgRole } from "../access/app-access";
 import { keyAppRestriction } from "../auth/principal";
 import { WEBHOOK_PREFIX } from "../auth/tokens";
-import { baseUrl, readJson, requireString } from "../http/body";
+import { baseUrl, queryInt, readJson, requireString } from "../http/body";
 import { principal, type AppContext, type AppEnv } from "../http/context";
 import {
   serializeApp,
@@ -78,6 +78,13 @@ export function appRoutes(): Hono<AppEnv> {
     const who = principal(c);
     const apps = await listAccessibleApps(c.get("deps").db, who.userId, who.isInstanceAdmin);
     const restricted = keyAppRestriction(who);
+    const visible = apps.filter((app) => !restricted || app.id === restricted);
+    if (c.req.query("counts") === "1") {
+      const counts = await Promise.all(visible.map((app) => appCounts(c.get("deps").db, app.id)));
+      return c.json(
+        visible.map((app, index) => ({ ...serializeApp(app, app.role), counts: counts[index] })),
+      );
+    }
     return c.json(
       apps
         .filter((app) => !restricted || app.id === restricted)
@@ -328,8 +335,8 @@ export function appRoutes(): Hono<AppEnv> {
       "Listing releases",
     );
     const [bundles, natives, channels] = await Promise.all([
-      listBundles(deps.db, access.app.id),
-      listNativeBuilds(deps.db, access.app.id),
+      listBundles(deps.db, access.app.id, queryInt(c, "limit", 200, 1, 1000)),
+      listNativeBuilds(deps.db, access.app.id, queryInt(c, "limit", 200, 1, 1000)),
       listChannels(deps.db, access.app.id),
     ]);
     const servedBy = (id: string) =>

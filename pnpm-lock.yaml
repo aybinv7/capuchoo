@@ -422,6 +422,9 @@ importers:
 
   packages/updater:
     dependencies:
+      '@capacitor/preferences':
+        specifier: '>=7.0.0 <9.0.0'
+        version: 8.0.1(@capacitor/core@8.5.0)
       '@capuchoo/core':
         specifier: workspace:^
         version: link:../core
@@ -724,6 +727,11 @@ packages:
 
   '@capacitor/network@8.0.1':
     resolution: {integrity: sha512-9xK/FHFmzKGanB6BdoSZOzXk8vF0OFVQSQ4PAsIrzAzLuXHryO317qy8dcHVpgxYeuZq2noI0My9z1DvVDi/9w==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/preferences@8.0.1':
+    resolution: {integrity: sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
@@ -4301,6 +4309,10 @@ snapshots:
       '@capacitor/synapse': 1.0.4
 
   '@capacitor/network@8.0.1(@capacitor/core@8.5.0)':
+    dependencies:
+      '@capacitor/core': 8.5.0
+
+  '@capacitor/preferences@8.0.1(@capacitor/core@8.5.0)':
     dependencies:
       '@capacitor/core': 8.5.0
 

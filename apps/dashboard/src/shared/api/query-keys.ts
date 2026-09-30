@@ -18,6 +18,7 @@ export const queryKeys = {
   appSettings: (appId: string, section: string) => ["apps", appId, "settings", section] as const,
   channel: (channelId: string) => ["channels", channelId] as const,
   channelHistory: (channelId: string) => ["channels", channelId, "history"] as const,
+  channelServed: (channelId: string) => ["channels", channelId, "served"] as const,
   build: (buildId: string) => ["builds", buildId] as const,
   apiKeys: () => ["api-keys"] as const,
   organization: (organizationId: string, section: string) =>

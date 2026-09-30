@@ -149,6 +149,18 @@ export function channelHistory(db: Db, channelId: string, limit: number) {
     .execute();
 }
 
+/** Every artefact a channel has ever pointed at: what a client channel following it may serve. */
+export async function servedArtefactIds(db: Db, channelId: string): Promise<string[]> {
+  const rows = await db
+    .selectFrom("channel_events")
+    .select("to_id")
+    .distinct()
+    .where("channel_id", "=", channelId)
+    .where("to_id", "is not", null)
+    .execute();
+  return rows.map((row) => row.to_id).filter((id): id is string => id !== null);
+}
+
 /** Channels whose pointers reference an artefact, so a delete can refuse. */
 export function channelsServing(db: Db, artefactId: string) {
   return db

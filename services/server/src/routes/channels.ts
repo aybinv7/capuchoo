@@ -22,10 +22,12 @@ import {
   findChannel,
   findChannelByName,
   hasEverPointed,
+  servedArtefactIds,
   updateChannel,
 } from "../repositories/channels";
 import { channelHealth } from "../repositories/device-events";
 import { pointChannel, setChannelPaused, type Artefact } from "../services/delivery";
+import { publishChannel } from "../services/live-events";
 
 const NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const FLAGS = [
@@ -160,7 +162,7 @@ export function channelRoutes(): Hono<AppEnv> {
       });
       deps.cache.invalidate(`app:${access.app.id}`);
       await audit(c, access, "channel.create", channel, { environment, kind, base: baseChannelId });
-      deps.hub.publish({ type: "channel", appId: access.app.id, data: channel });
+      publishChannel(deps, channel);
       return c.json(serializeChannel(channel), 201);
     } catch (error) {
       if (isUniqueViolation(error))
@@ -226,7 +228,7 @@ export function channelRoutes(): Hono<AppEnv> {
       const updated = await updateChannel(deps.db, channel.id, patch);
       deps.cache.invalidate(`app:${access.app.id}`);
       await audit(c, access, "channel.update", updated, patch as Record<string, unknown>);
-      deps.hub.publish({ type: "channel", appId: access.app.id, data: updated });
+      publishChannel(deps, updated);
       return c.json(serializeChannel(updated));
     } catch (error) {
       if (isUniqueViolation(error))
@@ -332,6 +334,14 @@ export function channelRoutes(): Hono<AppEnv> {
       return c.json(serializeChannel(updated));
     });
   }
+
+  router.get("/channels/:id/served", async (c) => {
+    const { channel } = await channelAccess(c, c.req.param("id"), "viewer", "Reading history");
+    return c.json({
+      channel_id: channel.id,
+      artefact_ids: await servedArtefactIds(c.get("deps").db, channel.id),
+    });
+  });
 
   router.get("/channels/:id/history", async (c) => {
     const { channel } = await channelAccess(c, c.req.param("id"), "viewer", "Reading history");
