@@ -13,7 +13,7 @@ import {
   type Platform,
   type UpdateCheckResponse,
 } from "./update-contract.js";
-import { compareVersions } from "./version.js";
+import { compareVersions, parseVersion } from "./version.js";
 
 /** The build a device is running, as it reports itself. */
 export interface DeviceState {
@@ -24,6 +24,14 @@ export interface DeviceState {
   versionCode: number;
   /** Applied OTA bundle version, or `"builtin"` when none has landed. */
   versionName: string;
+  /**
+   * Native `versionName` of the installed binary: the plugin's `version_build`,
+   * or the runtime's `versionBuiltin`. Never the runtime's `versionBuild`, which
+   * is a historical alias of the version code. Compared against when
+   * `versionName` is `"builtin"`, so a freshly installed binary is not served an
+   * older bundle.
+   */
+  builtinVersion?: string | undefined;
   /**
    * The plugin's `is_prod`: false for a debuggable build.
    *
@@ -59,6 +67,10 @@ export interface ChannelState {
   allowEmulators?: boolean | undefined;
   iosEnabled?: boolean | undefined;
   androidEnabled?: boolean | undefined;
+  /** An operator paused the channel: it serves nothing, to anyone. */
+  paused?: boolean | undefined;
+  /** Set by a rollback: an OTA bundle older than the applied one is served. */
+  allowDowngrade?: boolean | undefined;
 }
 
 /** A native binary row. The column is `file_size_bytes`; the wire field is `file_size`. */
@@ -70,6 +82,9 @@ export interface NativeRelease {
   required?: boolean | null;
   release_notes?: string | null;
   file_size_bytes?: number | null;
+  /** Lowercase hex SHA-256 of the binary. */
+  checksum?: string | null;
+  signature?: string | null;
 }
 
 /** An OTA bundle row. `url` is already resolved to something downloadable. */
@@ -83,6 +98,12 @@ export interface OtaRelease {
   min_update_version?: string | number | null;
   required?: boolean | null;
   release_notes?: string | null;
+  signature?: string | null;
+  /**
+   * The app's primary bundle identifier, the one release signatures are made
+   * for. Not the row's `app_id` column, which is the app's UUID.
+   */
+  app_id?: string | null;
 }
 
 /** Everything the server looked up. Facts only - no decisions. */
@@ -106,6 +127,7 @@ export interface UpdateFacts {
 export type UpdateDecision =
   | { kind: "app-not-found" }
   | { kind: "channel-not-found" }
+  | { kind: "channel-paused"; channel: ChannelState }
   | {
       kind: "flavour-mismatch";
       buildFlavour: Environment;
@@ -117,7 +139,14 @@ export type UpdateDecision =
   | { kind: "dev-build-blocked"; channel: ChannelState }
   | { kind: "native"; release: NativeRelease }
   | { kind: "native-required"; minVersionCode: number; installedVersionCode: number }
-  | { kind: "ota"; release: OtaRelease }
+  | {
+      kind: "ota";
+      release: OtaRelease;
+      /** Older than the applied bundle; only on a channel that allows downgrades. */
+      downgrade?: true;
+      /** An optional, newer native binary the bundle does not wait for. */
+      native?: NativeRelease;
+    }
   | { kind: "no-bundle" }
   | { kind: "platform-mismatch"; bundlePlatform: Platform; devicePlatform: Platform }
   | { kind: "up-to-date"; version: string };
@@ -145,14 +174,16 @@ function platformEnabled(channel: ChannelState, platform: Platform): boolean {
  *
  * Order is load-bearing. Every gate runs before any artefact is chosen, because
  * a device the channel refuses must be told so rather than handed the wrong
- * build; and native runs before OTA, because a bundle applied to a binary too
- * old to run it cannot be undone.
+ * build; and a required native binary runs before OTA, because a bundle
+ * applied to a binary too old to run it cannot be undone. An optional native
+ * binary rides along with a servable bundle instead of hiding it.
  */
 export function decideUpdate(facts: UpdateFacts): UpdateDecision {
   const { device, identity, channel, native, ota } = facts;
 
   if (!identity) return { kind: "app-not-found" };
   if (!channel) return { kind: "channel-not-found" };
+  if (channel.paused === true) return { kind: "channel-paused", channel };
 
   if (!platformEnabled(channel, device.platform)) {
     return { kind: "platform-disabled", platform: device.platform, channel };
@@ -180,11 +211,46 @@ export function decideUpdate(facts: UpdateFacts): UpdateDecision {
     return { kind: "dev-build-blocked", channel };
   }
 
-  // Platform checked here, not at the query, so iOS is never offered an APK.
-  if (native && native.platform === device.platform && native.version_code > device.versionCode) {
-    return { kind: "native", release: native };
-  }
+  const offered = newerNative(native, device);
+  if (offered?.required === true) return { kind: "native", release: offered };
 
+  const decision = decideOta(ota, device, channel);
+  if (!offered) return decision;
+
+  return decision.kind === "ota"
+    ? { ...decision, native: offered }
+    : { kind: "native", release: offered };
+}
+
+/**
+ * The native binary worth offering, if any. An unknown installed build (0)
+ * cannot be shown to be older, so nothing is offered; iOS is never offered an
+ * APK because the platform is checked here rather than at the query.
+ */
+function newerNative(native: NativeRelease | null, device: DeviceState): NativeRelease | null {
+  if (!native || native.platform !== device.platform) return null;
+  if (!(device.versionCode > 0)) return null;
+  return native.version_code > device.versionCode ? native : null;
+}
+
+const BUILTIN = "builtin";
+
+/**
+ * The version an OTA bundle is compared against: the applied bundle, or the
+ * binary's own version while it still runs its builtin bundle. `"builtin"`
+ * with no parseable binary version stays unparseable and sorts oldest.
+ */
+function effectiveVersion(device: DeviceState): string {
+  if (device.versionName !== BUILTIN) return device.versionName;
+  const builtin = device.builtinVersion?.trim();
+  return builtin && parseVersion(builtin) ? builtin : device.versionName;
+}
+
+function decideOta(
+  ota: OtaRelease | null,
+  device: DeviceState,
+  channel: ChannelState,
+): UpdateDecision {
   if (!ota) return { kind: "no-bundle" };
 
   if (ota.platform !== device.platform) {
@@ -195,10 +261,11 @@ export function decideUpdate(facts: UpdateFacts): UpdateDecision {
     };
   }
 
-  // `"builtin"` is unparseable, and compareVersions sorts those oldest.
-  if (compareVersions(ota.version_name, device.versionName) <= 0) {
-    return { kind: "up-to-date", version: device.versionName };
-  }
+  const current = effectiveVersion(device);
+  const order = compareVersions(ota.version_name, current);
+  const downgrade = order < 0 && channel.allowDowngrade === true && device.versionName !== BUILTIN;
+
+  if (order === 0 || (order < 0 && !downgrade)) return { kind: "up-to-date", version: current };
 
   const minimum = minimumNativeVersion(ota);
   if (minimum > 0 && device.versionCode < minimum) {
@@ -209,7 +276,7 @@ export function decideUpdate(facts: UpdateFacts): UpdateDecision {
     };
   }
 
-  return { kind: "ota", release: ota };
+  return downgrade ? { kind: "ota", release: ota, downgrade: true } : { kind: "ota", release: ota };
 }
 
 /** The wire fields of a native binary, and only those - never the database row. */
@@ -222,7 +289,14 @@ export function nativePayload(release: NativeRelease): NativeUpdatePayload {
     required: release.required ?? false,
     ...(release.release_notes ? { release_notes: release.release_notes } : {}),
     ...(typeof release.file_size_bytes === "number" ? { file_size: release.file_size_bytes } : {}),
+    ...(release.checksum ? { checksum: release.checksum } : {}),
+    ...(release.signature ? { signature: release.signature } : {}),
   };
+}
+
+function appIdField(context: RenderContext, ota?: OtaRelease): { app_id?: string } {
+  const appId = context.appId ?? ota?.app_id;
+  return appId ? { app_id: appId } : {};
 }
 
 export interface RenderContext {
@@ -230,6 +304,12 @@ export interface RenderContext {
   config: Record<string, unknown>;
   /** The binary satisfying a blocked bundle's `min_update_version`, if it exists. */
   gate?: NativeRelease | null;
+  /**
+   * The app's primary bundle identifier, stamped as `app_id` on every response
+   * that carries an artefact so the device can verify its signature. Falls back
+   * to the OTA release's `app_id`.
+   */
+  appId?: string | null;
 }
 
 /**
@@ -253,6 +333,9 @@ export function renderUpdateResponse(
 
     case "channel-not-found":
       return { message: UpdateMessage.CHANNEL_NOT_FOUND, kind: "blocked" };
+
+    case "channel-paused":
+      return { message: UpdateMessage.CHANNEL_PAUSED, kind: "blocked", config };
 
     // All four are "the channel will not serve this device". Blocked rather
     // than failed: nothing is broken, and the plugin logs blocked at info
@@ -283,6 +366,7 @@ export function renderUpdateResponse(
         version: payload.version_name,
         required: payload.required ?? false,
         ...(payload.release_notes ? { release_notes: payload.release_notes } : {}),
+        ...appIdField(context),
         native_update: payload,
         config,
       };
@@ -299,6 +383,7 @@ export function renderUpdateResponse(
           `Native version ${decision.minVersionCode} required. ` +
           `You have ${decision.installedVersionCode}.`,
         ...(context.gate ? { version: context.gate.version_name } : {}),
+        ...(context.gate ? appIdField(context) : {}),
         native_update: context.gate ? nativePayload(context.gate) : null,
         config,
       };
@@ -319,6 +404,10 @@ export function renderUpdateResponse(
         // update nobody may postpone.
         required: release.required ?? false,
         ...(release.release_notes ? { release_notes: release.release_notes } : {}),
+        ...(release.signature ? { signature: release.signature } : {}),
+        ...appIdField(context, release),
+        ...(decision.downgrade ? { downgrade: true } : {}),
+        ...(decision.native ? { native_update: nativePayload(decision.native) } : {}),
         config,
       };
     }
@@ -348,6 +437,8 @@ export function describeDecision(decision: UpdateDecision): string {
       return "no app carries this bundle identifier";
     case "channel-not-found":
       return "the app has no channel by that name";
+    case "channel-paused":
+      return `channel "${decision.channel.name}" is paused`;
     case "flavour-mismatch":
       return describeFlavourMismatch(
         "this identifier",
@@ -369,7 +460,11 @@ export function describeDecision(decision: UpdateDecision): string {
         `device has ${decision.installedVersionCode}`
       );
     case "ota":
-      return `bundle ${decision.release.version_name}`;
+      return (
+        `bundle ${decision.release.version_name}` +
+        (decision.downgrade ? " (downgrade)" : "") +
+        (decision.native ? `, native ${decision.native.version_name} offered` : "")
+      );
     case "no-bundle":
       return "the channel points at no bundle";
     case "platform-mismatch":
