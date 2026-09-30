@@ -36,14 +36,26 @@ describe("renderGitlabCi", () => {
     expect(rendered).not.toContain("# capuchoo:deliver-jobs\n");
   });
 
-  it("keeps the stages, the prod publish and the channel point delivery", () => {
+  it("keeps the stages, publishes each release branch to its channel and delivers by pointing", () => {
     const rendered = renderGitlabCi(template, "0.16.0", []);
     expect(rendered).toMatch(/stages:\n {2}- check\n {2}- publish\n {2}- deliver/);
-    expect(rendered).toContain("publish:prod:");
-    expect(rendered).toContain("--channel prod");
+    expect(rendered).toContain("publish:ota:");
+    expect(rendered).toContain("publish:native:");
+    expect(rendered).toContain('--channel "$CAPUCHOO_CHANNEL"');
+    for (const channel of ["prod", "staging", "dev"])
+      expect(rendered).toContain(`variables: { CAPUCHOO_CHANNEL: "${channel}" }`);
     expect(rendered).toContain('channel point "$CAPUCHOO_TARGET_CHANNEL"');
     expect(rendered).toContain("when: manual");
     expect(rendered).toContain("capuchoo:deliver-jobs - none yet");
+  });
+
+  it("builds OTA bundles without the Android SDK and assumes no package manager", () => {
+    const rendered = renderGitlabCi(template, "0.16.0", []);
+    const web = rendered.slice(rendered.indexOf("\n.web:"), rendered.indexOf("\n.native:"));
+    expect(web).not.toContain("sdkmanager");
+    expect(rendered).toContain("pnpm install --frozen-lockfile");
+    expect(rendered).toContain("npm ci");
+    expect(rendered).not.toContain("pnpm exec capuchoo");
   });
 
   it("never writes a secret into the file", () => {

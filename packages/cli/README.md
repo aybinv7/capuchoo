@@ -631,8 +631,8 @@ FLAGS
   -y, --yes                Accept every prompt - required in CI
       --allow-cert-change  Publish an APK signed with a different certificate than the previous release. Installed
                            devices cannot upgrade to it.
-      --allow-local-env    Build even when .env / .env.local define VITE_* keys the flavour file does not, shipping this
-                           machine's values
+      --allow-local-env    Build prod even when .env / .env.local define VITE_* keys the flavour file does not, shipping
+                           this machine's values
       --allow-unsigned     Publish a release build with no signature, to a dev channel only. Android will refuse to
                            install it.
       --dry-run            Build and package, but upload nothing
@@ -673,8 +673,8 @@ FLAGS
   -v, --version=<option>    Bump the app version before publishing
                             <options: major|minor|patch>
   -y, --yes                 Accept every prompt - required in CI
-      --allow-local-env     Build even when .env / .env.local define VITE_* keys the flavour file does not, shipping
-                            this machine's values
+      --allow-local-env     Build prod even when .env / .env.local define VITE_* keys the flavour file does not,
+                            shipping this machine's values
       --dry-run             Build and package, but upload nothing
       --json                Emit a machine-readable result on stdout
       --min-native=<value>  Native build number this bundle needs. Devices below it are offered the binary instead.

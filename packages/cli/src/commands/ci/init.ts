@@ -10,7 +10,7 @@ import { writeFileAtomic } from "../../utils/secure-file.js";
 
 export default class CiInit extends BaseCommand {
   static override description =
-    "Write a GitLab pipeline that publishes to prod once and delivers to each client by hand";
+    "Write a GitLab pipeline that publishes each release branch to its channel and delivers prod to each client by hand";
 
   static override examples = [
     "<%= config.bin %> ci init --gitlab",

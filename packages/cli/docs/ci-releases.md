@@ -116,20 +116,30 @@ capuchoo ci init --gitlab --clients acme,globex
 
 writes `.gitlab-ci.yml` (`--output` to put it elsewhere, e.g. a monorepo root, then set `APP_DIR`)
 from `templates/gitlab-ci.yml`. An existing file is diffed and only replaced after a confirmation or
-`--yes`. The pipeline runs on the default branch and on tags:
+`--yes`. A release branch publishes to the channel of its environment: the default branch and tags
+to `prod`, `$CAPUCHOO_STAGING_BRANCH` (`staging`) to `staging`, `$CAPUCHOO_DEV_BRANCH` (`dev`) to
+`dev`.
 
-- `check` - `deploy ota --channel prod --dry-run`, the whole pipeline except the upload.
-- `publish:prod` - `deploy $CAPUCHOO_DEPLOY_KIND --channel prod` (`ota` or `native`), keeping
-  `capuchoo-release.json` as an artifact.
-- `deliver:<client>` - one manual job per client running
-  `capuchoo channel point prod-<client> --version <published version>`. Create each channel first
-  with `capuchoo channel create prod-<client> --client --base prod`.
+- `check` - `deploy ota --channel <channel> --dry-run`, the whole pipeline except the upload. It
+  also runs on a merge request into a release branch, when `CAPUCHOO_API_KEY` is visible to it.
+- `publish:ota` - `deploy ota` on every push, keeping `capuchoo-ota.json` as an artifact. It runs in
+  a Node image with no Android SDK.
+- `publish:native` - manual. `deploy native --type=release` in a JDK 21 image with the Android SDK
+  installed and cached, keeping `capuchoo-native.json`.
+- `deliver:<client>` - one manual job per client, on prod only, running
+  `capuchoo channel point prod-<client> --version <published version>`, with `--native` when the
+  native job ran. Create each channel first with
+  `capuchoo channel create prod-<client> --client --base prod`.
 
-The image is `eclipse-temurin:21-jdk` with Node 22 and pnpm (corepack) and the Android SDK installed
-and cached by the job. Protected variables: `CAPUCHOO_ENDPOINT`, `CAPUCHOO_API_KEY` (masked),
+Each publish and delivery is a GitLab deployment to an environment named after the channel, so
+Operate > Environments lists what every channel received and from which pipeline.
+
+Dependencies are installed with the lockfile's package manager at the version `package.json` pins
+(`packageManager`, or `devEngines.packageManager`), and the project's own `capuchoo` runs from
+`node_modules/.bin`. Protected variables: `CAPUCHOO_ENDPOINT`, `CAPUCHOO_API_KEY` (masked),
 `CAPUCHOO_SIGNING_KEY` (masked), and for native builds `ANDROID_KEYSTORE_BASE64` (a masked File
 variable holding the base64 keystore) with `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
-`ANDROID_KEY_PASSWORD`.
+`ANDROID_KEY_PASSWORD`. Protect the three release branches, or their pipelines will not see them.
 
 ## Native builds
 
