@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono, type Context } from "hono";
+import { cors } from "hono/cors";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { authenticate } from "./auth/authenticate";
 import type { AppEnv, Deps } from "./http/context";
@@ -29,6 +30,15 @@ const SECURITY_HEADERS: Record<string, string> = {
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
   "cross-origin-opener-policy": "same-origin",
 };
+
+/** Called by installed apps from their WebView origin; public and credential-free, so CORS is open. */
+const DEVICE_PATHS = [
+  "/api/update",
+  "/api/stats",
+  "/api/native-updates/log",
+  "/api/channel_self",
+  "/api/artefacts/*",
+];
 
 const DASHBOARD_CSP = [
   "default-src 'self'",
@@ -110,6 +120,13 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   });
 
   app.route("/", systemRoutes());
+  const devices = cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    maxAge: 86400,
+  });
+  for (const path of DEVICE_PATHS) app.use(path, devices);
   app.use("/api/*", authenticate);
   app.route("/api", deviceRoutes());
   app.route("/api/auth", authRoutes());
