@@ -113,8 +113,8 @@ export class CloudClient {
    * Exchanges an email and password for a session token.
    *
    * Static because it runs before any credential exists: the whole point is to
-   * get one. `authenticate` accepts the returned Supabase JWT wherever it accepts
-   * an API key.
+   * get one. The server accepts the returned session token as a bearer credential
+   * wherever it accepts an API key.
    */
   static async login(
     endpoint: string,
@@ -138,7 +138,7 @@ export class CloudClient {
   /**
    * Mints an API key for the signed-in account.
    *
-   * A JWT expires; a key does not, so the CLI stores the key and forgets the
+   * A session expires; a key does not, so the CLI stores the key and forgets the
    * token. Unscoped by default - the key acts as the account, and the app roles
    * are what restrict it.
    */

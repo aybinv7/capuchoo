@@ -1,29 +1,33 @@
 import { describe, expect, it } from "vite-plus/test";
+import { HttpError } from "../../utils/http.js";
 import AuthLogin from "./login.js";
 
 /**
- * There is no `capuchoo auth register`: confirming an email is a browser
- * round-trip, so a CLI signup could only ever end by telling you to open a
- * browser. These messages are what stands in for it.
+ * There is no `capuchoo auth register`: accounts come from the server's first admin or from an
+ * invitation. These messages are what a refused sign-in says instead.
  */
 describe("explainSignInFailure", () => {
-  it("names the unconfirmed email, which is the likeliest confusion", () => {
-    const message = AuthLogin.explainSignInFailure(new Error("Email not confirmed"));
-
-    expect(message).toContain("not been confirmed");
-    expect(message).toContain("run this again");
+  it("says where accounts come from when the credentials are refused", () => {
+    const message = AuthLogin.explainSignInFailure(
+      new HttpError("Invalid email or password", 401, { reason: "unauthorized" }),
+    );
+    expect(message).toContain("not accepted");
+    expect(message).toContain("invitation");
   });
 
-  it("says where to sign up, since it cannot be done here", () => {
-    const message = AuthLogin.explainSignInFailure(new Error("Invalid login credentials"));
-
-    expect(message).toContain("dashboard");
-    expect(message).toContain("needs a browser");
+  it("gives the wait when sign-ins are rate limited", () => {
+    const message = AuthLogin.explainSignInFailure(
+      new HttpError("Too many requests", 429, { reason: "rate_limited", retry_after: 170 }),
+    );
+    expect(message).toContain("about 3 minutes");
   });
 
   // A network failure or a 500 must not be dressed up as a credential problem.
   it("passes anything else through untouched", () => {
     expect(AuthLogin.explainSignInFailure(new Error("socket hang up"))).toBe("socket hang up");
+    expect(AuthLogin.explainSignInFailure(new HttpError("Internal server error", 500, null))).toBe(
+      "Internal server error",
+    );
   });
 
   it("copes with a thrown non-error", () => {
