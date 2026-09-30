@@ -6,6 +6,8 @@ import chalk from "chalk";
 import fs from "node:fs";
 import path from "node:path";
 import type { ReleaseKey } from "../signing/release-key.js";
+import { BuildTracker } from "./build-tracker.js";
+import { detectCiContext } from "./ci-context.js";
 import { releasePreflight } from "./preflight.js";
 import { needsSeal, sealArtefact, type Seal } from "./seal.js";
 import { uploadRelease } from "./upload.js";
@@ -148,7 +150,11 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
 
   // In JSON mode stdout carries only the result document, so every human-facing
   // line goes to stderr. Non-interactive shells get the same treatment.
-  const reporter = new Reporter({ quiet: json || !process.stdout.isTTY });
+  let tracker = BuildTracker.disabled();
+  const reporter = new Reporter({
+    quiet: json || !process.stdout.isTTY,
+    onStep: (id, status, message) => tracker.step(id, status, message),
+  });
 
   const project = requireProjectConfig(appDir);
 
@@ -386,6 +392,16 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   // Hoisted so the failure path can tell "nothing was published, put it back"
   // from "it published, and the files have to stay".
   let uploaded = false;
+  let publishedId: string | null = null;
+
+  if (!flags["dry-run"]) {
+    tracker = BuildTracker.start(cloud, project.cloudAppId, {
+      kind,
+      channel: channel.name,
+      version,
+      ...detectCiContext(),
+    });
+  }
 
   try {
     const outcome = await runDeploy(request, reporter);
@@ -415,7 +431,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     if (!flags["dry-run"]) {
       reporter.begin("upload");
 
-      const { result } = await uploadRelease({
+      const { result, artefactId } = await uploadRelease({
         cloud,
         artifact,
         outcome,
@@ -428,9 +444,11 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         required,
         minNative: flags["min-native"],
         allowCertChange: flags["allow-cert-change"] ?? false,
+        buildId: await tracker.buildId(),
       });
 
       uploaded = result.status >= 200 && result.status < 300;
+      publishedId = artefactId;
       reporter.note(`${formatBytes(artifact.byteSize)} accepted`);
 
       // The OTA archive is a build artefact; the APK is not - it may be needed
@@ -445,6 +463,10 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         ? `Dry run complete - v${outcome.version} was built but not uploaded`
         : `v${outcome.version} published to "${channel.name}"`,
     );
+    await tracker.finish({
+      status: "succeeded",
+      ...(publishedId ? { [kind === "ota" ? "bundle_id" : "native_id"]: publishedId } : {}),
+    });
 
     for (const warning of outcome.warnings) {
       process.stderr.write(`${chalk.yellow("!")} ${warning}\n`);
@@ -483,13 +505,8 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     }
   } catch (error) {
     const message = describeFailure(error, appDir);
-    reporter.fail("Deploy failed");
-
-    if (json) {
-      command.log(JSON.stringify({ ok: false, error: message }, null, 2));
-      process.exitCode = 1;
-      return;
-    }
+    reporter.fail("Deploy failed", message);
+    await tracker.finish({ status: "failed", error: message });
 
     if (uploaded) {
       // Published, so the files must stay: the version on disk is the version
@@ -516,6 +533,12 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
           ),
         );
       }
+    }
+
+    if (json) {
+      command.log(JSON.stringify({ ok: false, error: message }, null, 2));
+      process.exitCode = 1;
+      return;
     }
 
     command.error(message);
