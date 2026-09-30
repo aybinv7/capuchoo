@@ -16,8 +16,7 @@ services:
     buildCommand: >-
       corepack enable &&
       pnpm install --frozen-lockfile &&
-      pnpm --filter "{services/server}..." run build &&
-      pnpm --filter "{apps/dashboard}..." run build
+      pnpm --filter "{services/server}..." run build
     startCommand: pnpm --filter "{services/server}" run start
     healthCheckPath: /ready
     autoDeploy: false
@@ -36,13 +35,58 @@ services:
         generateValue: true
       - key: STORAGE_DRIVER
         value: postgres
-      - key: DASHBOARD_DIR
-        value: ../../apps/dashboard/dist
       - key: TRUST_PROXY
         value: "true"
       - key: PUBLIC_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
         sync: false
       - key: BOOTSTRAP_ADMIN_EMAIL
         sync: false
       - key: BOOTSTRAP_ADMIN_PASSWORD
         sync: false
+
+  - type: web
+    name: capuchoo-dashboard
+    runtime: static
+    rootDir: .
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter "{apps/dashboard}..." run build
+    staticPublishPath: apps/dashboard/dist
+    autoDeploy: false
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://capuchoo-server.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Content-Security-Policy
+        value: >-
+          default-src 'self'; script-src 'self';
+          style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+          font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:;
+          connect-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self';
+          form-action 'self'
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

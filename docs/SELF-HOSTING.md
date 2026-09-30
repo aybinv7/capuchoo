@@ -1,7 +1,10 @@
 # Self-hosting Capuchoo
 
-One container (`deploy/Dockerfile`) serves the device API, the CLI API and the dashboard, next to
-PostgreSQL. Everything below is for the operator; developers only need `PUBLIC_URL`.
+Two containers next to PostgreSQL: the server (`deploy/Dockerfile`) serves the device, CLI and
+dashboard APIs; the dashboard (`deploy/dashboard/Dockerfile`) is static files behind nginx. Traefik
+routes `/api`, `/health` and `/ready` to the server and everything else to the dashboard, on one
+hostname, so the browser sees one origin and the session cookie stays first-party. Everything below
+is for the operator; developers only need `PUBLIC_URL`.
 
 ## First, the domain
 
@@ -22,8 +25,23 @@ remove it from `.env` once you have signed in. Sign-up is closed; invite everyon
 dashboard.
 
 The compose file expects an existing Traefik on the external `traefik` network with a `letsencrypt`
-resolver. Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for several instances use
-`STORAGE_DRIVER=s3` against MinIO or R2.
+resolver. Upload size is enforced by the server (`MAX_BUNDLE_BYTES`, `MAX_NATIVE_BYTES`) while it
+streams, so Traefik does not buffer bodies.
+
+## On Render
+
+`render.yaml` creates `capuchoo-server`, the `capuchoo-dashboard` static site and the database. The
+static site rewrites `/api/*` to the server, so the dashboard stays same-origin with its API. Two
+values have to match reality after the first apply:
+
+- the rewrite destination in `render.yaml` must be the server's real URL (Render appends a suffix
+  when `capuchoo-server` is taken, and a custom domain replaces it);
+- `ALLOWED_ORIGINS` on the server must be the dashboard's origin, because behind the rewrite the
+  server sees its own host while the browser sends the dashboard's `Origin`.
+
+Deploys are triggered by CI after checks pass (`RENDER_DEPLOY_HOOK`,
+`RENDER_DASHBOARD_DEPLOY_HOOK`). Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for
+several instances use `STORAGE_DRIVER=s3` against MinIO or R2.
 
 ## Operations
 

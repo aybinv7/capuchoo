@@ -44,11 +44,33 @@ services:
     networks: [internal, edge]
     labels:
       traefik.enable: "true"
-      traefik.http.routers.capuchoo.rule: Host(`${CAPUCHOO_HOST:?set CAPUCHOO_HOST in .env}`)
-      traefik.http.routers.capuchoo.entrypoints: websecure
-      traefik.http.routers.capuchoo.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
-      traefik.http.services.capuchoo.loadbalancer.server.port: "3000"
-      traefik.http.middlewares.capuchoo-body.buffering.maxRequestBodyBytes: "524288000"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
+      traefik.http.routers.capuchoo-api.rule: Host(`${CAPUCHOO_HOST:?set CAPUCHOO_HOST in .env}`) && (PathPrefix(`/api`) || Path(`/health`) || Path(`/ready`))
+      traefik.http.routers.capuchoo-api.priority: "100"
+      traefik.http.routers.capuchoo-api.entrypoints: websecure
+      traefik.http.routers.capuchoo-api.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      traefik.http.routers.capuchoo-api.service: capuchoo-api
+      traefik.http.services.capuchoo-api.loadbalancer.server.port: "3000"
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: deploy/dashboard/Dockerfile
+    image: capuchoo/dashboard:latest
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks: [edge]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
+      traefik.http.routers.capuchoo-dashboard.rule: Host(`${CAPUCHOO_HOST}`)
+      traefik.http.routers.capuchoo-dashboard.priority: "1"
+      traefik.http.routers.capuchoo-dashboard.entrypoints: websecure
+      traefik.http.routers.capuchoo-dashboard.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      traefik.http.routers.capuchoo-dashboard.service: capuchoo-dashboard
+      traefik.http.services.capuchoo-dashboard.loadbalancer.server.port: "8080"
 
   backup:
     image: postgres:17-alpine

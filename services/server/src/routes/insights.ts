@@ -251,6 +251,7 @@ export function insightRoutes(): Hono<AppEnv> {
       "viewer",
       "Watching the app",
     );
+    c.header("x-accel-buffering", "no");
     return streamSSE(c, async (stream) => {
       const queue: HubEvent[] = [];
       let wake: (() => void) | null = null;

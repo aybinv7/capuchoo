@@ -44,3 +44,9 @@ jobs:
         run: |
           if [ -z "$RENDER_DEPLOY_HOOK" ]; then echo "RENDER_DEPLOY_HOOK is not set; skipping"; exit 0; fi
           curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK"
+      - name: Trigger the dashboard deploy only after checks pass
+        env:
+          RENDER_DASHBOARD_DEPLOY_HOOK: ${{ secrets.RENDER_DASHBOARD_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DASHBOARD_DEPLOY_HOOK" ]; then echo "RENDER_DASHBOARD_DEPLOY_HOOK is not set; skipping"; exit 0; fi
+          curl --fail --silent --show-error -X POST "$RENDER_DASHBOARD_DEPLOY_HOOK"

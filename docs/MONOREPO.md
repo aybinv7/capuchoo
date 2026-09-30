@@ -12,7 +12,7 @@ capuchoo/
 │   ├── updater/        @capuchoo/updater       app-side runtime
 │   ├── cli/            @capuchoo/cli          build and publish releases
 ├── apps/
-│   └── dashboard/      @capuchoo/dashboard     release console, served by the server
+│   └── dashboard/      @capuchoo/dashboard     release console, static site
 ├── services/
 │   └── server/         @capuchoo/server        Hono + Kysely over PostgreSQL
 ├── deploy/             Dockerfile, compose with Postgres, Traefik labels and backups
@@ -197,8 +197,10 @@ Learned the hard way; each one was a live bug.
   build moves both in one transaction, native first, so a gated bundle is judged against the build
   it will run on.
 - **Device endpoints are public, credential-free and CORS-open; everything else is same-origin.**
-  The dashboard is served by the server, so its session is an httpOnly cookie and there is no CORS
-  for the management API.
+  The dashboard is a separate static site, but its host proxies `/api` to the server (Traefik path
+  routing, or a Render rewrite), so the browser sees one origin: the session is a first-party
+  httpOnly cookie and there is no CORS for the management API. Do not point the dashboard at the
+  server cross-origin; the cookie would become third-party and Safari drops those.
 - **On a device, updater requests go through native HTTP.** The WebView's `fetch` from
   `https://localhost` hits CORS and mixed-content rules the plugin's own native stack never sees.
 - **Never resolve a promise with a Capacitor plugin proxy.** Every property is a native call, `then`

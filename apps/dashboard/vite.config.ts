@@ -7,9 +7,10 @@ import vue from "@vitejs/plugin-vue";
 const API_TARGET = process.env.CAPUCHOO_API_TARGET ?? "http://localhost:3000";
 
 /**
- * The dashboard is served by `@capuchoo/server` from the same origin in production, so the API is
- * the relative `/api`. In development the proxy keeps that true: `changeOrigin` stays off so the
- * server sees the dev host in both `Host` and `Origin` and its CSRF check passes for cookie writes.
+ * The dashboard is a static site whose host proxies `/api` to `@capuchoo/server` (a Render rewrite,
+ * or Traefik path routing), so the API is always the relative, same-origin `/api`. In development
+ * the proxy keeps that true: `changeOrigin` stays off so the server sees the dev host in both
+ * `Host` and `Origin` and its CSRF check passes for cookie writes.
  */
 export default defineConfig({
   plugins: [vue(), tailwindcss()],

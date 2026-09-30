@@ -6,13 +6,13 @@ dashboard to manage it.
 
 ## What is in here
 
-| Path               | Package               | What it does                                                   |
-| ------------------ | --------------------- | -------------------------------------------------------------- |
-| `packages/core`    | `@capuchoo/core`      | The update contract, shared by every other package. No deps.   |
-| `packages/updater` | `@capuchoo/updater`   | App-side runtime: checks, downloads, applies, prompts.         |
-| `packages/cli`     | `@capuchoo/cli`       | Builds and publishes OTA and native releases.                  |
-| `apps/dashboard`   | `@capuchoo/dashboard` | Release console: canvas, channels, devices, builds, audit.     |
-| `services/server`  | `@capuchoo/server`    | Update server on PostgreSQL. Serves the API and the dashboard. |
+| Path               | Package               | What it does                                                    |
+| ------------------ | --------------------- | --------------------------------------------------------------- |
+| `packages/core`    | `@capuchoo/core`      | The update contract, shared by every other package. No deps.    |
+| `packages/updater` | `@capuchoo/updater`   | App-side runtime: checks, downloads, applies, prompts.          |
+| `packages/cli`     | `@capuchoo/cli`       | Builds and publishes OTA and native releases.                   |
+| `apps/dashboard`   | `@capuchoo/dashboard` | Release console: canvas, channels, devices, builds, audit.      |
+| `services/server`  | `@capuchoo/server`    | Update server on PostgreSQL. API only; the dashboard is static. |
 
 ## Getting started
 

@@ -1,7 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { getConnInfo } from "@hono/node-server/conninfo";
@@ -39,19 +36,6 @@ const DEVICE_PATHS = [
   "/api/channel_self",
   "/api/artefacts/*",
 ];
-
-const DASHBOARD_CSP = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self'",
-  "worker-src 'self' blob:",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
 
 function clientIp(c: Context<AppEnv>, trustProxy: boolean): string {
   if (trustProxy) {
@@ -138,21 +122,6 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", insightRoutes());
   app.get("/api/health", (c) => c.json({ status: "ok" }));
   app.all("/api/*", (c) => c.json({ error: "Not found", reason: "not_found" }, 404));
-
-  const dashboard = deps.config.DASHBOARD_DIR ? path.resolve(deps.config.DASHBOARD_DIR) : null;
-  if (dashboard && existsSync(path.join(dashboard, "index.html"))) {
-    const index = readFileSync(path.join(dashboard, "index.html"), "utf8");
-    app.use("/assets/*", async (c, next) => {
-      await next();
-      if (c.res.ok) c.header("cache-control", "public, max-age=31536000, immutable");
-    });
-    app.use("*", serveStatic({ root: path.relative(process.cwd(), dashboard) || "." }));
-    app.get("*", (c) => {
-      c.header("content-security-policy", DASHBOARD_CSP);
-      c.header("cache-control", "no-cache");
-      return c.html(index);
-    });
-  }
 
   return app;
 }

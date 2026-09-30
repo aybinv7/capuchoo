@@ -40,7 +40,6 @@ const schema = z
       .positive()
       .default(400 * 1024 * 1024),
     DEVICE_EVENT_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
-    DASHBOARD_DIR: z.string().optional(),
     TRUST_PROXY: bool.default(false),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   })
