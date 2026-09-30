@@ -18,9 +18,12 @@ const emit = defineEmits<{ move: [id: string, target: string] }>();
 const column = computed(() => props.header.column);
 const meta = computed(() => column.value.columnDef.meta);
 const title = computed(() => meta.value?.title ?? column.value.id);
-const usesMenu = computed(
-  () => typeof column.value.columnDef.header !== "function" && Boolean(meta.value?.title),
-);
+/**
+ * A titled column gets the menu header. TanStack's default column definition already supplies a
+ * `header` function, so its presence cannot tell a custom header apart; columns that render their
+ * own header (selection, actions) simply have no title.
+ */
+const usesMenu = computed(() => Boolean(meta.value?.title));
 const movable = computed(() => props.reorder && !meta.value?.fixed && !column.value.getIsPinned());
 const position = computed(() => props.order.indexOf(column.value.id));
 
