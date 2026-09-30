@@ -27,6 +27,22 @@ There is no `--environment` flag, because there is nothing to get wrong. A chann
 environment set is rejected, and so is a channel whose environment disagrees with the flavour's
 `VITE_APP_ID` - the server enforces the same rule, and finding out client-side saves a 40 MB upload.
 
+## Flavour isolation
+
+A build sees only its flavour file. Every key in `build/<env>/.env.<env>` is passed to the web
+build, Trapeze and `cap sync` explicitly, with `VITE_LIVE_RELOAD=false`. A deploy is refused when
+`.env`, `.env.local`, `.env.<mode>` or `.env.<mode>.local` define a `VITE_*` key the flavour file
+does not, because Vite (and a `capacitor.config.ts` that loads `.env.local`) would ship this
+machine's value. Set the key in the flavour file, or pass `--allow-local-env` to accept it.
+
+Keys that must never come from anywhere else go in `.capuchoo/project.json`:
+
+```json
+{ "requiredEnv": ["VITE_DB_FILENAME", "VITE_API_URL"] }
+```
+
+A flavour file that omits one, or leaves it empty, is refused before anything is built.
+
 ## Versions
 
 `package.json` owns the semantic version. `version-code.json` owns the monotonically increasing

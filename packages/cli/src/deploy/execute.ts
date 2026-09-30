@@ -85,6 +85,11 @@ export const commonDeployFlags = {
     default: false,
     description: "Accept every prompt - required in CI",
   }),
+  "allow-local-env": Flags.boolean({
+    default: false,
+    description:
+      "Build even when .env / .env.local define VITE_* keys the flavour file does not, shipping this machine's values",
+  }),
 } as const;
 
 export interface DeployFlags {
@@ -103,6 +108,7 @@ export interface DeployFlags {
   type?: string;
   "allow-unsigned"?: boolean;
   "allow-cert-change"?: boolean;
+  "allow-local-env": boolean;
   /** OTA only: the native build number a device needs before this bundle is served. */
   "min-native"?: number;
   flavor?: string;
@@ -327,6 +333,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     verbose: flags.verbose,
     quiet: json,
     identifiers,
+    allowLocalEnv: flags["allow-local-env"],
     seal: kind === "native" && platform === "android",
   };
 

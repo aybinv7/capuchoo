@@ -28,6 +28,7 @@ import {
   type VersionState,
 } from "./flavour.js";
 import { applyNativeConfig, builtinConfigLimitations } from "./native-config.js";
+import { describeEnvIsolationProblems, readLocalEnvSources } from "./env-isolation.js";
 import { detectToolchain } from "./toolchain.js";
 import { bundleFileName, createBundleZip } from "./zip.js";
 
@@ -68,6 +69,8 @@ export interface DeployRequest {
    * check below would then warn on every deploy against an older backend.
    */
   identifiers?: RegisteredIdentifier[] | undefined;
+  /** `--allow-local-env`: accept `VITE_*` keys the flavour omits being filled from local env files. */
+  allowLocalEnv?: boolean | undefined;
   /** Whether the artefact is checked and signed after the build, as the `sign` step. */
   seal?: boolean | undefined;
 }
@@ -146,6 +149,18 @@ export function planSteps(request: DeployRequest): Step[] {
 export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour): string[] {
   const problems = describeFlavourProblems(flavour);
 
+  if (flavour.envFile) {
+    problems.push(
+      ...describeEnvIsolationProblems({
+        envFileLabel: flavour.config.envFile,
+        required: request.project.requiredEnv,
+        flavourEnv: flavour.fileEnv,
+        sources: readLocalEnvSources(envRoots(request), flavour),
+        allowLocalEnv: request.allowLocalEnv ?? false,
+      }),
+    );
+  }
+
   const declaredAppId = flavour.fileEnv.VITE_APP_ID;
 
   // Checked against what the server has registered, not against the spelling of
@@ -196,6 +211,15 @@ export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour
   }
 
   return problems;
+}
+
+/** Directories Vite may load dotenv files from: the app, and the build directory when it differs. */
+function envRoots(request: DeployRequest): string[] {
+  const appDir = path.resolve(request.appDir);
+  const buildDir = request.project.build.cwd
+    ? path.resolve(appDir, request.project.build.cwd)
+    : appDir;
+  return buildDir === appDir ? [appDir] : [appDir, buildDir];
 }
 
 export async function runDeploy(

@@ -182,10 +182,13 @@ export function resolveVersionState(
   return { version, versionCode: codes[environment], codes };
 }
 
+/** Forced on every deploy build: a live-reload build points the WebView at a laptop. */
+export const DEPLOY_ONLY_ENV: Readonly<Record<string, string>> = { VITE_LIVE_RELOAD: "false" };
+
 /**
- * The environment a build step runs with: the flavour's own values, plus the
- * resolved version. Version values win, because they are computed for *this*
- * deploy while the file holds whatever the last one left behind.
+ * The environment every build step runs with: each flavour key explicitly, so it outranks the
+ * app's `.env` / `.env.local` (Vite never overrides a variable that is already set), then the
+ * resolved version, then the deploy-only values.
  */
 export function buildEnvironment(
   flavour: ResolvedFlavour,
@@ -194,5 +197,6 @@ export function buildEnvironment(
   return {
     ...flavour.fileEnv,
     ...versionEnv(state.version, state.versionCode),
+    ...DEPLOY_ONLY_ENV,
   };
 }

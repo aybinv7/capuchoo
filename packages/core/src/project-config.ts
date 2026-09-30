@@ -68,6 +68,12 @@ export interface ProjectConfig {
   flavours?: Partial<Record<Environment, FlavourConfig>>;
   build?: BuildConfig;
 
+  /**
+   * Keys every flavour env file must set. A key a flavour omits is otherwise filled from the
+   * app's `.env` / `.env.local`, so a laptop's value reaches a production build.
+   */
+  requiredEnv?: string[];
+
   /** Optional GitHub Pages mirror for generated web assets. */
   ghPagesRepo?: string;
 
@@ -90,6 +96,8 @@ export interface ResolvedProjectConfig {
   versionCodeFile: string;
   flavours: Record<Environment, FlavourConfig>;
   build: BuildConfig;
+  /** Trimmed and de-duplicated; empty when the project declares none. */
+  requiredEnv: string[];
   ghPagesRepo?: string;
 }
 
@@ -169,8 +177,20 @@ export function normaliseProjectConfig(config: ProjectConfig): ResolvedProjectCo
     versionCodeFile: config.versionCodeFile ?? "version-code.json",
     flavours,
     build,
+    requiredEnv: normaliseEnvKeys(config.requiredEnv),
     ghPagesRepo: config.ghPagesRepo,
   };
+}
+
+const ENV_KEY = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+function normaliseEnvKeys(keys: unknown): string[] {
+  if (!Array.isArray(keys)) return [];
+  const unique = new Set<string>();
+  for (const key of keys) {
+    if (typeof key === "string" && ENV_KEY.test(key.trim())) unique.add(key.trim());
+  }
+  return [...unique];
 }
 
 /** Fields a `project.json` must carry for a deploy to be possible. */
@@ -184,6 +204,22 @@ export function validateProjectConfig(config: Partial<ProjectConfig> | null | un
 
   if (config.appId && !isValidBundleId(config.appId)) {
     problems.push(`appId "${config.appId}" is not a valid bundle identifier`);
+  }
+
+  const required: unknown = config.requiredEnv;
+  if (required !== undefined) {
+    if (!Array.isArray(required)) {
+      problems.push("requiredEnv must be an array of environment variable names");
+    } else {
+      const invalid = required.filter(
+        (key) => typeof key !== "string" || !ENV_KEY.test(key.trim()),
+      );
+      if (invalid.length > 0) {
+        problems.push(
+          `requiredEnv has invalid names: ${invalid.map((key) => JSON.stringify(key)).join(", ")}`,
+        );
+      }
+    }
   }
 
   return problems;

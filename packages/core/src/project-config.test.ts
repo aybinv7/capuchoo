@@ -63,6 +63,29 @@ describe("normaliseProjectConfig", () => {
   });
 });
 
+describe("requiredEnv", () => {
+  it("defaults to none", () => {
+    expect(normaliseProjectConfig(v1).requiredEnv).toEqual([]);
+  });
+
+  it("is trimmed and de-duplicated", () => {
+    const resolved = normaliseProjectConfig({
+      ...v1,
+      requiredEnv: [" VITE_DB_FILENAME", "VITE_DB_FILENAME", "VITE_API_URL"],
+    });
+    expect(resolved.requiredEnv).toEqual(["VITE_DB_FILENAME", "VITE_API_URL"]);
+  });
+
+  it("rejects a value that is not a list of names", () => {
+    expect(validateProjectConfig({ ...v1, requiredEnv: "VITE_X" as never })).toEqual([
+      "requiredEnv must be an array of environment variable names",
+    ]);
+    expect(validateProjectConfig({ ...v1, requiredEnv: ["VITE_OK", "1BAD", 3 as never] })).toEqual([
+      'requiredEnv has invalid names: "1BAD", 3',
+    ]);
+  });
+});
+
 describe("validateProjectConfig", () => {
   it("accepts a complete config", () => {
     expect(validateProjectConfig(v1)).toEqual([]);
