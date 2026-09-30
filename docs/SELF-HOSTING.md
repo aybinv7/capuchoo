@@ -49,6 +49,29 @@ holds no secret and needs no rewrite. Build command
 there. Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for several instances use
 `STORAGE_DRIVER=s3` against MinIO or R2.
 
+## The first admin, and getting back in
+
+On an empty database, `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` create the first
+instance admin at boot; they do nothing once any user exists. For every later case (a database that
+already has users, a forgotten password), run the admin command against the same database. It reads
+both values from the environment, never from arguments, creates the account or resets its password,
+makes it an instance admin, and signs it out everywhere:
+
+```sh
+ADMIN_EMAIL=you@company.com ADMIN_PASSWORD='at least 12 characters' node server/dist/admin.mjs
+```
+
+In the Docker image that is `docker compose exec server node server/dist/admin.mjs` with the two
+variables passed through `-e`.
+
+## Demo data
+
+`pnpm --filter @capuchoo/server run seed:demo` creates a fictional organization, Northwind
+Distribution, with an app on three flavours, client channels, signed releases, a rollback in the
+history, 140 tablets with 28 days of activity, builds and audit entries. It needs `DATABASE_URL`,
+`DEMO_EMAIL` and `DEMO_PASSWORD`, replaces the organization on every run, and refuses to run with
+`NODE_ENV=production` unless `ALLOW_DEMO_SEED=true`. It is what the landing page screenshots show.
+
 ## Operations
 
 | Concern          | How                                                                                                                   |
