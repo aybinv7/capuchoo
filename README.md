@@ -12,6 +12,7 @@ dashboard to manage it.
 | `packages/updater` | `@capuchoo/updater`   | App-side runtime: checks, downloads, applies, prompts.          |
 | `packages/cli`     | `@capuchoo/cli`       | Builds and publishes OTA and native releases.                   |
 | `apps/dashboard`   | `@capuchoo/dashboard` | Release console: canvas, channels, devices, builds, audit.      |
+| `apps/landing`     | `@capuchoo/landing`   | Public landing page, a static site with no backend.             |
 | `services/server`  | `@capuchoo/server`    | Update server on PostgreSQL. API only; the dashboard is static. |
 
 ## Getting started

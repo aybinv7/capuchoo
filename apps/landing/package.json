@@ -1,0 +1,36 @@
+{
+  "name": "@capuchoo/landing",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Capuchoo public landing page, a static site",
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vue-tsc --build && vp build",
+    "preview": "vp preview",
+    "typecheck": "vue-tsc --build",
+    "test": "vp test --run --passWithNoTests"
+  },
+  "dependencies": {
+    "@lucide/vue": "catalog:",
+    "@vueuse/core": "catalog:",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "reka-ui": "catalog:",
+    "tailwind-merge": "^3.3.1",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.16",
+    "@tsconfig/node22": "^22.0.2",
+    "@types/node": "^22.18.11",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "tailwindcss": "^4.1.16",
+    "typescript": "~5.9.0",
+    "vue-tsc": "^3.1.1"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
