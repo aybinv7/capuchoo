@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Capuchoo · Over-the-air updates for Capacitor apps</title>
+    <meta
+      name="description"
+      content="Ship web bundles and native APKs to your Capacitor apps through channels you control. Signed releases, per-client channels, a CLI for CI and a live dashboard. Open source, self-hosted."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Capuchoo · Over-the-air updates for Capacitor apps" />
+    <meta
+      property="og:description"
+      content="Signed OTA and native releases, delivered through channels you control. Open source and self-hosted."
+    />
+    <meta property="og:image" content="/capuchoo.png" />
+    <meta name="theme-color" content="#c96442" />
+    <link rel="icon" href="/capuchoo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&family=Noto+Serif+Display:ital,wght@1,300&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("capuchoo.theme");
+          var dark =
+            stored === "dark" ||
+            ((!stored || stored === "auto") &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (_) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

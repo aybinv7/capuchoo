@@ -12,7 +12,8 @@ capuchoo/
 │   ├── updater/        @capuchoo/updater       app-side runtime
 │   ├── cli/            @capuchoo/cli          build and publish releases
 ├── apps/
-│   └── dashboard/      @capuchoo/dashboard     release console, static site
+│   ├── dashboard/      @capuchoo/dashboard     release console, static site
+│   └── landing/        @capuchoo/landing       public landing page, static site
 ├── services/
 │   └── server/         @capuchoo/server        Hono + Kysely over PostgreSQL
 ├── deploy/             Dockerfile, compose with Postgres, Traefik labels and backups

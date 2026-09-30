@@ -40,8 +40,14 @@ values have to match reality after the first apply:
   server sees its own host while the browser sends the dashboard's `Origin`.
 
 Deploys are triggered by CI after checks pass (`RENDER_DEPLOY_HOOK`,
-`RENDER_DASHBOARD_DEPLOY_HOOK`). Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for
-several instances use `STORAGE_DRIVER=s3` against MinIO or R2.
+`RENDER_DASHBOARD_DEPLOY_HOOK`).
+
+The public landing page (`apps/landing`) is a separate Render static site, outside the Blueprint: it
+holds no secret and needs no rewrite. Build command
+`pnpm install --frozen-lockfile && pnpm --filter "{apps/landing}..." run build`, publish directory
+`apps/landing/dist`, and `VITE_DASHBOARD_URL` set to the dashboard's address so "Sign in" lands
+there. Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for several instances use
+`STORAGE_DRIVER=s3` against MinIO or R2.
 
 ## Operations
 
