@@ -1,41 +1,40 @@
 <script setup lang="ts">
-import { useVModel } from "@vueuse/core";
+import type { SwitchRootEmits, SwitchRootProps } from "reka-ui";
+import type { HTMLAttributes } from "vue";
+import { reactiveOmit } from "@vueuse/core";
+import { SwitchRoot, SwitchThumb, useForwardPropsEmits } from "reka-ui";
 import { cn } from "@/lib/utils";
 
-interface Props {
-  modelValue?: boolean;
-  class?: string;
-}
+const props = defineProps<SwitchRootProps & { class?: HTMLAttributes["class"] }>();
 
-const props = defineProps<Props>();
-const emit = defineEmits<{
-  (e: "update:modelValue", value: boolean): void;
-}>();
+const emits = defineEmits<SwitchRootEmits>();
 
-const modelValue = useVModel(props, "modelValue", emit, { passive: true });
+const delegatedProps = reactiveOmit(props, "class");
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>
-  <button
-    type="button"
+  <SwitchRoot
+    v-slot="slotProps"
+    data-slot="switch"
+    v-bind="forwarded"
     :class="
       cn(
-        'peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50',
-        modelValue ? 'bg-primary' : 'bg-input',
+        'peer data-[state=checked]:bg-primary data-[state=unchecked]:bg-input focus-visible:border-ring focus-visible:ring-ring/50 dark:data-[state=unchecked]:bg-input/80 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
     "
-    :aria-pressed="modelValue"
-    role="switch"
-    @click="modelValue = !modelValue"
   >
-    <span
+    <SwitchThumb
+      data-slot="switch-thumb"
       :class="
         cn(
-          'pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform',
-          modelValue ? 'translate-x-5' : 'translate-x-0.5',
+          'bg-background dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground pointer-events-none block size-4 rounded-full ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0',
         )
       "
-    />
-  </button>
+    >
+      <slot name="thumb" v-bind="slotProps" />
+    </SwitchThumb>
+  </SwitchRoot>
 </template>
