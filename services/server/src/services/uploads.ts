@@ -147,7 +147,7 @@ async function activate(
     access: context.access,
     principal,
     channel: context.channel,
-    artefact,
+    artefacts: [artefact],
     rollback: false,
     reason: "published",
     ip,

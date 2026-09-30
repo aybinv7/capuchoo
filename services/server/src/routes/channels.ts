@@ -70,37 +70,43 @@ function audit(
   });
 }
 
-async function resolveArtefact(
+/** Every artefact the request names: a bundle, a native build, or one of each. */
+async function resolveArtefacts(
   c: AppContext,
   access: AppAccess,
   channel: Channel,
   body: Record<string, unknown>,
-): Promise<Artefact> {
+): Promise<Artefact[]> {
   const { db } = c.get("deps");
+  const platform = typeof body.platform === "string" ? body.platform : "android";
+  const artefacts: Artefact[] = [];
+
   if (typeof body.bundle_id === "string") {
     const row = await findBundle(db, body.bundle_id);
     if (!row || row.app_id !== access.app.id) throw notFound("Bundle");
-    return { kind: "ota", row };
+    artefacts.push({ kind: "ota", row });
+  } else if (typeof body.version === "string") {
+    const row = await findBundleByVersion(db, access.app.id, platform, body.version);
+    if (!row) throw notFound(`Bundle ${body.version}`);
+    artefacts.push({ kind: "ota", row });
   }
+
   if (typeof body.native_id === "string") {
     const row = await findNativeBuild(db, body.native_id);
     if (!row || row.app_id !== access.app.id) throw notFound("Native build");
-    return { kind: "native", row };
-  }
-  const platform = typeof body.platform === "string" ? body.platform : "android";
-  if (typeof body.version === "string") {
-    const row = await findBundleByVersion(db, access.app.id, platform, body.version);
-    if (!row) throw notFound(`Bundle ${body.version}`);
-    return { kind: "ota", row };
-  }
-  if (body.version_code !== undefined) {
+    artefacts.push({ kind: "native", row });
+  } else if (body.version_code !== undefined) {
     const code = Number(body.version_code);
     if (!Number.isInteger(code)) throw badRequest("version_code must be an integer");
     const row = await findNativeByCode(db, access.app.id, platform, channel.environment, code);
     if (!row) throw notFound(`Native build ${code}`);
-    return { kind: "native", row };
+    artefacts.push({ kind: "native", row });
   }
-  throw badRequest("Name what to deliver: bundle_id, native_id, version or version_code");
+
+  if (artefacts.length === 0) {
+    throw badRequest("Name what to deliver: bundle_id or version, native_id or version_code");
+  }
+  return artefacts;
 }
 
 /** Channel creation, settings and the delivery actions: point, rollback, pause, resume, history. */
@@ -290,12 +296,12 @@ export function channelRoutes(): Hono<AppEnv> {
       "Delivering",
     );
     const body = await readJson(c, 8 * 1024);
-    const artefact = await resolveArtefact(c, access, channel, body);
+    const artefacts = await resolveArtefacts(c, access, channel, body);
     const updated = await pointChannel(deps, {
       access,
       principal: principal(c),
       channel,
-      artefact,
+      artefacts,
       rollback: body.rollback === true,
       reason: typeof body.reason === "string" ? body.reason.slice(0, 500) : null,
       ip: c.get("clientIp"),

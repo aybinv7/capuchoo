@@ -78,6 +78,23 @@ describe("selectPointTargets", () => {
     expect(targets.native?.id).toBe("n-57");
   });
 
+  it("delivers a native build alone when --version is omitted", () => {
+    const targets = selectPointTargets({
+      artefacts: ARTEFACTS,
+      channel: PROD,
+      platform: "android",
+      nativeCode: 57,
+    });
+    expect(targets.bundle).toBeNull();
+    expect(targets.native?.id).toBe("n-57");
+  });
+
+  it("refuses when neither --version nor --native is given", () => {
+    expect(() =>
+      selectPointTargets({ artefacts: ARTEFACTS, channel: PROD, platform: "android" }),
+    ).toThrow(/--version/);
+  });
+
   it("points only the native pointer when the version has no bundle", () => {
     const artefacts = { bundles: [], native_builds: ARTEFACTS.native_builds };
     const targets = selectPointTargets({

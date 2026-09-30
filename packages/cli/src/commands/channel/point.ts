@@ -14,6 +14,7 @@ export default class ChannelPoint extends BaseCommand {
   static override examples = [
     "<%= config.bin %> channel point prod-acme --version 2.4.0",
     "<%= config.bin %> channel point prod --version 2.4.0 --native 57",
+    "<%= config.bin %> channel point prod-acme --native 57",
     '<%= config.bin %> channel point prod --version 2.3.1 --rollback --reason "crash on login"',
   ];
 
@@ -23,10 +24,11 @@ export default class ChannelPoint extends BaseCommand {
 
   static override flags = {
     version: Flags.string({
-      required: true,
-      description: "Version to deliver. Selects the OTA bundle, and the native build with --native",
+      description: "OTA bundle version to deliver",
     }),
-    native: Flags.integer({ description: "Native build number (versionCode) to deliver as well" }),
+    native: Flags.integer({
+      description: "Native build number (versionCode) to deliver, alone or with --version",
+    }),
     platform: Flags.string({ default: "android", options: ["android", "ios"] }),
     rollback: Flags.boolean({
       default: false,

@@ -3,7 +3,7 @@ import { requireDeliverRole, type AppAccess } from "../access/app-access";
 import { actorColumns, type Principal } from "../auth/principal";
 import type { Bundle, Channel, ChannelAction, NativeBuild } from "../db/schema";
 import type { Deps } from "../http/context";
-import { conflict, notFound } from "../lib/errors";
+import { badRequest, conflict, notFound } from "../lib/errors";
 import { findBundle, findNativeBuild } from "../repositories/artefacts";
 import { writeAudit } from "../repositories/audit";
 import {
@@ -15,7 +15,12 @@ import {
 
 export type Artefact = { kind: "ota"; row: Bundle } | { kind: "native"; row: NativeBuild };
 
-async function currentOf(deps: Deps, channel: Channel) {
+interface PointerState {
+  bundle: Bundle | undefined;
+  native: NativeBuild | undefined;
+}
+
+async function currentOf(deps: Deps, channel: Channel): Promise<PointerState> {
   const [bundle, native] = await Promise.all([
     channel.current_bundle_id
       ? findBundle(deps.db, channel.current_bundle_id)
@@ -27,25 +32,25 @@ async function currentOf(deps: Deps, channel: Channel) {
   return { bundle, native };
 }
 
-/** The pure verdict for pointing a channel at an artefact, with every fact loaded. */
+/** The pure verdict for pointing a channel, in the given pointer state, at an artefact. */
 export async function evaluatePointer(
   deps: Deps,
   channel: Channel,
+  state: PointerState,
   artefact: Artefact,
   rollback: boolean,
 ): Promise<PointerVerdict> {
-  const { bundle, native } = await currentOf(deps, channel);
   const servedByBase =
     channel.kind === "client" && channel.base_channel_id
       ? await servedByChannel(deps.db, channel.base_channel_id, artefact.row.id)
       : undefined;
   const current =
     artefact.kind === "ota"
-      ? bundle
-        ? { versionName: bundle.version_name }
+      ? state.bundle
+        ? { versionName: state.bundle.version_name }
         : null
-      : native
-        ? { versionName: native.version_name, versionCode: native.version_code }
+      : state.native
+        ? { versionName: state.native.version_name, versionCode: state.native.version_code }
         : null;
 
   return canPoint({
@@ -56,8 +61,8 @@ export async function evaluatePointer(
       kind: channel.kind,
       iosEnabled: channel.ios_enabled,
       androidEnabled: channel.android_enabled,
-      currentNativeCode: native?.version_code ?? null,
-      currentBundleGate: bundle?.min_native_version ?? null,
+      currentNativeCode: state.native?.version_code ?? null,
+      currentBundleGate: state.bundle?.min_native_version ?? null,
       currentVersion: current,
     },
     artefact: {
@@ -79,9 +84,17 @@ function publishChannel(deps: Deps, channel: Channel): void {
   deps.hub.publish({ type: "channel", appId: channel.app_id, data: channel });
 }
 
+interface Move {
+  artefact: Artefact;
+  from: Bundle | NativeBuild | undefined;
+  action: ChannelAction;
+}
+
 /**
- * Moves a channel's pointer. Refusals come from `canPoint`; the move, its history row and the audit
- * entry are written together, and a rollback leaves the channel accepting downgrades until the next
+ * Moves a channel's pointers: an OTA bundle, a native build, or both at once. The native build
+ * moves first, so a bundle gated on it is judged against the build it will run on. Every move is
+ * checked by `canPoint`; all of them, their history rows and audit entries are written in one
+ * transaction or not at all. A rollback leaves the channel accepting downgrades until the next
  * forward move.
  */
 export async function pointChannel(
@@ -90,34 +103,48 @@ export async function pointChannel(
     access: AppAccess;
     principal: Principal;
     channel: Channel;
-    artefact: Artefact;
+    artefacts: Artefact[];
     rollback: boolean;
     reason: string | null;
     ip: string | null;
   },
 ): Promise<Channel> {
-  const { access, principal, channel, artefact, rollback } = input;
+  const { access, principal, channel, rollback } = input;
   requireDeliverRole(access, channel.environment, rollback ? "Rolling back" : "Delivering");
+  if (input.artefacts.length === 0) throw badRequest("Nothing to deliver");
+  if (new Set(input.artefacts.map((artefact) => artefact.kind)).size !== input.artefacts.length) {
+    throw badRequest("Deliver at most one bundle and one native build at a time");
+  }
 
-  const verdict = await evaluatePointer(deps, channel, artefact, rollback);
-  if (!verdict.ok) throw conflict(verdict.message, verdict.reason);
-
-  const fromId = artefact.kind === "ota" ? channel.current_bundle_id : channel.current_native_id;
-  if (verdict.direction === "same" && fromId === artefact.row.id) return channel;
-
-  const current = await currentOf(deps, channel);
-  const fromVersion =
-    artefact.kind === "ota"
-      ? (current.bundle?.version_name ?? null)
-      : (current.native?.version_name ?? null);
-  const action: ChannelAction =
-    artefact.kind === "ota"
-      ? rollback
-        ? "rollback_bundle"
-        : "point_bundle"
-      : rollback
-        ? "rollback_native"
-        : "point_native";
+  const ordered = [...input.artefacts].sort((a, b) =>
+    a.kind === "native" ? -1 : b.kind === "native" ? 1 : 0,
+  );
+  const initial = await currentOf(deps, channel);
+  let state = initial;
+  const moves: Move[] = [];
+  for (const artefact of ordered) {
+    const verdict = await evaluatePointer(deps, channel, state, artefact, rollback);
+    if (!verdict.ok) throw conflict(verdict.message, verdict.reason);
+    const from = artefact.kind === "ota" ? state.bundle : state.native;
+    if (from?.id === artefact.row.id) continue;
+    moves.push({
+      artefact,
+      from,
+      action:
+        artefact.kind === "ota"
+          ? rollback
+            ? "rollback_bundle"
+            : "point_bundle"
+          : rollback
+            ? "rollback_native"
+            : "point_native",
+    });
+    state =
+      artefact.kind === "ota"
+        ? { ...state, bundle: artefact.row }
+        : { ...state, native: artefact.row };
+  }
+  if (moves.length === 0) return channel;
 
   const updated = await deps.db.transaction().execute(async (trx) => {
     const locked = await trx
@@ -127,51 +154,57 @@ export async function pointChannel(
       .forUpdate()
       .executeTakeFirst();
     if (!locked) throw notFound("Channel");
-    const lockedFrom =
-      artefact.kind === "ota" ? locked.current_bundle_id : locked.current_native_id;
-    if (lockedFrom !== fromId)
+    if (
+      locked.current_bundle_id !== (initial.bundle?.id ?? null) ||
+      locked.current_native_id !== (initial.native?.id ?? null)
+    ) {
       throw conflict("The channel changed while this request was in flight. Retry.", "stale");
+    }
 
+    const bundleMove = moves.find((move) => move.artefact.kind === "ota");
+    const nativeMove = moves.find((move) => move.artefact.kind === "native");
     const row = await trx
       .updateTable("channels")
       .set({
-        ...(artefact.kind === "ota"
-          ? { current_bundle_id: artefact.row.id }
-          : { current_native_id: artefact.row.id }),
-        ...(artefact.kind === "ota" ? { allow_downgrade: rollback } : {}),
+        ...(bundleMove
+          ? { current_bundle_id: bundleMove.artefact.row.id, allow_downgrade: rollback }
+          : {}),
+        ...(nativeMove ? { current_native_id: nativeMove.artefact.row.id } : {}),
         updated_at: new Date(),
       })
       .where("id", "=", channel.id)
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    await recordChannelEvent(trx, {
-      channelId: channel.id,
-      appId: channel.app_id,
-      action,
-      fromId,
-      toId: artefact.row.id,
-      fromVersion,
-      toVersion: artefact.row.version_name,
-      actorUserId: principal.userId,
-      actorApiKeyId: actorColumns(principal).actor_api_key_id,
-      reason: input.reason,
-    });
-    await writeAudit(trx, {
-      organizationId: access.app.organization_id,
-      appId: access.app.id,
-      ...toAuditActor(principal),
-      action: `channel.${action}`,
-      targetType: "channel",
-      targetId: channel.id,
-      details: {
-        channel: channel.name,
-        from: fromVersion,
-        to: artefact.row.version_name,
+    for (const move of moves) {
+      await recordChannelEvent(trx, {
+        channelId: channel.id,
+        appId: channel.app_id,
+        action: move.action,
+        fromId: move.from?.id ?? null,
+        toId: move.artefact.row.id,
+        fromVersion: move.from?.version_name ?? null,
+        toVersion: move.artefact.row.version_name,
+        actorUserId: principal.userId,
+        actorApiKeyId: actorColumns(principal).actor_api_key_id,
         reason: input.reason,
-      },
-      ip: input.ip,
-    });
+      });
+      await writeAudit(trx, {
+        organizationId: access.app.organization_id,
+        appId: access.app.id,
+        ...toAuditActor(principal),
+        action: `channel.${move.action}`,
+        targetType: "channel",
+        targetId: channel.id,
+        details: {
+          channel: channel.name,
+          from: move.from?.version_name ?? null,
+          to: move.artefact.row.version_name,
+          reason: input.reason,
+        },
+        ip: input.ip,
+      });
+    }
     return row;
   });
 

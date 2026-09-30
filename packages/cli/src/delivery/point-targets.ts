@@ -5,7 +5,8 @@ export interface PointRequest {
   artefacts: AppArtefacts;
   channel: { name: string; environment: Environment };
   platform: Platform;
-  version: string;
+  /** `--version`: the OTA bundle to deliver; optional when `--native` names a build. */
+  version?: string | undefined;
   /** `--native`: the native build number to point at alongside, or instead of, the bundle. */
   nativeCode?: number | undefined;
 }
@@ -43,11 +44,22 @@ export function selectPointTargets(request: PointRequest): PointTargets {
   const { artefacts, channel, platform, version, nativeCode } = request;
   const environment = channel.environment;
 
-  const bundle = pickFlavour(
-    artefacts.bundles.filter((row) => row.platform === platform && row.version_name === version),
-    environment,
-    () => `Bundle ${version}`,
-  );
+  if (version === undefined && nativeCode === undefined) {
+    throw new Error(
+      "Name what to deliver: --version for a bundle, --native for a native build, or both.",
+    );
+  }
+
+  const bundle =
+    version === undefined
+      ? null
+      : pickFlavour(
+          artefacts.bundles.filter(
+            (row) => row.platform === platform && row.version_name === version,
+          ),
+          environment,
+          () => `Bundle ${version}`,
+        );
 
   let native: NativeArtefact | null = null;
   if (nativeCode !== undefined) {
@@ -69,7 +81,7 @@ export function selectPointTargets(request: PointRequest): PointTargets {
       );
     }
 
-    if (native.version_name !== version) {
+    if (version !== undefined && native.version_name !== version) {
       throw new Error(
         `Native build ${nativeCode} is version ${native.version_name}, not ${version}. Pass --version ${native.version_name}.`,
       );
