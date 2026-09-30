@@ -92,7 +92,7 @@ For an application in its own repository, use the composite action:
     project-directory: apps/presalio
     channel: staging
     type: ota
-    cli-version: 0.2.0 # pin this in production
+    cli-version: 0.16.0 # pin this in production
     release-notes: Presalio v20.0.1
   env:
     CAPUCHOO_ENDPOINT: ${{ secrets.CAPUCHOO_ENDPOINT }}

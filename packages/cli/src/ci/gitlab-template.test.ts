@@ -13,7 +13,7 @@ describe("parseClients", () => {
 
   it("refuses a name that would break the YAML or a channel", () => {
     expect(() => parseClients("acme corp")).toThrow('"acme corp" is not a usable client name');
-    expect(() => parseClients("a:b")).toThrow();
+    expect(() => parseClients("a:b")).toThrow("not a usable client name");
   });
 
   it("is empty without --clients", () => {

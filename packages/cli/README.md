@@ -9,6 +9,12 @@ workflows and CI pipelines to ship updates quickly and reliably.
 For team release operations, version ownership, GitHub Actions integration, and ecosystem
 boundaries, see [CI releases](docs/ci-releases.md).
 
+Since 0.16: a release is built and uploaded once, then delivered to other channels with
+`capuchoo channel point` (client channels, pause, rollback, history); OTA bundles and APKs are
+signed with the key from `capuchoo keys init`; native deploys refuse debug or unsigned APKs on prod
+and client channels and pin the APK signing certificate; a flavour build refuses `VITE_*` values
+leaking in from `.env` / `.env.local`; `capuchoo ci init --gitlab` writes a GitLab pipeline.
+
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/%40capuchoo%2Fcli.svg)](https://npmjs.org/package/@capuchoo/cli)
 [![Downloads/week](https://img.shields.io/npm/dw/%40capuchoo%2Fcli.svg)](https://npmjs.org/package/@capuchoo/cli)
@@ -29,7 +35,7 @@ $ npm install -g @capuchoo/cli
 $ capuchoo COMMAND
 running command...
 $ capuchoo (--version)
-@capuchoo/cli/0.12.0 win32-x64 node-v24.20.0
+@capuchoo/cli/0.16.0 win32-x64 node-v24.21.0
 $ capuchoo --help [COMMAND]
 USAGE
   $ capuchoo COMMAND
@@ -56,7 +62,12 @@ USAGE
 - [`capuchoo auth whoami`](#capuchoo-auth-whoami)
 - [`capuchoo channel create [NAME]`](#capuchoo-channel-create-name)
 - [`capuchoo channel delete [NAME]`](#capuchoo-channel-delete-name)
+- [`capuchoo channel history CHANNEL`](#capuchoo-channel-history-channel)
 - [`capuchoo channel list`](#capuchoo-channel-list)
+- [`capuchoo channel pause CHANNEL`](#capuchoo-channel-pause-channel)
+- [`capuchoo channel point CHANNEL`](#capuchoo-channel-point-channel)
+- [`capuchoo channel resume CHANNEL`](#capuchoo-channel-resume-channel)
+- [`capuchoo ci init`](#capuchoo-ci-init)
 - [`capuchoo config list`](#capuchoo-config-list)
 - [`capuchoo config set KEY VALUE`](#capuchoo-config-set-key-value)
 - [`capuchoo deploy native`](#capuchoo-deploy-native)
@@ -64,11 +75,14 @@ USAGE
 - [`capuchoo doctor`](#capuchoo-doctor)
 - [`capuchoo help [COMMAND]`](#capuchoo-help-command)
 - [`capuchoo init`](#capuchoo-init)
+- [`capuchoo keys init`](#capuchoo-keys-init)
+- [`capuchoo keys show`](#capuchoo-keys-show)
 - [`capuchoo menu`](#capuchoo-menu)
 - [`capuchoo org create [NAME]`](#capuchoo-org-create-name)
 - [`capuchoo org invite EMAIL ROLE`](#capuchoo-org-invite-email-role)
 - [`capuchoo org list`](#capuchoo-org-list)
 - [`capuchoo org members`](#capuchoo-org-members)
+- [`capuchoo release list`](#capuchoo-release-list)
 - [`capuchoo setup`](#capuchoo-setup)
 - [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
 - [`capuchoo version sync`](#capuchoo-version-sync)
@@ -95,7 +109,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/app/delete.ts)_
+[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/delete.ts)_
 
 ## `capuchoo app grant EMAIL ROLE`
 
@@ -119,7 +133,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/app/grant.ts)_
+[src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/grant.ts)_
 
 ## `capuchoo app identifiers [ACTION] [BUNDLEID]`
 
@@ -152,7 +166,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/identifiers.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/app/identifiers.ts)_
+[src/commands/app/identifiers.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/identifiers.ts)_
 
 ## `capuchoo app list`
 
@@ -170,7 +184,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/app/list.ts)_
+[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/list.ts)_
 
 ## `capuchoo app revoke EMAIL`
 
@@ -194,7 +208,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/app/revoke.ts)_
+[src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/revoke.ts)_
 
 ## `capuchoo app roles`
 
@@ -212,7 +226,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/app/roles.ts)_
+[src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/roles.ts)_
 
 ## `capuchoo auth issue`
 
@@ -238,7 +252,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/auth/issue.ts)_
+[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/issue.ts)_
 
 ## `capuchoo auth keys`
 
@@ -256,7 +270,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/auth/keys.ts)_
+[src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/keys.ts)_
 
 ## `capuchoo auth login`
 
@@ -280,7 +294,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/auth/login.ts)_
+[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -295,7 +309,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/auth/logout.ts)_
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth revoke ID`
 
@@ -319,7 +333,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/auth/revoke.ts)_
+[src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/revoke.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -337,7 +351,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/auth/whoami.ts)_
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/whoami.ts)_
 
 ## `capuchoo channel create [NAME]`
 
@@ -345,7 +359,7 @@ Create a channel for this app
 
 ```
 USAGE
-  $ capuchoo channel create [NAME] [-e dev|staging|prod] [-y] [--json]
+  $ capuchoo channel create [NAME] [-e dev|staging|prod] [-y] [--base <value> --client] [--json]
 
 ARGUMENTS
   [NAME]  Name of the channel, e.g. staging
@@ -354,6 +368,8 @@ FLAGS
   -e, --environment=<option>  Which build flavour this channel serves
                               <options: dev|staging|prod>
   -y, --yes                   Accept the environment even when it disagrees with the name
+      --base=<value>          Release channel a client channel follows, e.g. prod
+      --client                A client channel: takes no uploads, only releases its base channel has served
       --json                  Machine-readable output
 
 DESCRIPTION
@@ -365,10 +381,12 @@ EXAMPLES
   $ capuchoo channel create beta --environment staging
 
   $ capuchoo channel create prod --environment prod --yes
+
+  $ capuchoo channel create prod-acme --client --base prod
 ```
 
 _See code:
-[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/channel/create.ts)_
+[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/create.ts)_
 
 ## `capuchoo channel delete [NAME]`
 
@@ -394,7 +412,29 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/channel/delete.ts)_
+[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/delete.ts)_
+
+## `capuchoo channel history CHANNEL`
+
+Show every pointer move, pause and rollback on a channel, newest first
+
+```
+USAGE
+  $ capuchoo channel history CHANNEL [--limit <value>] [--json]
+
+ARGUMENTS
+  CHANNEL  Channel to inspect
+
+FLAGS
+  --json           Machine-readable output
+  --limit=<value>  [default: 20] How many moves to show
+
+DESCRIPTION
+  Show every pointer move, pause and rollback on a channel, newest first
+```
+
+_See code:
+[src/commands/channel/history.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/history.ts)_
 
 ## `capuchoo channel list`
 
@@ -412,7 +452,115 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/channel/list.ts)_
+[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/list.ts)_
+
+## `capuchoo channel pause CHANNEL`
+
+Stop a channel serving anything until it is resumed
+
+```
+USAGE
+  $ capuchoo channel pause CHANNEL [-y] [--json]
+
+ARGUMENTS
+  CHANNEL  Channel to pause
+
+FLAGS
+  -y, --yes   Do not ask for confirmation
+      --json  Machine-readable output
+
+DESCRIPTION
+  Stop a channel serving anything until it is resumed
+```
+
+_See code:
+[src/commands/channel/pause.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/pause.ts)_
+
+## `capuchoo channel point CHANNEL`
+
+Deliver an already published release to a channel by moving its pointer; nothing is rebuilt
+
+```
+USAGE
+  $ capuchoo channel point CHANNEL --version <value> [--native <value>] [--platform android|ios] [--rollback]
+    [--reason <value>] [-y] [--json]
+
+ARGUMENTS
+  CHANNEL  Channel to point, e.g. prod-acme
+
+FLAGS
+  -y, --yes                Do not ask for confirmation
+      --json               Machine-readable output
+      --native=<value>     Native build number (versionCode) to deliver as well
+      --platform=<option>  [default: android]
+                           <options: android|ios>
+      --reason=<value>     Why, recorded in the channel history
+      --rollback           Move to a lower version; devices accept the downgrade
+      --version=<value>    (required) Version to deliver. Selects the OTA bundle, and the native build with --native
+
+DESCRIPTION
+  Deliver an already published release to a channel by moving its pointer; nothing is rebuilt
+
+EXAMPLES
+  $ capuchoo channel point prod-acme --version 2.4.0
+
+  $ capuchoo channel point prod --version 2.4.0 --native 57
+
+  $ capuchoo channel point prod --version 2.3.1 --rollback --reason "crash on login"
+```
+
+_See code:
+[src/commands/channel/point.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/point.ts)_
+
+## `capuchoo channel resume CHANNEL`
+
+Let a paused channel serve its releases again
+
+```
+USAGE
+  $ capuchoo channel resume CHANNEL [--json]
+
+ARGUMENTS
+  CHANNEL  Channel to resume
+
+FLAGS
+  --json  Machine-readable output
+
+DESCRIPTION
+  Let a paused channel serve its releases again
+```
+
+_See code:
+[src/commands/channel/resume.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/resume.ts)_
+
+## `capuchoo ci init`
+
+Write a GitLab pipeline that publishes to prod once and delivers to each client by hand
+
+```
+USAGE
+  $ capuchoo ci init [--gitlab] [--clients <value>] [--output <value>] [-y] [--json]
+
+FLAGS
+  -y, --yes              Replace an existing file without asking
+      --clients=<value>  Comma-separated clients; each gets a manual deliver job to prod-<client>
+      --gitlab           Generate .gitlab-ci.yml
+      --json             Machine-readable output
+      --output=<value>   [default: .gitlab-ci.yml] Where to write the pipeline
+
+DESCRIPTION
+  Write a GitLab pipeline that publishes to prod once and delivers to each client by hand
+
+EXAMPLES
+  $ capuchoo ci init --gitlab
+
+  $ capuchoo ci init --gitlab --clients acme,globex
+
+  $ capuchoo ci init --gitlab --clients acme --output ../../.gitlab-ci.yml --yes
+```
+
+_See code:
+[src/commands/ci/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/ci/init.ts)_
 
 ## `capuchoo config list`
 
@@ -430,7 +578,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/config/list.ts)_
+[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -454,7 +602,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/config/set.ts)_
+[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -463,8 +611,8 @@ Build and publish a native binary (APK). Users install it through the OS.
 ```
 USAGE
   $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets]
-    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [-p android|ios] [-t debug|release] [--flavor <value>]
-    [--allow-unsigned]
+    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [-p android|ios] [-t debug|release]
+    [--flavor <value>] [--allow-unsigned] [--allow-cert-change]
 
 FLAGS
   -a, --[no-]active        Serve this release immediately
@@ -473,12 +621,17 @@ FLAGS
   -p, --platform=<option>  [default: android] Target platform
                            <options: android|ios>
   -r, --[no-]required      Users cannot postpone this release
-  -t, --type=<option>      [default: release] Gradle variant to assemble
+  -t, --type=<option>      Gradle variant to assemble. Defaults to release; debug is refused on prod and client channels
                            <options: debug|release>
   -v, --version=<option>   Bump the app version before publishing
                            <options: major|minor|patch>
   -y, --yes                Accept every prompt - required in CI
-      --allow-unsigned     Publish a release build with no signature. Android will refuse to install it.
+      --allow-cert-change  Publish an APK signed with a different certificate than the previous release. Installed
+                           devices cannot upgrade to it.
+      --allow-local-env    Build even when .env / .env.local define VITE_* keys the flavour file does not, shipping this
+                           machine's values
+      --allow-unsigned     Publish a release build with no signature, to a dev channel only. Android will refuse to
+                           install it.
       --dry-run            Build and package, but upload nothing
       --flavor=<value>     Gradle product flavour to build, when the project has more than one
       --json               Emit a machine-readable result on stdout
@@ -498,7 +651,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/deploy/native.ts)_
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -507,21 +660,24 @@ Publish a web bundle over the air. Does not change the installed binary.
 ```
 USAGE
   $ capuchoo deploy ota [-c <value>] [-n <value>] [-v major|minor|patch] [-a] [-r] [--skip-assets]
-    [--skip-build] [--dry-run] [--json] [--verbose] [-y]
+    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [--min-native <value>]
 
 FLAGS
-  -a, --[no-]active       Serve this release immediately
-  -c, --channel=<value>   Channel to publish to. Its environment selects the flavour.
-  -n, --note=<value>      Release notes shown to users
-  -r, --[no-]required     Users cannot postpone this release
-  -v, --version=<option>  Bump the app version before publishing
-                          <options: major|minor|patch>
-  -y, --yes               Accept every prompt - required in CI
-      --dry-run           Build and package, but upload nothing
-      --json              Emit a machine-readable result on stdout
-      --skip-assets       Do not regenerate launcher icons
-      --skip-build        Publish the existing build output as-is
-      --verbose           Stream build output to the terminal
+  -a, --[no-]active         Serve this release immediately
+  -c, --channel=<value>     Channel to publish to. Its environment selects the flavour.
+  -n, --note=<value>        Release notes shown to users
+  -r, --[no-]required       Users cannot postpone this release
+  -v, --version=<option>    Bump the app version before publishing
+                            <options: major|minor|patch>
+  -y, --yes                 Accept every prompt - required in CI
+      --allow-local-env     Build even when .env / .env.local define VITE_* keys the flavour file does not, shipping
+                            this machine's values
+      --dry-run             Build and package, but upload nothing
+      --json                Emit a machine-readable result on stdout
+      --min-native=<value>  Native build number this bundle needs. Devices below it are offered the binary instead.
+      --skip-assets         Do not regenerate launcher icons
+      --skip-build          Publish the existing build output as-is
+      --verbose             Stream build output to the terminal
 
 DESCRIPTION
   Publish a web bundle over the air. Does not change the installed binary.
@@ -532,10 +688,12 @@ EXAMPLES
   $ capuchoo deploy ota -c production -v patch -n 'Fixes the invoice total'
 
   $ capuchoo deploy ota -c staging --dry-run
+
+  $ capuchoo deploy ota -c dev --min-native 10
 ```
 
 _See code:
-[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/deploy/ota.ts)_
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/deploy/ota.ts)_
 
 ## `capuchoo doctor`
 
@@ -553,7 +711,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/doctor.ts)_
+[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/doctor.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -622,7 +780,56 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/init.ts)_
+[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/init.ts)_
+
+## `capuchoo keys init`
+
+Create this app's release signing key, git-ignore it, and upload its public key
+
+```
+USAGE
+  $ capuchoo keys init [--require-signature] [--force] [-y] [--json]
+
+FLAGS
+  -y, --yes                     Accept every prompt
+      --force                   Replace an existing key. Builds that bake the old public key reject everything the new
+                                one signs
+      --json                    Machine-readable output
+      --[no-]require-signature  Make the server refuse unsigned uploads for this app
+
+DESCRIPTION
+  Create this app's release signing key, git-ignore it, and upload its public key
+
+EXAMPLES
+  $ capuchoo keys init
+
+  $ capuchoo keys init --yes --json
+
+  $ capuchoo keys init --no-require-signature
+
+  $ capuchoo keys init --force
+```
+
+_See code:
+[src/commands/keys/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/keys/init.ts)_
+
+## `capuchoo keys show`
+
+Show the release signing key's fingerprint and whether each flavour bakes its public key
+
+```
+USAGE
+  $ capuchoo keys show [--json]
+
+FLAGS
+  --json  Machine-readable output
+
+DESCRIPTION
+  Show the release signing key's fingerprint and whether each flavour bakes its public key
+```
+
+_See code:
+[src/commands/keys/show.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/keys/show.ts)_
 
 ## `capuchoo menu`
 
@@ -642,7 +849,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/menu.ts)_
+[src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/menu.ts)_
 
 ## `capuchoo org create [NAME]`
 
@@ -668,7 +875,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/org/create.ts)_
+[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/create.ts)_
 
 ## `capuchoo org invite EMAIL ROLE`
 
@@ -693,7 +900,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/org/invite.ts)_
+[src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/invite.ts)_
 
 ## `capuchoo org list`
 
@@ -711,7 +918,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/org/list.ts)_
+[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/list.ts)_
 
 ## `capuchoo org members`
 
@@ -732,7 +939,32 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/org/members.ts)_
+[src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/members.ts)_
+
+## `capuchoo release list`
+
+List published bundles and native builds, or only what one channel has served
+
+```
+USAGE
+  $ capuchoo release list [-c <value>] [--limit <value>] [--json]
+
+FLAGS
+  -c, --channel=<value>  Only releases this channel has served
+      --json             Machine-readable output
+      --limit=<value>    [default: 30] How many to show
+
+DESCRIPTION
+  List published bundles and native builds, or only what one channel has served
+
+EXAMPLES
+  $ capuchoo release list
+
+  $ capuchoo release list --channel prod-acme --json
+```
+
+_See code:
+[src/commands/release/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/release/list.ts)_
 
 ## `capuchoo setup`
 
@@ -779,9 +1011,6 @@ EXAMPLES
   $ capuchoo init --create --name "My App" --app-id com.acme.app
 ```
 
-_See code:
-[src/commands/setup.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/setup.ts)_
-
 ## `capuchoo version bump TYPE`
 
 Raise the app's semantic version, and optionally an environment's build number
@@ -807,7 +1036,7 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/version/bump.ts)_
+[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -833,5 +1062,5 @@ EXAMPLES
 ```
 
 _See code:
-[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.12.0/src/commands/version/sync.ts)_
+[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->
