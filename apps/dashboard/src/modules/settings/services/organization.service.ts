@@ -23,6 +23,3 @@ export const removeMember = (organizationId: string, userId: string) =>
 
 export const revokeInvitation = (organizationId: string, invitationId: string) =>
   http.delete(`${base(organizationId)}/invitations/${invitationId}`);
-
-export const renameOrganization = (organizationId: string, name: string) =>
-  http.put<{ id: string; name: string }>(base(organizationId), { name });
