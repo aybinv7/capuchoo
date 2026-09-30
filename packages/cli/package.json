@@ -20,6 +20,7 @@
   "files": [
     "./bin",
     "./dist",
+    "./templates",
     "./oclif.manifest.json"
   ],
   "type": "module",
@@ -66,6 +67,9 @@
       },
       "channel": {
         "description": "Create channels, and deliver, pause and roll back what they serve"
+      },
+      "ci": {
+        "description": "Generate CI pipelines that publish once and deliver to clients"
       },
       "config": {
         "description": "Inspect resolved configuration and detected tools"

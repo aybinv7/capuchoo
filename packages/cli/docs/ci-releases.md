@@ -106,6 +106,29 @@ the action directory on every invocation.
 Point production deploys at a protected GitHub environment so they need an approval, and scope its
 `CAPUCHOO_API_KEY` to that app.
 
+## GitLab CI
+
+```sh
+capuchoo ci init --gitlab --clients acme,globex
+```
+
+writes `.gitlab-ci.yml` (`--output` to put it elsewhere, e.g. a monorepo root, then set `APP_DIR`)
+from `templates/gitlab-ci.yml`. An existing file is diffed and only replaced after a confirmation or
+`--yes`. The pipeline runs on the default branch and on tags:
+
+- `check` - `deploy ota --channel prod --dry-run`, the whole pipeline except the upload.
+- `publish:prod` - `deploy $CAPUCHOO_DEPLOY_KIND --channel prod` (`ota` or `native`), keeping
+  `capuchoo-release.json` as an artifact.
+- `deliver:<client>` - one manual job per client running
+  `capuchoo channel point prod-<client> --version <published version>`. Create each channel first
+  with `capuchoo channel create prod-<client> --client --base prod`.
+
+The image is `eclipse-temurin:21-jdk` with Node 22 and pnpm (corepack) and the Android SDK installed
+and cached by the job. Protected variables: `CAPUCHOO_ENDPOINT`, `CAPUCHOO_API_KEY` (masked),
+`CAPUCHOO_SIGNING_KEY` (masked), and for native builds `ANDROID_KEYSTORE_BASE64` (a masked File
+variable holding the base64 keystore) with `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD`.
+
 ## Native builds
 
 `deploy native` refuses to publish an unsigned release APK - Android will not install one. Provide
