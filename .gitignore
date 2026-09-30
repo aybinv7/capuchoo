@@ -64,3 +64,4 @@ type-error*.txt
 type-errors*.txt
 type-check-*.txt
 tsc_error.txt
+services/server/data/

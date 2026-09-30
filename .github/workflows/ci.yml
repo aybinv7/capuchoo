@@ -31,3 +31,16 @@ jobs:
       - run: vp run -r build
 
       - run: vp run -r test
+
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger the server deploy only after checks pass
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then echo "RENDER_DEPLOY_HOOK is not set; skipping"; exit 0; fi
+          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK"
