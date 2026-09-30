@@ -25,7 +25,7 @@ const widest = computed(() => Math.max(1, ...bars.value.map((bar) => bar.devices
       <span class="truncate font-mono">{{ bar.version }}</span>
       <span class="bg-muted relative h-2.5 overflow-hidden rounded-sm">
         <span
-          class="bg-chart-3 absolute inset-y-0 left-0 rounded-sm"
+          class="bg-chart-1 absolute inset-y-0 left-0 rounded-sm"
           :style="{ width: `${(bar.devices / widest) * 100}%` }"
         />
       </span>

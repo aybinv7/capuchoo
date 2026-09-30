@@ -28,7 +28,7 @@ const OUTCOMES: BarSeries[] = [
   { key: "installs", label: "Installs", color: "var(--success)" },
   { key: "failures", label: "Failures", color: "var(--destructive)" },
 ];
-const CHECKS: BarSeries[] = [{ key: "checks", label: "Update checks", color: "var(--chart-3)" }];
+const CHECKS: BarSeries[] = [{ key: "checks", label: "Update checks", color: "var(--chart-1)" }];
 
 const outcomeValues = computed(() => ({
   installs: daily.value.map((row) => row.installs),
