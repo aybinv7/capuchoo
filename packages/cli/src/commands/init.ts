@@ -10,6 +10,7 @@ import {
   suggestEnvironment,
   isValidBundleId,
   type CloudApp,
+  type CloudOrganization,
   type Environment,
   type FlavourConfig,
   type ProjectConfig,
@@ -754,6 +755,30 @@ export default class Init extends BaseCommand {
     );
   }
 
+  /**
+   * The first user of a fresh server belongs to no organization, and apps live in one. Asking for
+   * a name here keeps the first run in one command; unattended runs are told what to run instead.
+   */
+  private async firstOrganization(cloud: CloudClient): Promise<CloudOrganization> {
+    if (!isInteractive()) {
+      this.error(
+        "This account belongs to no organization yet, and apps live in one. Create it with " +
+          `${chalk.cyan('capuchoo org create "<name>"')}, then run init again.`,
+      );
+    }
+    log.info("This account belongs to no organization yet. Apps live in one, so create it now.");
+    const name = await askText("Organization name", {
+      placeholder: "e.g. your company",
+      flag: "--org",
+      validate: (value) =>
+        value.trim().length > 0 && value.trim().length <= 120 ? undefined : "1 to 120 characters",
+    });
+    const creating = ora({ text: `Creating ${name}`, stream: process.stderr }).start();
+    const organization = await cloud.createOrganization({ name });
+    creating.succeed(`Created ${organization.name}`);
+    return organization;
+  }
+
   private async createNew(cloud: CloudClient, given: CreateFlags): Promise<CloudApp> {
     const spinner = ora({
       text: "Fetching organizations",
@@ -762,14 +787,16 @@ export default class Init extends BaseCommand {
     const organizations = await cloud.organizations();
     spinner.stop();
 
+    if (organizations.length === 0) {
+      organizations.push(await this.firstOrganization(cloud));
+    }
+
     const allowed = organizations.filter(canCreateApps);
 
     if (allowed.length === 0) {
       this.error(
-        organizations.length === 0
-          ? "This account belongs to no organization yet."
-          : "This account is a member, not an owner or admin, of every organization " +
-              "it belongs to, so it cannot create an app. Ask an owner.",
+        "This account is a member, not an owner or admin, of every organization " +
+          "it belongs to, so it cannot create an app. Ask an owner.",
       );
     }
 
