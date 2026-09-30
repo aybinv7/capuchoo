@@ -20,16 +20,16 @@ dashboard itself (same origin, so the session is an httpOnly cookie and there is
 ## Roles
 
 Org roles `owner > admin > member`; app roles `admin > developer > tester > viewer`. Org owner/admin
-count as app admin. An API key can be restricted to one app and capped at a role
-(`effectiveRole`). Rules:
+count as app admin. An API key can be restricted to one app and capped at a role (`effectiveRole`).
+Rules:
 
-| Action | Needs |
-| --- | --- |
-| read an app, its channels, devices, stats | viewer |
-| upload to a dev/staging channel, point dev/staging | developer |
-| upload to or point a prod or client channel, rollback, pause | admin |
-| manage channels, identifiers, permissions, keys scoped to the app | admin |
-| delete an app, manage org members | org admin; ownership transfer: owner |
+| Action                                                            | Needs                                |
+| ----------------------------------------------------------------- | ------------------------------------ |
+| read an app, its channels, devices, stats                         | viewer                               |
+| upload to a dev/staging channel, point dev/staging                | developer                            |
+| upload to or point a prod or client channel, rollback, pause      | admin                                |
+| manage channels, identifiers, permissions, keys scoped to the app | admin                                |
+| delete an app, manage org members                                 | org admin; ownership transfer: owner |
 
 Signup is off (`SIGNUP=closed`). The first instance admin comes from `BOOTSTRAP_ADMIN_EMAIL` /
 `BOOTSTRAP_ADMIN_PASSWORD` on an empty database; everyone else is invited.
@@ -47,9 +47,9 @@ publicKey = base64(SPKI DER)
 
 `kind` is `ota` or `native`; `appId` is the app's primary bundle id. The CLI signs with
 `CAPUCHOO_SIGNING_KEY` (base64 PKCS#8) or `.capuchoo/signing-key.pem` (git-ignored). The server
-stores the app's public key, refuses a bad signature, and refuses an unsigned upload when the app has
-`require_signature`. The update response carries `signature`; the updater verifies it against the
-public key baked into the build before applying anything.
+stores the app's public key, refuses a bad signature, and refuses an unsigned upload when the app
+has `require_signature`. The update response carries `signature`; the updater verifies it against
+the public key baked into the build before applying anything.
 
 ## Wire compatibility
 
@@ -60,18 +60,18 @@ Device endpoints are unchanged: `POST /api/update`, `POST /api/stats`,
 CLI endpoints keep the paths and shapes of `packages/cli/src/services/cloud.ts`, with these
 additions:
 
-| Method | Path | Body / result |
-| --- | --- | --- |
-| POST | `/api/channels/:id/point` | `{ bundle_id?, native_id?, rollback?, reason? }` → channel |
-| POST | `/api/channels/:id/pause` / `resume` | → channel |
-| GET | `/api/channels/:id/history` | pointer moves, newest first |
-| GET | `/api/apps/:id/artefacts` | bundles and native builds, eligible channels |
-| POST | `/api/apps/:id/builds` | `{ kind, channel, version, source, commit, ref, pipeline_url }` → `{ id }` |
-| POST | `/api/builds/:id/events` | `{ step, status: running\|succeeded\|failed\|skipped, message }` |
-| POST | `/api/builds/:id/finish` | `{ status, bundle_id?, native_id?, error? }` |
-| GET | `/api/apps/:id/stream` | SSE: `build`, `build_event`, `channel`, `device` |
-| POST | `/api/integrations/gitlab/:appId` | GitLab webhook, `X-Gitlab-Token` |
-| PUT | `/api/apps/:id/signing` | `{ public_key, require_signature }` |
+| Method | Path                                 | Body / result                                                              |
+| ------ | ------------------------------------ | -------------------------------------------------------------------------- |
+| POST   | `/api/channels/:id/point`            | `{ bundle_id?, native_id?, rollback?, reason? }` → channel                 |
+| POST   | `/api/channels/:id/pause` / `resume` | → channel                                                                  |
+| GET    | `/api/channels/:id/history`          | pointer moves, newest first                                                |
+| GET    | `/api/apps/:id/artefacts`            | bundles and native builds, eligible channels                               |
+| POST   | `/api/apps/:id/builds`               | `{ kind, channel, version, source, commit, ref, pipeline_url }` → `{ id }` |
+| POST   | `/api/builds/:id/events`             | `{ step, status: running\|succeeded\|failed\|skipped, message }`           |
+| POST   | `/api/builds/:id/finish`             | `{ status, bundle_id?, native_id?, error? }`                               |
+| GET    | `/api/apps/:id/stream`               | SSE: `build`, `build_event`, `channel`, `device`                           |
+| POST   | `/api/integrations/gitlab/:appId`    | GitLab webhook, `X-Gitlab-Token`                                           |
+| PUT    | `/api/apps/:id/signing`              | `{ public_key, require_signature }`                                        |
 
 Uploads (`/api/admin/upload`, `/api/admin/native-upload`) are authorized before the body is read and
 streamed to storage while hashed. They accept `signature`, `build_id`, `flavour` (required) and, for
@@ -80,9 +80,9 @@ app's previous release unless `allow_cert_change=true` is sent by an admin.
 
 ## Storage
 
-`STORAGE_DRIVER=fs` (default, `STORAGE_DIR`), `s3` (any S3-compatible: MinIO, R2) or `postgres` (small
-installs and the free-tier demo). Downloads go through `GET /api/artefacts/:key?exp=&sig=`, an HMAC
-link valid for `ARTEFACT_URL_TTL` seconds, with `Range` support so an APK download resumes.
+`STORAGE_DRIVER=fs` (default, `STORAGE_DIR`), `s3` (any S3-compatible: MinIO, R2) or `postgres`
+(small installs and the free-tier demo). Downloads go through `GET /api/artefacts/:key?exp=&sig=`,
+an HMAC link valid for `ARTEFACT_URL_TTL` seconds, with `Range` support so an APK download resumes.
 
 ## Operations
 
