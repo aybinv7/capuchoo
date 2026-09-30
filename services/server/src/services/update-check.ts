@@ -166,7 +166,7 @@ export async function checkForUpdate(
     nativeFact.version_code >= decision.minVersionCode
       ? nativeFact
       : null;
-  const response = renderUpdateResponse(decision, { config, gate });
+  const response = renderUpdateResponse(decision, { config, gate, appId: app?.app_id ?? null });
 
   if (app) {
     const now = deps.now();

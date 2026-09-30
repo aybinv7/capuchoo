@@ -48,7 +48,7 @@ export function deviceRoutes(): Hono<AppEnv> {
   const selfChannel = async (c: AppContext, choose: boolean) => {
     const deps = c.get("deps");
     const raw =
-      c.req.method === "GET"
+      c.req.method === "GET" || c.req.method === "DELETE"
         ? Object.fromEntries(new URL(c.req.url).searchParams)
         : await readJson(c, DEVICE_BODY_BYTES);
     const request = parseDeviceRequest(raw);

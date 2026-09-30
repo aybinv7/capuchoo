@@ -9,6 +9,7 @@ export interface DeviceRequest {
   defaultChannel?: string | undefined;
   versionName: string;
   versionBuiltin?: string | undefined;
+  /** The plugin's `version_build`: the native app version name, never a build number. */
   versionBuild?: string | undefined;
   versionCode: number;
   versionOs?: string | undefined;
@@ -82,7 +83,7 @@ export function parseDeviceRequest(raw: unknown): DeviceRequest | null {
     defaultChannel: text(body, "defaultChannel", "default_channel"),
     versionName: text(body, "version_name", "versionName", "version") ?? "builtin",
     versionBuiltin: text(body, "version_builtin", "versionBuiltin"),
-    versionBuild: text(body, "version_build", "versionBuild"),
+    versionBuild: text(body, "version_build"),
     versionCode,
     versionOs: text(body, "version_os", "versionOs"),
     pluginVersion: text(body, "plugin_version", "pluginVersion"),
