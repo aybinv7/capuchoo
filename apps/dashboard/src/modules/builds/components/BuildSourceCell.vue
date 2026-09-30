@@ -1,0 +1,33 @@
+<script setup lang="ts">
+import { GitBranch, SquareArrowOutUpRight } from "@lucide/vue";
+import { shortId } from "@/shared/lib/format";
+import type { Build } from "@/shared/types/build";
+
+defineProps<{ build: Build }>();
+</script>
+
+<template>
+  <div class="flex min-w-0 items-center gap-2 text-xs">
+    <span class="bg-muted shrink-0 rounded px-1 font-mono text-[10px] uppercase">{{
+      build.source
+    }}</span>
+    <span v-if="build.ref" class="text-muted-foreground flex min-w-0 items-center gap-1">
+      <GitBranch class="size-3 shrink-0" />
+      <span class="truncate font-mono">{{ build.ref }}</span>
+    </span>
+    <span v-if="build.commit_sha" class="text-muted-foreground font-mono">{{
+      shortId(build.commit_sha, 7)
+    }}</span>
+    <a
+      v-if="build.pipeline_url"
+      :href="build.pipeline_url"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="text-muted-foreground hover:text-foreground ml-auto shrink-0"
+      aria-label="Open the pipeline"
+      @click.stop
+    >
+      <SquareArrowOutUpRight class="size-3.5" />
+    </a>
+  </div>
+</template>
