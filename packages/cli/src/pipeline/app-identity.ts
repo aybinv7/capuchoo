@@ -1,3 +1,5 @@
+import { gradleString } from "./gradle-variant.js";
+
 /** Where a detected value came from, so a prompt can say why it is suggesting it. */
 export interface Detected {
   value: string;
@@ -60,8 +62,8 @@ export function detectIdentity(files: ProjectFiles): AppIdentity {
   const idCandidates: Detected[] = [];
 
   if (files.buildGradle) {
-    const match = /\bapplicationId\s+["']([^"']+)["']/.exec(files.buildGradle);
-    if (match) idCandidates.push({ value: match[1]!, source: "android/app/build.gradle" });
+    const value = gradleString(files.buildGradle, "applicationId");
+    if (value) idCandidates.push({ value, source: "android/app/build.gradle" });
   }
 
   if (files.capacitorConfig) {
@@ -115,10 +117,8 @@ export function conflictingIds(files: ProjectFiles, chosen: string): Detected[] 
   const found: Detected[] = [];
 
   if (files.buildGradle) {
-    const match = /\bapplicationId\s+["']([^"']+)["']/.exec(files.buildGradle);
-    if (match && match[1] !== chosen) {
-      found.push({ value: match[1]!, source: "android/app/build.gradle" });
-    }
+    const value = gradleString(files.buildGradle, "applicationId");
+    if (value && value !== chosen) found.push({ value, source: "android/app/build.gradle" });
   }
 
   if (files.capacitorConfig) {

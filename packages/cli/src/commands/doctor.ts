@@ -15,6 +15,9 @@ import { BaseCommand } from "../base-command.js";
 import { describeSigning } from "../pipeline/android-signing.js";
 import { androidSigningState } from "../deploy/signing.js";
 import { CloudClient } from "../services/cloud.js";
+import type { ChannelRecord } from "../services/wire.js";
+import { detectGradleAndroidProject } from "../pipeline/gradle-project.js";
+import { stepAndroidCode, stepAndroidLibrary } from "../init/android-steps.js";
 import { readProjectConfig, resolveCredentials } from "../utils/config.js";
 
 type Level = "ok" | "warn" | "fail";
@@ -208,6 +211,18 @@ export default class Doctor extends BaseCommand {
         });
       }
 
+      if (project.runtime === "android") {
+        const record = channel as ChannelRecord;
+        if (!record.current_native_id && record.kind !== "client")
+          findings.push({
+            level: "warn",
+            what: `Channel "${channel.name}" is serving no build`,
+            detail: "No APK has been published to it yet",
+            fix: runnable(`deploy native --channel ${channel.name}`),
+          });
+        continue;
+      }
+
       // The pointer that decides what is served. An upload that does not move
       // it leaves the channel answering "no update" forever.
       if (!channel.current_version_id) {
@@ -218,6 +233,12 @@ export default class Doctor extends BaseCommand {
           fix: runnable(`deploy ota --channel ${channel.name}`),
         });
       }
+    }
+
+    if (project.runtime === "android") {
+      findings.push(...this.checkAndroidApp(appDir, project.androidDir));
+      this.report(findings);
+      return;
     }
 
     // --- flavours ------------------------------------------------------------
@@ -416,6 +437,44 @@ export default class Doctor extends BaseCommand {
     }
 
     return findings;
+  }
+
+  /** A Gradle-only app: its module, the library, and the call that starts it. */
+  private checkAndroidApp(appDir: string, androidDir: string): Finding[] {
+    const root = path.join(appDir, androidDir);
+    const gradle = detectGradleAndroidProject(root);
+    if (!gradle)
+      return [
+        {
+          level: "fail",
+          what: "No Android application module",
+          detail:
+            "project.json describes a native app, and no module here applies the application plugin",
+          fix: `${runnable("init --force")} in the Gradle root`,
+        },
+      ];
+
+    const library = stepAndroidLibrary(root, gradle);
+    const code = stepAndroidCode(root, gradle);
+    return [
+      { level: "ok", what: "Gradle module", detail: `${gradle.module} (${gradle.buildFile})` },
+      library.state === "satisfied"
+        ? { level: "ok", what: "Capuchoo for Android", detail: library.detail }
+        : {
+            level: "fail",
+            what: "The app does not depend on Capuchoo for Android",
+            detail: library.detail,
+            fix: `${runnable("init")} prints the Gradle lines to add`,
+          },
+      code.state === "satisfied"
+        ? { level: "ok", what: "Capuchoo.init() present", detail: code.detail }
+        : {
+            level: "fail",
+            what: "Capuchoo.init() is never called",
+            detail: "Without it the app never asks for an update",
+            fix: "Call Capuchoo.init(this, CapuchooConfig(...)) in Application.onCreate",
+          },
+    ];
   }
 
   /** Whether a release build could be signed. Never blocking: debug and unsigned are valid choices. */

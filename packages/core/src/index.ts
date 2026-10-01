@@ -59,6 +59,7 @@ export {
   type BuildConfig,
   type FlavourConfig,
   type ProjectConfig,
+  type ProjectRuntime,
   type ResolvedProjectConfig,
 } from "./project-config.js";
 

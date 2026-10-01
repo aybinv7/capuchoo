@@ -31,7 +31,15 @@ export interface FlavourConfig {
   assetPath?: string;
   /** Vite `--mode`. Defaults to the flavour name. */
   mode?: string;
+  /** Native Android projects: the Gradle product flavour this environment builds. */
+  gradleFlavor?: string;
 }
+
+/**
+ * What builds the app. `capacitor` is a web app in a native shell, published as OTA bundles and
+ * APKs; `android` is a Gradle-only app - Kotlin, Java or Kotlin Multiplatform - published as APKs.
+ */
+export type ProjectRuntime = "capacitor" | "android";
 
 export interface BuildConfig {
   /**
@@ -46,6 +54,8 @@ export interface BuildConfig {
 export interface ProjectConfig {
   /** Absent on v1 files. */
   version?: number;
+  /** Absent means `capacitor`, which every file written before native support describes. */
+  runtime?: ProjectRuntime;
 
   /** Bundle identifier of the production flavour. */
   appId: string;
@@ -56,8 +66,11 @@ export interface ProjectConfig {
 
   /** Vite output directory, and what Capacitor copies into the native app. */
   webDir?: string;
+  /** The Gradle root: `android` in a Capacitor app, `.` in a native one. */
   androidDir?: string;
   iosDir?: string;
+  /** The Gradle module that builds the app. Defaults to `app`. */
+  module?: string;
 
   /**
    * Monotonic native build numbers per environment. Written by the CLI, and
@@ -65,7 +78,7 @@ export interface ProjectConfig {
    */
   versionCodeFile?: string;
 
-  flavours?: Partial<Record<Environment, FlavourConfig>>;
+  flavours?: Partial<Record<Environment, Partial<FlavourConfig>>>;
   build?: BuildConfig;
 
   /**
@@ -86,6 +99,7 @@ export interface ProjectConfig {
 /** A `ProjectConfig` with every optional resolved. */
 export interface ResolvedProjectConfig {
   version: number;
+  runtime: ProjectRuntime;
   appId: string;
   cloudAppId: string;
   appName: string;
@@ -93,6 +107,7 @@ export interface ResolvedProjectConfig {
   webDir: string;
   androidDir: string;
   iosDir: string;
+  module: string;
   versionCodeFile: string;
   flavours: Record<Environment, FlavourConfig>;
   build: BuildConfig;
@@ -153,6 +168,7 @@ export function normaliseProjectConfig(config: ProjectConfig): ResolvedProjectCo
       trapezeConfig: declared?.trapezeConfig ?? defaults.trapezeConfig,
       assetPath: declared?.assetPath ?? defaults.assetPath,
       mode: declared?.mode ?? defaults.mode,
+      ...(declared?.gradleFlavor ? { gradleFlavor: declared.gradleFlavor } : {}),
     };
   }
 
@@ -165,15 +181,19 @@ export function normaliseProjectConfig(config: ProjectConfig): ResolvedProjectCo
     build.command = `vp run ${config.packageName}#build`;
   }
 
+  const runtime: ProjectRuntime = config.runtime === "android" ? "android" : "capacitor";
+
   return {
     version: config.version ?? 1,
+    runtime,
     appId: config.appId,
     cloudAppId: config.cloudAppId,
     appName: config.appName,
     createdAt: config.createdAt,
     webDir: config.webDir ?? "dist",
-    androidDir: config.androidDir ?? "android",
+    androidDir: config.androidDir ?? (runtime === "android" ? "." : "android"),
     iosDir: config.iosDir ?? "ios",
+    module: config.module ?? "app",
     versionCodeFile: config.versionCodeFile ?? "version-code.json",
     flavours,
     build,

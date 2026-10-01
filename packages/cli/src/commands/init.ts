@@ -29,6 +29,15 @@ import {
   type ProjectFiles,
 } from "../pipeline/app-identity.js";
 import { CloudClient } from "../services/cloud.js";
+import { detectGradleAndroidProject } from "../pipeline/gradle-project.js";
+import {
+  describeAndroidWiring,
+  environmentFlavors,
+  releasePublicKey,
+  stepAndroidCode,
+  stepAndroidIdentifiers,
+  stepAndroidLibrary,
+} from "../init/android-steps.js";
 import { HttpError } from "../utils/http.js";
 import {
   projectConfigPath,
@@ -233,6 +242,34 @@ export default class Init extends BaseCommand {
       );
     }
 
+    const gradle = detectGradleAndroidProject(appDir);
+    if (gradle) {
+      const flavors = environmentFlavors(gradle);
+      writeProjectConfig(appDir, {
+        version: PROJECT_CONFIG_VERSION,
+        runtime: "android",
+        appId: app.app_id,
+        cloudAppId: app.id,
+        appName: app.name,
+        createdAt: new Date().toISOString(),
+        androidDir: ".",
+        module: gradle.module,
+        flavours: flavors,
+      });
+      this.log("");
+      this.log(chalk.green("  Linked a native Android app."));
+      this.log(`  module     ${chalk.cyan(gradle.module)} ${chalk.dim(`(${gradle.buildFile})`)}`);
+      this.log(`  bundle id  ${chalk.cyan(app.app_id)}`);
+      if (Object.keys(flavors).length > 0)
+        this.log(`  flavours   ${chalk.cyan(Object.keys(flavors).join(", "))}`);
+      this.log("");
+      const channels = await cloud.channels(app.id).catch(() => []);
+      if (!channels.some((channel) => channel.environment))
+        await this.offerFirstChannel(cloud, app, flags.channel);
+      await this.wireUp(appDir, cloud, app, flags);
+      return;
+    }
+
     // --- flavours ------------------------------------------------------------
 
     const flavours = this.detectFlavours(appDir);
@@ -388,12 +425,28 @@ export default class Init extends BaseCommand {
       sync: !flags["skip-sync"],
     };
 
-    const runners: Array<[InitStepId, () => Promise<StepOutcome>]> = [
-      ["identifiers", () => stepIdentifiers(context)],
-      ["packages", () => stepPackages(context)],
-      ["env", () => stepEnv(context)],
-      ["code", () => stepCode(context)],
-    ];
+    const gradle = project.runtime === "android" ? detectGradleAndroidProject(appDir) : null;
+    if (project.runtime === "android" && !gradle)
+      this.error(
+        "project.json describes a native Android app, but no Gradle module here applies the " +
+          "Android application plugin.",
+      );
+
+    const runners: Array<[InitStepId, () => Promise<StepOutcome>]> = gradle
+      ? [
+          ["identifiers", () => stepAndroidIdentifiers(context, gradle)],
+          [
+            "packages",
+            async () => stepAndroidLibrary(path.join(appDir, project.androidDir), gradle),
+          ],
+          ["code", async () => stepAndroidCode(path.join(appDir, project.androidDir), gradle)],
+        ]
+      : [
+          ["identifiers", () => stepIdentifiers(context)],
+          ["packages", () => stepPackages(context)],
+          ["env", () => stepEnv(context)],
+          ["code", () => stepCode(context)],
+        ];
 
     const wanted = new Set(
       selectSteps(
@@ -414,6 +467,24 @@ export default class Init extends BaseCommand {
       this.log("");
       this.log(renderOutcomes(outcomes));
       this.log("");
+    }
+
+    if (gradle) {
+      const library = outcomes.find((outcome) => outcome.id === "packages");
+      const code = outcomes.find((outcome) => outcome.id === "code");
+      if (library && code && (library.state !== "satisfied" || code.state !== "satisfied")) {
+        this.log(chalk.bold("  Add to the app"));
+        this.log("");
+        this.log(
+          describeAndroidWiring({
+            endpoint: cloud.endpoint,
+            publicKey: await releasePublicKey(appDir),
+            project: gradle,
+            library,
+            code,
+          }),
+        );
+      }
     }
 
     if (flags["dry-run"]) {
@@ -643,9 +714,12 @@ export default class Init extends BaseCommand {
       .map((name) => read(name))
       .find(Boolean);
 
+    const gradle = capacitorConfig ? null : detectGradleAndroidProject(appDir);
+
     return {
       capacitorConfig,
-      buildGradle: read("android", "app", "build.gradle"),
+      buildGradle:
+        read("android", "app", "build.gradle") ?? (gradle ? read(gradle.buildFile) : undefined),
       envFile: read(defaultFlavour("prod").envFile),
       packageJson: read("package.json"),
     };

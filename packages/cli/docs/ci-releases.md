@@ -160,6 +160,25 @@ Dependencies are installed with the lockfile's package manager at the version `p
 variable holding the base64 keystore) with `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
 `ANDROID_KEY_PASSWORD`. Protect the three release branches, or their pipelines will not see them.
 
+## Native Android apps
+
+A Kotlin, Java or Kotlin Multiplatform app with no Capacitor is a `runtime: "android"` project.
+`capuchoo init` in its Gradle root detects the module that applies the Android application plugin,
+registers the `applicationId` each environment flavour installs under, and prints the Gradle and
+`Capuchoo.init` lines for [Capuchoo for Android](../../android/README.md), filled with this server's
+endpoint and release key.
+
+```sh
+capuchoo deploy native --channel staging            # assembles the staging variant
+capuchoo deploy native --channel dev -v auto        # 1.3.1-dev.4, build above the server's
+capuchoo deploy native --channel prod --apk app-prod-release.apk
+```
+
+Every version is read back from the built APK's manifest. With `-v`, the deploy passes it as
+`-Pcapuchoo.versionName` and `-Pcapuchoo.versionCode`; a build file that does not read them is
+caught, and the two `defaultConfig` lines that fix it are printed. There is no OTA path: Kotlin and
+Java cannot be replaced over the air.
+
 ## Native builds
 
 `deploy native` refuses to publish an unsigned release APK - Android will not install one. Provide

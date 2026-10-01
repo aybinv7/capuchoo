@@ -13,48 +13,71 @@
  * project makes it unambiguous, and named explicitly otherwise.
  */
 
-/** Parses the flavour names out of an `android { productFlavors { ... } }` block. */
-export function parseProductFlavors(gradle: string): string[] {
+export interface FlavorBlock {
+  name: string;
+  /** What the flavour's own block says, without its nested blocks' braces resolved. */
+  body: string;
+}
+
+/** The closing brace of the block opened at `open`, or -1. */
+function blockEnd(source: string, open: number): number {
+  let depth = 0;
+  for (let index = open; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    else if (source[index] === "}") {
+      depth -= 1;
+      if (depth === 0) return index;
+    }
+  }
+  return -1;
+}
+
+/** `dev {` in Groovy, `create("dev") {` or `register("dev") {` in the Kotlin DSL. */
+const FLAVOR_HEADER =
+  /^(?:(?:create|register|maybeCreate|getByName)\(\s*["']([A-Za-z_]\w*)["']\s*\)|([A-Za-z_]\w*))\s*\{/;
+
+/** The flavours of an `android { productFlavors { ... } }` block, each with its own body. */
+export function parseFlavorBlocks(gradle: string): FlavorBlock[] {
   const start = gradle.search(/\bproductFlavors\s*\{/);
   if (start === -1) return [];
 
   const open = gradle.indexOf("{", start);
-  let depth = 0;
-  let end = -1;
-
-  for (let i = open; i < gradle.length; i += 1) {
-    if (gradle[i] === "{") depth += 1;
-    else if (gradle[i] === "}") {
-      depth -= 1;
-      if (depth === 0) {
-        end = i;
-        break;
-      }
-    }
-  }
+  const end = blockEnd(gradle, open);
   if (end === -1) return [];
 
   const body = gradle.slice(open + 1, end);
-  const names: string[] = [];
-  let depthInBody = 0;
+  const blocks: FlavorBlock[] = [];
+  let cursor = 0;
 
-  // Only identifiers at the top level of the block are flavours; anything
-  // nested is that flavour's own configuration.
-  for (const line of body.split(/\r?\n/)) {
-    const trimmed = line.trim();
-
-    if (depthInBody === 0) {
-      const match = /^([A-Za-z_]\w*)\s*\{/.exec(trimmed);
-      if (match?.[1]) names.push(match[1]);
+  // Only blocks at the top level are flavours; anything nested is a flavour's own configuration.
+  while (cursor < body.length) {
+    const next = body.indexOf("\n", cursor);
+    const lineEnd = next === -1 ? body.length : next;
+    const line = body.slice(cursor, lineEnd);
+    const brace = line.indexOf("{");
+    if (brace === -1) {
+      cursor = lineEnd + 1;
+      continue;
     }
-
-    for (const char of trimmed) {
-      if (char === "{") depthInBody += 1;
-      else if (char === "}") depthInBody -= 1;
-    }
+    const close = blockEnd(body, cursor + brace);
+    if (close === -1) break;
+    const match = FLAVOR_HEADER.exec(line.trim());
+    if (match)
+      blocks.push({ name: (match[1] ?? match[2])!, body: body.slice(cursor + brace + 1, close) });
+    cursor = close + 1;
   }
 
-  return names;
+  return blocks;
+}
+
+/** Parses the flavour names out of an `android { productFlavors { ... } }` block. */
+export function parseProductFlavors(gradle: string): string[] {
+  return parseFlavorBlocks(gradle).map((block) => block.name);
+}
+
+/** A string assignment in either DSL: `key "x"`, `key = "x"`, `key("x")`. */
+export function gradleString(source: string, key: string): string | null {
+  return new RegExp(`\\b${key}\\s*(?:=\\s*|\\(\\s*)?["']([^"']+)["']`).exec(source)?.[1] ?? null;
 }
 
 const capitalise = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);

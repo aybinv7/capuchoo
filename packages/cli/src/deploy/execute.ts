@@ -12,6 +12,7 @@ import { loadArtefacts } from "./artefact-index.js";
 import { describePrebuiltProblems } from "./prebuilt-apk.js";
 import { isApkSigned } from "../pipeline/android.js";
 import { readApkManifest, type ApkManifest } from "../pipeline/android-manifest.js";
+import { readGradleVersion, type GradleVersion } from "../pipeline/gradle-deploy.js";
 import { releasePreflight } from "./preflight.js";
 import { needsSeal, sealArtefact, type Seal } from "./seal.js";
 import { publishRelease, UnconfirmedUploadError } from "./publish.js";
@@ -227,6 +228,13 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   });
 
   const project = requireProjectConfig(appDir);
+  const gradleOnly = project.runtime === "android";
+  if (gradleOnly && kind === "ota")
+    fail(
+      command,
+      "This is a native Android app, which has no web bundle to publish over the air. " +
+        `Publish an APK with ${runnable("deploy native")}.`,
+    );
 
   const credentials = resolveCredentials();
   if (!credentials) {
@@ -327,13 +335,22 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   if (versionProblem) fail(command, versionProblem);
 
   const prebuilt = flags.apk ? inspectPrebuilt(command, flags) : null;
+  const gradleDeclared = gradleOnly && !prebuilt ? readGradleVersion(appDir, project) : null;
+  const currentVersion = (): string => {
+    if (!gradleOnly) return readAppVersion(appDir);
+    if (gradleDeclared) return gradleDeclared.name;
+    return fail(
+      command,
+      `No versionName and versionCode in ${project.module}'s build file, so -v has nothing to start from.`,
+    );
+  };
 
   let requested = flags.version as VersionRequest | undefined;
   if (!requested && interactive && !prebuilt) {
     const answer = await selectOne<string>(
       "Bump the version?",
       [
-        { value: "", label: "No bump", hint: `stay on ${readAppVersion(appDir)}` },
+        { value: "", label: "No bump", hint: `stay on ${currentVersion()}` },
         { value: "patch", label: "patch" },
         { value: "minor", label: "minor" },
         { value: "major", label: "major" },
@@ -363,13 +380,27 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
         origin: `from ${path.basename(prebuilt.file)}`,
       }
     : resolveReleaseVersion({
-        current: readAppVersion(appDir),
+        current: currentVersion(),
         request: requested,
         environment,
-        published: publishedBundleVersions(artefacts, platform),
+        published: gradleOnly
+          ? (artefacts?.native_builds ?? [])
+              .filter((build) => build.platform === platform)
+              .map((build) => build.version_name)
+          : publishedBundleVersions(artefacts, platform),
       });
   const version = resolution.version;
-  const bump = requested !== undefined && requested !== "auto";
+  const bump = requested !== undefined && requested !== "auto" && !gradleOnly;
+  const gradleVersion: GradleVersion | undefined =
+    gradleOnly && !prebuilt && requested
+      ? {
+          name: version,
+          code: Math.max(
+            nextPublishedCode(artefacts, platform, environment),
+            (gradleDeclared?.code ?? 0) + 1,
+          ),
+        }
+      : undefined;
 
   const signing = prebuilt
     ? {
@@ -446,6 +477,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     allowLocalEnv: flags["allow-local-env"],
     minVersionCode:
       kind === "native" ? nextPublishedCode(artefacts, platform, environment) : undefined,
+    gradleVersion,
   };
 
   // Validated before package.json is written, not after.
@@ -522,6 +554,20 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       : await runDeploy(request, reporter);
     const artifact = outcome.artifact;
     if (!artifact) throw new Error("The pipeline produced no artefact");
+
+    if (gradleOnly && !prebuilt) {
+      const built = describePrebuiltProblems({
+        file: path.basename(artifact.filePath),
+        manifest: readApkManifest(artifact.filePath),
+        signed: artifact.signed ?? false,
+        channel,
+        identifiers,
+        artefacts,
+        allowUnsigned,
+      });
+      if (built.length > 0)
+        throw new Error(`The built APK cannot be published:\n  - ${built.join("\n  - ")}`);
+    }
 
     let seal: Seal = { warnings: [] };
     if (request.seal) {

@@ -28,6 +28,7 @@ import {
   type VersionState,
 } from "./flavour.js";
 import { applyNativeConfig, builtinConfigLimitations } from "./native-config.js";
+import { runGradleDeploy, type GradleVersion } from "./gradle-deploy.js";
 import { assessEnvIsolation, readLocalEnvSources, type EnvIsolation } from "./env-isolation.js";
 import { detectToolchain } from "./toolchain.js";
 import { bundleFileName, createBundleZip } from "./zip.js";
@@ -71,6 +72,8 @@ export interface DeployRequest {
   identifiers?: RegisteredIdentifier[] | undefined;
   /** `--allow-local-env`: accept `VITE_*` keys the flavour omits being filled from local env files. */
   allowLocalEnv?: boolean | undefined;
+  /** Gradle-only apps: the version a deploy chose, passed as Gradle properties. */
+  gradleVersion?: GradleVersion | undefined;
   /** Native: the lowest build number the server has not taken for this flavour. */
   minVersionCode?: number | undefined;
   /** Whether the artefact is checked and signed after the build, as the `sign` step. */
@@ -113,8 +116,9 @@ export const DEPLOY_LOG_FILE = "capuchoo-deploy.log";
  */
 export function planSteps(request: DeployRequest): Step[] {
   const steps: Step[] = [{ id: "resolve", label: "Resolving flavour and version" }];
+  const gradleOnly = request.project.runtime === "android";
 
-  if (!request.skipBuild) {
+  if (!request.skipBuild && !gradleOnly) {
     if (!request.skipAssets) {
       steps.push({ id: "assets", label: "Generating launcher assets" });
     }
@@ -149,6 +153,8 @@ export function planSteps(request: DeployRequest): Step[] {
  * published.
  */
 export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour): string[] {
+  if (request.project.runtime === "android") return describeGradleOnlyProblems(request);
+
   const problems = describeFlavourProblems(flavour);
 
   problems.push(...envIsolation(request, flavour).problems);
@@ -205,6 +211,20 @@ export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour
   return problems;
 }
 
+/** A Gradle-only app has no web bundle and no env files; its identity is checked on the built APK. */
+function describeGradleOnlyProblems(request: DeployRequest): string[] {
+  if (request.kind === "ota")
+    return [
+      "This is a native Android app, which has no web bundle to publish over the air. " +
+        "Publish an APK with deploy native.",
+    ];
+  if (request.platform === "ios")
+    return ["iOS native builds are not driven by this CLI yet; publish through Xcode."];
+  if (request.skipBuild)
+    return ["--skip-build has nothing to publish in a native app; pass --apk with the built file."];
+  return [];
+}
+
 /** What the request should hear before the build, without being refused. */
 export function requestWarnings(request: DeployRequest, flavour: ResolvedFlavour): string[] {
   return envIsolation(request, flavour).warnings;
@@ -247,6 +267,13 @@ export async function runDeploy(
   }
 
   reporter.plan(planSteps(request));
+
+  if (request.project.runtime === "android") {
+    return runGradleDeploy(request, reporter, {
+      logFile: path.join(request.appDir, DEPLOY_LOG_FILE),
+      verbose: request.verbose,
+    });
+  }
 
   // Only a native build changes the installed binary, so only a native build
   // needs a new versionCode.

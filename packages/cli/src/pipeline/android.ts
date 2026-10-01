@@ -27,7 +27,9 @@ function gradleWrapper(androidDir: string): string {
   const wrapper = path.join(androidDir, name);
 
   if (!fs.existsSync(wrapper)) {
-    throw new Error(`No Gradle wrapper at ${wrapper}. Run "cap add android" in the app first.`);
+    throw new Error(
+      `No Gradle wrapper at ${wrapper}. Run "gradle wrapper" there, or "cap add android" in a Capacitor app.`,
+    );
   }
 
   // Gradle's wrapper must be executable; a fresh git clone on Unix sometimes
@@ -43,10 +45,10 @@ function gradleWrapper(androidDir: string): string {
   return process.platform === "win32" ? wrapper : `./${name}`;
 }
 
-/** Product flavours declared by app/build.gradle, or none. */
-export function readProductFlavors(androidDir: string): string[] {
+/** Product flavours declared by the module's build file, or none. */
+export function readProductFlavors(androidDir: string, module = "app"): string[] {
   for (const name of ["build.gradle", "build.gradle.kts"]) {
-    const file = path.join(androidDir, "app", name);
+    const file = path.join(androidDir, module, name);
     if (fs.existsSync(file)) return parseProductFlavors(fs.readFileSync(file, "utf8"));
   }
   return [];
@@ -57,13 +59,18 @@ export async function assembleAndroid(
   buildType: BuildType,
   options: Omit<RunOptions, "cwd">,
   flavor?: string,
+  extra: { module?: string; properties?: Record<string, string> } = {},
 ): Promise<void> {
   // With flavours, `assembleDebug` builds every one of them and writes each to
   // its own directory - slow, and it leaves the pipeline guessing which APK it
   // meant. Naming the variant builds exactly one.
   const task = assembleTask(buildType, flavor);
+  const qualified = extra.module ? `:${extra.module.replace(/\//g, ":")}:${task}` : task;
+  const properties = Object.entries(extra.properties ?? {}).map(
+    ([key, value]) => `-P${key}=${value}`,
+  );
 
-  await run(gradleWrapper(androidDir), [task], {
+  await run(gradleWrapper(androidDir), [qualified, ...properties], {
     ...options,
     cwd: androidDir,
     // Gradle on a cold cache legitimately takes a long time; 30 minutes is
@@ -79,8 +86,13 @@ export async function assembleAndroid(
  * `outputs/apk/<flavour>/<buildType>/` with them. Looking only in the first is
  * how a successful flavoured build reported "no debug APK exists".
  */
-export function findApk(androidDir: string, buildType: BuildType, flavor?: string): string | null {
-  const apkRoot = path.join(androidDir, "app", "build", "outputs", "apk");
+export function findApk(
+  androidDir: string,
+  buildType: BuildType,
+  flavor?: string,
+  module = "app",
+): string | null {
+  const apkRoot = path.join(androidDir, module, "build", "outputs", "apk");
 
   const candidates = [
     ...(flavor ? [path.join(apkRoot, flavor, buildType)] : []),
@@ -143,16 +155,16 @@ export function collectAndroidArtifact(
   buildType: BuildType,
   allowUnsigned: boolean,
   flavor?: string,
+  module = "app",
 ): AndroidBuildResult {
-  const apkPath = findApk(androidDir, buildType, flavor);
+  const apkPath = findApk(androidDir, buildType, flavor, module);
 
   if (!apkPath) {
-    const looked = flavor
-      ? `${path.join(androidDir, "app/build/outputs/apk", flavor, buildType)} or `
-      : "";
+    const outputs = path.join(androidDir, module, "build/outputs/apk");
+    const looked = flavor ? `${path.join(outputs, flavor, buildType)} or ` : "";
     throw new Error(
       `Gradle reported success but no ${buildType} APK exists under ` +
-        `${looked}${path.join(androidDir, "app/build/outputs/apk", buildType)}.`,
+        `${looked}${path.join(outputs, buildType)}.`,
     );
   }
 
