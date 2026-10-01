@@ -123,12 +123,13 @@ root the first time someone requests that version.
 
 ## Sample
 
-`sample/` is a one-screen app that shows every update state and the two actions a user takes. It
-reads its server from the git-ignored `sample/capuchoo.properties`:
+`sample/` is a one-screen app that shows every update state and the two actions a user takes. Its
+`dev` and `prod` flavours each ask their own channel, and a release build signs with the keystore
+the `CAPUCHOO_KEYSTORE_*` variables name. It reads its server from the git-ignored
+`sample/capuchoo.properties`:
 
 ```properties
 endpoint=https://updates.example.com
-channel=dev
 publicKey=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...
 ```
 
