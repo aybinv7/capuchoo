@@ -5,3 +5,5 @@ build/
 local.properties
 .capuchoo/
 sample/capuchoo.properties
+sample/*.keystore
+sample/keystore.properties

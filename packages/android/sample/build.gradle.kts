@@ -22,8 +22,36 @@ android {
         versionCode = (findProperty("capuchoo.versionCode") as String?)?.toInt() ?: 1
         versionName = findProperty("capuchoo.versionName") as String? ?: "1.0.0"
         buildConfigField("String", "CAPUCHOO_ENDPOINT", quoted("endpoint"))
-        buildConfigField("String", "CAPUCHOO_CHANNEL", quoted("channel"))
         buildConfigField("String", "CAPUCHOO_PUBLIC_KEY", quoted("publicKey"))
+    }
+
+    signingConfigs {
+        System.getenv("CAPUCHOO_KEYSTORE_FILE")?.let { keystore ->
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = System.getenv("CAPUCHOO_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CAPUCHOO_KEY_ALIAS")
+                keyPassword = System.getenv("CAPUCHOO_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.findByName("release")
+        }
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            buildConfigField("String", "CAPUCHOO_CHANNEL", "\"dev\"")
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField("String", "CAPUCHOO_CHANNEL", "\"prod\"")
+        }
     }
 
     buildFeatures {
