@@ -104,6 +104,15 @@ internal class ApkDownloader(
             @Suppress("DEPRECATION")
             context.packageManager.getPackageArchiveInfo(file.path, 0)
 
+    /** Deletes downloads the installed build already supersedes, such as the one it was installed from. */
+    fun discardInstalled() {
+        val installed = DeviceInfo.installedPackage(context).longVersionCodeCompat
+        directory.listFiles()?.forEach { file ->
+            val code = file.name.substringBefore('.').toLongOrNull()
+            if (code == null || code <= installed) file.delete()
+        }
+    }
+
     private fun discardOthers(keep: File) {
         directory.listFiles()?.filter { it != keep }?.forEach { it.delete() }
     }

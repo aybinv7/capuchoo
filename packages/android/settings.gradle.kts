@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "capuchoo-android"
 include(":capuchoo")
+include(":sample")

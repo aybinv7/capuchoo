@@ -30,6 +30,10 @@ internal class Updater(context: Context, private val config: CapuchooConfig) {
     private val _remoteConfig = MutableStateFlow<Map<String, Any?>>(emptyMap())
     val remoteConfig: StateFlow<Map<String, Any?>> = _remoteConfig.asStateFlow()
 
+    init {
+        scope.launch(Dispatchers.IO) { downloader.discardInstalled() }
+    }
+
     suspend fun check(): UpdateCheck = checking.withLock {
         _state.value = UpdateState.Checking
         lastCheck = SystemClock.elapsedRealtime()
@@ -56,6 +60,7 @@ internal class Updater(context: Context, private val config: CapuchooConfig) {
             SystemClock.elapsedRealtime() - lastCheck >= config.minCheckInterval.inWholeMilliseconds
         val busy = _state.value is UpdateState.Downloading || _state.value is UpdateState.Installing
         if (!due || busy || checking.isLocked) return
+        lastCheck = SystemClock.elapsedRealtime()
         scope.launch {
             try {
                 check()

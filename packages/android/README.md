@@ -120,3 +120,18 @@ to a client channel with `capuchoo channel point prod-acme --native <versionCode
 
 Tag `android-v<version>` and push the tag. JitPack builds it from `jitpack.yml` at the repository
 root the first time someone requests that version.
+
+## Sample
+
+`sample/` is a one-screen app that shows every update state and the two actions a user takes. It
+reads its server from the git-ignored `sample/capuchoo.properties`:
+
+```properties
+endpoint=https://updates.example.com
+channel=dev
+publicKey=MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...
+```
+
+From this directory: `capuchoo init`, `capuchoo keys init`, then
+`capuchoo deploy native --channel dev --type debug -v auto` publishes a build. Install one, publish
+the next, and press Update.
