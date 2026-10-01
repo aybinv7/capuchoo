@@ -20,13 +20,16 @@ leaking in from `.env` / `.env.local`; `capuchoo ci init --gitlab` writes a GitL
 [![Downloads/week](https://img.shields.io/npm/dw/%40capuchoo%2Fcli.svg)](https://npmjs.org/package/@capuchoo/cli)
 
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [Usage](#usage)
+- [Commands](#commands)
+
 <!-- tocstop -->
 
 # Usage
 
 <!-- usage -->
+
 ```sh-session
 $ npm install -g @capuchoo/cli
 $ capuchoo COMMAND
@@ -38,50 +41,52 @@ USAGE
   $ capuchoo COMMAND
 ...
 ```
+
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-* [`capuchoo app delete [APPID]`](#capuchoo-app-delete-appid)
-* [`capuchoo app grant EMAIL ROLE`](#capuchoo-app-grant-email-role)
-* [`capuchoo app identifiers [ACTION] [BUNDLEID]`](#capuchoo-app-identifiers-action-bundleid)
-* [`capuchoo app list`](#capuchoo-app-list)
-* [`capuchoo app revoke EMAIL`](#capuchoo-app-revoke-email)
-* [`capuchoo app roles`](#capuchoo-app-roles)
-* [`capuchoo auth issue`](#capuchoo-auth-issue)
-* [`capuchoo auth keys`](#capuchoo-auth-keys)
-* [`capuchoo auth login`](#capuchoo-auth-login)
-* [`capuchoo auth logout`](#capuchoo-auth-logout)
-* [`capuchoo auth revoke ID`](#capuchoo-auth-revoke-id)
-* [`capuchoo auth whoami`](#capuchoo-auth-whoami)
-* [`capuchoo channel create [NAME]`](#capuchoo-channel-create-name)
-* [`capuchoo channel delete [NAME]`](#capuchoo-channel-delete-name)
-* [`capuchoo channel history CHANNEL`](#capuchoo-channel-history-channel)
-* [`capuchoo channel list`](#capuchoo-channel-list)
-* [`capuchoo channel pause CHANNEL`](#capuchoo-channel-pause-channel)
-* [`capuchoo channel point CHANNEL`](#capuchoo-channel-point-channel)
-* [`capuchoo channel resume CHANNEL`](#capuchoo-channel-resume-channel)
-* [`capuchoo ci init`](#capuchoo-ci-init)
-* [`capuchoo config list`](#capuchoo-config-list)
-* [`capuchoo config set KEY VALUE`](#capuchoo-config-set-key-value)
-* [`capuchoo deploy native`](#capuchoo-deploy-native)
-* [`capuchoo deploy ota`](#capuchoo-deploy-ota)
-* [`capuchoo doctor`](#capuchoo-doctor)
-* [`capuchoo help [COMMAND]`](#capuchoo-help-command)
-* [`capuchoo init`](#capuchoo-init)
-* [`capuchoo keys init`](#capuchoo-keys-init)
-* [`capuchoo keys show`](#capuchoo-keys-show)
-* [`capuchoo menu`](#capuchoo-menu)
-* [`capuchoo org create [NAME]`](#capuchoo-org-create-name)
-* [`capuchoo org invite EMAIL ROLE`](#capuchoo-org-invite-email-role)
-* [`capuchoo org list`](#capuchoo-org-list)
-* [`capuchoo org members`](#capuchoo-org-members)
-* [`capuchoo release list`](#capuchoo-release-list)
-* [`capuchoo setup`](#capuchoo-setup)
-* [`capuchoo unlink`](#capuchoo-unlink)
-* [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
-* [`capuchoo version sync`](#capuchoo-version-sync)
+
+- [`capuchoo app delete [APPID]`](#capuchoo-app-delete-appid)
+- [`capuchoo app grant EMAIL ROLE`](#capuchoo-app-grant-email-role)
+- [`capuchoo app identifiers [ACTION] [BUNDLEID]`](#capuchoo-app-identifiers-action-bundleid)
+- [`capuchoo app list`](#capuchoo-app-list)
+- [`capuchoo app revoke EMAIL`](#capuchoo-app-revoke-email)
+- [`capuchoo app roles`](#capuchoo-app-roles)
+- [`capuchoo auth issue`](#capuchoo-auth-issue)
+- [`capuchoo auth keys`](#capuchoo-auth-keys)
+- [`capuchoo auth login`](#capuchoo-auth-login)
+- [`capuchoo auth logout`](#capuchoo-auth-logout)
+- [`capuchoo auth revoke ID`](#capuchoo-auth-revoke-id)
+- [`capuchoo auth whoami`](#capuchoo-auth-whoami)
+- [`capuchoo channel create [NAME]`](#capuchoo-channel-create-name)
+- [`capuchoo channel delete [NAME]`](#capuchoo-channel-delete-name)
+- [`capuchoo channel history CHANNEL`](#capuchoo-channel-history-channel)
+- [`capuchoo channel list`](#capuchoo-channel-list)
+- [`capuchoo channel pause CHANNEL`](#capuchoo-channel-pause-channel)
+- [`capuchoo channel point CHANNEL`](#capuchoo-channel-point-channel)
+- [`capuchoo channel resume CHANNEL`](#capuchoo-channel-resume-channel)
+- [`capuchoo ci init`](#capuchoo-ci-init)
+- [`capuchoo config list`](#capuchoo-config-list)
+- [`capuchoo config set KEY VALUE`](#capuchoo-config-set-key-value)
+- [`capuchoo deploy native`](#capuchoo-deploy-native)
+- [`capuchoo deploy ota`](#capuchoo-deploy-ota)
+- [`capuchoo doctor`](#capuchoo-doctor)
+- [`capuchoo help [COMMAND]`](#capuchoo-help-command)
+- [`capuchoo init`](#capuchoo-init)
+- [`capuchoo keys init`](#capuchoo-keys-init)
+- [`capuchoo keys show`](#capuchoo-keys-show)
+- [`capuchoo menu`](#capuchoo-menu)
+- [`capuchoo org create [NAME]`](#capuchoo-org-create-name)
+- [`capuchoo org invite EMAIL ROLE`](#capuchoo-org-invite-email-role)
+- [`capuchoo org list`](#capuchoo-org-list)
+- [`capuchoo org members`](#capuchoo-org-members)
+- [`capuchoo release list`](#capuchoo-release-list)
+- [`capuchoo setup`](#capuchoo-setup)
+- [`capuchoo unlink`](#capuchoo-unlink)
+- [`capuchoo version bump TYPE`](#capuchoo-version-bump-type)
+- [`capuchoo version sync`](#capuchoo-version-sync)
 
 ## `capuchoo app delete [APPID]`
 
@@ -104,7 +109,8 @@ EXAMPLES
   $ capuchoo app delete com.company.app
 ```
 
-_See code: [src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/delete.ts)_
+_See code:
+[src/commands/app/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/delete.ts)_
 
 ## `capuchoo app grant EMAIL ROLE`
 
@@ -127,7 +133,8 @@ EXAMPLES
   $ capuchoo app grant qa@company.com tester
 ```
 
-_See code: [src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/grant.ts)_
+_See code:
+[src/commands/app/grant.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/grant.ts)_
 
 ## `capuchoo app identifiers [ACTION] [BUNDLEID]`
 
@@ -159,7 +166,8 @@ EXAMPLES
   $ capuchoo app identifiers remove com.acme.app.dev
 ```
 
-_See code: [src/commands/app/identifiers.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/identifiers.ts)_
+_See code:
+[src/commands/app/identifiers.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/identifiers.ts)_
 
 ## `capuchoo app list`
 
@@ -176,7 +184,8 @@ DESCRIPTION
   List the apps this account can reach
 ```
 
-_See code: [src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/list.ts)_
+_See code:
+[src/commands/app/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/list.ts)_
 
 ## `capuchoo app revoke EMAIL`
 
@@ -199,7 +208,8 @@ EXAMPLES
   $ capuchoo app revoke dev@company.com
 ```
 
-_See code: [src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/revoke.ts)_
+_See code:
+[src/commands/app/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/revoke.ts)_
 
 ## `capuchoo app roles`
 
@@ -216,7 +226,8 @@ EXAMPLES
   $ capuchoo app roles
 ```
 
-_See code: [src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/roles.ts)_
+_See code:
+[src/commands/app/roles.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/app/roles.ts)_
 
 ## `capuchoo auth issue`
 
@@ -241,7 +252,8 @@ EXAMPLES
   $ capuchoo auth issue --name readonly --role viewer
 ```
 
-_See code: [src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/issue.ts)_
+_See code:
+[src/commands/auth/issue.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/issue.ts)_
 
 ## `capuchoo auth keys`
 
@@ -258,7 +270,8 @@ EXAMPLES
   $ capuchoo auth keys
 ```
 
-_See code: [src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/keys.ts)_
+_See code:
+[src/commands/auth/keys.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/keys.ts)_
 
 ## `capuchoo auth login`
 
@@ -281,7 +294,8 @@ EXAMPLES
   $ capuchoo auth login --endpoint https://capucho.internal --api-key cap_...
 ```
 
-_See code: [src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/login.ts)_
+_See code:
+[src/commands/auth/login.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/login.ts)_
 
 ## `capuchoo auth logout`
 
@@ -295,7 +309,8 @@ DESCRIPTION
   Remove the stored API key
 ```
 
-_See code: [src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/logout.ts)_
+_See code:
+[src/commands/auth/logout.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/logout.ts)_
 
 ## `capuchoo auth revoke ID`
 
@@ -318,7 +333,8 @@ EXAMPLES
   $ capuchoo auth revoke <id>
 ```
 
-_See code: [src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/revoke.ts)_
+_See code:
+[src/commands/auth/revoke.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/revoke.ts)_
 
 ## `capuchoo auth whoami`
 
@@ -335,7 +351,8 @@ DESCRIPTION
   Show the signed-in account, and the organizations and apps it can reach
 ```
 
-_See code: [src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/whoami.ts)_
+_See code:
+[src/commands/auth/whoami.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/auth/whoami.ts)_
 
 ## `capuchoo channel create [NAME]`
 
@@ -369,7 +386,8 @@ EXAMPLES
   $ capuchoo channel create prod-acme --client --base prod
 ```
 
-_See code: [src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/create.ts)_
+_See code:
+[src/commands/channel/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/create.ts)_
 
 ## `capuchoo channel delete [NAME]`
 
@@ -394,7 +412,8 @@ EXAMPLES
   $ capuchoo channel delete beta --yes
 ```
 
-_See code: [src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/delete.ts)_
+_See code:
+[src/commands/channel/delete.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/delete.ts)_
 
 ## `capuchoo channel history CHANNEL`
 
@@ -415,7 +434,8 @@ DESCRIPTION
   Show every pointer move, pause and rollback on a channel, newest first
 ```
 
-_See code: [src/commands/channel/history.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/history.ts)_
+_See code:
+[src/commands/channel/history.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/history.ts)_
 
 ## `capuchoo channel list`
 
@@ -432,7 +452,8 @@ DESCRIPTION
   List this app's channels and what they serve
 ```
 
-_See code: [src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/list.ts)_
+_See code:
+[src/commands/channel/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/list.ts)_
 
 ## `capuchoo channel pause CHANNEL`
 
@@ -453,7 +474,8 @@ DESCRIPTION
   Stop a channel serving anything until it is resumed
 ```
 
-_See code: [src/commands/channel/pause.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/pause.ts)_
+_See code:
+[src/commands/channel/pause.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/pause.ts)_
 
 ## `capuchoo channel point CHANNEL`
 
@@ -490,7 +512,8 @@ EXAMPLES
   $ capuchoo channel point prod --version 2.3.1 --rollback --reason "crash on login"
 ```
 
-_See code: [src/commands/channel/point.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/point.ts)_
+_See code:
+[src/commands/channel/point.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/point.ts)_
 
 ## `capuchoo channel resume CHANNEL`
 
@@ -510,11 +533,13 @@ DESCRIPTION
   Let a paused channel serve its releases again
 ```
 
-_See code: [src/commands/channel/resume.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/resume.ts)_
+_See code:
+[src/commands/channel/resume.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/channel/resume.ts)_
 
 ## `capuchoo ci init`
 
-Write a GitLab pipeline that publishes each release branch to its channel and delivers prod to each client by hand
+Write a GitLab pipeline that publishes each release branch to its channel and delivers prod to each
+client by hand
 
 ```
 USAGE
@@ -538,7 +563,8 @@ EXAMPLES
   $ capuchoo ci init --gitlab --clients acme --output ../../.gitlab-ci.yml --yes
 ```
 
-_See code: [src/commands/ci/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/ci/init.ts)_
+_See code:
+[src/commands/ci/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/ci/init.ts)_
 
 ## `capuchoo config list`
 
@@ -555,7 +581,8 @@ DESCRIPTION
   Show the resolved configuration, and which build tools were found
 ```
 
-_See code: [src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/config/list.ts)_
+_See code:
+[src/commands/config/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/config/list.ts)_
 
 ## `capuchoo config set KEY VALUE`
 
@@ -578,7 +605,8 @@ EXAMPLES
   $ capuchoo config set defaultChannel staging
 ```
 
-_See code: [src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/config/set.ts)_
+_See code:
+[src/commands/config/set.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/config/set.ts)_
 
 ## `capuchoo deploy native`
 
@@ -630,7 +658,8 @@ EXAMPLES
   $ capuchoo deploy native -c dev --apk app/build/outputs/apk/release/app-release.apk
 ```
 
-_See code: [src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/deploy/native.ts)_
+_See code:
+[src/commands/deploy/native.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/deploy/native.ts)_
 
 ## `capuchoo deploy ota`
 
@@ -671,7 +700,8 @@ EXAMPLES
   $ capuchoo deploy ota -c dev --min-native 10
 ```
 
-_See code: [src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/deploy/ota.ts)_
+_See code:
+[src/commands/deploy/ota.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/deploy/ota.ts)_
 
 ## `capuchoo doctor`
 
@@ -688,7 +718,8 @@ EXAMPLES
   $ capuchoo doctor
 ```
 
-_See code: [src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/doctor.ts)_
+_See code:
+[src/commands/doctor.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/doctor.ts)_
 
 ## `capuchoo help [COMMAND]`
 
@@ -708,7 +739,8 @@ DESCRIPTION
   Display help for capuchoo.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.58/src/commands/help.ts)_
+_See code:
+[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.58/src/commands/help.ts)_
 
 ## `capuchoo init`
 
@@ -755,7 +787,8 @@ EXAMPLES
   $ capuchoo init --create --name "My App" --app-id com.acme.app
 ```
 
-_See code: [src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/init.ts)_
+_See code:
+[src/commands/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/init.ts)_
 
 ## `capuchoo keys init`
 
@@ -785,7 +818,8 @@ EXAMPLES
   $ capuchoo keys init --force
 ```
 
-_See code: [src/commands/keys/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/keys/init.ts)_
+_See code:
+[src/commands/keys/init.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/keys/init.ts)_
 
 ## `capuchoo keys show`
 
@@ -802,7 +836,8 @@ DESCRIPTION
   Show the release signing key's fingerprint and whether each flavour bakes its public key
 ```
 
-_See code: [src/commands/keys/show.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/keys/show.ts)_
+_See code:
+[src/commands/keys/show.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/keys/show.ts)_
 
 ## `capuchoo menu`
 
@@ -821,7 +856,8 @@ EXAMPLES
   $ capuchoo menu
 ```
 
-_See code: [src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/menu.ts)_
+_See code:
+[src/commands/menu.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/menu.ts)_
 
 ## `capuchoo org create [NAME]`
 
@@ -846,7 +882,8 @@ EXAMPLES
   $ capuchoo org create Acme --json
 ```
 
-_See code: [src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/create.ts)_
+_See code:
+[src/commands/org/create.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/create.ts)_
 
 ## `capuchoo org invite EMAIL ROLE`
 
@@ -870,7 +907,8 @@ EXAMPLES
   $ capuchoo org invite dev@company.com member
 ```
 
-_See code: [src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/invite.ts)_
+_See code:
+[src/commands/org/invite.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/invite.ts)_
 
 ## `capuchoo org list`
 
@@ -887,7 +925,8 @@ DESCRIPTION
   List the organizations this account belongs to
 ```
 
-_See code: [src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/list.ts)_
+_See code:
+[src/commands/org/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/list.ts)_
 
 ## `capuchoo org members`
 
@@ -907,7 +946,8 @@ EXAMPLES
   $ capuchoo org members
 ```
 
-_See code: [src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/members.ts)_
+_See code:
+[src/commands/org/members.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/org/members.ts)_
 
 ## `capuchoo release list`
 
@@ -931,7 +971,8 @@ EXAMPLES
   $ capuchoo release list --channel prod-acme --json
 ```
 
-_See code: [src/commands/release/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/release/list.ts)_
+_See code:
+[src/commands/release/list.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/release/list.ts)_
 
 ## `capuchoo setup`
 
@@ -1005,7 +1046,8 @@ EXAMPLES
   $ capuchoo unlink --dry-run
 ```
 
-_See code: [src/commands/unlink.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/unlink.ts)_
+_See code:
+[src/commands/unlink.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/unlink.ts)_
 
 ## `capuchoo version bump TYPE`
 
@@ -1031,7 +1073,8 @@ EXAMPLES
   $ capuchoo version bump minor --environment staging
 ```
 
-_See code: [src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/version/bump.ts)_
+_See code:
+[src/commands/version/bump.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/version/bump.ts)_
 
 ## `capuchoo version sync`
 
@@ -1056,5 +1099,6 @@ EXAMPLES
   $ capuchoo version sync --bump --environment staging
 ```
 
-_See code: [src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/version/sync.ts)_
+_See code:
+[src/commands/version/sync.ts](https://github.com/aybinv7/capuchoo/blob/v0.16.0/src/commands/version/sync.ts)_
 <!-- commandsstop -->
