@@ -9,6 +9,9 @@ import type { ReleaseKey } from "../signing/release-key.js";
 import { BuildTracker } from "./build-tracker.js";
 import { detectCiContext } from "./ci-context.js";
 import { loadArtefacts } from "./artefact-index.js";
+import { describePrebuiltProblems } from "./prebuilt-apk.js";
+import { isApkSigned } from "../pipeline/android.js";
+import { readApkManifest, type ApkManifest } from "../pipeline/android-manifest.js";
 import { releasePreflight } from "./preflight.js";
 import { needsSeal, sealArtefact, type Seal } from "./seal.js";
 import { publishRelease, UnconfirmedUploadError } from "./publish.js";
@@ -19,6 +22,7 @@ import {
   runDeploy,
   validateRequest,
   type DeployKind,
+  type DeployOutcome,
   type DeployRequest,
 } from "../pipeline/deploy.js";
 import { resolveFlavour } from "../pipeline/flavour.js";
@@ -124,6 +128,8 @@ export interface DeployFlags {
   "allow-local-env": boolean;
   /** OTA only: the native build number a device needs before this bundle is served. */
   "min-native"?: number;
+  /** Native only: publish this APK instead of building one. */
+  apk?: string;
   flavor?: string;
 }
 
@@ -142,6 +148,61 @@ export interface DeployCommandOptions {
 function fail(command: Command, message: string): never {
   command.error(message);
   throw new Error(message); // unreachable
+}
+
+interface Prebuilt {
+  file: string;
+  manifest: ApkManifest;
+  signed: boolean;
+}
+
+/** Reads an APK built outside this CLI; the flags that would shape a build do not apply to it. */
+function inspectPrebuilt(command: Command, flags: DeployFlags): Prebuilt {
+  const file = path.resolve(flags.apk!);
+  const ignored = [
+    flags.version ? "--version" : null,
+    flags.type ? "--type" : null,
+    flags.flavor ? "--flavor" : null,
+    flags["skip-build"] ? "--skip-build" : null,
+  ].filter(Boolean);
+  if (ignored.length > 0)
+    fail(
+      command,
+      `--apk publishes the file as built, so ${ignored.join(", ")} cannot apply to it.`,
+    );
+  if (!fs.existsSync(file)) fail(command, `${flags.apk} does not exist.`);
+  try {
+    return { file, manifest: readApkManifest(file), signed: isApkSigned(file) };
+  } catch (error) {
+    return fail(command, error instanceof Error ? error.message : String(error));
+  }
+}
+
+function prebuiltOutcome(
+  prebuilt: Prebuilt,
+  request: DeployRequest,
+  reporter: Reporter,
+): DeployOutcome {
+  const byteSize = fs.statSync(prebuilt.file).size;
+  reporter.plan([
+    { id: "compile", label: "Reading the APK" },
+    ...(request.seal ? [{ id: "sign" as const, label: "Checking and signing the artefact" }] : []),
+    ...(request.dryRun ? [] : [{ id: "upload" as const, label: "Uploading to Capuchoo" }]),
+  ]);
+  reporter.begin("compile");
+  reporter.note(
+    `${prebuilt.manifest.applicationId} ${prebuilt.manifest.versionName} (build ${prebuilt.manifest.versionCode}), ` +
+      `${formatBytes(byteSize)}${prebuilt.manifest.minSdk ? `, minSdk ${prebuilt.manifest.minSdk}` : ""}`,
+  );
+  return {
+    version: prebuilt.manifest.versionName ?? "",
+    versionCode: prebuilt.manifest.versionCode,
+    environment: request.environment,
+    artifact: { kind: "native", filePath: prebuilt.file, byteSize, signed: prebuilt.signed },
+    nativeConfigMethod: "prebuilt",
+    warnings: [],
+    skipped: [{ step: "build", reason: "--apk" }],
+  };
 }
 
 function describeSeal(seal: Seal, key: ReleaseKey | null): string {
@@ -265,8 +326,10 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   const versionProblem = flags.version ? describeVersionRequestProblem(flags.version) : null;
   if (versionProblem) fail(command, versionProblem);
 
+  const prebuilt = flags.apk ? inspectPrebuilt(command, flags) : null;
+
   let requested = flags.version as VersionRequest | undefined;
-  if (!requested && interactive) {
+  if (!requested && interactive && !prebuilt) {
     const answer = await selectOne<string>(
       "Bump the version?",
       [
@@ -294,26 +357,36 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       : "");
 
   const platform = (flags.platform ?? "android") as "android" | "ios";
-  const resolution = resolveReleaseVersion({
-    current: readAppVersion(appDir),
-    request: requested,
-    environment,
-    published: publishedBundleVersions(artefacts, platform),
-  });
+  const resolution = prebuilt
+    ? {
+        version: prebuilt.manifest.versionName ?? "",
+        origin: `from ${path.basename(prebuilt.file)}`,
+      }
+    : resolveReleaseVersion({
+        current: readAppVersion(appDir),
+        request: requested,
+        environment,
+        published: publishedBundleVersions(artefacts, platform),
+      });
   const version = resolution.version;
   const bump = requested !== undefined && requested !== "auto";
 
-  const signing = await resolveSigning({
-    appDir,
-    kind,
-    platform,
-    channel,
-    interactive,
-    requested: flags.type as "debug" | "release" | undefined,
-    allowUnsigned: flags["allow-unsigned"] ?? false,
-  }).catch((error: unknown) =>
-    fail(command, error instanceof Error ? error.message : String(error)),
-  );
+  const signing = prebuilt
+    ? {
+        buildType: (prebuilt.manifest.debuggable ? "debug" : "release") as "debug" | "release",
+        allowUnsigned: flags["allow-unsigned"] ?? false,
+      }
+    : await resolveSigning({
+        appDir,
+        kind,
+        platform,
+        channel,
+        interactive,
+        requested: flags.type as "debug" | "release" | undefined,
+        allowUnsigned: flags["allow-unsigned"] ?? false,
+      }).catch((error: unknown) =>
+        fail(command, error instanceof Error ? error.message : String(error)),
+      );
 
   if (!signing) {
     command.log(chalk.dim("Cancelled."));
@@ -329,7 +402,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
     command.log(chalk.dim("  ─────────────────────────────────────────"));
     command.log(`  channel      ${chalk.green(channel.name)} (${environment})`);
     command.log(
-      `  version      ${chalk.green(version)}${resolution.origin ? chalk.dim(` (${resolution.origin})`) : ""}`,
+      `  version      ${chalk.green(version)}${prebuilt ? ` (build ${prebuilt.manifest.versionCode})` : ""}${resolution.origin ? chalk.dim(` (${resolution.origin})`) : ""}`,
     );
     if (kind === "native") {
       const signedNote =
@@ -401,7 +474,17 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   if (taken && flags["dry-run"])
     process.stderr.write(`${chalk.yellow("!")} ${taken} A real deploy stops here.\n`);
   const problems = [
-    ...validateRequest(request, flavour),
+    ...(prebuilt
+      ? describePrebuiltProblems({
+          file: path.basename(prebuilt.file),
+          manifest: prebuilt.manifest,
+          signed: prebuilt.signed,
+          channel,
+          identifiers,
+          artefacts,
+          allowUnsigned: flags["allow-unsigned"] ?? false,
+        })
+      : validateRequest(request, flavour)),
     ...preflight.problems,
     ...(taken && !flags["dry-run"] ? [taken] : []),
   ];
@@ -434,7 +517,9 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
   }
 
   try {
-    const outcome = await runDeploy(request, reporter);
+    const outcome = prebuilt
+      ? prebuiltOutcome(prebuilt, request, reporter)
+      : await runDeploy(request, reporter);
     const artifact = outcome.artifact;
     if (!artifact) throw new Error("The pipeline produced no artefact");
 

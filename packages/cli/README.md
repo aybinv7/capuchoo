@@ -614,9 +614,9 @@ Build and publish a native binary (APK). Users install it through the OS.
 
 ```
 USAGE
-  $ capuchoo deploy native [-c <value>] [-n <value>] [-v major|minor|patch|auto] [-a] [-r] [--skip-assets]
-    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [-p android|ios] [-t debug|release]
-    [--flavor <value>] [--allow-unsigned] [--allow-cert-change]
+  $ capuchoo deploy native [-c <value>] [-n <value>] [-v <value>] [-a] [-r] [--skip-assets] [--skip-build]
+    [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [-p android|ios] [-t debug|release] [--flavor <value>]
+    [--apk <value>] [--allow-unsigned] [--allow-cert-change]
 
 FLAGS
   -a, --[no-]active        Serve this release immediately
@@ -627,9 +627,8 @@ FLAGS
   -r, --[no-]required      Users cannot postpone this release
   -t, --type=<option>      Gradle variant to assemble. Defaults to release; debug is refused on prod and client channels
                            <options: debug|release>
-  -v, --version=<option>   Bump the app version before publishing. auto: a prerelease of the next patch on dev and
-                           staging, package.json as-is on prod
-                           <options: major|minor|patch|auto>
+  -v, --version=<value>    major, minor or patch bumps package.json; auto publishes a prerelease of the next patch on
+                           dev and staging and package.json as-is on prod; 1.2.3 or v1.2.3 publishes exactly that
   -y, --yes                Accept every prompt - required in CI
       --allow-cert-change  Publish an APK signed with a different certificate than the previous release. Installed
                            devices cannot upgrade to it.
@@ -637,6 +636,8 @@ FLAGS
                            this machine's values
       --allow-unsigned     Publish a release build with no signature, to a dev channel only. Android will refuse to
                            install it.
+      --apk=<value>        Publish this APK instead of building one: any Android app, Capacitor or native Kotlin/Java.
+                           Its version is the one compiled into it
       --dry-run            Build and package, but upload nothing
       --flavor=<value>     Gradle product flavour to build, when the project has more than one
       --json               Emit a machine-readable result on stdout
@@ -653,6 +654,8 @@ EXAMPLES
   $ capuchoo deploy native -c production -v minor --type release
 
   $ capuchoo deploy native -c staging --type debug -y
+
+  $ capuchoo deploy native -c dev --apk app/build/outputs/apk/release/app-release.apk
 ```
 
 _See code:
@@ -664,17 +667,16 @@ Publish a web bundle over the air. Does not change the installed binary.
 
 ```
 USAGE
-  $ capuchoo deploy ota [-c <value>] [-n <value>] [-v major|minor|patch|auto] [-a] [-r] [--skip-assets]
-    [--skip-build] [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [--min-native <value>]
+  $ capuchoo deploy ota [-c <value>] [-n <value>] [-v <value>] [-a] [-r] [--skip-assets] [--skip-build]
+    [--dry-run] [--json] [--verbose] [-y] [--allow-local-env] [--min-native <value>]
 
 FLAGS
   -a, --[no-]active         Serve this release immediately
   -c, --channel=<value>     Channel to publish to. Its environment selects the flavour.
   -n, --note=<value>        Release notes shown to users
   -r, --[no-]required       Users cannot postpone this release
-  -v, --version=<option>    Bump the app version before publishing. auto: a prerelease of the next patch on dev and
-                            staging, package.json as-is on prod
-                            <options: major|minor|patch|auto>
+  -v, --version=<value>     major, minor or patch bumps package.json; auto publishes a prerelease of the next patch on
+                            dev and staging and package.json as-is on prod; 1.2.3 or v1.2.3 publishes exactly that
   -y, --yes                 Accept every prompt - required in CI
       --allow-local-env     Build prod even when .env / .env.local define VITE_* keys the flavour file does not,
                             shipping this machine's values

@@ -10,6 +10,7 @@ export default class DeployNative extends BaseCommand {
     "<%= config.bin %> <%= command.id %> --channel staging",
     "<%= config.bin %> <%= command.id %> -c production -v minor --type release",
     "<%= config.bin %> <%= command.id %> -c staging --type debug -y",
+    "<%= config.bin %> <%= command.id %> -c dev --apk app/build/outputs/apk/release/app-release.apk",
   ];
 
   static override flags = {
@@ -28,6 +29,10 @@ export default class DeployNative extends BaseCommand {
     }),
     flavor: Flags.string({
       description: "Gradle product flavour to build, when the project has more than one",
+    }),
+    apk: Flags.string({
+      description:
+        "Publish this APK instead of building one: any Android app, Capacitor or native Kotlin/Java. Its version is the one compiled into it",
     }),
     "allow-unsigned": Flags.boolean({
       default: false,
