@@ -12,8 +12,8 @@ Framework7 owns the look. Your job is to compose its components, not to restyle 
 - Use PascalCase tags: `<F7Page>`, `<F7ListItem>`, `<F7BlockTitle>`.
 
 If a component renders as an unknown element, its kebab name is missing from the resolver's list —
-add it there. Do not add a name the installed `framework7-vue` does not export: `f7-toolbar-pane`
-is a Framework7 9 CSS class with no Vue component in framework7-vue 8, and resolving it fails as a
+add it there. Do not add a name the installed `framework7-vue` does not export: `f7-toolbar-pane` is
+a Framework7 9 CSS class with no Vue component in framework7-vue 8, and resolving it fails as a
 runtime `SyntaxError`, not a warning. Check the package's exports before adding.
 
 `f7`, `f7ready` and `theme` are auto-imported. `f7route` and `f7router` are **not** — Framework7
@@ -28,8 +28,8 @@ const props = defineProps<{ f7route: Router.Route; f7router: Router.Router }>();
 No backgrounds, no heights, no safe-area padding, no font sizes for body text. Framework7's theme
 provides all of it for both iOS and Material, light and dark. `app.css` is one line.
 
-Tailwind is available for layout and spacing inside a component — flex, grid, gaps, a text size on
-a number. The moment you reach for a colour or a background, stop: use a Framework7 component or a
+Tailwind is available for layout and spacing inside a component — flex, grid, gaps, a text size on a
+number. The moment you reach for a colour or a background, stop: use a Framework7 component or a
 theme variable.
 
 ## Lists
@@ -60,8 +60,8 @@ render as the literal word.
 
 ## Gestures
 
-Swipeout inside swipeable tabs claims the same horizontal drag as the tabs. Put
-`swiper-no-swiping` on the list, or one gesture does both.
+Swipeout inside swipeable tabs claims the same horizontal drag as the tabs. Put `swiper-no-swiping`
+on the list, or one gesture does both.
 
 ## Navigation
 

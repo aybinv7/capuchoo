@@ -18,8 +18,8 @@ which is the one failure an offline app cannot afford: the user has no network t
 
 - **`queryKey` is a process-wide identity built from arguments, not a label.** It is an array, and
   two mounted queries whose keys match await one request and share its result. Framework7 keeps
-  pages mounted, so two instances of one screen genuinely coexist — which is exactly why the key
-  has to carry what distinguishes them: `["demo:order", orderId]`, never `["demo:order"]`.
+  pages mounted, so two instances of one screen genuinely coexist — which is exactly why the key has
+  to carry what distinguishes them: `["demo:order", orderId]`, never `["demo:order"]`.
 
   Put every value the query reads in the key. A ref belongs there directly — `["demo:search", term]`
   — and the query re-runs through its own `debounce` when the ref moves, so a filtered screen never

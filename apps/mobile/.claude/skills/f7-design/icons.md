@@ -29,9 +29,9 @@ Rules that came from getting this wrong twice:
 ## 2. Material icons — the `md` theme
 
 `icon-md="material:home"` needs the Material font, which is bundled in `src/assets/css/icons.css`
-with a `font-feature-settings: "liga"` rule. Without it the icon renders as the literal word
-"home". The font is self-hosted, not from a CDN, because an offline-first app should not lose its
-icons with the network.
+with a `font-feature-settings: "liga"` rule. Without it the icon renders as the literal word "home".
+The font is self-hosted, not from a CDN, because an offline-first app should not lose its icons with
+the network.
 
 ## 3. unplugin-icons SVGs — feature UI
 

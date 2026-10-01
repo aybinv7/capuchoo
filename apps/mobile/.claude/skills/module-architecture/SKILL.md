@@ -1,6 +1,10 @@
 ---
 name: module-architecture
-description: Where code goes in this app and how to add a feature end to end. Use when creating a new screen, module, route, domain, repository, composable, or when deciding whether something belongs in modules, domains or shared. Covers the dependency direction, the file layout of a module, and the checklist for wiring a feature into the shell.
+description:
+  Where code goes in this app and how to add a feature end to end. Use when creating a new screen,
+  module, route, domain, repository, composable, or when deciding whether something belongs in
+  modules, domains or shared. Covers the dependency direction, the file layout of a module, and the
+  checklist for wiring a feature into the shell.
 ---
 
 # Module architecture
@@ -52,8 +56,8 @@ caller. If you cannot, it lives in the module that uses it.
 
 `ref`, `computed`, `watch`, lifecycle hooks, `useI18n`, `@vueuse/core`, `f7`, `f7ready` and
 everything under `shared/composables`, `shared/utils`, `plugins` and `modules/**/composables` are
-auto-imported — no import line. Components under `shared/components` and `modules/**/{views,components}`
-resolve the same way.
+auto-imported — no import line. Components under `shared/components` and
+`modules/**/{views,components}` resolve the same way.
 
 Two things are **not** auto-imported and must be declared:
 

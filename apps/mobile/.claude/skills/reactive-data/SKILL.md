@@ -1,6 +1,10 @@
 ---
 name: reactive-data
-description: Reading and writing the local SQLite database in this app. Use whenever the task involves a query, a mutation, a repository, a migration, the schema, useReactiveQuery, the change bus, stale data, a screen not refreshing, query metrics, or testing data access. Covers the tables invalidation contract, why every write goes through rdb, and how to test SQL without a device.
+description:
+  Reading and writing the local SQLite database in this app. Use whenever the task involves a query,
+  a mutation, a repository, a migration, the schema, useReactiveQuery, the change bus, stale data, a
+  screen not refreshing, query metrics, or testing data access. Covers the tables invalidation
+  contract, why every write goes through rdb, and how to test SQL without a device.
 ---
 
 # Reactive data workflow
@@ -24,10 +28,10 @@ const query = useReactiveQuery(() => searchOrders(getDatabase().db, term.value),
 2. **List every table the SQL touches in `tables`.** Count them in the query, not from memory: a
    join means each joined table. Under-list and the screen goes stale with no error; over-list and
    an unrelated write re-runs an expensive query.
-3. `queryKey` is an array of the values the query reads. Two mounted queries whose keys match
-   share one request, so anything that distinguishes them belongs in the key — a route param, a
-   filter ref. Refs are unwrapped and tracked: when one moves the query re-runs through its own
-   `debounce`, so never pair a key with a manual `refetch()`.
+3. `queryKey` is an array of the values the query reads. Two mounted queries whose keys match share
+   one request, so anything that distinguishes them belongs in the key — a route param, a filter
+   ref. Refs are unwrapped and tracked: when one moves the query re-runs through its own `debounce`,
+   so never pair a key with a manual `refetch()`.
 4. `debounce` so a burst of writes causes one refetch.
 
 ## Adding a write

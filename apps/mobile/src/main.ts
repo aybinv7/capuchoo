@@ -9,20 +9,20 @@ import App from "./App.vue";
 import { i18n } from "./plugins/i18n.plugin";
 import { renderBootstrapError } from "./plugins/bootstrapError";
 import { sqlitePlugin } from "./plugins/sqlite.plugin";
-import { applyMaterialScheme } from "./shared/composables/theme/materialScheme";
+import { applyStoredColorScheme } from "./shared/composables/theme/useColorTheme";
 import { restoreSession } from "./shared/session/session";
 
 Framework7.use(Framework7Vue);
 
 /**
- * The scheme is written before mount so the first frame is already in Capuchoo's colours, the
+ * The scheme is written before mount so the first frame is already in the chosen colours, the
  * database opens before mount so no screen renders against a missing schema, and the session is
  * restored so a signed-in person lands on their apps rather than the sign-in screen. A failure in
  * any of them takes the screen with a sentence and a retry, instead of an empty `#app`.
  */
 async function bootstrap(): Promise<void> {
   try {
-    applyMaterialScheme();
+    applyStoredColorScheme();
     await sqlitePlugin();
     await restoreSession();
   } catch (error) {

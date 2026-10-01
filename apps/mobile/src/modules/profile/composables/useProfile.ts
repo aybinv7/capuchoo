@@ -1,4 +1,9 @@
-import { getAccount, listAppRows, listOrganizations, setAppNotify } from "@/domains/catalog/catalog.repository";
+import {
+  getAccount,
+  listAppRows,
+  listOrganizations,
+  setAppNotify,
+} from "@/domains/catalog/catalog.repository";
 import { api } from "@/shared/api/endpoints";
 import { getDatabase, rdb, useReactiveQuery } from "@/shared/database";
 import { session } from "@/shared/session/session";
@@ -6,7 +11,11 @@ import { endSession } from "@/shared/sync/useSync";
 
 async function loadProfile() {
   const db = getDatabase().db;
-  const [account, organizations, apps] = await Promise.all([getAccount(db), listOrganizations(db), listAppRows(db)]);
+  const [account, organizations, apps] = await Promise.all([
+    getAccount(db),
+    listOrganizations(db),
+    listAppRows(db),
+  ]);
   return { account: account ?? null, organizations, apps };
 }
 

@@ -48,7 +48,9 @@ export const migrations: MigrationSet = {
 
       await db.schema
         .createTable("app_identifier")
-        .addColumn("app_id", "text", (col) => col.notNull().references("app.id").onDelete("cascade"))
+        .addColumn("app_id", "text", (col) =>
+          col.notNull().references("app.id").onDelete("cascade"),
+        )
         .addColumn("bundle_id", "text", (col) => col.notNull())
         .addColumn("flavour", "text")
         .addPrimaryKeyConstraint("pk_app_identifier", ["app_id", "bundle_id"])
@@ -57,7 +59,9 @@ export const migrations: MigrationSet = {
       await db.schema
         .createTable("channel")
         .addColumn("id", "text", (col) => col.primaryKey())
-        .addColumn("app_id", "text", (col) => col.notNull().references("app.id").onDelete("cascade"))
+        .addColumn("app_id", "text", (col) =>
+          col.notNull().references("app.id").onDelete("cascade"),
+        )
         .addColumn("name", "text", (col) => col.notNull())
         .addColumn("environment", "text")
         .addColumn("kind", "text", (col) => col.notNull().defaultTo("release"))
@@ -71,7 +75,9 @@ export const migrations: MigrationSet = {
       await db.schema
         .createTable("native_build")
         .addColumn("id", "text", (col) => col.primaryKey())
-        .addColumn("app_id", "text", (col) => col.notNull().references("app.id").onDelete("cascade"))
+        .addColumn("app_id", "text", (col) =>
+          col.notNull().references("app.id").onDelete("cascade"),
+        )
         .addColumn("version_name", "text", (col) => col.notNull())
         .addColumn("version_code", "integer", (col) => col.notNull())
         .addColumn("flavour", "text")
@@ -89,7 +95,9 @@ export const migrations: MigrationSet = {
       await db.schema
         .createTable("bundle")
         .addColumn("id", "text", (col) => col.primaryKey())
-        .addColumn("app_id", "text", (col) => col.notNull().references("app.id").onDelete("cascade"))
+        .addColumn("app_id", "text", (col) =>
+          col.notNull().references("app.id").onDelete("cascade"),
+        )
         .addColumn("version_name", "text", (col) => col.notNull())
         .addColumn("flavour", "text")
         .addColumn("size_bytes", "integer", (col) => col.notNull().defaultTo(0))

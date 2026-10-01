@@ -16,7 +16,10 @@ export async function trackForeground(): Promise<void> {
   });
 }
 
-export function activityTitle(row: Pick<ActivityTable, "kind" | "version_name" | "version_code" | "channel_name">, appName: string): string {
+export function activityTitle(
+  row: Pick<ActivityTable, "kind" | "version_name" | "version_code" | "channel_name">,
+  appName: string,
+): string {
   const t = i18n.global.t;
   const version = row.version_name ? `${row.version_name} (${row.version_code ?? "?"})` : "";
   return t(`activity.kind.${row.kind}`, { app: appName, version, channel: row.channel_name ?? "" });
@@ -60,7 +63,10 @@ export async function notifyActivity(
       body:
         list.length === 1
           ? activityTitle(latest, app.name)
-          : i18n.global.t("activity.many", { count: list.length, latest: activityTitle(latest, app.name) }),
+          : i18n.global.t("activity.many", {
+              count: list.length,
+              latest: activityTitle(latest, app.name),
+            }),
       extra: { appId },
       group: "capuchoo-activity",
     };

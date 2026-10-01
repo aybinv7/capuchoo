@@ -20,14 +20,18 @@ export const AppContextKey: InjectionKey<ComputedRef<AppContext>> = Symbol("AppC
 export const useAppThemeProvider = (): ComputedRef<AppContext> => {
   const mode = useLocalStorage<ColorMode>("app-color-mode", "system");
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
-  const dark = computed(() => (mode.value === "system" ? prefersDark.value : mode.value === "dark"));
+  const dark = computed(() =>
+    mode.value === "system" ? prefersDark.value : mode.value === "dark",
+  );
 
   watch(
     dark,
     (isDark) => {
       f7ready((instance) => instance.setDarkMode(isDark));
       if (Capacitor.isNativePlatform())
-        void StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => undefined);
+        void StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(
+          () => undefined,
+        );
     },
     { flush: "post" },
   );
@@ -47,6 +51,7 @@ export const useAppThemeProvider = (): ComputedRef<AppContext> => {
 
 export const useAppTheme = (): ComputedRef<AppContext> => {
   const context = inject(AppContextKey);
-  if (!context) throw new Error("useAppTheme needs useAppThemeProvider() called in a parent component");
+  if (!context)
+    throw new Error("useAppTheme needs useAppThemeProvider() called in a parent component");
   return context;
 };

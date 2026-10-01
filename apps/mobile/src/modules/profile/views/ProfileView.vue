@@ -4,119 +4,139 @@
       <F7NavRight><LiveIndicator /></F7NavRight>
     </F7Navbar>
 
-    <div class="flex flex-col gap-6 px-4 pt-1">
-      <header v-if="profile?.account" class="account">
-        <AppIcon :name="profile.account.full_name || profile.account.email" :bundle-id="profile.account.email" shape="clover4" :size="64" />
-        <div class="min-w-0">
-          <p class="truncate text-xl font-semibold">{{ profile.account.full_name || profile.account.email }}</p>
-          <p class="truncate text-sm text-muted-foreground">{{ profile.account.email }}</p>
-          <span v-if="profile.account.instance_admin" class="mt-1 inline-flex rounded-sm bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground uppercase">
-            {{ t("profile.instanceAdmin") }}
-          </span>
-        </div>
-      </header>
+    <F7List v-if="account" strong inset media-list class="rounded-2xl!">
+      <F7ListItem
+        :title="account.full_name || account.email"
+        :subtitle="account.email"
+        :text="host"
+      >
+        <template #media>
+          <AppIcon
+            :name="account.full_name || account.email"
+            :bundle-id="account.email"
+            shape="cookie9"
+            :size="56"
+          />
+        </template>
+        <template v-if="account.instance_admin" #after>
+          <F7Badge class="bg-primary! text-primary-foreground!">{{
+            t("profile.instanceAdmin")
+          }}</F7Badge>
+        </template>
+      </F7ListItem>
+    </F7List>
 
-      <section class="flex flex-col gap-2">
-        <h2 class="section-title">{{ t("profile.appearance") }}</h2>
-        <F7Segmented strong class="m-0!">
-          <F7Button v-for="mode in MODES" :key="mode.id" :active="theme.mode === mode.id" @click="theme.setMode(mode.id)">
-            <F7Icon :md="`material:${mode.icon}`" size="18" class="me-1" />{{ t(`profile.mode.${mode.id}`) }}
-          </F7Button>
-        </F7Segmented>
-      </section>
+    <F7BlockTitle>{{ t("profile.preferences") }}</F7BlockTitle>
+    <F7List strong inset dividers class="rounded-2xl!">
+      <F7ListItem
+        link="/profile/appearance/"
+        :title="t('appearance.title')"
+        :after="t(`appearance.modes.${theme.mode}`)"
+      >
+        <template #media
+          ><F7Icon md="material:palette" class="material-icons-outlined text-muted-foreground"
+        /></template>
+      </F7ListItem>
+      <F7ListItem
+        link="/profile/notifications/"
+        :title="t('profile.notifications')"
+        :after="notifySummary"
+      >
+        <template #media
+          ><F7Icon
+            md="material:notifications"
+            class="material-icons-outlined text-muted-foreground"
+        /></template>
+      </F7ListItem>
+    </F7List>
 
-      <section v-if="profile?.organizations.length" class="flex flex-col gap-2">
-        <h2 class="section-title">{{ t("profile.organizations") }}</h2>
-        <F7List strong inset dividers class="m-0!">
-          <F7ListItem v-for="org in profile.organizations" :key="org.id" :title="org.name" :after="t(`profile.orgRole.${org.role}`)" />
-        </F7List>
-      </section>
+    <template v-if="organizations.length">
+      <F7BlockTitle>{{ t("profile.organizations") }}</F7BlockTitle>
+      <F7List strong inset dividers class="rounded-2xl!">
+        <F7ListItem
+          v-for="org in organizations"
+          :key="org.id"
+          :title="org.name"
+          :after="t(`profile.orgRole.${org.role}`)"
+        >
+          <template #media
+            ><F7Icon
+              md="material:corporate_fare"
+              class="material-icons-outlined text-muted-foreground"
+          /></template>
+        </F7ListItem>
+      </F7List>
+    </template>
 
-      <section v-if="profile?.apps.length" class="flex flex-col gap-2">
-        <h2 class="section-title">{{ t("profile.notifications") }}</h2>
-        <F7List strong inset dividers media-list class="m-0!">
-          <F7ListItem v-for="app in profile.apps" :key="app.id" :title="app.name" :subtitle="t(`roles.name.${app.role}`)">
-            <template #media>
-              <AppIcon :name="app.name" :bundle-id="app.bundle_id" :icon-url="app.icon_url" :size="40" />
-            </template>
-            <template #after>
-              <F7Toggle :checked="Boolean(app.notify)" @toggle:change="(on: boolean) => setNotify(app.id, on)" />
-            </template>
-          </F7ListItem>
-        </F7List>
-        <p class="px-1 text-xs text-muted-foreground">{{ t("profile.notificationsHint") }}</p>
-      </section>
+    <F7BlockTitle>{{ t("profile.phone") }}</F7BlockTitle>
+    <F7List strong inset dividers class="rounded-2xl!">
+      <F7ListItem :title="t('profile.endpoint')" :after="host">
+        <template #media
+          ><F7Icon md="material:dns" class="material-icons-outlined text-muted-foreground"
+        /></template>
+      </F7ListItem>
+      <F7ListItem :title="t('profile.version')" :after="version">
+        <template #media
+          ><F7Icon md="material:info" class="material-icons-outlined text-muted-foreground"
+        /></template>
+      </F7ListItem>
+    </F7List>
 
-      <section class="flex flex-col gap-2">
-        <h2 class="section-title">{{ t("profile.server") }}</h2>
-        <F7List strong inset dividers class="m-0!">
-          <F7ListItem :title="t('profile.endpoint')" :after="endpoint" />
-          <F7ListItem :title="t('profile.version')" :after="version" />
-        </F7List>
-      </section>
-
-      <F7Button large round tonal class="sign-out h-14! font-semibold!" :disabled="signingOut" @click="confirmSignOut">
-        <F7Icon md="material:logout" size="20" class="me-2" />{{ t("profile.signOut") }}
-      </F7Button>
-    </div>
+    <F7List strong inset class="rounded-2xl!">
+      <F7ListButton
+        class="list-button-danger"
+        :class="{ disabled: signingOut }"
+        @click="confirmSignOut"
+      >
+        {{ t("profile.signOut") }}
+      </F7ListButton>
+    </F7List>
   </F7Page>
 </template>
 
 <script setup lang="ts">
 import AppIcon from "@/shared/components/app/AppIcon.vue";
 import LiveIndicator from "@/shared/components/app/LiveIndicator.vue";
-import { useAppTheme, type ColorMode } from "@/shared/composables/theme/useAppTheme";
+import { useAppTheme } from "@/shared/composables/theme/useAppTheme";
 import { session } from "@/shared/session/session";
 import { useProfile } from "../composables/useProfile";
 
-const MODES: Array<{ id: ColorMode; icon: string }> = [
-  { id: "system", icon: "brightness_auto" },
-  { id: "light", icon: "light_mode" },
-  { id: "dark", icon: "dark_mode" },
-];
-
+/**
+ * The hub names the groups and leads to them: a row is a page, never a toggle hidden among
+ * settings - the Android settings shape, and the one Framework7's list is built for.
+ */
 const { t } = useI18n();
-const theme = useAppTheme();
-const { profile, signingOut, signOut, setNotify } = useProfile();
+const appTheme = useAppTheme();
+const theme = computed(() => appTheme.value);
+const { profile, signingOut, signOut } = useProfile();
 
-const endpoint = computed(() => session.value?.endpoint.replace(/^https?:\/\//, "") ?? "—");
+const account = computed(() => profile.value?.account ?? null);
+const organizations = computed(() => profile.value?.organizations ?? []);
+const host = computed(() => session.value?.endpoint.replace(/^https?:\/\//, "") ?? "—");
 const version = __APP_VERSION__;
 
+const notifySummary = computed(() => {
+  const apps = profile.value?.apps ?? [];
+  const on = apps.filter((app) => app.notify).length;
+  return apps.length ? t("profile.notifyCount", { on, total: apps.length }) : "";
+});
+
 function confirmSignOut(): void {
+  if (signingOut.value) return;
   f7.dialog
     .create({
       title: t("profile.signOutTitle"),
       text: t("profile.signOutText"),
       buttons: [
         { text: t("common.cancel") },
-        { text: t("profile.signOut"), strong: true, cssClass: "dialog-button-danger", onClick: () => void signOut() },
+        {
+          text: t("profile.signOut"),
+          strong: true,
+          cssClass: "dialog-button-danger",
+          onClick: () => void signOut(),
+        },
       ],
     })
     .open();
 }
 </script>
-
-<style scoped>
-.account {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  border-radius: var(--radius-xl-increased);
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-}
-
-.section-title {
-  margin: 0;
-  padding-inline: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--muted-foreground);
-}
-
-.sign-out {
-  --f7-button-text-color: var(--destructive-container-foreground);
-  background: var(--destructive-container) !important;
-}
-</style>

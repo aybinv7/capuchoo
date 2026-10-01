@@ -22,7 +22,11 @@ const STEPS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
 ];
 
 /** "3 minutes ago", "yesterday" - in the reader's language, from an ISO timestamp. */
-export function formatRelative(iso: string | null | undefined, locale: string, now = Date.now()): string {
+export function formatRelative(
+  iso: string | null | undefined,
+  locale: string,
+  now = Date.now(),
+): string {
   if (!iso) return "—";
   const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   let value = (Date.parse(iso) - now) / 1000;
@@ -38,11 +42,15 @@ export function formatDay(iso: string, locale: string, now = new Date()): string
   const date = new Date(iso);
   const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const days = Math.round((startOf(now) - startOf(date)) / 86_400_000);
-  if (days <= 1) return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-days, "day");
+  if (days <= 1)
+    return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-days, "day");
   return date.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
 }
 
-export function versionLabel(name: string | null | undefined, code: number | null | undefined): string {
+export function versionLabel(
+  name: string | null | undefined,
+  code: number | null | undefined,
+): string {
   if (!name) return "—";
   return code === null || code === undefined ? name : `${name} (${code})`;
 }
@@ -50,7 +58,9 @@ export function versionLabel(name: string | null | undefined, code: number | nul
 export function parseChannels(json: string | null | undefined): string[] {
   try {
     const value: unknown = JSON.parse(json ?? "[]");
-    return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === "string")
+      : [];
   } catch {
     return [];
   }

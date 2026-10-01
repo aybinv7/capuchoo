@@ -5,7 +5,9 @@
         <F7Icon :md="`material:${icon}`" size="30" />
       </MaterialShape>
       <div class="min-w-0 flex-1">
-        <p class="text-xs font-semibold tracking-wide uppercase opacity-80">{{ t("phone.title") }}</p>
+        <p class="text-xs font-semibold tracking-wide uppercase opacity-80">
+          {{ t("phone.title") }}
+        </p>
         <p class="text-[22px] leading-7 font-semibold">{{ headline }}</p>
         <p class="mt-1 text-sm opacity-85">{{ detail }}</p>
       </div>
@@ -21,7 +23,7 @@
         @install="emit('install')"
         @cancel="emit('cancel')"
       />
-      <F7Button v-if="canOpen" tonal round class="font-semibold!" @click="emit('open')">
+      <F7Button v-if="canOpen" round class="phone-open font-semibold!" @click="emit('open')">
         <F7Icon md="material:open_in_new" size="20" class="me-2" />
         {{ t("phone.open") }}
       </F7Button>
@@ -45,25 +47,60 @@ const props = defineProps<{ status: PhoneStatus; canInstall: boolean; job?: Inst
 const emit = defineEmits<{ install: []; cancel: []; open: [] }>();
 const { t } = useI18n();
 
-const target = computed(() => versionLabel(props.status.target?.version_name, props.status.target?.version_code));
-const installed = computed(() => versionLabel(props.status.installedName, props.status.installedCode));
+const target = computed(() =>
+  versionLabel(props.status.target?.version_name, props.status.target?.version_code),
+);
+const installed = computed(() =>
+  versionLabel(props.status.installedName, props.status.installedCode),
+);
 const channel = computed(() => props.status.channel?.name ?? "prod");
 
-const shape = computed<MaterialShapeName>(() =>
-  ({ behind: "sunny", current: "cookie9", ahead: "flower", untracked: "pentagon", absent: "clover4" })[props.status.state] as MaterialShapeName,
+const shape = computed<MaterialShapeName>(
+  () =>
+    ({
+      behind: "sunny",
+      current: "cookie9",
+      ahead: "flower",
+      untracked: "pentagon",
+      absent: "clover4",
+    })[props.status.state] as MaterialShapeName,
 );
-const icon = computed(() =>
-  ({ behind: "system_update", current: "verified", ahead: "science", untracked: "help_outline", absent: "download" })[props.status.state],
+const icon = computed(
+  () =>
+    ({
+      behind: "system_update",
+      current: "verified",
+      ahead: "science",
+      untracked: "help_outline",
+      absent: "download",
+    })[props.status.state],
 );
 
-const headline = computed(() => t(`phone.${props.status.state}.headline`, { installed: installed.value, target: target.value, channel: channel.value }));
-const detail = computed(() => t(`phone.${props.status.state}.detail`, { installed: installed.value, target: target.value, channel: channel.value }));
+const headline = computed(() =>
+  t(`phone.${props.status.state}.headline`, {
+    installed: installed.value,
+    target: target.value,
+    channel: channel.value,
+  }),
+);
+const detail = computed(() =>
+  t(`phone.${props.status.state}.detail`, {
+    installed: installed.value,
+    target: target.value,
+    channel: channel.value,
+  }),
+);
 
 const actionable = computed(
-  () => props.canInstall && Boolean(props.status.target) && ["behind", "absent"].includes(props.status.state),
+  () =>
+    props.canInstall &&
+    Boolean(props.status.target) &&
+    ["behind", "absent"].includes(props.status.state),
 );
 const actionLabel = computed(() =>
-  props.status.state === "behind" ? t("phone.update", { version: target.value }) : t("phone.install", { version: target.value }),
+  props.status.state === "behind"
+    ? t("phone.update", { version: target.value })
+    : t("phone.install", { version: target.value }),
 );
 const canOpen = computed(() => props.status.state !== "absent" && Boolean(props.status.bundleId));
 </script>
@@ -100,6 +137,12 @@ const canOpen = computed(() => props.status.state !== "absent" && Boolean(props.
   --phone-bg: var(--tertiary);
   --phone-fg: var(--tertiary-foreground);
   --phone-shape: color-mix(in srgb, var(--card) 70%, transparent);
+}
+
+/* The card's own tone, one step stronger, so its second action reads as part of it. */
+.phone-open {
+  background: color-mix(in srgb, var(--phone-fg, var(--secondary-foreground)) 12%, transparent);
+  color: var(--phone-fg, var(--secondary-foreground));
 }
 
 @keyframes phone-in {

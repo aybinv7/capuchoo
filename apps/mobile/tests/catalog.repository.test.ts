@@ -2,7 +2,12 @@ import { Kysely } from "kysely";
 import { Migrator } from "kysely/migration";
 import { createSqlJsDialect } from "@cavulsqa/mobile-db/testing";
 import { beforeEach, expect, test } from "vite-plus/test";
-import { countUnread, listActivity, markAllRead, recordActivity } from "../src/domains/activity/activity.repository.js";
+import {
+  countUnread,
+  listActivity,
+  markAllRead,
+  recordActivity,
+} from "../src/domains/activity/activity.repository.js";
 import {
   listAppRows,
   listChannels,
@@ -33,7 +38,10 @@ const APP = {
 
 beforeEach(async () => {
   db = new Kysely<Database>({ dialect: await createSqlJsDialect() });
-  await new Migrator({ db, provider: { getMigrations: () => Promise.resolve(migrations) } }).migrateToLatest();
+  await new Migrator({
+    db,
+    provider: { getMigrations: () => Promise.resolve(migrations) },
+  }).migrateToLatest();
 });
 
 test("replacing apps keeps the phone's notify choice and drops what the account lost", async () => {
@@ -89,9 +97,19 @@ test("an app's detail is replaced whole, newest build first", async () => {
     channels: "[]",
     created_at: "2026-10-01T00:00:00Z",
   });
-  const detail = { identifiers: [], channels: [], natives: [native("n1", 1), native("n2", 2)], bundles: [] };
+  const detail = {
+    identifiers: [],
+    channels: [],
+    natives: [native("n1", 1), native("n2", 2)],
+    bundles: [],
+  };
   await replaceAppDetail(db, "a1", detail, "2026-10-01T00:00:00Z");
-  await replaceAppDetail(db, "a1", { ...detail, natives: [native("n2", 2), native("n3", 3)] }, "2026-10-01T01:00:00Z");
+  await replaceAppDetail(
+    db,
+    "a1",
+    { ...detail, natives: [native("n2", 2), native("n3", 3)] },
+    "2026-10-01T01:00:00Z",
+  );
   expect((await listNatives(db, "a1")).map((row) => row.version_code)).toEqual([3, 2]);
 });
 

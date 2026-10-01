@@ -7,9 +7,7 @@ import type { Dialect } from "kysely";
  * its own copy: `@cavulsqa/create` was regexing this very file to populate `--engine`, and
  * `localStorage`'s override was cast rather than checked.
  */
-export const STORAGE_IDS = [
-  "sqlite-wasm-opfs-sahpool",
-] as const;
+export const STORAGE_IDS = ["sqlite-wasm-opfs-sahpool"] as const;
 
 export type StorageId = (typeof STORAGE_IDS)[number];
 

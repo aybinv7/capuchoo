@@ -11,7 +11,9 @@
     <div class="swipe-handler" />
     <F7PageContent class="pb-6!">
       <div v-if="channel" class="px-6 pt-1 pb-3">
-        <p class="text-[22px] leading-7 font-semibold">{{ t("deliver.sheetTitle", { channel: channel.name }) }}</p>
+        <p class="text-[22px] leading-7 font-semibold">
+          {{ t("deliver.sheetTitle", { channel: channel.name }) }}
+        </p>
         <p class="mt-1 text-sm text-muted-foreground">{{ t("deliver.sheetText") }}</p>
       </div>
       <div class="flex flex-col">
@@ -24,13 +26,27 @@
           :disabled="build.id === channel?.current_native_id"
           @click="emit('pick', build, isRollback(build))"
         >
-          <span class="cap-mono w-24 shrink-0 text-start text-base font-semibold">{{ build.version_name }}</span>
-          <span class="cap-mono w-12 shrink-0 text-start text-xs text-muted-foreground">#{{ build.version_code }}</span>
-          <span class="min-w-0 flex-1 truncate text-start text-xs text-muted-foreground">{{ formatRelative(build.created_at, locale) }}</span>
-          <span v-if="build.id === channel?.current_native_id" class="text-xs font-semibold text-primary">{{ t("deliver.current") }}</span>
-          <span v-else-if="isRollback(build)" class="text-xs font-semibold text-destructive">{{ t("deliver.rollback") }}</span>
+          <span class="cap-mono w-24 shrink-0 text-start text-base font-semibold">{{
+            build.version_name
+          }}</span>
+          <span class="cap-mono w-12 shrink-0 text-start text-xs text-muted-foreground"
+            >#{{ build.version_code }}</span
+          >
+          <span class="min-w-0 flex-1 truncate text-start text-xs text-muted-foreground">{{
+            formatRelative(build.created_at, locale)
+          }}</span>
+          <span
+            v-if="build.id === channel?.current_native_id"
+            class="text-xs font-semibold text-primary"
+            >{{ t("deliver.current") }}</span
+          >
+          <span v-else-if="isRollback(build)" class="text-xs font-semibold text-destructive">{{
+            t("deliver.rollback")
+          }}</span>
         </button>
-        <p v-if="!eligible.length" class="px-6 py-4 text-sm text-muted-foreground">{{ t("deliver.none") }}</p>
+        <p v-if="!eligible.length" class="px-6 py-4 text-sm text-muted-foreground">
+          {{ t("deliver.none") }}
+        </p>
       </div>
     </F7PageContent>
   </F7Sheet>
@@ -48,10 +64,15 @@ const props = defineProps<{ channel: Channel | null; builds: NativeBuild[] }>();
 const emit = defineEmits<{ close: []; pick: [build: NativeBuild, rollback: boolean] }>();
 const { t, locale } = useI18n();
 
-const current = computed(() => props.builds.find((build) => build.id === props.channel?.current_native_id) ?? null);
+const current = computed(
+  () => props.builds.find((build) => build.id === props.channel?.current_native_id) ?? null,
+);
 
 const eligible = computed(() =>
-  props.builds.filter((build) => !build.flavour || !props.channel?.environment || build.flavour === props.channel.environment),
+  props.builds.filter(
+    (build) =>
+      !build.flavour || !props.channel?.environment || build.flavour === props.channel.environment,
+  ),
 );
 
 function isRollback(build: NativeBuild): boolean {

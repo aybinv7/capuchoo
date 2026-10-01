@@ -92,7 +92,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": { target: process.env.CAPUCHOO_DEV_SERVER ?? "http://localhost:3000", changeOrigin: true },
+      "/api": {
+        target: process.env.CAPUCHOO_DEV_SERVER ?? "http://localhost:3000",
+        changeOrigin: true,
+      },
     },
   },
   build: { target: "esnext" },

@@ -1,6 +1,10 @@
 ---
 name: f7-design
-description: Framework7 UI work in this app. Use whenever the task is to build or change a screen, view, page, component, layout, navbar, tabbar, toolbar, list, sheet, popup, panel, FAB, card, chip, searchbar, swipeout, or any mobile UI. Covers the component-first rule, the resolver allowlist you must update before using a new component, the icon ligature trap, and why this app writes no CSS.
+description:
+  Framework7 UI work in this app. Use whenever the task is to build or change a screen, view, page,
+  component, layout, navbar, tabbar, toolbar, list, sheet, popup, panel, FAB, card, chip, searchbar,
+  swipeout, or any mobile UI. Covers the component-first rule, the resolver allowlist you must
+  update before using a new component, the icon ligature trap, and why this app writes no CSS.
 ---
 
 # Framework7 UI workflow
@@ -16,9 +20,10 @@ building anything by hand — it already handles the theme, dark mode, safe area
 3. Not in the allowlist → add the kebab name to `framework7Components` in
    `src/shared/utils/resolvers/resolvers.ts` **first**. Skip this and the component silently fails
    to resolve.
-4. Before adding a name, confirm the installed `framework7-vue` actually exports it. `f7-toolbar-pane`
-   is a Framework7 9 CSS class with no Vue component in framework7-vue 8 — resolving it throws a
-   runtime `SyntaxError`, not a warning. Use the class on a plain `div` in that case.
+4. Before adding a name, confirm the installed `framework7-vue` actually exports it.
+   `f7-toolbar-pane` is a Framework7 9 CSS class with no Vue component in framework7-vue 8 —
+   resolving it throws a runtime `SyntaxError`, not a warning. Use the class on a plain `div` in
+   that case.
 5. Hand-build only when Framework7 has nothing suitable.
 
 ## Layout idiom

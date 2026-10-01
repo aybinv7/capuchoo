@@ -33,7 +33,10 @@ function summarise(): void {
  * Bearer token, which EventSource cannot send. A burst of events - an upload announces the build
  * and then the channel it activated - settles into one sync of that app.
  */
-export async function startLive(appIds: string[], onActivity: (rows: ActivityTable[]) => void): Promise<void> {
+export async function startLive(
+  appIds: string[],
+  onActivity: (rows: ActivityTable[]) => void,
+): Promise<void> {
   if (!hasDevice()) return;
   await stopLive();
   const c = credentials();
@@ -75,7 +78,9 @@ export async function stopLive(): Promise<void> {
   if (!hasDevice()) return;
   for (const timer of pending.values()) clearTimeout(timer);
   pending.clear();
-  await Promise.all([...open].map((key) => CapuchooDevice.closeStream({ key }).catch(() => undefined)));
+  await Promise.all(
+    [...open].map((key) => CapuchooDevice.closeStream({ key }).catch(() => undefined)),
+  );
   await Promise.all(listeners.map((listener) => listener.remove()));
   listeners = [];
   open = new Set();

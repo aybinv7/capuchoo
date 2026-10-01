@@ -2,15 +2,56 @@ import {
   DynamicScheme,
   Hct,
   MaterialDynamicColors,
+  SchemeExpressive,
   SchemeFidelity,
+  SchemeMonochrome,
   SchemeTonalSpot,
+  SchemeVibrant,
   TonalPalette,
   Variant,
   argbFromHex,
   customColor,
   hexFromArgb,
 } from "@material/material-color-utilities";
-import { BRAND_INFO, BRAND_PRIMARY, ENVIRONMENT_COLORS } from "@/shared/utils/theme/brand";
+import { BRAND_INFO, ENVIRONMENT_COLORS } from "@/shared/utils/theme/brand";
+
+/**
+ * The Material 3 variants the colour page offers. `brand` is Capuchoo's own: Fidelity's primary,
+ * so the seed itself is the primary container, Tonal Spot's calmer secondary and tertiary, and the
+ * dashboard's quiet paper neutrals whatever the seed. Every other variant is Material's, neutrals
+ * included, so picking one tints the surfaces with the seed as Android does.
+ */
+export type SchemeVariant =
+  | "brand"
+  | "fidelity"
+  | "tonalSpot"
+  | "expressive"
+  | "vibrant"
+  | "monochrome";
+
+export const SCHEME_VARIANTS: readonly SchemeVariant[] = [
+  "brand",
+  "fidelity",
+  "tonalSpot",
+  "expressive",
+  "vibrant",
+  "monochrome",
+];
+
+type SchemeConstructor = new (
+  source: Hct,
+  isDark: boolean,
+  contrastLevel: number,
+  specVersion?: "2021" | "2025",
+) => DynamicScheme;
+
+const CONSTRUCTORS: Record<Exclude<SchemeVariant, "brand">, SchemeConstructor> = {
+  fidelity: SchemeFidelity,
+  tonalSpot: SchemeTonalSpot,
+  expressive: SchemeExpressive,
+  vibrant: SchemeVibrant,
+  monochrome: SchemeMonochrome,
+};
 
 /** The M3 roles the app reads, by the CSS name each is published under (`--m3-<name>`). */
 const ROLES = {
@@ -77,13 +118,14 @@ const NEUTRAL_CHROMA = 3;
 const NEUTRAL_VARIANT_CHROMA = 6;
 
 /**
- * Fidelity's primary palette for the brand - its containers stay within a few tones of the seed,
- * moved only as far as text contrast needs (white on the seed is 3.6:1) - with Tonal Spot's quieter
- * secondary and tertiary, and quiet warm neutrals instead of the seed's own, which would tint
- * every surface pink.
+ * For `brand`: Fidelity's primary palette - its containers stay within a few tones of the seed,
+ * moved only as far as text contrast needs (white on the terracotta is 3.6:1) - with Tonal Spot's
+ * quieter secondary and tertiary, and quiet warm neutrals instead of the seed's own, which would
+ * tint every surface pink.
  */
-function createScheme(isDark: boolean): DynamicScheme {
-  const source = Hct.fromInt(argbFromHex(BRAND_PRIMARY));
+function createScheme(seed: string, variant: SchemeVariant, isDark: boolean): DynamicScheme {
+  const source = Hct.fromInt(argbFromHex(seed));
+  if (variant !== "brand") return new CONSTRUCTORS[variant](source, isDark, 0, SPEC);
   const fidelity = new SchemeFidelity(source, isDark, 0, SPEC);
   const tonal = new SchemeTonalSpot(source, isDark, 0, SPEC);
   return new DynamicScheme({
@@ -100,16 +142,20 @@ function createScheme(isDark: boolean): DynamicScheme {
   });
 }
 
-export function buildScheme(isDark: boolean): SchemeColors {
-  const scheme = createScheme(isDark);
+export function buildScheme(seed: string, variant: SchemeVariant, isDark: boolean): SchemeColors {
+  const scheme = createScheme(seed, variant, isDark);
   const colors = {} as SchemeColors;
   for (const [name, role] of Object.entries(ROLES)) {
     colors[name as keyof typeof ROLES] = hexFromArgb(role.getArgb(scheme));
   }
 
-  const source = argbFromHex(BRAND_PRIMARY);
+  const source = argbFromHex(seed);
   for (const [name, extra] of Object.entries(EXTRAS) as Array<[Extra, (typeof EXTRAS)[Extra]]>) {
-    const group = customColor(source, { name, value: argbFromHex(extra.value), blend: extra.blend });
+    const group = customColor(source, {
+      name,
+      value: argbFromHex(extra.value),
+      blend: extra.blend,
+    });
     const tones = isDark ? group.dark : group.light;
     colors[name] = hexFromArgb(tones.color);
     colors[`on-${name}`] = hexFromArgb(tones.onColor);
@@ -126,7 +172,9 @@ function rgbTriple(hex: string): string {
 
 function toneShift(hex: string, delta: number): string {
   const hct = Hct.fromInt(argbFromHex(hex));
-  return hexFromArgb(Hct.from(hct.hue, hct.chroma, Math.min(100, Math.max(0, hct.tone + delta))).toInt());
+  return hexFromArgb(
+    Hct.from(hct.hue, hct.chroma, Math.min(100, Math.max(0, hct.tone + delta))).toInt(),
+  );
 }
 
 /**
@@ -171,12 +219,16 @@ function framework7Variables(colors: SchemeColors): Record<string, string> {
 
 function declarations(colors: SchemeColors): string {
   const own = Object.entries(colors).map(([name, value]) => `--m3-${name}:${value};`);
-  const f7 = Object.entries(framework7Variables(colors)).map(([name, value]) => `${name}:${value};`);
+  const f7 = Object.entries(framework7Variables(colors)).map(
+    ([name, value]) => `${name}:${value};`,
+  );
   return [...own, ...f7].join("");
 }
 
-export function schemeStylesheet(): string {
-  return `:root{${declarations(buildScheme(false))}}:root.dark{${declarations(buildScheme(true))}}`;
+export function schemeStylesheet(seed: string, variant: SchemeVariant): string {
+  const light = declarations(buildScheme(seed, variant, false));
+  const dark = declarations(buildScheme(seed, variant, true));
+  return `:root{${light}}:root.dark{${dark}}`;
 }
 
 const STYLE_ID = "capuchoo-material-scheme";
@@ -186,12 +238,12 @@ const STYLE_ID = "capuchoo-material-scheme";
  * regeneration, no flash. Appended after Framework7's own generated palette, which it prepends, so
  * these win at equal specificity and `:root.dark` outranks its `.dark`.
  */
-export function applyMaterialScheme(): void {
+export function applyMaterialScheme(seed: string, variant: SchemeVariant): void {
   let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
   if (!style) {
     style = document.createElement("style");
     style.id = STYLE_ID;
     document.head.appendChild(style);
   }
-  style.textContent = schemeStylesheet();
+  style.textContent = schemeStylesheet(seed, variant);
 }

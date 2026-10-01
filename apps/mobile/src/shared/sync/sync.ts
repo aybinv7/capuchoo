@@ -88,7 +88,10 @@ export async function syncAll(): Promise<SyncOutcome> {
         try {
           outcome.activity.push(...(await syncApp(appId)));
         } catch (error) {
-          outcome.failed.push({ appId, message: error instanceof Error ? error.message : String(error) });
+          outcome.failed.push({
+            appId,
+            message: error instanceof Error ? error.message : String(error),
+          });
         }
       }
     }),

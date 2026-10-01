@@ -41,8 +41,12 @@ async function loadAppDetail(appId: string) {
   const views: ChannelView[] = channels
     .map((channel) => ({
       channel,
-      native: channel.current_native_id ? (nativeById.get(channel.current_native_id) ?? null) : null,
-      bundle: channel.current_bundle_id ? (bundleById.get(channel.current_bundle_id) ?? null) : null,
+      native: channel.current_native_id
+        ? (nativeById.get(channel.current_native_id) ?? null)
+        : null,
+      bundle: channel.current_bundle_id
+        ? (bundleById.get(channel.current_bundle_id) ?? null)
+        : null,
       base: channel.base_channel_id ? (channelById.get(channel.base_channel_id) ?? null) : null,
     }))
     .sort(

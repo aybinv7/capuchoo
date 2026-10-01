@@ -31,12 +31,12 @@ Exit is always shorter than entry.
 
 ## Patterns in the codebase
 
-- **Page transitions** - `doba-start` / `doba-end` in `transitions.css`: slide in from the
-  control's side with emphasized decelerate, the page under it drifts 30% and dims to 0.82.
-  Framework7 replays the same transition on back. Mirrored under `dir="rtl"`.
-- **Layout changes** - `useFlip({ target, trigger, enabled })`: measure, change, play the inverse
-  as one transform (460ms emphasized decelerate). Used when the character moves from hero to the
-  top bar.
+- **Page transitions** - `doba-start` / `doba-end` in `transitions.css`: slide in from the control's
+  side with emphasized decelerate, the page under it drifts 30% and dims to 0.82. Framework7 replays
+  the same transition on back. Mirrored under `dir="rtl"`.
+- **Layout changes** - `useFlip({ target, trigger, enabled })`: measure, change, play the inverse as
+  one transform (460ms emphasized decelerate). Used when the character moves from hero to the top
+  bar.
 - **The character** - poses (`idle`, `thinking`, `speaking`, `listening`, `entering`, `exiting`,
   `gate`) with per-pose springs; `thinking` runs the loading-indicator shape loop; reactions
   (`happy`, `spin`, `squash`) play over any pose. Drive it with props, never by poking the SVG.
@@ -48,7 +48,7 @@ Exit is always shorter than entry.
 
 ## Loading
 
-Never a spinner. The M3 loading indicator is the shape loop (SoftBurst → Cookie9 → Pentagon → Pill
-→ Sunny → Cookie4 → Oval, 650ms per morph, full turn 4666ms, spring 0.6/200), 48dp container with
-a 38dp shape; contained version = primary on primary-container. `loadingIndicator.ts` implements
-it; the character's `thinking` pose is the same loop.
+Never a spinner. The M3 loading indicator is the shape loop (SoftBurst → Cookie9 → Pentagon → Pill →
+Sunny → Cookie4 → Oval, 650ms per morph, full turn 4666ms, spring 0.6/200), 48dp container with a
+38dp shape; contained version = primary on primary-container. `loadingIndicator.ts` implements it;
+the character's `thinking` pose is the same loop.

@@ -9,15 +9,16 @@
     "clear": "Clear",
     "refresh": "Refresh",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "done": "Done"
   },
   "errors": {
     "notFoundTitle": "Not here",
     "notFound": "This page does not exist."
   },
   "signIn": {
-    "title": "Capuchoo",
-    "subtitle": "Your apps, their channels, and any build on this phone in one tap.",
+    "title": "Sign in",
+    "subtitle": "Use your Capuchoo account. Your apps, their channels and every build follow you here.",
     "server": "Server",
     "serverPlaceholder": "updates.example.com",
     "email": "Email",
@@ -29,7 +30,12 @@
       "credentials": "That email and password do not match an account.",
       "rateLimited": "Too many attempts. Wait a few minutes, then try again.",
       "offline": "{server} could not be reached. Check the address and the connection."
-    }
+    },
+    "change": "Change",
+    "changeServer": "Change the server",
+    "noServer": "No server set",
+    "showPassword": "Show the password",
+    "hidePassword": "Hide the password"
   },
   "live": {
     "syncing": "Syncing",
@@ -62,7 +68,12 @@
     "attentionText": "Their channel serves a newer build than the one installed.",
     "emptyTitle": "No apps yet",
     "emptyText": "Apps you are given a role on appear here. Ask an admin to add you to one.",
-    "noMatch": "No app matches that search."
+    "noMatch": "No app matches “{term}”",
+    "updatesTitle": "Update ready | {count} updates ready",
+    "updateFrom": "From {channel}",
+    "update": "Update",
+    "all": "Your apps",
+    "results": "{count} result | {count} results"
   },
   "phone": {
     "title": "On this phone",
@@ -109,7 +120,8 @@
     "pausedLong": "Paused: devices get nothing new",
     "deliver": "Deliver",
     "pause": "Pause",
-    "resume": "Resume"
+    "resume": "Resume",
+    "deliverAction": "Deliver a build…"
   },
   "build": {
     "code": "Build {code}",
@@ -126,7 +138,8 @@
     "signedYes": "Signed",
     "signedNo": "Not signed",
     "certificate": "Signing certificate",
-    "checksum": "SHA-256"
+    "checksum": "SHA-256",
+    "details": "Details"
   },
   "install": {
     "cancel": "Cancel",
@@ -204,25 +217,119 @@
   "profile": {
     "title": "You",
     "instanceAdmin": "Server admin",
-    "appearance": "Appearance",
-    "mode": {
-      "system": "System",
-      "light": "Light",
-      "dark": "Dark"
-    },
     "organizations": "Organizations",
     "orgRole": {
       "owner": "Owner",
       "admin": "Admin",
       "member": "Member"
     },
-    "notifications": "Notify me about",
+    "notifications": "Notifications",
     "notificationsHint": "Notifications arrive while Capuchoo is running. The Activity tab always has everything.",
-    "server": "Server",
     "endpoint": "Address",
     "version": "App version",
     "signOut": "Sign out",
     "signOutTitle": "Sign out?",
-    "signOutText": "Your session ends on the server, and what this phone kept for it is deleted."
+    "signOutText": "Your session ends on the server, and what this phone kept for it is deleted.",
+    "preferences": "Preferences",
+    "notifyAbout": "Notify me about",
+    "notifyCount": "{on} of {total}",
+    "phone": "This phone"
+  },
+  "refresh": {
+    "label": "Refreshing"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "mode": "Theme",
+    "modes": {
+      "system": "Follow the system",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "modeHint": "Following the system switches with Android's dark theme and its schedule.",
+    "colors": "Colours"
+  },
+  "colors": {
+    "title": "Colours",
+    "reset": "Reset",
+    "seed": "Colour",
+    "custom": "Custom colour",
+    "customHint": "Pick any colour; Material builds the whole palette from it.",
+    "customActive": "Your own colour, {hex}.",
+    "style": "Style",
+    "roles": "Generated roles",
+    "rolesHint": "Every colour in the app is one of these roles, generated from the colour and the style above.",
+    "presets": {
+      "terracotta": "Capuchoo terracotta",
+      "amber": "Staging amber",
+      "forest": "Prod green",
+      "teal": "Teal",
+      "ocean": "Ocean",
+      "indigo": "Indigo",
+      "violet": "Dev violet",
+      "rose": "Rose"
+    },
+    "schemes": {
+      "brand": {
+        "name": "Capuchoo",
+        "hint": "Your colour exactly, on Capuchoo's quiet paper surfaces."
+      },
+      "fidelity": {
+        "name": "Fidelity",
+        "hint": "Your colour exactly, carried into every surface."
+      },
+      "tonalSpot": {
+        "name": "Tonal spot",
+        "hint": "Android's default: calm, softened tones of your colour."
+      },
+      "expressive": {
+        "name": "Expressive",
+        "hint": "Shifted hues for a bolder, playful palette."
+      },
+      "vibrant": {
+        "name": "Vibrant",
+        "hint": "The most saturated version of your colour."
+      },
+      "monochrome": {
+        "name": "Monochrome",
+        "hint": "Greys only; the environments keep their colours."
+      }
+    },
+    "sample": {
+      "chip": "Beta"
+    }
+  },
+  "welcome": {
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Get started",
+    "carousel": "Introduction",
+    "position": "{n} of {total}",
+    "lanes": {
+      "kicker": "Channels",
+      "title": "Every release, where it stands",
+      "body": "Dev, staging and prod side by side, with the build each one serves right now."
+    },
+    "install": {
+      "kicker": "This phone",
+      "title": "Any build, one tap away",
+      "body": "See what this phone runs against its channel and install the build it should have."
+    },
+    "notify": {
+      "kicker": "Live",
+      "title": "Know the moment it ships",
+      "body": "New builds, deliveries and pauses arrive as they happen, for the apps you choose.",
+      "now": "now",
+      "notes": {
+        "build": "Retail 1.6.0 was published",
+        "delivered": "prod now serves 1.5.2",
+        "paused": "staging was paused"
+      }
+    },
+    "roles": {
+      "kicker": "Roles",
+      "title": "Made for the whole team",
+      "body": "Testers install, developers deliver to dev and staging, admins run every channel."
+    }
   }
 }

@@ -9,8 +9,8 @@ SQLite — it does not become the thing screens read.
 
 ## Stack
 
-Vue 3.5 `<script setup lang="ts">` · Framework7 9 (+ framework7-vue 8) · Capacitor 8 (Android
-first) · Kysely over SQLite in an OPFS worker · vue-i18n · Tailwind 4 · Vite+ (`vp`).
+Vue 3.5 `<script setup lang="ts">` · Framework7 9 (+ framework7-vue 8) · Capacitor 8 (Android first)
+· Kysely over SQLite in an OPFS worker · vue-i18n · Tailwind 4 · Vite+ (`vp`).
 
 Data layer comes from three published packages, not from this repo:
 
@@ -57,18 +57,18 @@ The short version of the rules, each earned by a real bug:
 - **Never write a CSS background, height or safe-area rule.** Framework7's theme owns those.
   `assets/css/app.css` is one line — the Tailwind import — and `icons.css` is font wiring. If a
   screen looks wrong, you are fighting the theme, not missing CSS.
-- **An icon name is verified against the font, never guessed.** framework7-icons is a ligature
-  font: a wrong name renders _nothing at all_, silently. `tests/icons.test.ts` checks every name in
-  the app against the ttf. Run it.
+- **An icon name is verified against the font, never guessed.** framework7-icons is a ligature font:
+  a wrong name renders _nothing at all_, silently. `tests/icons.test.ts` checks every name in the
+  app against the ttf. Run it.
 - **A reactive query's `tables` must list exactly what its function reads.** Under-list and the
   screen goes stale with no error. See `.claude/rules/data-fetching.md`.
 - **Every write goes through `rdb`**, never `getDatabase().db`. `rdb` announces the tables it
   touched; a raw write is invisible to every query watching them.
-- **`queryKey` is an identity built from arguments**, not a label: `["demo:order", orderId]`.
-  Refs in the key are tracked, so a filter belongs in it rather than in a manual `refetch()`.
-- **An inserted id comes from `insertId`, never `.returning(...)`.** Inside a transaction the
-  SQLite plugin executes the statement and drops its RETURNING rows, so the insert succeeds and
-  kysely reports `no result`. See `.claude/rules/database.md`.
+- **`queryKey` is an identity built from arguments**, not a label: `["demo:order", orderId]`. Refs
+  in the key are tracked, so a filter belongs in it rather than in a manual `refetch()`.
+- **An inserted id comes from `insertId`, never `.returning(...)`.** Inside a transaction the SQLite
+  plugin executes the statement and drops its RETURNING rows, so the insert succeeds and kysely
+  reports `no result`. See `.claude/rules/database.md`.
 - **Money is integer cents.** A float total is a rounding bug waiting to happen.
 - **`f7route` and `f7router` are props**, not imports: `defineProps<{ f7route: Router.Route }>()`.
 - **A route loads its component through `lazyRoute`**, never a bare `import().then(resolve)`.
@@ -89,16 +89,16 @@ pnpm type-check   # vue-tsc, the gate for anything touching .vue
 
 `vp check` is the type gate for `vite.config.ts`; `vue-tsc` covers `src`. Both must pass.
 
-There is deliberately no `tsconfig.node.json`. A `tsc` project over `vite.config.ts` cannot be
-clean either way: with `skipLibCheck` on, Vite's deeply recursive `PluginOption` union blows the
+There is deliberately no `tsconfig.node.json`. A `tsc` project over `vite.config.ts` cannot be clean
+either way: with `skipLibCheck` on, Vite's deeply recursive `PluginOption` union blows the
 comparison depth limit on the plugin array; with it off, vite-plus-core's own declarations fail on
 optional peers it does not ship. Nothing in this repository runs `tsc`, and an editor with no
 project reports the file clean - so the config only ever added a red squiggle and a wrong
 explanation. `vp check` resolves it correctly and is the authority.
 
-**Type-checking is not verification for UI.** A screen that compiles can still render an empty
-box — that is how seven invisible icons and a blank-page bootstrap both shipped. If you changed
-something visual, say plainly that you have not seen it run.
+**Type-checking is not verification for UI.** A screen that compiles can still render an empty box —
+that is how seven invisible icons and a blank-page bootstrap both shipped. If you changed something
+visual, say plainly that you have not seen it run.
 
 ## What not to do
 
@@ -107,8 +107,8 @@ something visual, say plainly that you have not seen it run.
 - Do not add a data-fetching library. If you need a shared cache across screens, read the note in
   `@cavulsqa/reactive-vue`'s README about driving TanStack Query from the bus rather than growing
   `useReactiveQuery`.
-- Do not assume the toolchain. Capacitor 8 compiles against **JDK 21** - an older default JDK
-  fails with `invalid source release: 21` from inside capacitor-android, which reads as a
-  Capacitor bug and is not one.
+- Do not assume the toolchain. Capacitor 8 compiles against **JDK 21** - an older default JDK fails
+  with `invalid source release: 21` from inside capacitor-android, which reads as a Capacitor bug
+  and is not one.
 - Do not build for the web. `vp dev` in a browser runs sql.js in memory so the app is inspectable;
   the target is a device, and anything that only works in a browser is not done.

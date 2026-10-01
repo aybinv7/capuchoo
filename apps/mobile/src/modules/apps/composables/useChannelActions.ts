@@ -14,7 +14,12 @@ function ask(title: string, text: string, ok: string, danger: boolean): Promise<
         text,
         buttons: [
           { text: f7.params.dialog?.buttonCancel ?? "Cancel", onClick: () => resolve(false) },
-          { text: ok, strong: true, cssClass: danger ? "dialog-button-danger" : "", onClick: () => resolve(true) },
+          {
+            text: ok,
+            strong: true,
+            cssClass: danger ? "dialog-button-danger" : "",
+            onClick: () => resolve(true),
+          },
         ],
         on: { closed: () => resolve(false) },
       })
@@ -31,7 +36,8 @@ export function useChannelActions(app: Ref<App | null | undefined>) {
   const { t } = useI18n();
   const busy = ref<string | null>(null);
 
-  const allowed = (channel: Channel) => Boolean(app.value && can.deliver(app.value, channel.environment));
+  const allowed = (channel: Channel) =>
+    Boolean(app.value && can.deliver(app.value, channel.environment));
 
   function toast(text: string): void {
     f7.toast.create({ text, closeTimeout: 3200, position: "bottom" }).open();
@@ -57,15 +63,24 @@ export function useChannelActions(app: Ref<App | null | undefined>) {
     const version = `${build.version_name} (${build.version_code})`;
     const prod = channel.environment === "prod";
     const confirmed = await ask(
-      rollback ? t("deliver.rollbackTitle", { channel: channel.name }) : t("deliver.title", { channel: channel.name }),
-      prod ? t("deliver.prodWarning", { version, channel: channel.name }) : t("deliver.text", { version, channel: channel.name }),
+      rollback
+        ? t("deliver.rollbackTitle", { channel: channel.name })
+        : t("deliver.title", { channel: channel.name }),
+      prod
+        ? t("deliver.prodWarning", { version, channel: channel.name })
+        : t("deliver.text", { version, channel: channel.name }),
       rollback ? t("deliver.rollback") : t("deliver.confirm"),
       prod || rollback,
     );
     if (!confirmed) return;
     await run(
       channel,
-      () => api.point(credentials(), channel.id, { native_id: build.id, rollback, reason: t("deliver.reason") }),
+      () =>
+        api.point(credentials(), channel.id, {
+          native_id: build.id,
+          rollback,
+          reason: t("deliver.reason"),
+        }),
       t("deliver.done", { version, channel: channel.name }),
     );
   }
@@ -73,7 +88,11 @@ export function useChannelActions(app: Ref<App | null | undefined>) {
   async function togglePause(channel: Channel): Promise<void> {
     if (!allowed(channel)) return;
     if (channel.paused) {
-      await run(channel, () => api.resume(credentials(), channel.id), t("deliver.resumed", { channel: channel.name }));
+      await run(
+        channel,
+        () => api.resume(credentials(), channel.id),
+        t("deliver.resumed", { channel: channel.name }),
+      );
       return;
     }
     const confirmed = await ask(

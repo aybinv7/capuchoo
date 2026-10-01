@@ -1,6 +1,7 @@
 {
   "name": "@capuchoo/mobile",
   "version": "0.1.0",
+  "private": true,
   "description": "Capuchoo on a phone: the apps you are responsible for, their releases, and installing any build to test it.",
   "type": "module",
   "scripts": {
@@ -54,7 +55,6 @@
     "vite-plus": "catalog:",
     "vue-tsc": "^3.2.4"
   },
-  "private": true,
   "engines": {
     "node": ">=22.18.0"
   }

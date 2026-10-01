@@ -5,8 +5,16 @@
     :class="tone"
     :style="{ width: `${size}px`, height: `${size}px`, fontSize: `${Math.round(size * 0.36)}px` }"
   >
-    <img v-if="iconUrl && !broken" :src="iconUrl" alt="" class="size-full object-cover" @error="broken = true" />
-    <span v-else class="font-semibold tracking-tight select-none" aria-hidden="true">{{ initials }}</span>
+    <img
+      v-if="iconUrl && !broken"
+      :src="iconUrl"
+      alt=""
+      class="size-full object-cover"
+      @error="broken = true"
+    />
+    <span v-else class="font-semibold tracking-tight select-none" aria-hidden="true">{{
+      initials
+    }}</span>
   </MaterialShape>
 </template>
 
@@ -20,7 +28,13 @@ import type { MaterialShapeName } from "@/shared/utils/shapes/materialShapes";
  * chosen from an id, never at random per render.
  */
 const props = withDefaults(
-  defineProps<{ name: string; bundleId: string; iconUrl?: string | null; size?: number; shape?: MaterialShapeName }>(),
+  defineProps<{
+    name: string;
+    bundleId: string;
+    iconUrl?: string | null;
+    size?: number;
+    shape?: MaterialShapeName;
+  }>(),
   { iconUrl: null, size: 48, shape: "cookie9" },
 );
 
@@ -44,7 +58,10 @@ function hash(text: string): number {
 const tone = computed(() => TONES[hash(props.bundleId) % TONES.length]);
 
 const initials = computed(() => {
-  const words = props.name.trim().split(/[\s._-]+/).filter(Boolean);
+  const words = props.name
+    .trim()
+    .split(/[\s._-]+/)
+    .filter(Boolean);
   const letters = words.length > 1 ? words[0]![0]! + words[1]![0]! : (words[0] ?? "?").slice(0, 2);
   return letters.toUpperCase();
 });

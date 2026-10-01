@@ -46,7 +46,9 @@ const visibility = useDocumentVisibility();
 
 function draw(elapsed: number): void {
   const frame =
-    props.progress === undefined ? indeterminateFrame(elapsed, buffer) : determinateFrame(props.progress, buffer);
+    props.progress === undefined
+      ? indeterminateFrame(elapsed, buffer)
+      : determinateFrame(props.progress, buffer);
   path.value = outlinePath(frame.outline, frame.scale * ACTIVE_INDICATOR_SCALE);
   rotation.value = frame.rotation;
 }

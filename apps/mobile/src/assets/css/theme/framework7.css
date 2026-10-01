@@ -89,13 +89,17 @@
   --f7-menu-list-item-title-font-size: var(--f7-list-font-size);
   --f7-menu-list-item-title-font-weight: 400;
 
-  /* The M3 navigation bar: one tone above the page, a 64dp-wide pill behind the active icon. */
-  --f7-tabbar-icons-height: 80px;
+  /* The navigation bar's active pill; its metrics live in layout/shell.css. */
   --f7-tabbar-link-active-color: var(--m3-on-secondary-container);
   --f7-tabbar-link-inactive-color: var(--muted-foreground);
-  --f7-tabbar-link-active-bg-color: var(--m3-secondary-container);
-  --f7-tabbar-label-font-size: 12px;
-  --f7-tabbar-label-font-weight: 500;
+  --f7-tabbar-link-active-bg-color: transparent;
+  --f7-tabbar-link-active-icon-bg-color: var(--m3-secondary-container);
+
+  /* The M3 search bar: a full-pill field on the highest surface container, never a tint. */
+  --f7-searchbar-input-bg-color: var(--muted);
+  --f7-searchbar-input-text-color: var(--foreground);
+  --f7-searchbar-placeholder-color: var(--muted-foreground);
+  --f7-searchbar-search-icon-color: var(--muted-foreground);
 
   --f7-dialog-border-radius: var(--radius-xl);
   --f7-toast-bg-color: var(--inverse);

@@ -17,9 +17,7 @@ import {
  * No in-memory entry on purpose: a chain that ends somewhere data is not kept is worse than one that
  * fails and names every attempt.
  */
-export const DEFAULT_ORDER: StorageCandidate[] = [
-  opfsSahPool,
-];
+export const DEFAULT_ORDER: StorageCandidate[] = [opfsSahPool];
 
 /**
  * `VITE_STORAGE_ENGINE` promotes one candidate to the front and leaves the rest as fallback, so the

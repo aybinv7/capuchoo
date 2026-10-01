@@ -39,8 +39,8 @@ if (!orderId) throw new Error("the order was written but the database reported n
 `insertId` is the portable answer. Every engine reports it — the worker engines from
 `last_insert_rowid()`, the sql.js test dialect the same way — so a repository written against it
 behaves identically in tests and on a device. `.returning(...)` does work on the worker engines, but
-it is the one thing that differs between them: the Capacitor plugin runs a statement issued inside an
-open transaction through `query()`, which executes it and silently drops its RETURNING rows, so
+it is the one thing that differs between them: the Capacitor plugin runs a statement issued inside
+an open transaction through `query()`, which executes it and silently drops its RETURNING rows, so
 `.returning("id").executeTakeFirstOrThrow()` threw `no result` from an insert that had in fact
 succeeded. `@cavulsqa/mobile-db` now throws a message that says so instead.
 

@@ -6,7 +6,10 @@ import { migrations } from "../src/shared/database/migrations.js";
 import type { Database } from "../src/shared/database/schema.js";
 
 async function migrate(db: Kysely<Database>, set = migrations) {
-  return new Migrator({ db, provider: { getMigrations: () => Promise.resolve(set) } }).migrateToLatest();
+  return new Migrator({
+    db,
+    provider: { getMigrations: () => Promise.resolve(set) },
+  }).migrateToLatest();
 }
 
 const TABLES = [

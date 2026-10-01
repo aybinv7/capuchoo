@@ -2,7 +2,10 @@ import type { ActivityTable, ChannelTable, NativeBuildTable } from "@/shared/dat
 
 export interface Snapshot {
   channels: Pick<ChannelTable, "id" | "name" | "environment" | "paused" | "current_native_id">[];
-  natives: Pick<NativeBuildTable, "id" | "version_name" | "version_code" | "flavour" | "created_at">[];
+  natives: Pick<
+    NativeBuildTable,
+    "id" | "version_name" | "version_code" | "flavour" | "created_at"
+  >[];
 }
 
 /**
@@ -11,7 +14,12 @@ export interface Snapshot {
  * stream, or by a second sync, is the same row. A first sync (no previous snapshot) records the
  * builds it finds but no deliveries: it cannot tell a move from a state it never saw before.
  */
-export function diffActivity(appId: string, previous: Snapshot | null, next: Snapshot, at: string): ActivityTable[] {
+export function diffActivity(
+  appId: string,
+  previous: Snapshot | null,
+  next: Snapshot,
+  at: string,
+): ActivityTable[] {
   const rows: ActivityTable[] = [];
   const known = new Set(previous?.natives.map((native) => native.id) ?? []);
   const byId = new Map(next.natives.map((native) => [native.id, native]));

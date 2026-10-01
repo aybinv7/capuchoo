@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import { can } from "../src/shared/access/capabilities.js";
-import { followedChannel, phoneStatus, type StatusChannel } from "../src/shared/release/phone-status.js";
+import {
+  followedChannel,
+  phoneStatus,
+  type StatusChannel,
+} from "../src/shared/release/phone-status.js";
 import { diffActivity, type Snapshot } from "../src/shared/sync/activity-diff.js";
 import { normaliseEndpoint } from "../src/modules/auth/composables/useSignIn.js";
 
@@ -34,7 +38,9 @@ describe("phoneStatus", () => {
   test("a shared id follows prod, and an older install is behind it", () => {
     const status = phoneStatus({
       identifiers,
-      installed: [{ bundle_id: "com.example.field", installed: 1, version_name: "1.0.0", version_code: 1 }],
+      installed: [
+        { bundle_id: "com.example.field", installed: 1, version_name: "1.0.0", version_code: 1 },
+      ],
       channels: CHANNELS,
       natives: NATIVES,
     });
@@ -48,7 +54,12 @@ describe("phoneStatus", () => {
       identifiers,
       installed: [
         { bundle_id: "com.example.field", installed: 1, version_name: "1.0.1", version_code: 2 },
-        { bundle_id: "com.example.field.dev", installed: 1, version_name: "1.0.0", version_code: 1 },
+        {
+          bundle_id: "com.example.field.dev",
+          installed: 1,
+          version_name: "1.0.0",
+          version_code: 1,
+        },
       ],
       channels: CHANNELS,
       natives: NATIVES,
@@ -62,7 +73,9 @@ describe("phoneStatus", () => {
     const at = (code: number) =>
       phoneStatus({
         identifiers: identifiers.slice(0, 1),
-        installed: [{ bundle_id: "com.example.field", installed: 1, version_name: "x", version_code: code }],
+        installed: [
+          { bundle_id: "com.example.field", installed: 1, version_name: "x", version_code: code },
+        ],
         channels: CHANNELS,
         natives: NATIVES,
       }).state;
@@ -71,12 +84,19 @@ describe("phoneStatus", () => {
     expect(
       phoneStatus({
         identifiers: identifiers.slice(0, 1),
-        installed: [{ bundle_id: "com.example.field", installed: 1, version_name: "x", version_code: 1 }],
+        installed: [
+          { bundle_id: "com.example.field", installed: 1, version_name: "x", version_code: 1 },
+        ],
         channels: [channel({ id: "prod" })],
         natives: NATIVES,
       }).state,
     ).toBe("untracked");
-    const absent = phoneStatus({ identifiers, installed: [], channels: CHANNELS, natives: NATIVES });
+    const absent = phoneStatus({
+      identifiers,
+      installed: [],
+      channels: CHANNELS,
+      natives: NATIVES,
+    });
     expect(absent.state).toBe("absent");
     expect(absent.target?.version_code).toBe(2);
   });
@@ -90,8 +110,20 @@ describe("diffActivity", () => {
   const before: Snapshot = {
     channels: [{ id: "c", name: "prod", environment: "prod", paused: 0, current_native_id: "n2" }],
     natives: [
-      { id: "n1", version_name: "1.0.0", version_code: 1, flavour: "prod", created_at: "2026-10-01T10:00:00Z" },
-      { id: "n2", version_name: "1.0.1", version_code: 2, flavour: "prod", created_at: "2026-10-01T11:00:00Z" },
+      {
+        id: "n1",
+        version_name: "1.0.0",
+        version_code: 1,
+        flavour: "prod",
+        created_at: "2026-10-01T10:00:00Z",
+      },
+      {
+        id: "n2",
+        version_name: "1.0.1",
+        version_code: 2,
+        flavour: "prod",
+        created_at: "2026-10-01T11:00:00Z",
+      },
     ],
   };
 
@@ -103,10 +135,18 @@ describe("diffActivity", () => {
 
   test("a new build, a rollback and a pause, each with a stable id", () => {
     const after: Snapshot = {
-      channels: [{ id: "c", name: "prod", environment: "prod", paused: 1, current_native_id: "n1" }],
+      channels: [
+        { id: "c", name: "prod", environment: "prod", paused: 1, current_native_id: "n1" },
+      ],
       natives: [
         ...before.natives,
-        { id: "n3", version_name: "1.0.2", version_code: 3, flavour: "prod", created_at: "2026-10-01T12:00:00Z" },
+        {
+          id: "n3",
+          version_name: "1.0.2",
+          version_code: 3,
+          flavour: "prod",
+          created_at: "2026-10-01T12:00:00Z",
+        },
       ],
     };
     const rows = diffActivity("app", before, after, "2026-10-01T12:05:00Z");

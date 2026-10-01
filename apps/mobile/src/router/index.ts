@@ -3,6 +3,7 @@ import activityRoutes from "@/modules/activity/router/routes/activity.routes";
 import appsRoutes from "@/modules/apps/router/routes/apps.routes";
 import authRoutes from "@/modules/auth/router/routes/auth.routes";
 import profileRoutes from "@/modules/profile/router/routes/profile.routes";
+import welcomeRoutes from "@/modules/welcome/router/routes/welcome.routes";
 import globalRoutes from "./global/global.routes";
 
 /**
@@ -10,6 +11,7 @@ import globalRoutes from "./global/global.routes";
  * takes the first match.
  */
 const routes: Router.RouteParameters[] = [
+  ...welcomeRoutes,
   ...authRoutes,
   ...appsRoutes,
   ...activityRoutes,

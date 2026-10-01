@@ -1,20 +1,26 @@
 ---
 name: m3-expressive
-description: Material 3 Expressive in Doba - shapes, springs, motion, component sizes and the messaging patterns (bubbles, tapbacks, stickers, voice notes, composer). Use for ANY UI or UX work - a new screen, a component, an animation, a transition, onboarding, a sheet, a list, a button, a loading state, a chat surface - before writing markup. Covers the shape library and character engine ported from proxima, the exact M3 tokens (from androidx), which Framework7 pieces to use, and the mistakes already made once.
+description:
+  Material 3 Expressive in Doba - shapes, springs, motion, component sizes and the messaging
+  patterns (bubbles, tapbacks, stickers, voice notes, composer). Use for ANY UI or UX work - a new
+  screen, a component, an animation, a transition, onboarding, a sheet, a list, a button, a loading
+  state, a chat surface - before writing markup. Covers the shape library and character engine
+  ported from proxima, the exact M3 tokens (from androidx), which Framework7 pieces to use, and the
+  mistakes already made once.
 ---
 
 # Material 3 Expressive in Doba
 
-Doba is Android-first and pinned to Framework7's Material theme. "Expressive" is not decoration:
-it is shape, springy motion and tonal colour used to say _what is happening_. Every screen follows
-this skill; the numbers are Google's own (androidx Compose tokens, see [sources.md](sources.md)).
+Doba is Android-first and pinned to Framework7's Material theme. "Expressive" is not decoration: it
+is shape, springy motion and tonal colour used to say _what is happening_. Every screen follows this
+skill; the numbers are Google's own (androidx Compose tokens, see [sources.md](sources.md)).
 
 ## Before building anything
 
-1. **Look at a reference first.** Google Messages (2025 Expressive redesign), Google Photos,
-   Pixel launcher, iMessage for tapbacks. Decide what the screen does in one sentence.
-2. **Pick the M3 component** and read its numbers in [components.md](components.md). Framework7
-   has most of them; build by hand only what it lacks (and say why in the component's doc).
+1. **Look at a reference first.** Google Messages (2025 Expressive redesign), Google Photos, Pixel
+   launcher, iMessage for tapbacks. Decide what the screen does in one sentence.
+2. **Pick the M3 component** and read its numbers in [components.md](components.md). Framework7 has
+   most of them; build by hand only what it lacks (and say why in the component's doc).
 3. **Pick the shape** ([shapes.md](shapes.md)) and **the motion** ([motion.md](motion.md)).
 4. Chat surfaces: [messaging.md](messaging.md) is binding - it records decisions the user made.
 5. Verify live in the built-in browser against the user's running dev server, at 412x915 and a
@@ -47,8 +53,8 @@ this skill; the numbers are Google's own (androidx Compose tokens, see [sources.
 - **Short threads sit against the composer** (`justify-content: flex-end`), and new messages keep
   the view pinned to the end unless the reader scrolled back.
 - **Pages open from the side of their control**; back returns the same way.
-- **No stock filler.** No canned "AI" lines, no lorem, no placeholder personas. Empty states
-  explain and offer the one action that fills them.
+- **No stock filler.** No canned "AI" lines, no lorem, no placeholder personas. Empty states explain
+  and offer the one action that fills them.
 - **Visual before verbal.** Onboarding and empty states lead with a scene (shapes, the character,
   motion) and one line of text, never a paragraph.
 - **Reduced motion keeps meaning, drops travel:** morphs and colour stay, rotation, parallax and

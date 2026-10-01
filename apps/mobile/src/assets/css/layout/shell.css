@@ -1,0 +1,15 @@
+/* M3 Expressive navigation bar metrics; read by the tab bar and by the page's bottom clearance. */
+.md .cap-shell {
+  --f7-tabbar-icons-height: 64px;
+  --f7-tabbar-icons-tablet-height: 64px;
+  --f7-tabbar-label-font-size: 12px;
+  --f7-tabbar-label-tablet-font-size: 12px;
+  --f7-tabbar-label-font-weight: 500;
+  --f7-tabbar-icon-size: 24px;
+}
+
+.toolbar.tabbar {
+  transition:
+    transform 300ms var(--ease-emphasized),
+    opacity 300ms var(--ease-emphasized);
+}

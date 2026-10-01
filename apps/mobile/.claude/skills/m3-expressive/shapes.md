@@ -3,9 +3,9 @@
 ## Corner scale (`ShapeTokens.kt`, dp)
 
 none 0 · extraSmall 4 · small 8 · medium 12 · large 16 · largeIncreased 20 · extraLarge 28 ·
-extraLargeIncreased 32 · extraExtraLarge 48 · full (pill).
-Tailwind: `rounded-[4px]`, `rounded-lg` (8), `rounded-xl` (12), `rounded-2xl` (16),
-`rounded-[20px]`, `rounded-[28px]`, `rounded-[32px]`, `rounded-[48px]`, `rounded-full`.
+extraLargeIncreased 32 · extraExtraLarge 48 · full (pill). Tailwind: `rounded-[4px]`, `rounded-lg`
+(8), `rounded-xl` (12), `rounded-2xl` (16), `rounded-[20px]`, `rounded-[28px]`, `rounded-[32px]`,
+`rounded-[48px]`, `rounded-full`.
 
 Pressed and selected states **change shape**, animated by a spring: a round button squares toward
 its pressed token, a selected item in a connected group becomes a pill.
@@ -17,8 +17,8 @@ its pressed token, a selected item in a connected group becomes a pill.
 pentagon, gem, sunny, verySunny, clover4, clover8, flower, softBurst, burst. Add a missing one
 (Heart, Ghostish, Puffy, Bun, Arch...) by porting its vertices from androidx, never by eyeballing.
 
-`<MaterialShape shape="…">` cuts any content to a shape with a CSS mask (give it a square box).
-For motion between shapes use `sampleOutline` + `morphOutline` (`morph.ts`) on an SVG path.
+`<MaterialShape shape="…">` cuts any content to a shape with a CSS mask (give it a square box). For
+motion between shapes use `sampleOutline` + `morphOutline` (`morph.ts`) on an SVG path.
 
 ## Which shape where (Doba's vocabulary)
 

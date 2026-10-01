@@ -1,4 +1,11 @@
-import type { MeResponse, ServerApp, ServerBundle, ServerChannel, ServerIdentifier, ServerNative } from "@/shared/api/types";
+import type {
+  MeResponse,
+  ServerApp,
+  ServerBundle,
+  ServerChannel,
+  ServerIdentifier,
+  ServerNative,
+} from "@/shared/api/types";
 import type {
   AccountTable,
   AppIdentifierTable,
@@ -23,7 +30,12 @@ export function toAccount(me: MeResponse, endpoint: string, at: string): Account
 }
 
 export function toOrganizations(me: MeResponse): OrganizationTable[] {
-  return me.organizations.map((org) => ({ id: org.id, name: org.name, slug: org.slug, role: org.role }));
+  return me.organizations.map((org) => ({
+    id: org.id,
+    name: org.name,
+    slug: org.slug,
+    role: org.role,
+  }));
 }
 
 /** An app the server lists without a role is not one this account can act on; it is dropped. */
@@ -46,9 +58,14 @@ export function toApps(apps: ServerApp[]): Omit<AppTable, "notify" | "synced_at"
     }));
 }
 
-export function toIdentifiers(appId: string, rows: ServerIdentifier[], primary: string): AppIdentifierTable[] {
+export function toIdentifiers(
+  appId: string,
+  rows: ServerIdentifier[],
+  primary: string,
+): AppIdentifierTable[] {
   const seen = new Map<string, AppIdentifierTable>();
-  for (const row of rows) seen.set(row.bundle_id, { app_id: appId, bundle_id: row.bundle_id, flavour: row.flavour });
+  for (const row of rows)
+    seen.set(row.bundle_id, { app_id: appId, bundle_id: row.bundle_id, flavour: row.flavour });
   if (!seen.has(primary)) seen.set(primary, { app_id: appId, bundle_id: primary, flavour: null });
   return [...seen.values()];
 }

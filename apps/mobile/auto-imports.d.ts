@@ -14,6 +14,7 @@ declare global {
   const BRAND_NEUTRAL: typeof import('./src/shared/utils/theme/brand').BRAND_NEUTRAL
   const BRAND_PRIMARY: typeof import('./src/shared/utils/theme/brand').BRAND_PRIMARY
   const DISTANCE_EPSILON: typeof import('./src/shared/utils/shapes/geometry').DISTANCE_EPSILON
+  const DRAG_MULTIPLIER: typeof import('./src/shared/utils/motion/pullToRefresh').DRAG_MULTIPLIER
   const Dom7: typeof import('framework7/lite').Dom7
   const ENVIRONMENT_COLORS: typeof import('./src/shared/utils/theme/brand').ENVIRONMENT_COLORS
   const ENVIRONMENT_ORDER: typeof import('./src/modules/apps/composables/useAppsOverview').ENVIRONMENT_ORDER
@@ -21,11 +22,16 @@ declare global {
   const Framework7VueResolver: typeof import('./src/shared/utils/resolvers/resolvers').Framework7VueResolver
   const GLOBAL_ROTATION_MS: typeof import('./src/shared/utils/shapes/loadingIndicator').GLOBAL_ROTATION_MS
   const INDETERMINATE_SHAPES: typeof import('./src/shared/utils/shapes/loadingIndicator').INDETERMINATE_SHAPES
+  const INDICATOR_SIZE_PX: typeof import('./src/shared/utils/motion/pullToRefresh').INDICATOR_SIZE_PX
   const MATERIAL_SHAPES: typeof import('./src/shared/utils/shapes/materialShapes').MATERIAL_SHAPES
   const MORPH_INTERVAL_MS: typeof import('./src/shared/utils/shapes/loadingIndicator').MORPH_INTERVAL_MS
+  const PULL_THRESHOLD_PX: typeof import('./src/shared/utils/motion/pullToRefresh').PULL_THRESHOLD_PX
   const SCHEME_VARIANTS: typeof import('./src/shared/composables/theme/materialScheme').SCHEME_VARIANTS
+  const THEME_PRESETS: typeof import('./src/shared/utils/theme/brand').THEME_PRESETS
+  const activeTabId: typeof import('./src/shared/composables/useActiveTab').activeTabId
   const add: typeof import('./src/shared/utils/shapes/geometry').add
   const applyMaterialScheme: typeof import('./src/shared/composables/theme/materialScheme').applyMaterialScheme
+  const applyStoredColorScheme: typeof import('./src/shared/composables/theme/useColorTheme').applyStoredColorScheme
   const asyncComputed: typeof import('@vueuse/core').asyncComputed
   const autoResetRef: typeof import('@vueuse/core').autoResetRef
   const boundsOf: typeof import('./src/shared/utils/shapes/geometry').boundsOf
@@ -84,10 +90,12 @@ declare global {
   const i18n: typeof import('./src/plugins/i18n.plugin').i18n
   const ignorableWatch: typeof import('@vueuse/core').ignorableWatch
   const indeterminateFrame: typeof import('./src/shared/utils/shapes/loadingIndicator').indeterminateFrame
+  const indicatorOffset: typeof import('./src/shared/utils/motion/pullToRefresh').indicatorOffset
   const initCapacitor: typeof import('./src/plugins/capacitor/index').initCapacitor
   const inject: typeof import('vue').inject
   const injectLocal: typeof import('@vueuse/core').injectLocal
   const installNavigationGuard: typeof import('./src/shared/composables/useNavigationGuard').installNavigationGuard
+  const isArmed: typeof import('./src/shared/utils/motion/pullToRefresh').isArmed
   const isDefined: typeof import('@vueuse/core').isDefined
   const isProxy: typeof import('vue').isProxy
   const isReactive: typeof import('vue').isReactive
@@ -101,6 +109,7 @@ declare global {
   const loadAppSummaries: typeof import('./src/modules/apps/composables/useAppsOverview').loadAppSummaries
   const makeDestructurable: typeof import('@vueuse/core').makeDestructurable
   const markRaw: typeof import('vue').markRaw
+  const markTabShown: typeof import('./src/shared/composables/useActiveTab').markTabShown
   const materialShapeCubics: typeof import('./src/shared/utils/shapes/materialShapes').materialShapeCubics
   const materialShapeMask: typeof import('./src/shared/utils/shapes/materialShapes').materialShapeMask
   const materialShapePath: typeof import('./src/shared/utils/shapes/materialShapes').materialShapePath
@@ -128,11 +137,13 @@ declare global {
   const onUpdated: typeof import('vue').onUpdated
   const onWatcherCleanup: typeof import('vue').onWatcherCleanup
   const outlinePath: typeof import('./src/shared/utils/shapes/morph').outlinePath
+  const overpullRotation: typeof import('./src/shared/utils/motion/pullToRefresh').overpullRotation
   const parseChannels: typeof import('./src/shared/utils/format').parseChannels
   const pausableWatch: typeof import('@vueuse/core').pausableWatch
   const point: typeof import('./src/shared/utils/shapes/geometry').point
   const provide: typeof import('vue').provide
   const provideLocal: typeof import('@vueuse/core').provideLocal
+  const pullFraction: typeof import('./src/shared/utils/motion/pullToRefresh').pullFraction
   const reachOf: typeof import('./src/shared/utils/shapes/morph').reachOf
   const reactify: typeof import('@vueuse/core').reactify
   const reactifyObject: typeof import('@vueuse/core').reactifyObject
@@ -168,6 +179,7 @@ declare global {
   const springAt: typeof import('./src/shared/utils/motion/spring').springAt
   const sqlitePlugin: typeof import('./src/plugins/sqlite.plugin').sqlitePlugin
   const starVertices: typeof import('./src/shared/utils/shapes/roundedPolygon').starVertices
+  const startColorTheme: typeof import('./src/shared/composables/theme/useColorTheme').startColorTheme
   const straightLine: typeof import('./src/shared/utils/shapes/geometry').straightLine
   const sub: typeof import('./src/shared/utils/shapes/geometry').sub
   const syncRef: typeof import('@vueuse/core').syncRef
@@ -228,6 +240,7 @@ declare global {
   const useClipboardItems: typeof import('@vueuse/core').useClipboardItems
   const useCloned: typeof import('@vueuse/core').useCloned
   const useColorMode: typeof import('@vueuse/core').useColorMode
+  const useColorTheme: typeof import('./src/shared/composables/theme/useColorTheme').useColorTheme
   const useConfirmDialog: typeof import('@vueuse/core').useConfirmDialog
   const useCountdown: typeof import('@vueuse/core').useCountdown
   const useCounter: typeof import('@vueuse/core').useCounter
@@ -319,11 +332,13 @@ declare global {
   const usePreferredReducedTransparency: typeof import('@vueuse/core').usePreferredReducedTransparency
   const usePrevious: typeof import('@vueuse/core').usePrevious
   const useProfile: typeof import('./src/modules/profile/composables/useProfile').useProfile
+  const usePullToRefresh: typeof import('./src/shared/composables/refresh/usePullToRefresh').usePullToRefresh
   const useRafFn: typeof import('@vueuse/core').useRafFn
   const useReactiveDemo: typeof import('./src/modules/demo/composables/useReactiveDemo').useReactiveDemo
   const useRefHistory: typeof import('@vueuse/core').useRefHistory
   const useResizeObserver: typeof import('@vueuse/core').useResizeObserver
   const useSSRWidth: typeof import('@vueuse/core').useSSRWidth
+  const useSchemePreviews: typeof import('./src/modules/profile/composables/useSchemePreviews').useSchemePreviews
   const useScreenOrientation: typeof import('@vueuse/core').useScreenOrientation
   const useScreenSafeArea: typeof import('@vueuse/core').useScreenSafeArea
   const useScriptTag: typeof import('@vueuse/core').useScriptTag
@@ -402,11 +417,17 @@ declare global {
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, ShallowRef, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
   // @ts-ignore
-  export type { SchemeRole, SchemeColors } from './src/shared/composables/theme/materialScheme'
+  export type { PullToRefresh } from './src/shared/composables/refresh/usePullToRefresh'
+  import('./src/shared/composables/refresh/usePullToRefresh')
+  // @ts-ignore
+  export type { SchemeVariant, SchemeRole, SchemeColors } from './src/shared/composables/theme/materialScheme'
   import('./src/shared/composables/theme/materialScheme')
   // @ts-ignore
   export type { ColorMode, AppContext } from './src/shared/composables/theme/useAppTheme'
   import('./src/shared/composables/theme/useAppTheme')
+  // @ts-ignore
+  export type { ColorThemeContext } from './src/shared/composables/theme/useColorTheme'
+  import('./src/shared/composables/theme/useColorTheme')
   // @ts-ignore
   export type { TabbarVisibility } from './src/shared/composables/useTabbarVisibility'
   import('./src/shared/composables/useTabbarVisibility')
@@ -426,6 +447,9 @@ declare global {
   export type { CornerRounding, Vertex } from './src/shared/utils/shapes/roundedPolygon'
   import('./src/shared/utils/shapes/roundedPolygon')
   // @ts-ignore
+  export type { ThemePreset } from './src/shared/utils/theme/brand'
+  import('./src/shared/utils/theme/brand')
+  // @ts-ignore
   export type { ActivityDay } from './src/modules/activity/composables/useActivityFeed'
   import('./src/modules/activity/composables/useActivityFeed')
   // @ts-ignore
@@ -437,6 +461,9 @@ declare global {
   // @ts-ignore
   export type { InstallPhase, InstallJob } from './src/modules/apps/composables/useInstaller'
   import('./src/modules/apps/composables/useInstaller')
+  // @ts-ignore
+  export type { SchemePreview } from './src/modules/profile/composables/useSchemePreviews'
+  import('./src/modules/profile/composables/useSchemePreviews')
 }
 
 // for vue template auto import
@@ -449,6 +476,7 @@ declare module 'vue' {
     readonly BRAND_INFO: UnwrapRef<typeof import('./src/shared/utils/theme/brand')['BRAND_INFO']>
     readonly BRAND_PRIMARY: UnwrapRef<typeof import('./src/shared/utils/theme/brand')['BRAND_PRIMARY']>
     readonly DISTANCE_EPSILON: UnwrapRef<typeof import('./src/shared/utils/shapes/geometry')['DISTANCE_EPSILON']>
+    readonly DRAG_MULTIPLIER: UnwrapRef<typeof import('./src/shared/utils/motion/pullToRefresh')['DRAG_MULTIPLIER']>
     readonly Dom7: UnwrapRef<typeof import('framework7/lite')['Dom7']>
     readonly ENVIRONMENT_COLORS: UnwrapRef<typeof import('./src/shared/utils/theme/brand')['ENVIRONMENT_COLORS']>
     readonly ENVIRONMENT_ORDER: UnwrapRef<typeof import('./src/modules/apps/composables/useAppsOverview')['ENVIRONMENT_ORDER']>
@@ -456,10 +484,16 @@ declare module 'vue' {
     readonly Framework7VueResolver: UnwrapRef<typeof import('./src/shared/utils/resolvers/resolvers')['Framework7VueResolver']>
     readonly GLOBAL_ROTATION_MS: UnwrapRef<typeof import('./src/shared/utils/shapes/loadingIndicator')['GLOBAL_ROTATION_MS']>
     readonly INDETERMINATE_SHAPES: UnwrapRef<typeof import('./src/shared/utils/shapes/loadingIndicator')['INDETERMINATE_SHAPES']>
+    readonly INDICATOR_SIZE_PX: UnwrapRef<typeof import('./src/shared/utils/motion/pullToRefresh')['INDICATOR_SIZE_PX']>
     readonly MATERIAL_SHAPES: UnwrapRef<typeof import('./src/shared/utils/shapes/materialShapes')['MATERIAL_SHAPES']>
     readonly MORPH_INTERVAL_MS: UnwrapRef<typeof import('./src/shared/utils/shapes/loadingIndicator')['MORPH_INTERVAL_MS']>
+    readonly PULL_THRESHOLD_PX: UnwrapRef<typeof import('./src/shared/utils/motion/pullToRefresh')['PULL_THRESHOLD_PX']>
+    readonly SCHEME_VARIANTS: UnwrapRef<typeof import('./src/shared/composables/theme/materialScheme')['SCHEME_VARIANTS']>
+    readonly THEME_PRESETS: UnwrapRef<typeof import('./src/shared/utils/theme/brand')['THEME_PRESETS']>
+    readonly activeTabId: UnwrapRef<typeof import('./src/shared/composables/useActiveTab')['activeTabId']>
     readonly add: UnwrapRef<typeof import('./src/shared/utils/shapes/geometry')['add']>
     readonly applyMaterialScheme: UnwrapRef<typeof import('./src/shared/composables/theme/materialScheme')['applyMaterialScheme']>
+    readonly applyStoredColorScheme: UnwrapRef<typeof import('./src/shared/composables/theme/useColorTheme')['applyStoredColorScheme']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly boundsOf: UnwrapRef<typeof import('./src/shared/utils/shapes/geometry')['boundsOf']>
@@ -516,10 +550,12 @@ declare module 'vue' {
     readonly i18n: UnwrapRef<typeof import('./src/plugins/i18n.plugin')['i18n']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indeterminateFrame: UnwrapRef<typeof import('./src/shared/utils/shapes/loadingIndicator')['indeterminateFrame']>
+    readonly indicatorOffset: UnwrapRef<typeof import('./src/shared/utils/motion/pullToRefresh')['indicatorOffset']>
     readonly initCapacitor: UnwrapRef<typeof import('./src/plugins/capacitor/index')['initCapacitor']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly installNavigationGuard: UnwrapRef<typeof import('./src/shared/composables/useNavigationGuard')['installNavigationGuard']>
+    readonly isArmed: UnwrapRef<typeof import('./src/shared/utils/motion/pullToRefresh')['isArmed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
@@ -533,6 +569,7 @@ declare module 'vue' {
     readonly loadAppSummaries: UnwrapRef<typeof import('./src/modules/apps/composables/useAppsOverview')['loadAppSummaries']>
     readonly makeDestructurable: UnwrapRef<typeof import('@vueuse/core')['makeDestructurable']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
+    readonly markTabShown: UnwrapRef<typeof import('./src/shared/composables/useActiveTab')['markTabShown']>
     readonly materialShapeCubics: UnwrapRef<typeof import('./src/shared/utils/shapes/materialShapes')['materialShapeCubics']>
     readonly materialShapeMask: UnwrapRef<typeof import('./src/shared/utils/shapes/materialShapes')['materialShapeMask']>
     readonly materialShapePath: UnwrapRef<typeof import('./src/shared/utils/shapes/materialShapes')['materialShapePath']>
@@ -560,11 +597,13 @@ declare module 'vue' {
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly outlinePath: UnwrapRef<typeof import('./src/shared/utils/shapes/morph')['outlinePath']>
+    readonly overpullRotation: UnwrapRef<typeof import('./src/shared/utils/motion/pullToRefresh')['overpullRotation']>
     readonly parseChannels: UnwrapRef<typeof import('./src/shared/utils/format')['parseChannels']>
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
     readonly point: UnwrapRef<typeof import('./src/shared/utils/shapes/geometry')['point']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>
+    readonly pullFraction: UnwrapRef<typeof import('./src/shared/utils/motion/pullToRefresh')['pullFraction']>
     readonly reachOf: UnwrapRef<typeof import('./src/shared/utils/shapes/morph')['reachOf']>
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>
     readonly reactifyObject: UnwrapRef<typeof import('@vueuse/core')['reactifyObject']>
@@ -599,6 +638,7 @@ declare module 'vue' {
     readonly springAt: UnwrapRef<typeof import('./src/shared/utils/motion/spring')['springAt']>
     readonly sqlitePlugin: UnwrapRef<typeof import('./src/plugins/sqlite.plugin')['sqlitePlugin']>
     readonly starVertices: UnwrapRef<typeof import('./src/shared/utils/shapes/roundedPolygon')['starVertices']>
+    readonly startColorTheme: UnwrapRef<typeof import('./src/shared/composables/theme/useColorTheme')['startColorTheme']>
     readonly straightLine: UnwrapRef<typeof import('./src/shared/utils/shapes/geometry')['straightLine']>
     readonly sub: UnwrapRef<typeof import('./src/shared/utils/shapes/geometry')['sub']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
@@ -658,6 +698,7 @@ declare module 'vue' {
     readonly useClipboardItems: UnwrapRef<typeof import('@vueuse/core')['useClipboardItems']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
+    readonly useColorTheme: UnwrapRef<typeof import('./src/shared/composables/theme/useColorTheme')['useColorTheme']>
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useCountdown: UnwrapRef<typeof import('@vueuse/core')['useCountdown']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
@@ -749,10 +790,12 @@ declare module 'vue' {
     readonly usePreferredReducedTransparency: UnwrapRef<typeof import('@vueuse/core')['usePreferredReducedTransparency']>
     readonly usePrevious: UnwrapRef<typeof import('@vueuse/core')['usePrevious']>
     readonly useProfile: UnwrapRef<typeof import('./src/modules/profile/composables/useProfile')['useProfile']>
+    readonly usePullToRefresh: UnwrapRef<typeof import('./src/shared/composables/refresh/usePullToRefresh')['usePullToRefresh']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useSSRWidth: UnwrapRef<typeof import('@vueuse/core')['useSSRWidth']>
+    readonly useSchemePreviews: UnwrapRef<typeof import('./src/modules/profile/composables/useSchemePreviews')['useSchemePreviews']>
     readonly useScreenOrientation: UnwrapRef<typeof import('@vueuse/core')['useScreenOrientation']>
     readonly useScreenSafeArea: UnwrapRef<typeof import('@vueuse/core')['useScreenSafeArea']>
     readonly useScriptTag: UnwrapRef<typeof import('@vueuse/core')['useScriptTag']>

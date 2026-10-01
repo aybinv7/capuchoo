@@ -45,7 +45,9 @@ export function followedChannel(
   flavour: Environment | null,
 ): StatusChannel | null {
   const environment = flavour ?? "prod";
-  const release = channels.filter((channel) => channel.kind === "release" && channel.environment === environment);
+  const release = channels.filter(
+    (channel) => channel.kind === "release" && channel.environment === environment,
+  );
   return release.find((channel) => channel.name === environment) ?? release[0] ?? null;
 }
 
@@ -62,14 +64,18 @@ export function phoneStatus(input: {
   natives: readonly StatusNative[];
 }): PhoneStatus {
   const natives = new Map(input.natives.map((native) => [native.id, native]));
-  const installed = new Map(input.installed.filter((row) => row.installed).map((row) => [row.bundle_id, row]));
+  const installed = new Map(
+    input.installed.filter((row) => row.installed).map((row) => [row.bundle_id, row]),
+  );
 
   const candidates = input.identifiers
     .filter((identifier) => installed.has(identifier.bundle_id))
     .map((identifier) => {
       const row = installed.get(identifier.bundle_id)!;
       const channel = followedChannel(input.channels, identifier.flavour);
-      const target = channel?.current_native_id ? (natives.get(channel.current_native_id) ?? null) : null;
+      const target = channel?.current_native_id
+        ? (natives.get(channel.current_native_id) ?? null)
+        : null;
       const code = row.version_code ?? 0;
       const state: PhoneState = !target
         ? "untracked"
@@ -90,10 +96,15 @@ export function phoneStatus(input: {
 
   if (candidates.length === 0) {
     const channel = followedChannel(input.channels, null);
-    const target = channel?.current_native_id ? (natives.get(channel.current_native_id) ?? null) : null;
+    const target = channel?.current_native_id
+      ? (natives.get(channel.current_native_id) ?? null)
+      : null;
     return {
       state: "absent",
-      bundleId: input.identifiers.find((identifier) => identifier.flavour === null)?.bundle_id ?? input.identifiers[0]?.bundle_id ?? null,
+      bundleId:
+        input.identifiers.find((identifier) => identifier.flavour === null)?.bundle_id ??
+        input.identifiers[0]?.bundle_id ??
+        null,
       installedName: null,
       installedCode: null,
       channel,
@@ -101,6 +112,12 @@ export function phoneStatus(input: {
     };
   }
 
-  const urgency: Record<PhoneState, number> = { behind: 0, ahead: 1, current: 2, untracked: 3, absent: 4 };
+  const urgency: Record<PhoneState, number> = {
+    behind: 0,
+    ahead: 1,
+    current: 2,
+    untracked: 3,
+    absent: 4,
+  };
   return candidates.sort((a, b) => urgency[a.state] - urgency[b.state])[0]!;
 }

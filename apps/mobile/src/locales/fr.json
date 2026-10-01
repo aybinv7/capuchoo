@@ -9,15 +9,16 @@
     "clear": "Effacer",
     "refresh": "Actualiser",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "done": "OK"
   },
   "errors": {
     "notFoundTitle": "Introuvable",
     "notFound": "Cette page n'existe pas."
   },
   "signIn": {
-    "title": "Capuchoo",
-    "subtitle": "Vos apps, leurs canaux, et n'importe quel build sur ce téléphone en un geste.",
+    "title": "Connexion",
+    "subtitle": "Utilisez votre compte Capuchoo. Vos applications, leurs canaux et chaque build vous suivent ici.",
     "server": "Serveur",
     "serverPlaceholder": "updates.exemple.com",
     "email": "E-mail",
@@ -29,7 +30,12 @@
       "credentials": "Cet e-mail et ce mot de passe ne correspondent à aucun compte.",
       "rateLimited": "Trop de tentatives. Attendez quelques minutes, puis réessayez.",
       "offline": "{server} est injoignable. Vérifiez l'adresse et la connexion."
-    }
+    },
+    "change": "Modifier",
+    "changeServer": "Modifier le serveur",
+    "noServer": "Aucun serveur",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "live": {
     "syncing": "Synchronisation",
@@ -62,7 +68,12 @@
     "attentionText": "Leur canal sert un build plus récent que celui installé.",
     "emptyTitle": "Aucune app",
     "emptyText": "Les apps sur lesquelles vous avez un rôle apparaissent ici. Demandez à un admin de vous ajouter.",
-    "noMatch": "Aucune app ne correspond."
+    "noMatch": "Aucune application ne correspond à « {term} »",
+    "updatesTitle": "Mise à jour prête | {count} mises à jour prêtes",
+    "updateFrom": "Depuis {channel}",
+    "update": "Mettre à jour",
+    "all": "Vos applications",
+    "results": "{count} résultat | {count} résultats"
   },
   "phone": {
     "title": "Sur ce téléphone",
@@ -109,7 +120,8 @@
     "pausedLong": "En pause : les appareils ne reçoivent rien de nouveau",
     "deliver": "Livrer",
     "pause": "Pause",
-    "resume": "Reprendre"
+    "resume": "Reprendre",
+    "deliverAction": "Livrer un build…"
   },
   "build": {
     "code": "Build {code}",
@@ -126,7 +138,8 @@
     "signedYes": "Signé",
     "signedNo": "Non signé",
     "certificate": "Certificat de signature",
-    "checksum": "SHA-256"
+    "checksum": "SHA-256",
+    "details": "Détails"
   },
   "install": {
     "cancel": "Annuler",
@@ -204,25 +217,119 @@
   "profile": {
     "title": "Vous",
     "instanceAdmin": "Admin du serveur",
-    "appearance": "Apparence",
-    "mode": {
-      "system": "Système",
-      "light": "Clair",
-      "dark": "Sombre"
-    },
     "organizations": "Organisations",
     "orgRole": {
       "owner": "Propriétaire",
       "admin": "Admin",
       "member": "Membre"
     },
-    "notifications": "Me notifier pour",
+    "notifications": "Notifications",
     "notificationsHint": "Les notifications arrivent tant que Capuchoo tourne. L'onglet Activité a toujours tout.",
-    "server": "Serveur",
     "endpoint": "Adresse",
     "version": "Version de l'app",
     "signOut": "Se déconnecter",
     "signOutTitle": "Se déconnecter ?",
-    "signOutText": "Votre session prend fin sur le serveur, et ce que ce téléphone gardait pour elle est supprimé."
+    "signOutText": "Votre session prend fin sur le serveur, et ce que ce téléphone gardait pour elle est supprimé.",
+    "preferences": "Préférences",
+    "notifyAbout": "Me notifier pour",
+    "notifyCount": "{on} sur {total}",
+    "phone": "Ce téléphone"
+  },
+  "refresh": {
+    "label": "Actualisation"
+  },
+  "appearance": {
+    "title": "Apparence",
+    "mode": "Thème",
+    "modes": {
+      "system": "Suivre le système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "modeHint": "Suivre le système bascule avec le thème sombre d'Android et sa programmation.",
+    "colors": "Couleurs"
+  },
+  "colors": {
+    "title": "Couleurs",
+    "reset": "Réinitialiser",
+    "seed": "Couleur",
+    "custom": "Couleur personnalisée",
+    "customHint": "Choisissez n'importe quelle couleur ; Material en construit toute la palette.",
+    "customActive": "Votre propre couleur, {hex}.",
+    "style": "Style",
+    "roles": "Rôles générés",
+    "rolesHint": "Chaque couleur de l'application est l'un de ces rôles, générés à partir de la couleur et du style ci-dessus.",
+    "presets": {
+      "terracotta": "Terracotta Capuchoo",
+      "amber": "Ambre staging",
+      "forest": "Vert prod",
+      "teal": "Sarcelle",
+      "ocean": "Océan",
+      "indigo": "Indigo",
+      "violet": "Violet dev",
+      "rose": "Rose"
+    },
+    "schemes": {
+      "brand": {
+        "name": "Capuchoo",
+        "hint": "Votre couleur exacte, sur les surfaces papier de Capuchoo."
+      },
+      "fidelity": {
+        "name": "Fidélité",
+        "hint": "Votre couleur exacte, jusque dans chaque surface."
+      },
+      "tonalSpot": {
+        "name": "Tonal",
+        "hint": "Le défaut d'Android : des tons calmes et adoucis de votre couleur."
+      },
+      "expressive": {
+        "name": "Expressif",
+        "hint": "Des teintes décalées pour une palette plus audacieuse."
+      },
+      "vibrant": {
+        "name": "Vibrant",
+        "hint": "La version la plus saturée de votre couleur."
+      },
+      "monochrome": {
+        "name": "Monochrome",
+        "hint": "Des gris uniquement ; les environnements gardent leurs couleurs."
+      }
+    },
+    "sample": {
+      "chip": "Bêta"
+    }
+  },
+  "welcome": {
+    "skip": "Passer",
+    "next": "Suivant",
+    "start": "Commencer",
+    "carousel": "Présentation",
+    "position": "{n} sur {total}",
+    "lanes": {
+      "kicker": "Canaux",
+      "title": "Chaque version, là où elle en est",
+      "body": "Dev, staging et prod côte à côte, avec le build que chacun sert en ce moment."
+    },
+    "install": {
+      "kicker": "Ce téléphone",
+      "title": "N'importe quel build, en un geste",
+      "body": "Voyez ce que ce téléphone exécute face à son canal et installez le build qu'il devrait avoir."
+    },
+    "notify": {
+      "kicker": "En direct",
+      "title": "Sachez-le dès que ça part",
+      "body": "Nouveaux builds, livraisons et pauses arrivent en direct, pour les applications choisies.",
+      "now": "maintenant",
+      "notes": {
+        "build": "Retail 1.6.0 a été publié",
+        "delivered": "prod sert désormais 1.5.2",
+        "paused": "staging a été mis en pause"
+      }
+    },
+    "roles": {
+      "kicker": "Rôles",
+      "title": "Pensé pour toute l'équipe",
+      "body": "Les testeurs installent, les développeurs livrent en dev et staging, les admins pilotent chaque canal."
+    }
   }
 }

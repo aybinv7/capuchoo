@@ -80,3 +80,8 @@
   background: var(--destructive);
   color: var(--destructive-foreground);
 }
+
+/* A destructive action in an action sheet takes the error role, never Framework7's red. */
+.actions-button.color-red {
+  color: var(--destructive);
+}

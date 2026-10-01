@@ -1,4 +1,8 @@
-import { listActivity, markAllRead, type ActivityRow } from "@/domains/activity/activity.repository";
+import {
+  listActivity,
+  markAllRead,
+  type ActivityRow,
+} from "@/domains/activity/activity.repository";
 import { getDatabase, rdb, useReactiveQuery } from "@/shared/database";
 import { notificationsAllowed, requestNotifications } from "@/shared/notify/notify";
 import { formatDay } from "@/shared/utils/format";
@@ -42,5 +46,13 @@ export function useActivityFeed() {
     await markAllRead(rdb, new Date().toISOString());
   }
 
-  return { days, unread, loading: query.loading, notificationsOn, checkNotifications, enableNotifications, readAll };
+  return {
+    days,
+    unread,
+    loading: query.loading,
+    notificationsOn,
+    checkNotifications,
+    enableNotifications,
+    readAll,
+  };
 }

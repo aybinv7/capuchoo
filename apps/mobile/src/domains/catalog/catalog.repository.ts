@@ -39,7 +39,8 @@ export async function replaceAccount(
   await db.deleteFrom("account").execute();
   await db.insertInto("account").values(account).execute();
   await db.deleteFrom("organization").execute();
-  for (const rows of chunks(organizations)) await db.insertInto("organization").values(rows).execute();
+  for (const rows of chunks(organizations))
+    await db.insertInto("organization").values(rows).execute();
 }
 
 /**
@@ -47,12 +48,28 @@ export async function replaceAccount(
  * so nothing it may no longer see lingers on the phone. `notify` is the phone's own choice and
  * survives the refresh.
  */
-export async function replaceApps(db: Db, apps: Omit<AppTable, "notify" | "synced_at">[]): Promise<void> {
+export async function replaceApps(
+  db: Db,
+  apps: Omit<AppTable, "notify" | "synced_at">[],
+): Promise<void> {
   const ids = apps.map((app) => app.id);
-  const gone = db.selectFrom("app").select("id").where("id", "not in", ids.length ? ids : [""]);
-  for (const table of ["channel", "native_build", "bundle", "app_identifier", "installed", "activity"] as const)
+  const gone = db
+    .selectFrom("app")
+    .select("id")
+    .where("id", "not in", ids.length ? ids : [""]);
+  for (const table of [
+    "channel",
+    "native_build",
+    "bundle",
+    "app_identifier",
+    "installed",
+    "activity",
+  ] as const)
     await db.deleteFrom(table).where("app_id", "in", gone).execute();
-  await db.deleteFrom("app").where("id", "not in", ids.length ? ids : [""]).execute();
+  await db
+    .deleteFrom("app")
+    .where("id", "not in", ids.length ? ids : [""])
+    .execute();
 
   for (const rows of chunks(apps))
     await db
@@ -84,18 +101,29 @@ export interface AppDetail {
 }
 
 /** One app's channels and builds as the server has them now, in one transaction by the caller. */
-export async function replaceAppDetail(db: Db, appId: string, detail: AppDetail, syncedAt: string): Promise<void> {
+export async function replaceAppDetail(
+  db: Db,
+  appId: string,
+  detail: AppDetail,
+  syncedAt: string,
+): Promise<void> {
   for (const table of ["app_identifier", "channel", "native_build", "bundle"] as const)
     await db.deleteFrom(table).where("app_id", "=", appId).execute();
-  for (const rows of chunks(detail.identifiers)) await db.insertInto("app_identifier").values(rows).execute();
+  for (const rows of chunks(detail.identifiers))
+    await db.insertInto("app_identifier").values(rows).execute();
   for (const rows of chunks(detail.channels)) await db.insertInto("channel").values(rows).execute();
-  for (const rows of chunks(detail.natives)) await db.insertInto("native_build").values(rows).execute();
+  for (const rows of chunks(detail.natives))
+    await db.insertInto("native_build").values(rows).execute();
   for (const rows of chunks(detail.bundles)) await db.insertInto("bundle").values(rows).execute();
   await db.updateTable("app").set({ synced_at: syncedAt }).where("id", "=", appId).execute();
 }
 
 export async function setAppNotify(db: Db, appId: string, notify: boolean): Promise<void> {
-  await db.updateTable("app").set({ notify: notify ? 1 : 0 }).where("id", "=", appId).execute();
+  await db
+    .updateTable("app")
+    .set({ notify: notify ? 1 : 0 })
+    .where("id", "=", appId)
+    .execute();
 }
 
 export async function replaceInstalled(db: Db, rows: InstalledTable[]): Promise<void> {
@@ -164,7 +192,12 @@ export function getNative(db: Db, nativeId: string): Promise<NativeBuild | undef
 }
 
 export function listBundles(db: Db, appId: string): Promise<Bundle[]> {
-  return db.selectFrom("bundle").selectAll().where("app_id", "=", appId).orderBy("created_at", "desc").execute();
+  return db
+    .selectFrom("bundle")
+    .selectAll()
+    .where("app_id", "=", appId)
+    .orderBy("created_at", "desc")
+    .execute();
 }
 
 export function listIdentifiers(db: Db, appId?: string): Promise<Identifier[]> {

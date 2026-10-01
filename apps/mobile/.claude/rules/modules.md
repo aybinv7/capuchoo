@@ -14,8 +14,8 @@ shared/…                                              what two modules genuine
 A **view** wires a composable to components. If it holds business logic, that logic belongs in the
 composable; if it holds SQL, that belongs in a repository.
 
-A **composable** owns state, queries and actions for one feature. It may import repositories and
-the reactive query helpers. It returns refs and functions, never markup.
+A **composable** owns state, queries and actions for one feature. It may import repositories and the
+reactive query helpers. It returns refs and functions, never markup.
 
 A **repository** is plain functions over Kysely. No `ref`, no lifecycle, no Framework7, no imports
 from `modules/`. It takes the database as a parameter — that is what makes it testable, and reaching

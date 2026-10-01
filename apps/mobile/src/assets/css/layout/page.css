@@ -1,6 +1,16 @@
+/*
+ * Room to scroll the last row clear of the tab bar. Framework7 would add the bar's height itself,
+ * but only through its own padding, which this rule replaces - 32px alone left the last rows
+ * under the bar.
+ */
 .cap-page .page-content {
   overflow-x: hidden;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 32px);
+  padding-bottom: calc(var(--f7-safe-area-bottom) + var(--f7-tabbar-icons-height) + 32px);
+}
+
+/* A pushed page has no tab bar under it, only the gesture area. */
+.cap-page.cap-pushed .page-content {
+  padding-bottom: calc(var(--f7-safe-area-bottom) + 32px);
 }
 
 /*
@@ -45,4 +55,8 @@
 /* A page's own action bar is a surface (M3 bottom app bar); the floating one draws its own. */
 .page > .toolbar-bottom {
   --f7-toolbar-bg-color: var(--bar);
+}
+
+.cap-page.cap-pushed:has(> .toolbar-bottom) .page-content {
+  padding-bottom: calc(var(--f7-safe-area-bottom) + var(--f7-toolbar-height) + 32px);
 }

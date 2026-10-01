@@ -9,7 +9,14 @@
             {{ formatBytes(job!.bytes) }} / {{ formatBytes(job!.total) }}
           </p>
         </div>
-        <F7Button v-if="job!.phase === 'downloading'" tonal round small class="w-auto!" @click="emit('cancel')">
+        <F7Button
+          v-if="job!.phase === 'downloading'"
+          tonal
+          round
+          small
+          class="w-auto!"
+          @click="emit('cancel')"
+        >
           {{ t("install.cancel") }}
         </F7Button>
       </div>
@@ -18,7 +25,11 @@
 
     <template v-else>
       <Transition name="cap-fade">
-        <p v-if="job?.phase === 'failed'" role="alert" class="rounded-md bg-destructive-container px-3 py-2 text-sm text-destructive-container-foreground">
+        <p
+          v-if="job?.phase === 'failed'"
+          role="alert"
+          class="rounded-md bg-destructive-container px-3 py-2 text-sm text-destructive-container-foreground"
+        >
           {{ job.error }}
         </p>
       </Transition>
@@ -47,7 +58,14 @@ import type { InstallJob } from "../composables/useInstaller";
 
 /** One build's install action: the button, then its progress, then what went wrong if anything did. */
 const props = withDefaults(
-  defineProps<{ job?: InstallJob; label: string; icon?: string; primary?: boolean; large?: boolean; disabled?: boolean }>(),
+  defineProps<{
+    job?: InstallJob;
+    label: string;
+    icon?: string;
+    primary?: boolean;
+    large?: boolean;
+    disabled?: boolean;
+  }>(),
   { job: undefined, icon: "download", primary: true, large: false, disabled: false },
 );
 const emit = defineEmits<{ install: []; cancel: [] }>();

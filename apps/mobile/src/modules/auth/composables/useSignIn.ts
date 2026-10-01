@@ -29,7 +29,11 @@ export function useSignIn() {
   const error = ref<string | null>(null);
 
   const canSubmit = computed(
-    () => !busy.value && Boolean(normaliseEndpoint(endpoint.value)) && email.value.includes("@") && password.value.length > 0,
+    () =>
+      !busy.value &&
+      Boolean(normaliseEndpoint(endpoint.value)) &&
+      email.value.includes("@") &&
+      password.value.length > 0,
   );
 
   function describe(failure: unknown, server: string): string {
