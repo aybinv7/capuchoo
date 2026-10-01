@@ -1,4 +1,4 @@
-import { UploadTimeoutError } from "../utils/http.js";
+import { isDroppedConnection, UploadTimeoutError } from "../utils/http.js";
 import { confirmAfterTimeout, type RecoveryOptions } from "./upload-recovery.js";
 import { uploadRelease, type UploadInput } from "./upload.js";
 
@@ -17,7 +17,7 @@ export class UnconfirmedUploadError extends Error {
 }
 
 /**
- * Uploads, and after a timeout asks the server whether the artefact landed before anyone
+ * Uploads, and after a timeout or a dropped connection asks the server whether the artefact landed before anyone
  * concludes it did not: rewinding the version of a release that exists makes the next deploy
  * collide with it.
  */
@@ -29,7 +29,11 @@ export async function publishRelease(
     const { artefactId } = await uploadRelease(input);
     return { artefactId };
   } catch (error) {
-    if (!(error instanceof UploadTimeoutError)) throw error;
+    if (!(error instanceof UploadTimeoutError) && !isDroppedConnection(error)) throw error;
+    const what =
+      error instanceof UploadTimeoutError
+        ? error.message
+        : "The connection dropped during the upload";
 
     const label = `${input.artifact.kind === "ota" ? "Bundle" : "Native build"} ${input.outcome.version}`;
     const state = await confirmAfterTimeout(
@@ -48,13 +52,18 @@ export async function publishRelease(
       case "published":
         return {
           artefactId: state.id,
-          warning: `${error.message}, but the server has ${label}, so it was published. Check it with capuchoo release list.`,
+          warning: `${what}, but the server has ${label}, so it was published. Check it with capuchoo release list.`,
         };
       case "absent":
-        throw error;
+        throw new Error(
+          `${what}, and the server does not have ${label}. Nothing was published; deploy again.`,
+          {
+            cause: error,
+          },
+        );
       case "unknown":
         throw new UnconfirmedUploadError(
-          `${error.message}, and the server could not be asked whether ${label} arrived (${state.reason}). ` +
+          `${what}, and the server could not be asked whether ${label} arrived (${state.reason}). ` +
             "The version files were kept; check capuchoo release list before deploying again.",
         );
     }

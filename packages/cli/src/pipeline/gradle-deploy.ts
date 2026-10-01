@@ -6,7 +6,7 @@ import type { Reporter } from "../utils/reporter.js";
 import { assembleAndroid, collectAndroidArtifact, readProductFlavors } from "./android.js";
 import { readApkManifest } from "./android-manifest.js";
 import type { DeployOutcome, DeployRequest } from "./deploy.js";
-import { chooseFlavor, describeAmbiguousFlavor, gradleString } from "./gradle-variant.js";
+import { chooseFlavor, describeAmbiguousFlavor } from "./gradle-variant.js";
 
 /** The Gradle properties a deploy passes when it chooses the version itself. */
 export const VERSION_NAME_PROPERTY = "capuchoo.versionName";
@@ -25,12 +25,23 @@ export function readGradleVersion(
   for (const name of ["build.gradle.kts", "build.gradle"]) {
     const file = path.join(appDir, project.androidDir, project.module, name);
     if (!fs.existsSync(file)) continue;
-    const gradle = fs.readFileSync(file, "utf8");
-    const versionName = gradleString(gradle, "versionName");
-    const versionCode = /\bversionCode\s*=?\s*(\d+)/.exec(gradle)?.[1];
-    return versionName && versionCode ? { name: versionName, code: Number(versionCode) } : null;
+    return parseGradleVersion(fs.readFileSync(file, "utf8"));
   }
   return null;
+}
+
+/**
+ * `versionName "1.2.0"`, or the fallback of `versionName = findProperty(...) ?: "1.2.0"`: the last
+ * literal on the assignment line is what the build uses when no deploy passes a version.
+ */
+export function parseGradleVersion(gradle: string): GradleVersion | null {
+  const line = (key: string) => new RegExp(`^\\s*${key}\\b[^\\n]*`, "m").exec(gradle)?.[0] ?? "";
+  const name = [...line("versionName").matchAll(/["']([^"']+)["']/g)]
+    .map((match) => match[1]!)
+    .filter((value) => value !== VERSION_NAME_PROPERTY)
+    .at(-1);
+  const code = [...line("versionCode").matchAll(/(?<![\w.])(\d+)(?![\w.])/g)].at(-1)?.[1];
+  return name && code ? { name, code: Number(code) } : null;
 }
 
 /** What to add when the build ignored the version the deploy asked for. */

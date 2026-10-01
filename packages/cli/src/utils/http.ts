@@ -28,6 +28,13 @@ export class UploadTimeoutError extends Error {
   }
 }
 
+/** fetch's own failure: the connection broke or never opened, so the server gave no answer. */
+export function isDroppedConnection(error: unknown): error is Error {
+  return (
+    error instanceof TypeError && /fetch failed|terminated|socket|network/i.test(error.message)
+  );
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;

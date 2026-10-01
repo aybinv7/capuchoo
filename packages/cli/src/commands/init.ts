@@ -265,7 +265,7 @@ export default class Init extends BaseCommand {
       this.log("");
       const channels = await cloud.channels(app.id).catch(() => []);
       if (!channels.some((channel) => channel.environment))
-        await this.offerFirstChannel(cloud, app, flags.channel);
+        await this.offerFirstChannel(cloud, app, flags.channel, "native");
       await this.wireUp(appDir, cloud, app, flags);
       return;
     }
@@ -606,11 +606,12 @@ export default class Init extends BaseCommand {
     cloud: CloudClient,
     app: CloudApp,
     requested: string | undefined,
+    deploy: "ota" | "native" = "ota",
   ): Promise<void> {
     const name = requested?.trim();
 
     if (!name) {
-      await this.createDefaultChannels(cloud, app);
+      await this.createDefaultChannels(cloud, app, deploy);
       return;
     }
 
@@ -634,7 +635,8 @@ export default class Init extends BaseCommand {
         `  ${chalk.green("Created channel")} ${channel.name} ${chalk.dim(`(${environment})`)}`,
       );
       this.log(
-        chalk.dim("  Deploy with: ") + chalk.cyan(runnable(`deploy ota --channel ${channel.name}`)),
+        chalk.dim("  Deploy with: ") +
+          chalk.cyan(runnable(`deploy ${deploy} --channel ${channel.name}`)),
       );
     } catch (error) {
       // The app and project.json are already correct, so this is a warning and
@@ -662,7 +664,11 @@ export default class Init extends BaseCommand {
    * Each is attempted independently. A partial result is useful, and one
    * failure - a name already taken, say - should not cost the other two.
    */
-  private async createDefaultChannels(cloud: CloudClient, app: CloudApp): Promise<void> {
+  private async createDefaultChannels(
+    cloud: CloudClient,
+    app: CloudApp,
+    deploy: "ota" | "native",
+  ): Promise<void> {
     this.log(chalk.bold("  channels"));
 
     const created: string[] = [];
@@ -687,7 +693,8 @@ export default class Init extends BaseCommand {
 
     if (created.length > 0) {
       this.log(
-        chalk.dim("  Deploy with: ") + chalk.cyan(runnable(`deploy ota --channel ${created[0]}`)),
+        chalk.dim("  Deploy with: ") +
+          chalk.cyan(runnable(`deploy ${deploy} --channel ${created[0]}`)),
       );
     }
 
@@ -720,6 +727,9 @@ export default class Init extends BaseCommand {
       capacitorConfig,
       buildGradle:
         read("android", "app", "build.gradle") ?? (gradle ? read(gradle.buildFile) : undefined),
+      ...(gradle && !fs.existsSync(path.join(appDir, "android", "app", "build.gradle"))
+        ? { buildGradleSource: gradle.buildFile }
+        : {}),
       envFile: read(defaultFlavour("prod").envFile),
       packageJson: read("package.json"),
     };

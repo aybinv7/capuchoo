@@ -107,6 +107,8 @@ export function stepAndroidLibrary(root: string, project: GradleAndroidProject):
   const depends =
     build.includes("capuchoo-android") ||
     (catalog.includes("capuchoo-android") && /capuchoo/i.test(build));
+  if (build.includes(`project(":capuchoo")`))
+    return { id: "packages", state: "satisfied", detail: "the in-repo :capuchoo project" };
   const jitpack = repositories.includes("jitpack.io");
   if (depends && jitpack)
     return { id: "packages", state: "satisfied", detail: `${ANDROID_LIBRARY} from JitPack` };

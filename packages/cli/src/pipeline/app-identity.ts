@@ -14,8 +14,10 @@ export interface AppIdentity {
 export interface ProjectFiles {
   /** `capacitor.config.ts` / `.js` / `.json`. */
   capacitorConfig?: string | undefined;
-  /** `android/app/build.gradle`. */
+  /** `android/app/build.gradle`, or a native app's module build file. */
   buildGradle?: string | undefined;
+  /** Where `buildGradle` was read from, for messages. Defaults to `android/app/build.gradle`. */
+  buildGradleSource?: string | undefined;
   /** The production flavour's env file. */
   envFile?: string | undefined;
   packageJson?: string | undefined;
@@ -63,7 +65,8 @@ export function detectIdentity(files: ProjectFiles): AppIdentity {
 
   if (files.buildGradle) {
     const value = gradleString(files.buildGradle, "applicationId");
-    if (value) idCandidates.push({ value, source: "android/app/build.gradle" });
+    if (value)
+      idCandidates.push({ value, source: files.buildGradleSource ?? "android/app/build.gradle" });
   }
 
   if (files.capacitorConfig) {
@@ -118,7 +121,8 @@ export function conflictingIds(files: ProjectFiles, chosen: string): Detected[] 
 
   if (files.buildGradle) {
     const value = gradleString(files.buildGradle, "applicationId");
-    if (value && value !== chosen) found.push({ value, source: "android/app/build.gradle" });
+    if (value && value !== chosen)
+      found.push({ value, source: files.buildGradleSource ?? "android/app/build.gradle" });
   }
 
   if (files.capacitorConfig) {

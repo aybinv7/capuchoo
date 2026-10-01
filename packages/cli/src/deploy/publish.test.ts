@@ -123,10 +123,36 @@ describe("publishRelease", () => {
     expect(published.warning).toContain("the server has Bundle 1.2.0");
   });
 
-  it("rethrows the timeout when the server has nothing, so the files are restored", async () => {
+  it("says nothing was published when the server has nothing, so the files are restored", async () => {
+    const failure = await publishRelease(
+      input({ uploadBundle: timedOut, artefacts: async () => EMPTY }),
+      noSleep,
+    ).catch((error: unknown) => error as Error);
+    expect(failure.message).toContain("Nothing was published; deploy again");
+    expect(failure.cause).toBeInstanceOf(UploadTimeoutError);
+  });
+
+  it("asks the server after a dropped connection, as after a timeout", async () => {
+    const dropped = async () => {
+      throw new TypeError("fetch failed");
+    };
+    const published = await publishRelease(
+      input({ uploadBundle: dropped, artefacts: async () => WITH_BUNDLE }),
+      noSleep,
+    );
+    expect(published.warning).toContain("The connection dropped during the upload");
     await expect(
-      publishRelease(input({ uploadBundle: timedOut, artefacts: async () => EMPTY }), noSleep),
-    ).rejects.toBeInstanceOf(UploadTimeoutError);
+      publishRelease(input({ uploadBundle: dropped, artefacts: async () => EMPTY }), noSleep),
+    ).rejects.toThrow("The connection dropped during the upload, and the server does not have");
+  });
+
+  it("rethrows a refusal the server answered with", async () => {
+    const refused = async () => {
+      throw new Error("Version 1.2.0 is already published");
+    };
+    await expect(
+      publishRelease(input({ uploadBundle: refused, artefacts: async () => EMPTY }), noSleep),
+    ).rejects.toThrow("already published");
   });
 
   it("refuses to guess when the server cannot be asked", async () => {
