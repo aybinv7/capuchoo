@@ -1,0 +1,134 @@
+/*
+ * Every page arrives from the end edge and leaves the same way on back; Framework7 remembers the
+ * transition a page came in with and plays it backwards.
+ *
+ * M3 emphasized curves: decelerate into place, accelerate out. The page underneath drifts a third
+ * of the way and dims, so the motion reads as depth rather than a swap. Physical directions flip
+ * under `dir="rtl"`, where the start edge is on the right.
+ *
+ * The dim is a scrim fading over the page, never `filter: brightness()` on it: a filter on the
+ * whole page re-rendered it - and every backdrop blur inside it - on each frame of the slide.
+ * Only transform and opacity move here, both on the compositor.
+ */
+:root {
+  --cap-page-duration: 420ms;
+  --cap-page-duration-back: 320ms;
+  --cap-ease-in: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --cap-ease-out: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --cap-page-sign: 1;
+}
+
+[dir="rtl"] {
+  --cap-page-sign: -1;
+}
+
+.router-transition-cap-end-forward .page,
+.router-transition-cap-end-backward .page {
+  animation-fill-mode: forwards;
+}
+
+.router-transition-cap-end-forward .page-next {
+  z-index: 2;
+  box-shadow: var(--elevation-float);
+}
+
+.router-transition-cap-end-backward .page-current {
+  z-index: 2;
+  box-shadow: var(--elevation-float);
+}
+
+.router-transition-cap-end-forward .page-next {
+  animation: cap-in-from-end var(--cap-page-duration) var(--cap-ease-in) forwards;
+}
+.router-transition-cap-end-forward .page-current {
+  animation: cap-under-to-start var(--cap-page-duration) var(--cap-ease-in) forwards;
+}
+.router-transition-cap-end-backward .page-current {
+  animation: cap-out-to-end var(--cap-page-duration-back) var(--cap-ease-out) forwards;
+}
+.router-transition-cap-end-backward .page-previous {
+  animation: cap-under-from-start var(--cap-page-duration-back) var(--cap-ease-in) forwards;
+}
+
+@keyframes cap-in-from-end {
+  from {
+    transform: translateX(calc(100% * var(--cap-page-sign)));
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes cap-out-to-end {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(calc(100% * var(--cap-page-sign)));
+  }
+}
+@keyframes cap-under-to-start {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(calc(-30% * var(--cap-page-sign)));
+  }
+}
+@keyframes cap-under-from-start {
+  from {
+    transform: translateX(calc(-30% * var(--cap-page-sign)));
+  }
+  to {
+    transform: none;
+  }
+}
+
+.router-transition-cap-end-forward .page-current::after,
+.router-transition-cap-end-backward .page-previous::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  background: var(--m3-scrim);
+  opacity: 0;
+}
+
+.router-transition-cap-end-forward .page-current::after {
+  animation: cap-scrim-in var(--cap-page-duration) var(--cap-ease-in) forwards;
+}
+
+.router-transition-cap-end-backward .page-previous::after {
+  animation: cap-scrim-out var(--cap-page-duration-back) var(--cap-ease-in) forwards;
+}
+
+@keyframes cap-scrim-in {
+  to {
+    opacity: 0.18;
+  }
+}
+
+@keyframes cap-scrim-out {
+  from {
+    opacity: 0.18;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .router-transition-custom .page {
+    animation-duration: 1ms !important;
+  }
+}
+
+/*
+ * The page under a pushed one is still in place, so its looping decorations - a loading indicator,
+ * a morphing shape - would keep the compositor busy for a page nobody sees.
+ */
+.page-previous *,
+.page-previous *::before,
+.page-previous *::after {
+  animation-play-state: paused !important;
+}

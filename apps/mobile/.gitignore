@@ -1,0 +1,18 @@
+node_modules
+dist
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Generated native projects. Recreate with `npx cap add android`.
+android/app/build
+android/build
+android/.gradle
+android/local.properties
+android/app/src/main/assets/public
+android/capacitor-cordova-android-plugins
+ios
+
+

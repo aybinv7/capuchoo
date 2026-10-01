@@ -1,0 +1,61 @@
+{
+  "name": "@capuchoo/mobile",
+  "version": "0.1.0",
+  "description": "Capuchoo on a phone: the apps you are responsible for, their releases, and installing any build to test it.",
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vue-tsc --noEmit && vp build",
+    "type-check": "vue-tsc --noEmit",
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-secure-storage": "8.0.0",
+    "@capacitor/android": "catalog:",
+    "@capacitor/app": "catalog:",
+    "@capacitor/core": "catalog:",
+    "@capacitor/device": "catalog:",
+    "@capacitor/filesystem": "catalog:",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/network": "catalog:",
+    "@capacitor/preferences": "catalog:",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
+    "@capuchoo/core": "workspace:*",
+    "@cavulsqa/mobile-db": "^1.2.1",
+    "@cavulsqa/reactive-db": "^1.2.1",
+    "@cavulsqa/reactive-vue": "^1.2.1",
+    "@material/material-color-utilities": "0.4.0",
+    "@sqlite.org/sqlite-wasm": "3.53.0-build1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vueuse/core": "^14.4.0",
+    "framework7": "^9.0.2",
+    "framework7-icons": "^5.0.5",
+    "framework7-vue": "^9.1.2",
+    "kysely": "^0.29.5",
+    "tailwindcss": "^4.3.3",
+    "vue": "catalog:",
+    "vue-i18n": "^11.2.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "catalog:",
+    "@intlify/unplugin-vue-i18n": "^11.2.5",
+    "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "^6.0.3",
+    "sql.js": "1.13.0",
+    "typescript": "catalog:",
+    "unplugin-auto-import": "^21.1.0",
+    "unplugin-icons": "^23.0.1",
+    "unplugin-vue-components": "^32.1.0",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vue-tsc": "^3.2.4"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

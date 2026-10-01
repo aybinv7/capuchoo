@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@import "./theme/tokens.css";
+@import "./theme/scale.css";
+@import "./theme/framework7.css";
+@import "./base.css";
+@import "./layout/page.css";
+@import "./layout/transitions.css";
+@import "./layout/framework7-md.css";
+@import "./layout/navigation.css";

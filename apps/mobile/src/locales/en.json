@@ -1,0 +1,228 @@
+{
+  "tabs": {
+    "apps": "Apps",
+    "activity": "Activity",
+    "profile": "You"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "refresh": "Refresh",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "errors": {
+    "notFoundTitle": "Not here",
+    "notFound": "This page does not exist."
+  },
+  "signIn": {
+    "title": "Capuchoo",
+    "subtitle": "Your apps, their channels, and any build on this phone in one tap.",
+    "server": "Server",
+    "serverPlaceholder": "updates.example.com",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "signingIn": "Signing in",
+    "footnote": "Use the account you sign in to the dashboard with. Accounts are created by an administrator.",
+    "errors": {
+      "credentials": "That email and password do not match an account.",
+      "rateLimited": "Too many attempts. Wait a few minutes, then try again.",
+      "offline": "{server} could not be reached. Check the address and the connection."
+    }
+  },
+  "live": {
+    "syncing": "Syncing",
+    "live": "Live: changes arrive as they happen",
+    "connecting": "Connecting to live updates",
+    "retrying": "Reconnecting to live updates",
+    "off": "Live updates off"
+  },
+  "roles": {
+    "name": {
+      "viewer": "Viewer",
+      "tester": "Tester",
+      "developer": "Developer",
+      "admin": "Admin"
+    },
+    "purpose": {
+      "viewer": "You can see this app's channels and builds.",
+      "tester": "You can install any of this app's builds on this phone.",
+      "developer": "You can install builds and deliver them to dev and staging.",
+      "admin": "You can install builds and deliver them to every channel."
+    }
+  },
+  "apps": {
+    "title": "Apps",
+    "search": "Search apps",
+    "lanes": "What each channel serves",
+    "noChannels": "No channels yet.",
+    "clients": "{count} client channel | {count} client channels",
+    "attentionTitle": "{count} app on this phone is behind | {count} apps on this phone are behind",
+    "attentionText": "Their channel serves a newer build than the one installed.",
+    "emptyTitle": "No apps yet",
+    "emptyText": "Apps you are given a role on appear here. Ask an admin to add you to one.",
+    "noMatch": "No app matches that search."
+  },
+  "phone": {
+    "title": "On this phone",
+    "behindShort": "Update to {version}",
+    "currentShort": "Current · {version}",
+    "aheadShort": "Ahead · {version}",
+    "untrackedShort": "Installed · {version}",
+    "absentShort": "Not installed",
+    "update": "Update to {version}",
+    "install": "Install {version}",
+    "open": "Open the app",
+    "behind": {
+      "headline": "{target} is ready",
+      "detail": "This phone runs {installed}; {channel} serves {target}."
+    },
+    "current": {
+      "headline": "Up to date",
+      "detail": "{installed} is what {channel} serves."
+    },
+    "ahead": {
+      "headline": "Ahead of {channel}",
+      "detail": "This phone runs {installed}, newer than the {target} {channel} serves."
+    },
+    "untracked": {
+      "headline": "{installed} installed",
+      "detail": "{channel} serves no build yet, so there is nothing to compare it with."
+    },
+    "absent": {
+      "headline": "Not on this phone",
+      "detail": "{channel} serves {target}."
+    }
+  },
+  "app": {
+    "channels": "Channels",
+    "builds": "Builds",
+    "buildCount": "{count} build | {count} builds",
+    "noBuilds": "No Android build has been published yet.",
+    "showAll": "Show all {count}",
+    "recent": "Recent"
+  },
+  "channel": {
+    "follows": "follows {base}",
+    "paused": "Paused",
+    "pausedLong": "Paused: devices get nothing new",
+    "deliver": "Deliver",
+    "pause": "Pause",
+    "resume": "Resume"
+  },
+  "build": {
+    "code": "Build {code}",
+    "servedBy": "on {channel}",
+    "required": "Required",
+    "onThisPhone": "Installed on this phone",
+    "install": "Install {version}",
+    "reinstall": "Reinstall",
+    "notes": "What changed",
+    "size": "Size",
+    "published": "Published",
+    "minSdk": "Needs",
+    "signed": "Release signature",
+    "signedYes": "Signed",
+    "signedNo": "Not signed",
+    "certificate": "Signing certificate",
+    "checksum": "SHA-256"
+  },
+  "install": {
+    "cancel": "Cancel",
+    "cancelled": "The install was cancelled.",
+    "failed": "Android could not install the update.",
+    "phase": {
+      "linking": "Getting the download",
+      "downloading": "Downloading",
+      "verifying": "Checking the file",
+      "confirming": "Waiting for you",
+      "installing": "Installing",
+      "done": "Installed",
+      "failed": "Not installed"
+    },
+    "permission": {
+      "missing": "This app is not allowed to install apps yet.",
+      "title": "Allow installs",
+      "text": "Android asks once: allow Capuchoo to install apps, then come back and try again.",
+      "open": "Open settings"
+    },
+    "integrity": {
+      "package": "The file is {pkg}, which is not one of {app}'s identifiers. It was not installed.",
+      "version": "The file is build {got}, not build {want}. It was not installed.",
+      "certificate": "The file is signed with a different certificate than the server recorded. It was not installed."
+    },
+    "conflict": {
+      "title": "Replace the installed app?",
+      "downgrade": "This phone has {installed}, newer than {target}, and Android will not install an older build over it.",
+      "certificate": "The installed app is signed with a different key, so Android will not update it.",
+      "dataLoss": "Uninstalling it first deletes its data on this phone.",
+      "replace": "Uninstall and install",
+      "kept": "The installed app was kept, so nothing changed."
+    }
+  },
+  "deliver": {
+    "title": "Deliver to {channel}?",
+    "rollbackTitle": "Roll {channel} back?",
+    "text": "Devices on {channel} will be offered {version}.",
+    "prodWarning": "{channel} serves field devices. They will be offered {version} the next time they check.",
+    "confirm": "Deliver",
+    "rollback": "Roll back",
+    "done": "{channel} now serves {version}",
+    "reason": "From Capuchoo on a phone",
+    "sheetTitle": "Deliver to {channel}",
+    "sheetText": "Pick the build this channel should serve. Nothing is rebuilt.",
+    "current": "Serving",
+    "none": "No build of this channel's flavour has been published.",
+    "pauseTitle": "Pause {channel}?",
+    "pauseText": "Devices on it stop being offered updates until it is resumed.",
+    "pause": "Pause",
+    "paused": "{channel} is paused",
+    "resumed": "{channel} is serving again"
+  },
+  "activity": {
+    "heading": "Activity",
+    "readAll": "Mark everything read",
+    "unread": "Unread",
+    "from": "was {version}",
+    "many": "{count} changes. Latest: {latest}",
+    "emptyTitle": "Nothing yet",
+    "emptyText": "New builds, deliveries and pauses on your apps appear here as they happen.",
+    "notifyTitle": "Get notified",
+    "notifyText": "While Capuchoo runs, new builds and deliveries arrive as notifications.",
+    "notifyAction": "Allow",
+    "kind": {
+      "build": "{app} {version} was published",
+      "delivered": "{channel} now serves {version}",
+      "rolled_back": "{channel} was rolled back to {version}",
+      "paused": "{channel} was paused",
+      "resumed": "{channel} is serving again",
+      "installed": "{version} installed on this phone",
+      "install_failed": "{version} could not be installed"
+    }
+  },
+  "profile": {
+    "title": "You",
+    "instanceAdmin": "Server admin",
+    "appearance": "Appearance",
+    "mode": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "organizations": "Organizations",
+    "orgRole": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "notifications": "Notify me about",
+    "notificationsHint": "Notifications arrive while Capuchoo is running. The Activity tab always has everything.",
+    "server": "Server",
+    "endpoint": "Address",
+    "version": "App version",
+    "signOut": "Sign out",
+    "signOutTitle": "Sign out?",
+    "signOutText": "Your session ends on the server, and what this phone kept for it is deleted."
+  }
+}

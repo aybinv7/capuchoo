@@ -1,0 +1,48 @@
+.cap-page .page-content {
+  overflow-x: hidden;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 32px);
+}
+
+/*
+ * The bar is a near-solid surface, so a title never sits on top of readable content; only
+ * the strip hanging below it fades, which keeps the edge soft instead of a hard line.
+ */
+.navbar.navbar-gradient .navbar-bg {
+  border: 0;
+  height: calc(100% + 28px);
+  background-color: color-mix(in srgb, var(--background) 96%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent 100%);
+}
+
+/* A subnavbar sits under the navbar (top: 100%): the surface stays solid behind it, then fades. */
+.navbar.navbar-gradient:has(> .navbar-inner > .subnavbar) .navbar-bg {
+  height: calc(100% + var(--f7-subnavbar-height) + 24px);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(to bottom, black calc(100% - 24px), transparent 100%);
+}
+
+.navbar.navbar-gradient .subnavbar {
+  --f7-subnavbar-bg-color: transparent;
+}
+
+.navbar.navbar-gradient .navbar-bg::after {
+  display: none;
+}
+
+.navbar.navbar-gradient .title,
+.navbar.navbar-gradient .title-large-text {
+  color: var(--foreground);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.navbar.navbar-gradient .subtitle {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+/* A page's own action bar is a surface (M3 bottom app bar); the floating one draws its own. */
+.page > .toolbar-bottom {
+  --f7-toolbar-bg-color: var(--bar);
+}

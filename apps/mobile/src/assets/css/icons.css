@@ -1,0 +1,50 @@
+/**
+ * Framework7 renders `icon-md="material:home"` as the ligature text "home" unless a Material Icons
+ * font with `liga` enabled is present. The npm `framework7-icons` package only ships the iOS glyphs,
+ * so the Material font is bundled here rather than pulled from a CDN - an offline-first app should
+ * not lose its icons with the network.
+ */
+@font-face {
+  font-family: "Material Icons";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src:
+    local("Material Icons"),
+    url(../fonts/material-icons-round.woff2) format("woff2");
+}
+
+@font-face {
+  font-family: "Material Icons Outlined";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(../fonts/material-icons-outlined.woff2) format("woff2");
+}
+
+.material-icons,
+.material-icons-outlined {
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  /* Without this the icon name renders as text instead of a glyph. */
+  font-feature-settings: "liga";
+}
+
+.material-icons {
+  font-family: "Material Icons";
+}
+
+.material-icons-outlined {
+  font-family: "Material Icons Outlined";
+}

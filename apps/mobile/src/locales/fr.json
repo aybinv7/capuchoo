@@ -1,0 +1,228 @@
+{
+  "tabs": {
+    "apps": "Apps",
+    "activity": "Activité",
+    "profile": "Vous"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "clear": "Effacer",
+    "refresh": "Actualiser",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "errors": {
+    "notFoundTitle": "Introuvable",
+    "notFound": "Cette page n'existe pas."
+  },
+  "signIn": {
+    "title": "Capuchoo",
+    "subtitle": "Vos apps, leurs canaux, et n'importe quel build sur ce téléphone en un geste.",
+    "server": "Serveur",
+    "serverPlaceholder": "updates.exemple.com",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "signingIn": "Connexion",
+    "footnote": "Utilisez le compte du tableau de bord. Les comptes sont créés par un administrateur.",
+    "errors": {
+      "credentials": "Cet e-mail et ce mot de passe ne correspondent à aucun compte.",
+      "rateLimited": "Trop de tentatives. Attendez quelques minutes, puis réessayez.",
+      "offline": "{server} est injoignable. Vérifiez l'adresse et la connexion."
+    }
+  },
+  "live": {
+    "syncing": "Synchronisation",
+    "live": "En direct : les changements arrivent dès qu'ils ont lieu",
+    "connecting": "Connexion au direct",
+    "retrying": "Reconnexion au direct",
+    "off": "Direct désactivé"
+  },
+  "roles": {
+    "name": {
+      "viewer": "Lecteur",
+      "tester": "Testeur",
+      "developer": "Développeur",
+      "admin": "Admin"
+    },
+    "purpose": {
+      "viewer": "Vous voyez les canaux et les builds de cette app.",
+      "tester": "Vous pouvez installer n'importe quel build de cette app sur ce téléphone.",
+      "developer": "Vous pouvez installer des builds et les livrer en dev et en staging.",
+      "admin": "Vous pouvez installer des builds et les livrer sur tous les canaux."
+    }
+  },
+  "apps": {
+    "title": "Apps",
+    "search": "Rechercher une app",
+    "lanes": "Ce que sert chaque canal",
+    "noChannels": "Aucun canal pour l'instant.",
+    "clients": "{count} canal client | {count} canaux clients",
+    "attentionTitle": "{count} app de ce téléphone est en retard | {count} apps de ce téléphone sont en retard",
+    "attentionText": "Leur canal sert un build plus récent que celui installé.",
+    "emptyTitle": "Aucune app",
+    "emptyText": "Les apps sur lesquelles vous avez un rôle apparaissent ici. Demandez à un admin de vous ajouter.",
+    "noMatch": "Aucune app ne correspond."
+  },
+  "phone": {
+    "title": "Sur ce téléphone",
+    "behindShort": "Mettre à jour vers {version}",
+    "currentShort": "À jour · {version}",
+    "aheadShort": "En avance · {version}",
+    "untrackedShort": "Installée · {version}",
+    "absentShort": "Non installée",
+    "update": "Mettre à jour vers {version}",
+    "install": "Installer {version}",
+    "open": "Ouvrir l'app",
+    "behind": {
+      "headline": "{target} est prête",
+      "detail": "Ce téléphone a {installed} ; {channel} sert {target}."
+    },
+    "current": {
+      "headline": "À jour",
+      "detail": "{installed} est ce que sert {channel}."
+    },
+    "ahead": {
+      "headline": "En avance sur {channel}",
+      "detail": "Ce téléphone a {installed}, plus récent que {target} servi par {channel}."
+    },
+    "untracked": {
+      "headline": "{installed} installée",
+      "detail": "{channel} ne sert encore aucun build, rien à comparer."
+    },
+    "absent": {
+      "headline": "Pas sur ce téléphone",
+      "detail": "{channel} sert {target}."
+    }
+  },
+  "app": {
+    "channels": "Canaux",
+    "builds": "Builds",
+    "buildCount": "{count} build | {count} builds",
+    "noBuilds": "Aucun build Android publié pour l'instant.",
+    "showAll": "Voir les {count}",
+    "recent": "Récent"
+  },
+  "channel": {
+    "follows": "suit {base}",
+    "paused": "En pause",
+    "pausedLong": "En pause : les appareils ne reçoivent rien de nouveau",
+    "deliver": "Livrer",
+    "pause": "Pause",
+    "resume": "Reprendre"
+  },
+  "build": {
+    "code": "Build {code}",
+    "servedBy": "sur {channel}",
+    "required": "Obligatoire",
+    "onThisPhone": "Installé sur ce téléphone",
+    "install": "Installer {version}",
+    "reinstall": "Réinstaller",
+    "notes": "Ce qui change",
+    "size": "Taille",
+    "published": "Publié",
+    "minSdk": "Nécessite",
+    "signed": "Signature de release",
+    "signedYes": "Signé",
+    "signedNo": "Non signé",
+    "certificate": "Certificat de signature",
+    "checksum": "SHA-256"
+  },
+  "install": {
+    "cancel": "Annuler",
+    "cancelled": "L'installation a été annulée.",
+    "failed": "Android n'a pas pu installer la mise à jour.",
+    "phase": {
+      "linking": "Obtention du téléchargement",
+      "downloading": "Téléchargement",
+      "verifying": "Vérification du fichier",
+      "confirming": "En attente de votre choix",
+      "installing": "Installation",
+      "done": "Installé",
+      "failed": "Non installé"
+    },
+    "permission": {
+      "missing": "Cette app n'est pas encore autorisée à installer des apps.",
+      "title": "Autoriser les installations",
+      "text": "Android le demande une fois : autorisez Capuchoo à installer des apps, puis revenez réessayer.",
+      "open": "Ouvrir les réglages"
+    },
+    "integrity": {
+      "package": "Le fichier est {pkg}, qui n'est pas un identifiant de {app}. Rien n'a été installé.",
+      "version": "Le fichier est le build {got}, pas le build {want}. Rien n'a été installé.",
+      "certificate": "Le fichier est signé avec un autre certificat que celui enregistré par le serveur. Rien n'a été installé."
+    },
+    "conflict": {
+      "title": "Remplacer l'app installée ?",
+      "downgrade": "Ce téléphone a {installed}, plus récent que {target}, et Android n'installe pas un build plus ancien par-dessus.",
+      "certificate": "L'app installée est signée avec une autre clé, Android ne la mettra pas à jour.",
+      "dataLoss": "La désinstaller d'abord supprime ses données sur ce téléphone.",
+      "replace": "Désinstaller et installer",
+      "kept": "L'app installée a été conservée, rien n'a changé."
+    }
+  },
+  "deliver": {
+    "title": "Livrer sur {channel} ?",
+    "rollbackTitle": "Revenir en arrière sur {channel} ?",
+    "text": "Les appareils de {channel} se verront proposer {version}.",
+    "prodWarning": "{channel} sert les appareils du terrain. Ils se verront proposer {version} à leur prochaine vérification.",
+    "confirm": "Livrer",
+    "rollback": "Revenir en arrière",
+    "done": "{channel} sert maintenant {version}",
+    "reason": "Depuis Capuchoo sur téléphone",
+    "sheetTitle": "Livrer sur {channel}",
+    "sheetText": "Choisissez le build que ce canal doit servir. Rien n'est recompilé.",
+    "current": "Servi",
+    "none": "Aucun build de la saveur de ce canal n'a été publié.",
+    "pauseTitle": "Mettre {channel} en pause ?",
+    "pauseText": "Ses appareils ne se voient plus proposer de mises à jour jusqu'à la reprise.",
+    "pause": "Mettre en pause",
+    "paused": "{channel} est en pause",
+    "resumed": "{channel} sert à nouveau"
+  },
+  "activity": {
+    "heading": "Activité",
+    "readAll": "Tout marquer comme lu",
+    "unread": "Non lu",
+    "from": "était {version}",
+    "many": "{count} changements. Dernier : {latest}",
+    "emptyTitle": "Rien pour l'instant",
+    "emptyText": "Les nouveaux builds, livraisons et pauses de vos apps apparaissent ici dès qu'ils ont lieu.",
+    "notifyTitle": "Être notifié",
+    "notifyText": "Tant que Capuchoo tourne, les nouveaux builds et livraisons arrivent en notification.",
+    "notifyAction": "Autoriser",
+    "kind": {
+      "build": "{app} {version} a été publiée",
+      "delivered": "{channel} sert maintenant {version}",
+      "rolled_back": "{channel} est revenu à {version}",
+      "paused": "{channel} a été mis en pause",
+      "resumed": "{channel} sert à nouveau",
+      "installed": "{version} installée sur ce téléphone",
+      "install_failed": "{version} n'a pas pu être installée"
+    }
+  },
+  "profile": {
+    "title": "Vous",
+    "instanceAdmin": "Admin du serveur",
+    "appearance": "Apparence",
+    "mode": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "organizations": "Organisations",
+    "orgRole": {
+      "owner": "Propriétaire",
+      "admin": "Admin",
+      "member": "Membre"
+    },
+    "notifications": "Me notifier pour",
+    "notificationsHint": "Les notifications arrivent tant que Capuchoo tourne. L'onglet Activité a toujours tout.",
+    "server": "Serveur",
+    "endpoint": "Adresse",
+    "version": "Version de l'app",
+    "signOut": "Se déconnecter",
+    "signOutTitle": "Se déconnecter ?",
+    "signOutText": "Votre session prend fin sur le serveur, et ce que ce téléphone gardait pour elle est supprimé."
+  }
+}

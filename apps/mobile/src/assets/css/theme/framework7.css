@@ -1,0 +1,110 @@
+/* Framework7's variables on the same tokens, so its components and ours are one surface. */
+:root {
+  --f7-page-bg-color: var(--background);
+  --f7-text-color: var(--foreground);
+
+  --f7-card-bg-color: var(--card);
+  --f7-card-border-radius: var(--radius-card);
+  --f7-card-box-shadow: var(--elevation-card);
+  --f7-card-outline-border-color: var(--border);
+
+  --f7-list-bg-color: var(--card);
+  --f7-list-strong-bg-color: var(--card);
+  --f7-list-border-color: var(--divider);
+  --f7-list-item-border-color: var(--divider);
+  --f7-list-item-after-text-color: var(--muted-foreground);
+  --f7-list-item-footer-text-color: var(--muted-foreground);
+  --f7-list-inset-border-radius: var(--radius-card);
+
+  --f7-block-strong-bg-color: var(--card);
+  --f7-block-title-text-color: var(--muted-foreground);
+  --f7-block-inset-border-radius: var(--radius-card);
+
+  --f7-popup-bg-color: var(--popover);
+  --f7-sheet-bg-color: var(--popover);
+  --f7-popover-bg-color: var(--popover);
+  --f7-dialog-bg-color: var(--popover);
+  --f7-actions-bg-color: var(--popover);
+
+  /*
+   * Inputs as Material 3 filled text fields: a tonal container with Expressive's rounded top, an
+   * active indicator that turns primary on focus, a label that floats in the primary colour.
+   */
+  --f7-input-text-color: var(--foreground);
+  --f7-input-placeholder-color: var(--muted-foreground);
+  --f7-input-item-bg-color: var(--muted);
+  --f7-input-item-border-radius: 16px 16px 4px 4px;
+  --f7-input-border-color: var(--input);
+  --f7-input-focused-border-color: var(--primary);
+  --f7-input-invalid-border-color: var(--destructive);
+  --f7-input-invalid-text-color: var(--destructive);
+  --f7-input-outline-border-color: var(--input);
+  --f7-input-outline-border-radius: 16px;
+  --f7-input-outline-invalid-border-color: var(--destructive);
+  --f7-input-info-text-color: var(--muted-foreground);
+  --f7-input-error-text-color: var(--destructive);
+  --f7-input-clear-button-color: var(--muted-foreground);
+  --f7-label-text-color: var(--muted-foreground);
+  --f7-label-focused-text-color: var(--primary);
+  --f7-label-invalid-text-color: var(--destructive);
+
+  /* Chips as M3 input and suggestion chips: 32dp, 8dp corners, tonal fill or an outline. */
+  --f7-chip-height: 32px;
+  --f7-chip-border-radius: 8px;
+  --f7-chip-bg-color: var(--secondary);
+  --f7-chip-text-color: var(--secondary-foreground);
+  --f7-chip-outline-border-color: var(--input);
+  --f7-chip-outline-text-color: var(--foreground);
+  --f7-chip-delete-button-color: var(--secondary-foreground);
+  --f7-chip-font-size: 14px;
+  --f7-chip-font-weight: 500;
+
+  /* Sheets as M3 modal bottom sheets: extra-large top corners, the emphasized curve. */
+  --f7-sheet-border-radius: 28px;
+  --f7-sheet-border-color: transparent;
+  --f7-sheet-transition-duration: 420ms;
+  --f7-sheet-transition-timing-function: cubic-bezier(0.05, 0.7, 0.1, 1);
+  /*
+   * The drawer as an M3 modal navigation drawer: a shorter slide on the emphasized-decelerate
+   * curve. Framework7's 400ms with a soft tail read as sluggish, most of all when closing.
+   */
+  --f7-panel-transition-duration: 300ms;
+  --f7-panel-transition-timing-function: cubic-bezier(0.05, 0.7, 0.1, 1);
+
+  --f7-navbar-bg-color: transparent;
+  --f7-toolbar-bg-color: transparent;
+  --f7-bars-bg-color: transparent;
+  --f7-page-transition-duration: 220ms;
+
+  /* One variable paints resting and pressed rows alike; resting stays clear, the ripple is feedback. */
+  --f7-menu-list-item-bg-color: transparent;
+  --f7-menu-list-item-text-color: var(--foreground);
+  --f7-menu-list-item-selected-bg-color: var(--secondary);
+  --f7-menu-list-item-selected-text-color: var(--secondary-foreground);
+  /* Concentric with the card: inner radius = outer radius - inset. */
+  --f7-menu-list-offset: 6px;
+  --f7-menu-list-border-radius: calc(var(--radius-card) - var(--f7-menu-list-offset));
+  --f7-menu-list-item-min-height: 48px;
+  --f7-menu-list-font-size: var(--f7-list-font-size);
+  --f7-menu-list-item-title-font-size: var(--f7-list-font-size);
+  --f7-menu-list-item-title-font-weight: 400;
+
+  /* The M3 navigation bar: one tone above the page, a 64dp-wide pill behind the active icon. */
+  --f7-tabbar-icons-height: 80px;
+  --f7-tabbar-link-active-color: var(--m3-on-secondary-container);
+  --f7-tabbar-link-inactive-color: var(--muted-foreground);
+  --f7-tabbar-link-active-bg-color: var(--m3-secondary-container);
+  --f7-tabbar-label-font-size: 12px;
+  --f7-tabbar-label-font-weight: 500;
+
+  --f7-dialog-border-radius: var(--radius-xl);
+  --f7-toast-bg-color: var(--inverse);
+  --f7-toast-text-color: var(--inverse-foreground);
+  --f7-toast-border-radius: var(--radius-xs);
+  --f7-preloader-color: var(--primary);
+  --f7-progressbar-progress-color: var(--primary);
+  --f7-progressbar-bg-color: var(--m3-secondary-container);
+  --f7-segmented-strong-bg-color: var(--muted);
+  --f7-segmented-strong-button-active-bg-color: var(--m3-secondary-container);
+  --f7-segmented-strong-button-active-text-color: var(--m3-on-secondary-container);
+}

@@ -1,0 +1,82 @@
+/*
+ * Where Framework7's Material theme and Material 3 Expressive disagree and no variable reaches:
+ * its internals, so these are global, and only these.
+ */
+
+/* A suggestion or input chip's leading icon sits bare in M3, in the primary colour. */
+.chip .chip-media {
+  background: transparent;
+  color: var(--primary);
+  margin-inline-start: 4px;
+}
+
+.chip.chip-outline {
+  transition: transform 150ms ease;
+}
+
+.chip:active {
+  transform: scale(0.96);
+}
+
+/* A filled text field's leading icon: on-surface-variant at rest, primary while focused. */
+.item-input .item-media .icon {
+  color: var(--muted-foreground);
+  transition: color 150ms ease;
+}
+
+.item-input.item-input-focused .item-media .icon {
+  color: var(--primary);
+}
+
+/* The M3 bottom sheet's drag handle: 32 x 4dp, centred, on-surface-variant at 40%. */
+.sheet-modal .swipe-handler {
+  position: relative;
+  height: 28px;
+  background: transparent;
+}
+
+.sheet-modal .swipe-handler::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 32px;
+  height: 4px;
+  translate: -50% 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 40%, transparent);
+}
+
+/* The destructive action of a confirm dialog, in the error role - M3's danger text button. */
+.dialog-buttons .dialog-button.dialog-button-danger {
+  color: var(--destructive);
+}
+
+/*
+ * A field made for writing - a description, a prompt - rather than for a value: tall from the
+ * start, body-large text with room between lines, still growing with `resizable`.
+ */
+.list.is-writing {
+  --f7-textarea-height: 168px;
+}
+
+.list.is-writing.is-tall {
+  --f7-textarea-height: 50vh;
+}
+
+.list.is-writing textarea {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* A destructive list button and swipe action: the error role, never Framework7's red. */
+.list-button-danger .list-button,
+.list .list-button.list-button-danger {
+  color: var(--destructive);
+}
+
+.swipeout-actions-right > .swipeout-danger,
+.swipeout-actions-left > .swipeout-danger {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+}

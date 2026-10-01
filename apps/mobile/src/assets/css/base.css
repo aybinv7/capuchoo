@@ -1,0 +1,80 @@
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * An app, not a page: a long-press must never select text, pop the WebView's link menu or start
+ * dragging a link or picture - it is how a finger holds a button. Typing and reading prose stay
+ * selectable where it makes sense.
+ */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+img,
+button {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+input,
+textarea,
+[contenteditable="true"],
+.cap-selectable {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Versions, build numbers and hashes line up digit for digit. */
+.cap-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The effects transition for text and small surfaces appearing: fade, a short rise, no travel. */
+.cap-fade-enter-active {
+  transition:
+    opacity var(--duration-medium) var(--ease-emphasized-decelerate),
+    transform var(--duration-medium) var(--ease-emphasized-decelerate);
+}
+
+.cap-fade-leave-active {
+  transition: opacity var(--duration-short) var(--ease-emphasized-accelerate);
+}
+
+.cap-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.cap-fade-leave-to {
+  opacity: 0;
+}
