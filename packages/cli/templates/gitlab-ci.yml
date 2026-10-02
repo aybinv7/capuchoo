@@ -12,6 +12,18 @@
 # A native APK is built only when asked for, by starting the manual publish:native job, so a
 # web-only change never waits for Gradle.
 #
+# A pipeline started through the API with CAPUCHOO_ACTION set, which is how the Capuchoo dashboard
+# starts one, runs what it asks for instead of what the ref implies. ota and native run check and
+# then publish with no manual step; check only rehearses; deliver builds nothing and points
+# prod-<client> at a version prod already serves.
+#   CAPUCHOO_ACTION      ota, native, check or deliver
+#   CAPUCHOO_CHANNEL     outranks the ref's channel; empty uses it, and the default branch is prod
+#   CAPUCHOO_VERSION     auto or x.y.z; empty uses the tag, else auto. Prod is never published auto.
+#   CAPUCHOO_CLIENT      deliver: one of CAPUCHOO_CLIENTS
+#   CAPUCHOO_NOTES       release notes
+#   CAPUCHOO_BUILD_TYPE  native: release (the default, needs the keystore) or debug
+# A pipeline started through the API without CAPUCHOO_ACTION behaves like a push to its ref.
+#
 # Settings > CI/CD > Variables, every one Protected, and the three branches protected so they see
 # them. A merge request rehearsal runs only where CAPUCHOO_API_KEY is visible to it.
 #   CAPUCHOO_ENDPOINT          backend base URL
@@ -32,8 +44,9 @@ stages:
 variables:
   APP_DIR: "."
   CAPUCHOO_CLI_VERSION: "__CAPUCHOO_CLI_VERSION__"
-  CAPUCHOO_DEV_BRANCH: "dev"
-  CAPUCHOO_STAGING_BRANCH: "staging"
+  CAPUCHOO_CLIENTS: "__CAPUCHOO_CLIENTS__"
+  CAPUCHOO_DEV_BRANCH: "__CAPUCHOO_DEV_BRANCH__"
+  CAPUCHOO_STAGING_BRANCH: "__CAPUCHOO_STAGING_BRANCH__"
   NODE_IMAGE: "node:22-bookworm"
   NODE_VERSION: "22.20.0"
   ANDROID_PLATFORM: "android-35"
@@ -47,6 +60,53 @@ variables:
     variables: { CAPUCHOO_CHANNEL: "staging" }
   - if: $CI_COMMIT_BRANCH == $CAPUCHOO_DEV_BRANCH
     variables: { CAPUCHOO_CHANNEL: "dev" }
+
+# A pipeline started through the API with CAPUCHOO_ACTION. A CAPUCHOO_CHANNEL passed with it
+# outranks the channel set here, so these only supply the one the ref implies. Each job puts its
+# own `when: never` for the other actions first.
+.api-refs: &api-refs
+  - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION && $CI_COMMIT_TAG
+    variables: { CAPUCHOO_CHANNEL: "prod" }
+  - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION && $CI_COMMIT_BRANCH == $CAPUCHOO_STAGING_BRANCH
+    variables: { CAPUCHOO_CHANNEL: "staging" }
+  - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION && $CI_COMMIT_BRANCH == $CAPUCHOO_DEV_BRANCH
+    variables: { CAPUCHOO_CHANNEL: "dev" }
+  - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    variables: { CAPUCHOO_CHANNEL: "prod" }
+  - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION
+
+# Refuses an API pipeline whose variables do not describe a release, before anything is installed.
+# Does nothing on any other pipeline.
+.api-plan: &api-plan
+  - |
+    if [ "$CI_PIPELINE_SOURCE" = "api" ] && [ -n "${CAPUCHOO_ACTION:-}" ]; then
+      matches() { [ "$(printf '%s' "$1" | wc -l)" -eq 0 ] && printf '%s\n' "$1" | grep -Eq "$2"; }
+      VERSION="${CAPUCHOO_VERSION:-${CI_COMMIT_TAG:-auto}}"
+      case "$CAPUCHOO_ACTION" in
+        ota|native|check) ;;
+        *) echo "Unknown CAPUCHOO_ACTION $CAPUCHOO_ACTION: use ota, native, check or deliver." >&2; exit 1 ;;
+      esac
+      if [ -z "${CAPUCHOO_CHANNEL:-}" ]; then
+        echo "$CI_COMMIT_REF_NAME is not a release branch; start the pipeline with CAPUCHOO_CHANNEL." >&2
+        exit 1
+      fi
+      if ! matches "$CAPUCHOO_CHANNEL" '^[a-z0-9][a-z0-9-]{0,62}$'; then
+        echo "CAPUCHOO_CHANNEL $CAPUCHOO_CHANNEL is not a channel name." >&2
+        exit 1
+      fi
+      if ! matches "$VERSION" '^(auto|v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?)$'; then
+        echo "Version $VERSION is neither auto nor x.y.z; pass CAPUCHOO_VERSION." >&2
+        exit 1
+      fi
+      if [ "$CAPUCHOO_ACTION" != "check" ] && [ "$CAPUCHOO_CHANNEL" = "prod" ] && [ "$VERSION" = "auto" ]; then
+        echo "Prod is published from a tag or an exact version, never -v auto. Pass CAPUCHOO_VERSION." >&2
+        exit 1
+      fi
+      case "${CAPUCHOO_BUILD_TYPE:-release}" in
+        release|debug) ;;
+        *) echo "CAPUCHOO_BUILD_TYPE must be release or debug, not $CAPUCHOO_BUILD_TYPE." >&2; exit 1 ;;
+      esac
+    fi
 
 # Installs with whatever the lockfile says, at the version package.json pins, then puts the
 # project's own capuchoo on PATH.
@@ -77,6 +137,7 @@ variables:
       - .cache/pnpm-store
       - .cache/npm
   before_script:
+    - *api-plan
     - *install
 
 # JDK 21 + Node + Android SDK, cached between pipelines.
@@ -90,6 +151,7 @@ variables:
       - .cache/pnpm-store
       - .cache/npm
   before_script:
+    - *api-plan
     - apt-get update -qq
     - apt-get install -y -qq --no-install-recommends ca-certificates curl git unzip xz-utils > /dev/null
     - |
@@ -118,6 +180,9 @@ check:
   extends: .web
   stage: check
   rules:
+    - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION == "deliver"
+      when: never
+    - *api-refs
     - *release-refs
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       variables: { CAPUCHOO_CHANNEL: "prod" }
@@ -129,7 +194,7 @@ check:
       variables: { CAPUCHOO_CHANNEL: "dev" }
   script:
     - cd "$APP_DIR"
-    - capuchoo deploy ota --channel "$CAPUCHOO_CHANNEL" -v "${CI_COMMIT_TAG:-auto}" --dry-run --yes --json > "$CI_PROJECT_DIR/capuchoo-check.json"
+    - capuchoo deploy ota --channel "$CAPUCHOO_CHANNEL" -v "${CAPUCHOO_VERSION:-${CI_COMMIT_TAG:-auto}}" --dry-run --yes --json > "$CI_PROJECT_DIR/capuchoo-check.json"
   artifacts:
     when: always
     expire_in: 7 days
@@ -144,10 +209,14 @@ publish:ota:
   resource_group: capuchoo-$CAPUCHOO_CHANNEL
   environment:
     name: $CAPUCHOO_CHANNEL
-  rules: *release-refs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION && $CAPUCHOO_ACTION != "ota"
+      when: never
+    - *api-refs
+    - *release-refs
   script:
     - cd "$APP_DIR"
-    - capuchoo deploy ota --channel "$CAPUCHOO_CHANNEL" -v "${CI_COMMIT_TAG:-auto}" --note "${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} $CI_COMMIT_TITLE" --yes --json > "$CI_PROJECT_DIR/capuchoo-ota.json"
+    - capuchoo deploy ota --channel "$CAPUCHOO_CHANNEL" -v "${CAPUCHOO_VERSION:-${CI_COMMIT_TAG:-auto}}" --note "${CAPUCHOO_NOTES:-${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} $CI_COMMIT_TITLE}" --yes --json > "$CI_PROJECT_DIR/capuchoo-ota.json"
   artifacts:
     when: always
     expire_in: 30 days
@@ -163,6 +232,9 @@ publish:native:
   environment:
     name: $CAPUCHOO_CHANNEL
   rules:
+    - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION && $CAPUCHOO_ACTION != "native"
+      when: never
+    - *api-refs
     - if: $CI_COMMIT_TAG
       variables: { CAPUCHOO_CHANNEL: "prod" }
       when: manual
@@ -178,20 +250,23 @@ publish:native:
   script:
     - cd "$APP_DIR"
     - |
-      if [ ! -s "${ANDROID_KEYSTORE_BASE64:-}" ]; then
-        echo "ANDROID_KEYSTORE_BASE64 is not set; a release APK cannot be signed." >&2
-        exit 1
+      BUILD_TYPE="${CAPUCHOO_BUILD_TYPE:-release}"
+      if [ "$BUILD_TYPE" = "release" ]; then
+        if [ ! -s "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+          echo "ANDROID_KEYSTORE_BASE64 is not set; a release APK cannot be signed." >&2
+          exit 1
+        fi
+        base64 -d "$ANDROID_KEYSTORE_BASE64" > android/release.keystore
+        printf 'RELEASE_STORE_FILE=%s\nRELEASE_STORE_PASSWORD=%s\nRELEASE_KEY_ALIAS=%s\nRELEASE_KEY_PASSWORD=%s\n' \
+          "$PWD/android/release.keystore" "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" \
+          >> android/local.properties
+        export CAPUCHOO_KEYSTORE_FILE=release.keystore
+        export CAPUCHOO_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+        export CAPUCHOO_KEY_ALIAS="$ANDROID_KEY_ALIAS"
+        export CAPUCHOO_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
       fi
-      base64 -d "$ANDROID_KEYSTORE_BASE64" > android/release.keystore
-      printf 'RELEASE_STORE_FILE=%s\nRELEASE_STORE_PASSWORD=%s\nRELEASE_KEY_ALIAS=%s\nRELEASE_KEY_PASSWORD=%s\n' \
-        "$PWD/android/release.keystore" "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" \
-        >> android/local.properties
-      export CAPUCHOO_KEYSTORE_FILE=release.keystore
-      export CAPUCHOO_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
-      export CAPUCHOO_KEY_ALIAS="$ANDROID_KEY_ALIAS"
-      export CAPUCHOO_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
-      capuchoo deploy native --channel "$CAPUCHOO_CHANNEL" --type=release -v "${CI_COMMIT_TAG:-auto}" \
-        --note "${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} $CI_COMMIT_TITLE" --yes --json > "$CI_PROJECT_DIR/capuchoo-native.json"
+      capuchoo deploy native --channel "$CAPUCHOO_CHANNEL" --type="$BUILD_TYPE" -v "${CAPUCHOO_VERSION:-${CI_COMMIT_TAG:-auto}}" \
+        --note "${CAPUCHOO_NOTES:-${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} $CI_COMMIT_TITLE}" --yes --json > "$CI_PROJECT_DIR/capuchoo-native.json"
   after_script:
     - rm -f "$APP_DIR/android/release.keystore"
   artifacts:
@@ -207,6 +282,8 @@ publish:native:
   image: $NODE_IMAGE
   stage: deliver
   rules:
+    - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION && $CAPUCHOO_ACTION != "ota"
+      when: never
     - if: $CI_COMMIT_TAG
       when: manual
   environment:
@@ -222,5 +299,41 @@ publish:native:
       cd "$APP_DIR"
       npx --yes "@capuchoo/cli@$CAPUCHOO_CLI_VERSION" channel point "$CAPUCHOO_TARGET_CHANNEL" \
         --version "$VERSION" $NATIVE_FLAG --reason "GitLab $CI_PIPELINE_URL" --yes --json
+
+# An API pipeline with CAPUCHOO_ACTION=deliver: points prod-$CAPUCHOO_CLIENT at CAPUCHOO_VERSION,
+# which prod must already have served. Nothing is built.
+deliver:api:
+  image: $NODE_IMAGE
+  stage: deliver
+  needs: []
+  resource_group: capuchoo-prod-$CAPUCHOO_CLIENT
+  environment:
+    name: prod-$CAPUCHOO_CLIENT
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "api" && $CAPUCHOO_ACTION == "deliver"
+  script:
+    - |
+      matches() { [ "$(printf '%s' "$1" | wc -l)" -eq 0 ] && printf '%s\n' "$1" | grep -Eq "$2"; }
+      CLIENT="${CAPUCHOO_CLIENT:-}"
+      VERSION="${CAPUCHOO_VERSION:-}"
+      if [ -z "$CLIENT" ] || ! matches "$CLIENT" '^[a-z0-9][a-z0-9-]{0,62}$'; then
+        echo "deliver needs CAPUCHOO_CLIENT, the client whose prod-<client> channel is pointed." >&2
+        exit 1
+      fi
+      case " $CAPUCHOO_CLIENTS " in
+        *" $CLIENT "*) ;;
+        *) echo "$CLIENT is not one of the clients this pipeline was generated for (${CAPUCHOO_CLIENTS:-none}); re-run capuchoo ci init --gitlab --clients." >&2; exit 1 ;;
+      esac
+      if [ -z "$VERSION" ] || [ "$VERSION" = "auto" ]; then
+        echo "deliver needs CAPUCHOO_VERSION, the exact version prod serves." >&2
+        exit 1
+      fi
+      if ! matches "$VERSION" '^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+        echo "CAPUCHOO_VERSION $VERSION is not an x.y.z version." >&2
+        exit 1
+      fi
+      cd "$APP_DIR"
+      npx --yes "@capuchoo/cli@$CAPUCHOO_CLI_VERSION" channel point "prod-$CLIENT" \
+        --version "${VERSION#v}" --reason "GitLab $CI_PIPELINE_URL" --yes --json
 
 # capuchoo:deliver-jobs

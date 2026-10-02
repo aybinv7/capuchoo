@@ -72,6 +72,14 @@ export type BuildStep =
   | "sign"
   | "upload";
 
+/** The CI run a deploy happens inside, so the server attaches the build to that run's job. */
+export interface BuildCiRun {
+  provider: "github" | "gitlab";
+  run_id: string;
+  run_attempt: number | null;
+  job: string;
+}
+
 /** `POST /api/apps/:id/builds`. */
 export interface BuildStart {
   kind: "ota" | "native";
@@ -82,6 +90,7 @@ export interface BuildStart {
   ref: string | null;
   pipeline_url: string | null;
   job_url?: string | null;
+  ci?: BuildCiRun | null;
 }
 
 /** `POST /api/builds/:id/finish`. */

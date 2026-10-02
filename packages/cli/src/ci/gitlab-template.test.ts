@@ -1,31 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
 import { describeReplacement } from "./file-diff.js";
-import { parseClients, readGitlabTemplate, renderGitlabCi } from "./gitlab-template.js";
-
-describe("parseClients", () => {
-  it("maps clients to prod-<client> channels, de-duplicated", () => {
-    expect(parseClients(" Acme, globex,acme, prod-initech ,")).toEqual([
-      { client: "acme", channel: "prod-acme" },
-      { client: "globex", channel: "prod-globex" },
-      { client: "initech", channel: "prod-initech" },
-    ]);
-  });
-
-  it("refuses a name that would break the YAML or a channel", () => {
-    expect(() => parseClients("acme corp")).toThrow('"acme corp" is not a usable client name');
-    expect(() => parseClients("a:b")).toThrow("not a usable client name");
-  });
-
-  it("is empty without --clients", () => {
-    expect(parseClients(undefined)).toEqual([]);
-  });
-});
+import { parseClients } from "./clients.js";
+import { readGitlabTemplate, renderGitlabCi, type GitlabCiOptions } from "./gitlab-template.js";
 
 describe("renderGitlabCi", () => {
   const template = readGitlabTemplate();
+  const render = (clients = parseClients(undefined), branches: Partial<GitlabCiOptions> = {}) =>
+    renderGitlabCi(template, { cliVersion: "0.16.0", clients, ...branches });
 
   it("pins the CLI version and adds one manual deliver job per client", () => {
-    const rendered = renderGitlabCi(template, "0.16.0", parseClients("acme,globex"));
+    const rendered = render(parseClients("acme,globex"));
 
     expect(rendered).not.toContain("__CAPUCHOO_CLI_VERSION__");
     expect(rendered).toContain('CAPUCHOO_CLI_VERSION: "0.16.0"');
@@ -37,7 +21,7 @@ describe("renderGitlabCi", () => {
   });
 
   it("keeps the stages, publishes each release branch to its channel and delivers by pointing", () => {
-    const rendered = renderGitlabCi(template, "0.16.0", []);
+    const rendered = render();
     expect(rendered).toMatch(/stages:\n {2}- check\n {2}- publish\n {2}- deliver/);
     expect(rendered).toContain("publish:ota:");
     expect(rendered).toContain("publish:native:");
@@ -50,7 +34,7 @@ describe("renderGitlabCi", () => {
   });
 
   it("builds OTA bundles without the Android SDK and assumes no package manager", () => {
-    const rendered = renderGitlabCi(template, "0.16.0", []);
+    const rendered = render();
     const web = rendered.slice(rendered.indexOf("\n.web:"), rendered.indexOf("\n.native:"));
     expect(web).not.toContain("sdkmanager");
     expect(rendered).toContain("pnpm install --frozen-lockfile");
@@ -59,13 +43,33 @@ describe("renderGitlabCi", () => {
   });
 
   it("never writes a secret into the file", () => {
-    const rendered = renderGitlabCi(template, "0.16.0", parseClients("acme"));
+    const rendered = render(parseClients("acme"));
     expect(rendered).not.toMatch(/CAPUCHOO_API_KEY:\s*\S/);
     expect(rendered).not.toMatch(/CAPUCHOO_SIGNING_KEY:\s*\S/);
   });
 
+  it("pins the release branches and the client list", () => {
+    const rendered = render([], { devBranch: "develop", stagingBranch: "release/next" });
+    expect(rendered).toContain('CAPUCHOO_DEV_BRANCH: "develop"');
+    expect(rendered).toContain('CAPUCHOO_STAGING_BRANCH: "release/next"');
+    expect(rendered).toContain('CAPUCHOO_CLIENTS: ""');
+    expect(render()).toContain('CAPUCHOO_DEV_BRANCH: "dev"');
+    expect(render()).toContain('CAPUCHOO_STAGING_BRANCH: "staging"');
+    expect(render()).not.toMatch(/__CAPUCHOO_[A-Z_]+__/);
+  });
+
+  it("refuses a branch that would break the YAML, or one branch for two channels", () => {
+    expect(() => render([], { devBranch: 'dev"\nx: 1' })).toThrow('--dev-branch "dev');
+    expect(() => render([], { stagingBranch: "a..b" })).toThrow("--staging-branch");
+    expect(() => render([], { devBranch: "main", stagingBranch: "main" })).toThrow(
+      "two different branches",
+    );
+  });
+
   it("refuses a template without placeholders", () => {
-    expect(() => renderGitlabCi("stages: []", "0.16.0", [])).toThrow("placeholders");
+    expect(() => renderGitlabCi("stages: []", { cliVersion: "0.16.0", clients: [] })).toThrow(
+      "placeholders",
+    );
   });
 });
 

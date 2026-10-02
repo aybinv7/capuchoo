@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { Reporter } from "../utils/reporter.js";
 import { BuildTracker, toBuildStep, type BuildApi } from "./build-tracker.js";
-import { detectCiContext } from "./ci-context.js";
 
 const START = {
   kind: "ota" as const,
@@ -49,6 +48,15 @@ describe("BuildTracker", () => {
       "finish:succeeded",
     ]);
     expect(await tracker.buildId()).toBe("build-1");
+  });
+
+  it("passes the CI run through to the build it creates", async () => {
+    const { api } = recordingApi();
+    const ci = { provider: "github" as const, run_id: "42", run_attempt: 2, job: "publish-ota" };
+    const tracker = BuildTracker.start(api, "app", { ...START, source: "github", ci });
+    await tracker.finish({ status: "succeeded" });
+
+    expect(api.createBuild).toHaveBeenCalledWith("app", { ...START, source: "github", ci }, 3_000);
   });
 
   it("returns immediately from step, even while the server is slow", () => {
@@ -161,58 +169,5 @@ describe("Reporter step events", () => {
       "upload:running:Upload",
       "upload:failed:413 too large",
     ]);
-  });
-});
-
-describe("detectCiContext", () => {
-  it("reads GitLab CI", () => {
-    expect(
-      detectCiContext({
-        GITLAB_CI: "true",
-        CI_COMMIT_SHA: "abc",
-        CI_COMMIT_REF_NAME: "main",
-        CI_PIPELINE_URL: "https://gitlab.example.com/p/-/pipelines/1",
-        CI_JOB_URL: "https://gitlab.example.com/p/-/jobs/2",
-      }),
-    ).toEqual({
-      source: "gitlab",
-      commit: "abc",
-      ref: "main",
-      pipeline_url: "https://gitlab.example.com/p/-/pipelines/1",
-      job_url: "https://gitlab.example.com/p/-/jobs/2",
-    });
-  });
-
-  it("prefers the tag on a GitLab tag pipeline", () => {
-    expect(
-      detectCiContext({ GITLAB_CI: "true", CI_COMMIT_TAG: "v2.4.0", CI_COMMIT_REF_NAME: "v2.4.0x" })
-        .ref,
-    ).toBe("v2.4.0");
-  });
-
-  it("reads GitHub Actions", () => {
-    expect(
-      detectCiContext({
-        GITHUB_ACTIONS: "true",
-        GITHUB_SHA: "def",
-        GITHUB_REF_NAME: "main",
-        GITHUB_REPOSITORY: "acme/app",
-        GITHUB_RUN_ID: "42",
-      }),
-    ).toMatchObject({
-      source: "github",
-      commit: "def",
-      pipeline_url: "https://github.com/acme/app/actions/runs/42",
-    });
-  });
-
-  it("is a plain CLI run elsewhere", () => {
-    expect(detectCiContext({})).toEqual({
-      source: "cli",
-      commit: null,
-      ref: null,
-      pipeline_url: null,
-      job_url: null,
-    });
   });
 });

@@ -14,6 +14,8 @@ Since 0.16: a release is built and uploaded once, then delivered to other channe
 signed with the key from `capuchoo keys init`; native deploys refuse debug or unsigned APKs on prod
 and client channels and pin the APK signing certificate; a flavour build refuses `VITE_*` values
 leaking in from `.env` / `.env.local`; `capuchoo ci init --gitlab` writes a GitLab pipeline.
+`capuchoo ci init --github` writes the GitHub Actions workflow the dashboard also sets up, and
+GitLab pipelines started through the API run the action they are given.
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/%40capuchoo%2Fcli.svg)](https://npmjs.org/package/@capuchoo/cli)
@@ -538,24 +540,38 @@ _See code:
 
 ## `capuchoo ci init`
 
-Write a GitLab pipeline that publishes each release branch to its channel and delivers prod to each
-client by hand
+Write a GitHub Actions workflow or a GitLab pipeline that publishes each release branch to its
+channel and delivers prod to each client
 
 ```
 USAGE
-  $ capuchoo ci init [--gitlab] [--clients <value>] [--output <value>] [-y] [--json]
+  $ capuchoo ci init [--github] [--gitlab] [--clients <value>] [--dev-branch <value>] [--staging-branch
+    <value>] [--default-branch <value>] [--app-dir <value>] [--output <value>] [-y] [--json]
 
 FLAGS
-  -y, --yes              Replace an existing file without asking
-      --clients=<value>  Comma-separated clients; each gets a manual deliver job to prod-<client>
-      --gitlab           Generate .gitlab-ci.yml
-      --json             Machine-readable output
-      --output=<value>   [default: .gitlab-ci.yml] Where to write the pipeline
+  -y, --yes                     Replace an existing file without asking
+      --app-dir=<value>         GitHub only: the app's directory from the repository root [default: the current
+                                directory's]
+      --clients=<value>         Comma-separated clients; each can be delivered prod on its prod-<client> channel
+      --default-branch=<value>  GitHub only: the branch that rehearses against prod [default: origin/HEAD, else
+                                main]
+      --dev-branch=<value>      [default: dev] Branch that publishes to the dev channel
+      --github                  Generate .github/workflows/capuchoo.yml
+      --gitlab                  Generate .gitlab-ci.yml
+      --json                    Machine-readable output
+      --output=<value>          Where to write the file [default: .github/workflows/capuchoo.yml at the repository
+                                root, or .gitlab-ci.yml here]
+      --staging-branch=<value>  [default: staging] Branch that publishes to the staging channel
 
 DESCRIPTION
-  Write a GitLab pipeline that publishes each release branch to its channel and delivers prod to each client by hand
+  Write a GitHub Actions workflow or a GitLab pipeline that publishes each release branch to its channel and
+  delivers prod to each client
 
 EXAMPLES
+  $ capuchoo ci init --github
+
+  $ capuchoo ci init --github --clients acme,globex --default-branch main
+
   $ capuchoo ci init --gitlab
 
   $ capuchoo ci init --gitlab --clients acme,globex

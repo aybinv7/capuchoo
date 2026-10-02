@@ -5,7 +5,7 @@ activation and rollback. Neither reaches into the other.
 
 ## Credentials
 
-Set these as repository or environment secrets:
+Set these as CI/CD variables or secrets:
 
 - `CAPUCHOO_ENDPOINT` - the backend base URL.
 - `CAPUCHOO_API_KEY` - a key scoped to the target application only.
@@ -96,10 +96,100 @@ The env files are read, never written.
 
 ## GitHub Actions
 
-Inside this monorepo, use the `deploy-app` workflow. It installs the toolchain and hands the whole
-pipeline to the CLI, so a CI deploy and a local deploy run the same code.
+```sh
+capuchoo ci init --github --clients acme,globex
+```
 
-For an application in its own repository, use the composite action:
+writes `.github/workflows/capuchoo.yml` at the root of the git repository that holds the current
+directory. `@capuchoo/core` renders it, so it is the same file, byte for byte, as the one the
+dashboard's setup pull request adds. An existing file is diffed and only replaced after a
+confirmation or `--yes`. Regenerate it rather than editing it: the dashboard reads the job graph
+from it.
+
+| Flag               | Default                                                    |
+| ------------------ | ---------------------------------------------------------- |
+| `--app-dir`        | the path from the repository root to the current directory |
+| `--default-branch` | the branch `origin/HEAD` points at, else `main`            |
+| `--dev-branch`     | `dev`                                                      |
+| `--staging-branch` | `staging`                                                  |
+| `--clients`        | none; each client becomes a `client` choice for `deliver`  |
+| `--output`         | `.github/workflows/capuchoo.yml` at the repository root    |
+
+GitHub only runs workflows from `.github/workflows` at the repository root, and the dashboard reads
+`capuchoo.yml` there unless the app's workflow path is changed; `ci init` warns when `--output` puts
+the file anywhere else. A value that would be unsafe in the YAML - a branch name with a quote, an
+`--app-dir` containing `..`, one branch used for two channels - is refused and nothing is written.
+
+| Event                              | Channel                                | Version                            |
+| ---------------------------------- | -------------------------------------- | ---------------------------------- |
+| push to `dev`                      | `dev`                                  | `-v auto`                          |
+| push to `staging`                  | `staging`                              | `-v auto`                          |
+| tag `v1.2.0`                       | `prod`                                 | `1.2.0`                            |
+| push to the default branch         | rehearsal against `prod`               | -                                  |
+| pull request into a release branch | rehearsal against the target's channel | -                                  |
+| Run workflow                       | the `channel` input, else as above     | the `version` input, else as above |
+
+Jobs:
+
+- `plan` - resolves the action, channel, version and client from the event and the inputs, and stops
+  the run on an unknown action, a malformed channel or version, `prod` at `-v auto`, or a `deliver`
+  without an exact version and one of the generated clients.
+- `check` - `deploy ota --dry-run`, the whole pipeline except the upload. Pull requests from forks
+  skip it, because they cannot read the secrets.
+- `publish-ota` - `deploy ota`, keeping `capuchoo-ota.json` and `capuchoo-deploy.log` as an
+  artifact.
+- `publish-native` - only when a run asks for `native`. JDK 21 and the Android SDK, then
+  `deploy native --type=<build_type>`. `release`, the default, restores the keystore from the
+  secrets and fails without it; `debug` skips it.
+- `deliver` - only when generated with `--clients`. Runs
+  `capuchoo channel point prod-<client> --version <version>` with the CLI version the file pins.
+  Nothing is built.
+
+"Run workflow" takes `action` (`ota`, `native`, `check`, `deliver`), `channel`, `version`, `client`,
+`notes` and `build_type`. A native APK is built only when a run asks for one, so a web-only change
+never waits for Gradle.
+
+Each publish job runs in a GitHub environment named after its channel (`dev`, `staging`, `prod`),
+and `deliver` in `prod-<client>`. To require an approval, add required reviewers to `prod` and to
+every `prod-<client>` under Settings > Environments. Environment secrets work as well, for example
+an API key used only by `prod`. Runs for the same channel queue instead of overlapping.
+
+| Name                        | Kind     | Needed for                                                  |
+| --------------------------- | -------- | ----------------------------------------------------------- |
+| `CAPUCHOO_ENDPOINT`         | variable | every job: the backend base URL                             |
+| `CAPUCHOO_API_KEY`          | secret   | every job: an API key scoped to this app                    |
+| `CAPUCHOO_SIGNING_KEY`      | secret   | optional: base64 PKCS#8 body of `.capuchoo/signing-key.pem` |
+| `ANDROID_KEYSTORE_BASE64`   | secret   | native release builds: the release keystore, base64         |
+| `ANDROID_KEYSTORE_PASSWORD` | secret   | native release builds                                       |
+| `ANDROID_KEY_ALIAS`         | secret   | native release builds                                       |
+| `ANDROID_KEY_PASSWORD`      | secret   | native release builds                                       |
+
+The keystore is written to `android/release.keystore` and removed when the job ends. Its values are
+appended to `android/local.properties` as `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`,
+`RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD`, and exported as `CAPUCHOO_KEYSTORE_*`.
+
+Dependencies are installed with the lockfile's package manager at the version `package.json` pins,
+and `capuchoo` runs from the project's `node_modules/.bin`, so the app needs `@capuchoo/cli` as a
+dev dependency.
+
+### From the dashboard
+
+App settings > CI connects an app to a repository through the instance's GitHub App. From there the
+dashboard:
+
+- opens a pull request that adds the same workflow, with the options `ci init --github` takes;
+- sets the secrets and the `CAPUCHOO_ENDPOINT` variable. Secrets are encrypted in the browser with
+  the repository's public key, so the keystore and its passwords never reach Capuchoo;
+- starts runs with the "Run workflow" inputs above, and shows each run as soon as it starts.
+
+Runs started any other way arrive through webhooks. A deploy inside a run sends the run id, attempt
+and job (`GITHUB_RUN_ID`, `GITHUB_RUN_ATTEMPT`, `GITHUB_JOB`) with its build, so its steps appear
+under that job. [CI providers](../../../docs/CI-PROVIDERS.md) describes the integration.
+
+### One step in an existing workflow
+
+Inside this monorepo, the `deploy-app` workflow does this. For an application in its own repository
+that already has a workflow, the composite action runs a single deploy:
 
 ```yaml
 - uses: aybinv7/capuchoo@main # the action lives in packages/cli
@@ -110,16 +200,12 @@ For an application in its own repository, use the composite action:
     cli-version: 0.16.0 # pin this in production
     release-notes: Presalio v20.0.1
   env:
-    CAPUCHOO_ENDPOINT: ${{ secrets.CAPUCHOO_ENDPOINT }}
+    CAPUCHOO_ENDPOINT: ${{ vars.CAPUCHOO_ENDPOINT }}
     CAPUCHOO_API_KEY: ${{ secrets.CAPUCHOO_API_KEY }}
 ```
 
-The action runs the **published** CLI via `npx`, so consumers do not need this repository's
-lockfile, Node version or toolchain. The previous version ran `pnpm install && pnpm build` inside
-the action directory on every invocation.
-
-Point production deploys at a protected GitHub environment so they need an approval, and scope its
-`CAPUCHOO_API_KEY` to that app.
+The action runs the published CLI through `npx`, so it needs neither this repository's lockfile nor
+its toolchain.
 
 ## GitLab CI
 
@@ -128,8 +214,9 @@ capuchoo ci init --gitlab --clients acme,globex
 ```
 
 writes `.gitlab-ci.yml` (`--output` to put it elsewhere, e.g. a monorepo root, then set `APP_DIR`)
-from `templates/gitlab-ci.yml`. An existing file is diffed and only replaced after a confirmation or
-`--yes`.
+from `templates/gitlab-ci.yml`. `--dev-branch` and `--staging-branch` name the release branches
+(`dev` and `staging` by default). An existing file is diffed and only replaced after a confirmation
+or `--yes`.
 
 | Ref                                    | Channel                  | Version                        |
 | -------------------------------------- | ------------------------ | ------------------------------ |
@@ -159,6 +246,40 @@ Dependencies are installed with the lockfile's package manager at the version `p
 `CAPUCHOO_SIGNING_KEY` (masked), and for native builds `ANDROID_KEYSTORE_BASE64` (a masked File
 variable holding the base64 keystore) with `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
 `ANDROID_KEY_PASSWORD`. Protect the three release branches, or their pipelines will not see them.
+
+### API-started pipelines
+
+A pipeline created through the GitLab API (`$CI_PIPELINE_SOURCE == "api"`) with `CAPUCHOO_ACTION`
+set runs what its variables ask for instead of what its ref implies. This is how the dashboard
+starts a GitLab run, once App settings > CI holds a project access token; the variables it passes
+come from `GITLAB_PIPELINE_VARIABLES` in `@capuchoo/core`.
+
+| Variable              | Meaning                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `CAPUCHOO_ACTION`     | `ota`, `native`, `check` or `deliver`                                                       |
+| `CAPUCHOO_CHANNEL`    | the channel; empty takes it from the ref as a push would, with the default branch as `prod` |
+| `CAPUCHOO_VERSION`    | `auto` or `x.y.z`; empty takes the tag, else `auto`                                         |
+| `CAPUCHOO_CLIENT`     | `deliver` only: one of the clients generated with `--clients`                               |
+| `CAPUCHOO_NOTES`      | release notes; empty uses the tag or short commit SHA and the commit title                  |
+| `CAPUCHOO_BUILD_TYPE` | `native` only: `release`, the default, which needs the keystore variables, or `debug`       |
+
+- `ota` - `check`, then `publish:ota`, with no manual step. On a tag, the manual `deliver:<client>`
+  jobs follow, as they do after a tag push.
+- `native` - `check`, then `publish:native`, started automatically.
+- `check` - `check` only.
+- `deliver` - only `deliver:api`, which points `prod-$CAPUCHOO_CLIENT` at `$CAPUCHOO_VERSION`.
+  Nothing is built. It uses the same `prod-<client>` environment and resource group as
+  `deliver:<client>`, so a protected environment's approval rules apply to both.
+
+A `CAPUCHOO_CHANNEL` passed with the pipeline wins over the ref's channel, because pipeline
+variables take precedence over `rules:variables`. Before anything is installed, the pipeline refuses
+an unknown action, a ref with no channel, a malformed channel or version, and `prod` at `auto` for
+`ota` and `native`. `deliver:api` refuses a client the file was not generated for, and an empty or
+`auto` version.
+
+A pipeline started through the API without `CAPUCHOO_ACTION` behaves like a push to its ref.
+Protected variables reach only protected refs, so start API pipelines on the release branches or on
+tags, or the jobs will not see `CAPUCHOO_API_KEY`.
 
 ## Native Android apps
 
