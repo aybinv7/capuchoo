@@ -126,3 +126,38 @@ category and channel. The Statistics page shows the same events aggregated.
 - `setDeviceAttributes` saves locally first and sends without waiting. A 404 (the device has not
   checked in yet) and a network failure are both left to the next check to reconcile.
 - Patches are applied in call order, so two quick calls never lose a key.
+
+## Channel insights
+
+What a channel's devices report, seen from the channel.
+
+| Method | Path                                                | Who    | Answer                                  |
+| ------ | --------------------------------------------------- | ------ | --------------------------------------- |
+| GET    | `/api/channels/:id/activity?from=&to=&bucket=&tz=`  | viewer | `DeviceActivity`, scoped to the channel |
+| GET    | `/api/channels/:id/rollout?tz=`                     | viewer | `ChannelRollout`                        |
+| GET    | `/api/apps/:id/builds?channel_id=&scope=top&limit=` | viewer | builds that deployed to the channel     |
+
+```ts
+interface ChannelRollout {
+  current: {
+    bundle_id: string;
+    version: string;
+    delivered_at: string | null; // the last pointer move to this bundle
+    delivered_by: string | null;
+    from_version: string | null;
+    rollback: boolean; // the move was a rollback
+  } | null;
+  devices: number; // devices whose resolved channel is this one
+  on_current: number;
+  /** Largest first, at most 6 versions then an `other` row; `builtin` = no bundle applied. */
+  mix: Array<{ version: string; devices: number; current: boolean }>;
+  /** Up to 8 devices not on the current version, most recently seen first. */
+  behind: Array<DeviceRef & { version_name: string | null; last_seen_at: string }>;
+  /** Cumulative devices that took the current version, per local day since its delivery (60 days max). */
+  curve: Array<{ day: string; devices: number }>;
+  tz: string;
+}
+```
+
+`curve` counts a device on the first `delivered` event for the current version on this channel, so a
+device that already ran it before the delivery is in `on_current` but not in the curve.

@@ -126,24 +126,30 @@ export async function deviceSummary(db: Db, deviceUuid: string, since: Date) {
   };
 }
 
-/** Events per local hour or day and category, over [from, to), cut in time zone `tz`. */
-export function deviceActivitySeries(
+export type ActivityScope = { deviceUuid: string } | { channelId: string };
+
+/** Events of one device or one channel per local hour or day and category, over [from, to). */
+export function activitySeries(
   db: Db,
-  query: { deviceUuid: string; from: Date; to: Date; bucket: "hour" | "day"; tz: string },
+  query: ActivityScope & { from: Date; to: Date; bucket: "hour" | "day"; tz: string },
 ) {
   const unit = query.bucket;
   const label = unit === "hour" ? 'YYYY-MM-DD"T"HH24' : "YYYY-MM-DD";
   const local = sql`(device_events.created_at AT TIME ZONE ${query.tz})`;
-  return db
+  let base = db
     .selectFrom("device_events")
     .select([
       sql<string>`to_char(date_trunc(${unit}, ${local}), ${label})`.as("at"),
       "category",
       (eb) => eb.fn.countAll<string>().as("count"),
     ])
-    .where("device_uuid", "=", query.deviceUuid)
     .where("created_at", ">=", query.from)
-    .where("created_at", "<", query.to)
+    .where("created_at", "<", query.to);
+  base =
+    "deviceUuid" in query
+      ? base.where("device_uuid", "=", query.deviceUuid)
+      : base.where("channel_id", "=", query.channelId);
+  return base
     .groupBy([sql`1`, "category"])
     .orderBy(sql`1`)
     .execute();

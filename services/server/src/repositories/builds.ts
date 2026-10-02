@@ -227,7 +227,7 @@ export async function listBuilds(
   db: Db,
   appId: string,
   limit: number,
-  options: { topLevel?: boolean } = {},
+  options: { topLevel?: boolean; channelId?: string | undefined } = {},
 ) {
   let query = db
     .selectFrom("builds")
@@ -259,6 +259,21 @@ export async function listBuilds(
     )
     .where("builds.app_id", "=", appId);
   if (options.topLevel) query = query.where("builds.parent_id", "is", null);
+  if (options.channelId) {
+    const channelId = options.channelId;
+    query = query.where((eb) =>
+      eb.or([
+        eb("builds.channel_id", "=", channelId),
+        eb.exists(
+          eb
+            .selectFrom("builds as target")
+            .select("target.id")
+            .whereRef("target.parent_id", "=", "builds.id")
+            .where("target.channel_id", "=", channelId),
+        ),
+      ]),
+    );
+  }
   const rows = await query.orderBy("builds.created_at", "desc").limit(limit).execute();
   return rows.map((row) => ({
     ...row,

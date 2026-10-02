@@ -19,6 +19,7 @@ import { ciRoutes } from "./routes/ci";
 import { demoRoutes } from "./routes/demo";
 import { deviceRoutes } from "./routes/device";
 import { githubRoutes } from "./routes/github";
+import { channelInsightRoutes } from "./routes/channel-insights";
 import { deviceInsightRoutes } from "./routes/device-insights";
 import { insightRoutes } from "./routes/insights";
 import { organizationRoutes } from "./routes/organizations";
@@ -126,6 +127,7 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", artefactRoutes());
   app.route("/api", insightRoutes());
   app.route("/api", deviceInsightRoutes());
+  app.route("/api", channelInsightRoutes());
   app.route("/api", ciRoutes());
   app.route("/api", githubRoutes());
   app.route("/api", demoRoutes());

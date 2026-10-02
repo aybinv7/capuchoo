@@ -202,6 +202,7 @@ export function insightRoutes(): Hono<AppEnv> {
     return c.json(
       await listBuilds(deps.db, access.app.id, queryInt(c, "limit", 30, 1, 200), {
         topLevel: c.req.query("scope") === "top",
+        channelId: c.req.query("channel_id") || undefined,
       }),
     );
   });

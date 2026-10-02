@@ -1,23 +1,11 @@
 import type { Db } from "../db/database";
 import type { Device } from "../db/schema";
 import { listChannels } from "../repositories/channels";
-import {
-  deviceActivitySeries,
-  deviceSummary,
-  listDeviceEvents,
-} from "../repositories/device-events";
+import { deviceSummary, listDeviceEvents } from "../repositories/device-events";
+import { EVENT_CATEGORIES as CATEGORIES, activityOf } from "./activity";
 import type { ActivityQuery } from "./event-range";
 
 const SUMMARY_DAYS = 30;
-const CATEGORIES = new Set([
-  "check",
-  "downloading",
-  "delivered",
-  "failed",
-  "cancelled",
-  "lifecycle",
-  "other",
-]);
 
 export interface EventPageQuery {
   appId: string;
@@ -56,29 +44,8 @@ export async function deviceDetail(db: Db, device: Device, now: Date, retentionD
 }
 
 /** A device's events counted per category and per local hour or day of the window. */
-export async function deviceActivity(db: Db, device: Device, query: ActivityQuery) {
-  const rows = await deviceActivitySeries(db, { deviceUuid: device.id, ...query });
-  const totals: Record<string, number> = Object.fromEntries(
-    [...CATEGORIES].map((category) => [category, 0]),
-  );
-  const buckets = new Map<string, Record<string, number | string>>();
-  for (const row of rows) {
-    const category = row.category && CATEGORIES.has(row.category) ? row.category : "other";
-    const count = Number(row.count);
-    totals[category] = (totals[category] ?? 0) + count;
-    const bucket = buckets.get(row.at) ?? { at: row.at };
-    bucket[category] = Number(bucket[category] ?? 0) + count;
-    buckets.set(row.at, bucket);
-  }
-  return {
-    from: query.from.toISOString(),
-    to: query.to.toISOString(),
-    bucket: query.bucket,
-    tz: query.tz,
-    totals,
-    series: [...buckets.values()],
-  };
-}
+export const deviceActivity = (db: Db, device: Device, query: ActivityQuery) =>
+  activityOf(db, { deviceUuid: device.id }, query);
 
 /** Rejects a category the classifier never produces instead of silently returning nothing. */
 export function parseCategory(raw: string | undefined): string | undefined | null {
