@@ -104,6 +104,25 @@ describe("demo organization", () => {
       .where("paused", "=", true)
       .execute();
     expect(paused.map((channel) => channel.name)).toEqual(["prod-tailspin"]);
+
+    const prod = await ctx.db
+      .selectFrom("channels")
+      .select("id")
+      .where("app_id", "=", fieldSales.id)
+      .where("name", "=", "prod")
+      .executeTakeFirstOrThrow();
+    const rollout = await (
+      await ctx.request(`/api/channels/${prod.id}/rollout`, { token: admin.token })
+    ).json();
+    expect(rollout.on_current).toBeGreaterThan(0);
+    expect(rollout.curve.at(-1)?.devices ?? 0).toBeLessThanOrEqual(rollout.on_current);
+    const attributed = await ctx.db
+      .selectFrom("devices")
+      .select((eb) => eb.fn.countAll<string>().as("count"))
+      .where("app_id", "=", fieldSales.id)
+      .where("attributes", "is not", null)
+      .executeTakeFirstOrThrow();
+    expect(Number(attributed.count)).toBeGreaterThan(0);
   }, 120_000);
 });
 

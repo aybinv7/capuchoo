@@ -211,10 +211,12 @@ function deviceEvents(context: DemoContext, seeded: SeededApp, device: SeededDev
     }
   }
   const rolledBack = incidents(seeded).filter((incident) => incident.channel === device.channel);
-  for (const move of seeded.catalog.moves.filter(
-    (entry) => entry.channel === device.channel && entry.days <= 27,
-  )) {
-    if (device.lagging && move.to === device.version) continue;
+  const moves = seeded.catalog.moves.filter((entry) => entry.channel === device.channel);
+  const arrivals = moves.filter((entry) => entry.to === device.version).map((entry) => entry.days);
+  const reached =
+    device.lagging && arrivals.length > 0 ? Math.min(...arrivals) : Number.NEGATIVE_INFINITY;
+  for (const move of moves.filter((entry) => entry.days <= 27)) {
+    if (move.days < reached) continue;
     if (device.lastSeenMs > move.days * DAY) continue;
     const when = Math.max(device.lastSeenMs, (move.days - dice.next() * 0.6) * DAY);
     if (dice.chance(0.035)) {
