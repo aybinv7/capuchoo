@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { formatCount } from "@/shared/lib/format";
 import { useDataTable } from "./composables/useDataTable";
 import DataTableBulkBar from "./DataTableBulkBar.vue";
+import DataTableGroupRow from "./DataTableGroupRow.vue";
 import DataTableHeaderCell from "./DataTableHeaderCell.vue";
 import DataTablePagination from "./DataTablePagination.vue";
 import DataTableToolbar from "./DataTableToolbar.vue";
@@ -91,7 +92,12 @@ const controller = useDataTable<T>({
   tableId: props.tableId,
   pageSize: props.pageSize,
 });
-const { table, density, selectedRows, filtered, columnOrder } = controller;
+const { table, density, selectedRows, filtered, columnOrder, leafRows } = controller;
+const groupingState = computed(() => ({
+  enabled: controller.groupingEnabled.value,
+  available: controller.groupable.value,
+  columns: controller.grouping.value,
+}));
 
 const CELL: Record<Density, string> = {
   compact: "h-8 px-3 py-1 text-xs",
@@ -104,21 +110,21 @@ const IGNORED_TARGETS =
   "a,button,input,select,textarea,label,[role=checkbox],[role=menuitem],[data-row-ignore]";
 
 const rows = computed(() => table.getRowModel().rows);
+const nestedIndent = (depth: number) =>
+  depth > 0 ? { paddingLeft: `${12 + depth * 20}px` } : undefined;
 const visibleColumns = computed(() => table.getVisibleLeafColumns());
 const showSkeleton = computed(() => props.loading && props.data.length === 0);
 
 const exportScope = computed(() => {
   if (selectedRows.value.length > 0)
     return `${formatCount(selectedRows.value.length, true)} selected row(s)`;
-  const count = table.getPrePaginationRowModel().rows.length;
+  const count = leafRows.value.length;
   return `${formatCount(count, true)} row(s)${props.hasMore ? " loaded so far" : ""}`;
 });
 
 function exportAs(format: ExportFormat, onlySelected = false) {
   const source =
-    onlySelected || selectedRows.value.length > 0
-      ? selectedRows.value
-      : table.getPrePaginationRowModel().rows.map((row) => row.original);
+    onlySelected || selectedRows.value.length > 0 ? selectedRows.value : leafRows.value;
   try {
     const columns = exportColumns(table.getVisibleLeafColumns());
     const content = format === "csv" ? toCsv(source, columns) : toJson(source, columns);
@@ -181,6 +187,9 @@ watch(
       :export-disabled="props.data.length === 0"
       :refreshable="props.refreshable"
       :refreshing="props.refreshing"
+      :grouping="groupingState"
+      @toggle-group="controller.toggleGroup"
+      @expand-all="controller.setAllExpanded"
       @reset-filters="controller.resetFilters"
       @reset-layout="controller.resetLayout"
       @export="exportAs"
@@ -229,49 +238,58 @@ watch(
             </TableRow>
           </template>
           <template v-else-if="rows.length > 0">
-            <TableRow
-              v-for="row in rows"
-              :key="row.id"
-              :data-state="row.getIsSelected() ? 'selected' : undefined"
-              :tabindex="props.rowClickable ? 0 : undefined"
-              :class="
-                cn(
-                  'group/row',
-                  props.rowClickable && 'cursor-pointer',
-                  props.rowClass?.(row.original),
-                )
-              "
-              @click="onRowClick(row.original, $event)"
-              @keydown.enter.self="props.rowClickable && emit('rowClick', row.original)"
-            >
-              <TableCell
-                v-for="cell in row.getVisibleCells()"
-                :key="cell.id"
-                :style="pinningStyle(cell.column)"
+            <template v-for="row in rows" :key="row.id">
+              <DataTableGroupRow
+                v-if="row.getIsGrouped()"
+                :row="row"
+                :table="table"
+                :colspan="visibleColumns.length"
+                :density="density"
+                :selection="features.selection"
+              />
+              <TableRow
+                v-else
+                :data-state="row.getIsSelected() ? 'selected' : undefined"
+                :tabindex="props.rowClickable ? 0 : undefined"
                 :class="
                   cn(
-                    CELL[density],
-                    cell.column.columnDef.meta?.align === 'right' && 'text-right',
-                    cell.column.columnDef.meta?.align === 'center' && 'text-center',
-                    cell.column.getIsPinned() && PINNED_CELL,
-                    pinningEdge(cell.column),
-                    cell.column.columnDef.meta?.cellClass,
+                    'group/row',
+                    props.rowClickable && 'cursor-pointer',
+                    props.rowClass?.(row.original),
                   )
                 "
+                @click="onRowClick(row.original, $event)"
+                @keydown.enter.self="props.rowClickable && emit('rowClick', row.original)"
               >
-                <slot
-                  v-if="slots[`cell-${cell.column.id}`]"
-                  :name="`cell-${cell.column.id}`"
-                  :row="row.original"
-                  :value="cell.getValue()"
-                />
-                <FlexRender
-                  v-else
-                  :render="cell.column.columnDef.cell"
-                  :props="cell.getContext()"
-                />
-              </TableCell>
-            </TableRow>
+                <TableCell
+                  v-for="(cell, index) in row.getVisibleCells()"
+                  :key="cell.id"
+                  :style="[pinningStyle(cell.column), index === 0 && nestedIndent(row.depth)]"
+                  :class="
+                    cn(
+                      CELL[density],
+                      cell.column.columnDef.meta?.align === 'right' && 'text-right',
+                      cell.column.columnDef.meta?.align === 'center' && 'text-center',
+                      cell.column.getIsPinned() && PINNED_CELL,
+                      pinningEdge(cell.column),
+                      cell.column.columnDef.meta?.cellClass,
+                    )
+                  "
+                >
+                  <slot
+                    v-if="slots[`cell-${cell.column.id}`]"
+                    :name="`cell-${cell.column.id}`"
+                    :row="row.original"
+                    :value="cell.getValue()"
+                  />
+                  <FlexRender
+                    v-else
+                    :render="cell.column.columnDef.cell"
+                    :props="cell.getContext()"
+                  />
+                </TableCell>
+              </TableRow>
+            </template>
           </template>
           <TableRow v-else class="hover:bg-transparent">
             <TableCell :colspan="visibleColumns.length" class="h-40 text-center">

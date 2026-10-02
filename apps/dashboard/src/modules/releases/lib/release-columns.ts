@@ -34,7 +34,7 @@ export function releaseColumns(
       accessorFn: (artefact) => artefact.version_name,
       sortingFn: "alphanumeric",
       size: 180,
-      meta: { title: "Version" },
+      meta: { title: "Version", groupable: true },
     },
     ...(kind === "native"
       ? [
@@ -51,13 +51,17 @@ export function releaseColumns(
       id: "flavour",
       accessorFn: (artefact) => artefact.flavour ?? "",
       size: 110,
-      meta: { title: "Flavour", facetLabel: (value: string) => value || "unflavoured" },
+      meta: {
+        title: "Flavour",
+        groupable: true,
+        facetLabel: (value: string) => value || "unflavoured",
+      },
     },
     {
       id: "platform",
       accessorFn: (artefact) => artefact.platform,
       size: 100,
-      meta: { title: "Platform" },
+      meta: { title: "Platform", groupable: true },
     },
     {
       id: "size",
@@ -73,6 +77,7 @@ export function releaseColumns(
       size: 90,
       meta: {
         title: "Signed",
+        groupable: true,
         facetLabel: (value: boolean) => (value ? "Signed" : "Unsigned"),
       },
     },
@@ -84,6 +89,7 @@ export function releaseColumns(
       meta: {
         title: "Required",
         defaultHidden: true,
+        groupable: true,
         facetLabel: (value: boolean) => (value ? "Required" : "Optional"),
       },
     },
@@ -106,7 +112,7 @@ export function releaseColumns(
       id: "uploaded_by",
       accessorFn: (artefact) => artefact.uploaded_by ?? "",
       size: 180,
-      meta: { title: "Uploaded by", defaultHidden: true },
+      meta: { title: "Uploaded by", defaultHidden: true, groupable: true },
     },
     {
       id: "notes",

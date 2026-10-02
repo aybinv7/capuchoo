@@ -52,6 +52,7 @@ function loadMore() {
       :columns="AUDIT_COLUMNS"
       :get-row-id="(entry) => entry.id"
       table-id="audit"
+      :features="{ grouping: true }"
       :export-name="`${app?.name ?? 'app'}-audit`"
       :facets="FACETS"
       search-placeholder="Search loaded entries"

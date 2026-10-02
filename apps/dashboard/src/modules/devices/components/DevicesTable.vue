@@ -65,7 +65,7 @@ const facets = computed<DataTableFacet[]>(() => [
     table-id="devices"
     :export-name="`${props.appName}-devices`"
     :facets="facets"
-    :features="{ selection: true }"
+    :features="{ selection: true, grouping: true }"
     search-placeholder="Device id, custom id, model, name, attribute value"
     server-filtering
     :total="props.total"

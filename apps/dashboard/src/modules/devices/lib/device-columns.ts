@@ -37,14 +37,18 @@ export const DEVICE_COLUMNS: AnyColumnDef<Device>[] = [
     id: "platform",
     accessorFn: (device) => device.platform,
     size: 120,
-    meta: { title: "Platform" },
+    meta: { title: "Platform", groupable: true },
   },
   {
     id: "ota",
     accessorFn: (device) => device.version_name ?? "",
     sortingFn: "alphanumeric",
     size: 130,
-    meta: { title: "OTA bundle" },
+    meta: {
+      title: "OTA bundle",
+      groupable: true,
+      groupLabel: (value: string) => (!value || value === "builtin" ? "built-in" : value),
+    },
   },
   {
     id: "native",
@@ -53,30 +57,46 @@ export const DEVICE_COLUMNS: AnyColumnDef<Device>[] = [
     size: 150,
     meta: {
       title: "Native",
+      groupable: true,
+      groupLabel: (value: string) => value || "unknown",
       exportValue: (device) =>
         device.version_builtin
           ? `${device.version_builtin}${device.version_code ? ` (${device.version_code})` : ""}`
           : null,
     },
   },
-  { id: "channel", accessorFn: deviceChannelName, size: 170, meta: { title: "Channel" } },
+  {
+    id: "channel",
+    accessorFn: deviceChannelName,
+    size: 170,
+    meta: {
+      title: "Channel",
+      groupable: true,
+      groupLabel: (value: string) => value || "unresolved",
+    },
+  },
   {
     id: "build",
     accessorFn: (device) => (device.is_prod === false ? "debug" : "release"),
     size: 100,
-    meta: { title: "Build", defaultHidden: true },
+    meta: { title: "Build", defaultHidden: true, groupable: true },
   },
   {
     id: "emulator",
     accessorFn: (device) => Boolean(device.is_emulator),
     size: 100,
-    meta: { title: "Emulator", defaultHidden: true },
+    meta: {
+      title: "Emulator",
+      defaultHidden: true,
+      groupable: true,
+      groupLabel: (value: boolean) => (value ? "Emulator" : "Physical device"),
+    },
   },
   {
     id: "plugin",
     accessorFn: (device) => device.plugin_version ?? "",
     size: 110,
-    meta: { title: "Updater", defaultHidden: true },
+    meta: { title: "Updater", defaultHidden: true, groupable: true },
   },
   {
     id: "last_seen",

@@ -60,6 +60,7 @@ function open(row: ChannelTableRow) {
     :columns="CHANNEL_COLUMNS"
     :get-row-id="(row) => row.channel.id"
     table-id="channels"
+    :features="{ grouping: true }"
     :export-name="`${props.appName}-channels`"
     :facets="FACETS"
     search-placeholder="Channel or version"

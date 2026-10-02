@@ -40,6 +40,7 @@ const open = (build: Build) =>
     :columns="BUILD_COLUMNS"
     :get-row-id="(build) => build.id"
     table-id="builds"
+    :features="{ grouping: true }"
     :export-name="`${props.appName}-builds`"
     :facets="FACETS"
     search-placeholder="Version, run, channel, branch, commit, author"

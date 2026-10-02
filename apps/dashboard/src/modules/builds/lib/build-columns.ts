@@ -17,13 +17,17 @@ export const BUILD_COLUMNS: AnyColumnDef<Build>[] = [
     id: "status",
     accessorFn: (build) => build.status,
     size: 120,
-    meta: { title: "Status", facetLabel: (value: string) => STATUS_LABELS[value] ?? value },
+    meta: {
+      title: "Status",
+      groupable: true,
+      facetLabel: (value: string) => STATUS_LABELS[value] ?? value,
+    },
   },
   {
     id: "kind",
     accessorFn: (build) => build.kind,
     size: 90,
-    meta: { title: "Kind", defaultHidden: true },
+    meta: { title: "Kind", defaultHidden: true, groupable: true },
   },
   {
     id: "release",
@@ -47,13 +51,13 @@ export const BUILD_COLUMNS: AnyColumnDef<Build>[] = [
     id: "channel",
     accessorFn: (build) => build.channel_name ?? build.target_channel_names?.join(", ") ?? "",
     size: 160,
-    meta: { title: "Channel" },
+    meta: { title: "Channel", groupable: true },
   },
   {
     id: "flavour",
     accessorFn: (build) => build.flavour ?? "",
     size: 100,
-    meta: { title: "Flavour", defaultHidden: true },
+    meta: { title: "Flavour", defaultHidden: true, groupable: true },
   },
   {
     id: "source",
@@ -62,7 +66,7 @@ export const BUILD_COLUMNS: AnyColumnDef<Build>[] = [
     size: 280,
     meta: { title: "Source" },
   },
-  { id: "actor", accessorFn: buildActor, size: 180, meta: { title: "By" } },
+  { id: "actor", accessorFn: buildActor, size: 180, meta: { title: "By", groupable: true } },
   {
     id: "started",
     accessorFn: (build) => build.started_at ?? build.created_at,

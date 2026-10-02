@@ -17,9 +17,14 @@ export const AUDIT_COLUMNS: AnyColumnDef<AuditEntry>[] = [
     size: 130,
     meta: { title: "When" },
   },
-  { id: "actor", accessorFn: auditActor, size: 200, meta: { title: "Actor" } },
-  { id: "action", accessorFn: (entry) => entry.action, size: 190, meta: { title: "Action" } },
-  { id: "target", accessorFn: auditTarget, size: 150, meta: { title: "Target" } },
+  { id: "actor", accessorFn: auditActor, size: 200, meta: { title: "Actor", groupable: true } },
+  {
+    id: "action",
+    accessorFn: (entry) => entry.action,
+    size: 190,
+    meta: { title: "Action", groupable: true },
+  },
+  { id: "target", accessorFn: auditTarget, size: 150, meta: { title: "Target", groupable: true } },
   {
     id: "target_id",
     accessorFn: (entry) => entry.target_id ?? "",

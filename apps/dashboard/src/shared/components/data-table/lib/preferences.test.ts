@@ -24,6 +24,7 @@ describe("table preferences", () => {
         visibility: { a: false, b: "no" },
         order: ["a", 3, "b"],
         pinning: { left: ["a"], right: "b" },
+        grouping: ["channel", 4],
       },
       fallback,
     );
@@ -33,6 +34,7 @@ describe("table preferences", () => {
       visibility: { a: false },
       order: ["a", "b"],
       pinning: { left: ["a"], right: [] },
+      grouping: ["channel"],
     });
   });
 

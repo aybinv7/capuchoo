@@ -43,6 +43,8 @@ export interface DataTableFeatures {
   pinning: boolean;
   reorder: boolean;
   pagination: boolean;
+  /** Rows can be grouped by the columns marked `meta.groupable`. */
+  grouping: boolean;
 }
 
 export const DEFAULT_FEATURES: DataTableFeatures = {
@@ -55,6 +57,7 @@ export const DEFAULT_FEATURES: DataTableFeatures = {
   pinning: true,
   reorder: true,
   pagination: true,
+  grouping: false,
 };
 
 export const PAGE_SIZES: readonly number[] = [10, 20, 50, 100];
@@ -74,5 +77,9 @@ declare module "@tanstack/vue-table" {
     fixed?: boolean;
     /** Label of a facet value read from the rows. */
     facetLabel?: (value: TValue) => string;
+    /** Offered in the table's Group menu when the table enables grouping. */
+    groupable?: boolean;
+    /** Label of a group header; falls back to `facetLabel`, then the raw value. */
+    groupLabel?: (value: TValue) => string;
   }
 }

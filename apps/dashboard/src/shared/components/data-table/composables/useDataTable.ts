@@ -1,12 +1,15 @@
 import {
   getCoreRowModel,
+  getExpandedRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getGroupedRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useVueTable,
   type ColumnFiltersState,
+  type ExpandedState,
   type FilterFn,
   type RowSelectionState,
   type SortingState,
@@ -14,6 +17,7 @@ import {
 } from "@tanstack/vue-table";
 import { computed, ref, toValue, watch, type MaybeRefOrGetter, type Ref } from "vue";
 import { facetFilter, globalSearch } from "../lib/filter-fns";
+import { leafOriginals, sanitizeGrouping, toggleGrouping } from "../lib/grouping";
 import { defaultPreferences, moveColumn, pruneToColumns, resolveOrder } from "../lib/preferences";
 import type { AnyColumnDef, DataTableFeatures, Density } from "../types";
 import { useTablePreferences } from "./useTablePreferences";
@@ -78,6 +82,22 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
   const sortable = computed(
     () => toValue(options.features).sorting && !toValue(options.incomplete),
   );
+  const groupableIds = computed(
+    () =>
+      new Set(
+        toValue(options.columns)
+          .filter((column) => column.meta?.groupable && !column.meta?.fixed)
+          .map(columnIdOf),
+      ),
+  );
+  const groupingEnabled = computed(
+    () => toValue(options.features).grouping && groupableIds.value.size > 0,
+  );
+  const groupable = computed(() => groupingEnabled.value && !toValue(options.incomplete));
+  const grouping = computed(() =>
+    groupable.value ? sanitizeGrouping(prefs.value.grouping ?? [], groupableIds.value) : [],
+  );
+  const expanded = ref<ExpandedState>(true);
 
   watch(
     columnIds,
@@ -124,6 +144,12 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
       get columnPinning() {
         return prefs.value.pinning;
       },
+      get grouping() {
+        return grouping.value;
+      },
+      get expanded() {
+        return expanded.value;
+      },
       get pagination() {
         return { pageIndex: pageIndex.value, pageSize: prefs.value.pageSize };
       },
@@ -140,8 +166,14 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
     get enableColumnPinning() {
       return toValue(options.features).pinning;
     },
+    get enableGrouping() {
+      return groupable.value;
+    },
+    groupedColumnMode: false,
+    getRowCanExpand: (row) => row.getIsGrouped(),
     enableMultiSort: true,
     autoResetPageIndex: false,
+    autoResetExpanded: false,
     onSortingChange: (updater) => {
       sorting.value = apply(updater, sorting.value);
     },
@@ -163,6 +195,13 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
     onColumnPinningChange: (updater) => {
       prefs.value = { ...prefs.value, pinning: apply(updater, prefs.value.pinning) };
     },
+    onGroupingChange: (updater) => {
+      const next = sanitizeGrouping(apply(updater, grouping.value), groupableIds.value);
+      prefs.value = { ...prefs.value, grouping: next };
+    },
+    onExpandedChange: (updater) => {
+      expanded.value = apply(updater, expanded.value);
+    },
     onPaginationChange: (updater) => {
       const next = apply(updater, { pageIndex: pageIndex.value, pageSize: prefs.value.pageSize });
       pageIndex.value = next.pageIndex;
@@ -172,15 +211,30 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   watch(
-    [() => options.search.value, () => options.filters.value, sorting, () => prefs.value.pageSize],
+    [
+      () => options.search.value,
+      () => options.filters.value,
+      sorting,
+      () => prefs.value.pageSize,
+      () => grouping.value.join("|"),
+    ],
     () => {
       pageIndex.value = 0;
+    },
+  );
+
+  watch(
+    () => grouping.value.join("|"),
+    () => {
+      expanded.value = true;
     },
   );
 
@@ -230,6 +284,17 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
     prefs.value = { ...defaultPreferences(prefs.value.pageSize), density: prefs.value.density };
   }
 
+  function toggleGroup(id: string) {
+    table.setGrouping(toggleGrouping(grouping.value, id));
+  }
+
+  function setAllExpanded(open: boolean) {
+    expanded.value = open ? true : {};
+  }
+
+  /** Data rows in display order, through any grouping: what export and counts must use. */
+  const leafRows = computed(() => leafOriginals(table.getSortedRowModel().rows));
+
   function resetFilters() {
     options.search.value = "";
     options.filters.value = [];
@@ -239,6 +304,12 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
     table,
     density,
     sortable,
+    groupingEnabled,
+    groupable,
+    grouping,
+    toggleGroup,
+    setAllExpanded,
+    leafRows,
     selectedRows,
     filtered,
     columnOrder,

@@ -52,7 +52,7 @@ const servingOf = (artefact: Artefact) => serving.value.get(artefact.id) ?? [];
     :table-id="`releases-${props.kind}`"
     :export-name="`${props.appName}-${props.kind === 'ota' ? 'bundles' : 'native-builds'}`"
     :facets="FACETS"
-    :features="{ selection: true }"
+    :features="{ selection: true, grouping: true }"
     search-placeholder="Version, build number, notes, uploader"
     :loading="props.loading"
     refreshable

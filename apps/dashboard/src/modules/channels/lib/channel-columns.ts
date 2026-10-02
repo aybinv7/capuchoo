@@ -26,7 +26,7 @@ export const CHANNEL_COLUMNS: AnyColumnDef<ChannelTableRow>[] = [
     id: "environment",
     accessorFn: (row) => row.channel.environment,
     size: 110,
-    meta: { title: "Environment", defaultHidden: true },
+    meta: { title: "Environment", defaultHidden: true, groupable: true },
   },
   {
     id: "kind",
@@ -35,6 +35,7 @@ export const CHANNEL_COLUMNS: AnyColumnDef<ChannelTableRow>[] = [
     meta: {
       title: "Kind",
       defaultHidden: true,
+      groupable: true,
       facetLabel: (value: string) => (value === "client" ? "Client channel" : "Release channel"),
     },
   },
@@ -45,6 +46,7 @@ export const CHANNEL_COLUMNS: AnyColumnDef<ChannelTableRow>[] = [
     meta: {
       title: "Status",
       defaultHidden: true,
+      groupable: true,
       facetLabel: (value: string) => (value === "paused" ? "Paused" : "Live"),
     },
   },

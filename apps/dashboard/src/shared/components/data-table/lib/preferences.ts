@@ -8,6 +8,8 @@ export interface TablePreferences {
   visibility: VisibilityState;
   order: string[];
   pinning: ColumnPinningState;
+  /** Column ids the rows are grouped by, outermost first. */
+  grouping: string[];
 }
 
 export function defaultPreferences(pageSize = PAGE_SIZES[0]!): TablePreferences {
@@ -17,6 +19,7 @@ export function defaultPreferences(pageSize = PAGE_SIZES[0]!): TablePreferences 
     visibility: {},
     order: [],
     pinning: { left: [], right: [] },
+    grouping: [],
   };
 }
 
@@ -45,7 +48,14 @@ export function sanitizePreferences(stored: unknown, fallback: TablePreferences)
   const pinning = isRecord(stored.pinning)
     ? { left: stringList(stored.pinning.left), right: stringList(stored.pinning.right) }
     : fallback.pinning;
-  return { density, pageSize, visibility, order: stringList(stored.order), pinning };
+  return {
+    density,
+    pageSize,
+    visibility,
+    order: stringList(stored.order),
+    pinning,
+    grouping: stringList(stored.grouping),
+  };
 }
 
 /** Drops ids of columns that no longer exist, so a renamed column cannot hide forever. */
@@ -61,6 +71,7 @@ export function pruneToColumns(prefs: TablePreferences, ids: readonly string[]):
       left: (prefs.pinning.left ?? []).filter((id) => known.has(id)),
       right: (prefs.pinning.right ?? []).filter((id) => known.has(id)),
     },
+    grouping: (prefs.grouping ?? []).filter((id) => known.has(id)),
   };
 }
 
