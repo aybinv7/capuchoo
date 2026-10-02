@@ -4,6 +4,10 @@ import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import RunPipelineButton from "@/shared/ci/components/RunPipelineButton.vue";
+import RunPipelineDialogHost from "@/shared/ci/components/RunPipelineDialogHost.vue";
+import { useRunGate } from "@/shared/ci/composables/useRunGate";
+import { useRunPipelineDialog } from "@/shared/ci/composables/useRunPipelineDialog";
 import EmptyState from "@/shared/components/EmptyState.vue";
 import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
@@ -20,8 +24,15 @@ const { appId, app } = useCurrentApp();
 const { graph, catalog, isPending, error, refetch } = useCanvasGraph(appId);
 const servedByBase = useServedByBases(computed(() => catalog.value.channels));
 const dialogs = useDeliveryDialogs();
+const runDialog = useRunPipelineDialog();
+const runGate = useRunGate();
 
-provideCanvasContext({ catalog, servedByBase, dialogs });
+provideCanvasContext({
+  catalog,
+  servedByBase,
+  dialogs,
+  pipeline: { reason: runGate.reason, run: runDialog.show },
+});
 provideCanvasDrag();
 
 const flowId = computed(() => `release-canvas-${appId.value}`);
@@ -50,7 +61,12 @@ const flowId = computed(() => `release-canvas-${appId.value}`);
         </Button>
       </EmptyState>
     </div>
-    <ReleaseCanvas v-else :key="flowId" :graph="graph" :flow-id="flowId" />
+    <ReleaseCanvas v-else :key="flowId" :graph="graph" :flow-id="flowId">
+      <template #toolbar>
+        <RunPipelineButton variant="outline" @run="runDialog.show()" />
+      </template>
+    </ReleaseCanvas>
     <DeliveryDialogHost :controller="dialogs" />
+    <RunPipelineDialogHost :controller="runDialog" />
   </div>
 </template>

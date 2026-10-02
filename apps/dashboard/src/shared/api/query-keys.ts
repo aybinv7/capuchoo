@@ -16,12 +16,19 @@ export const queryKeys = {
     ["apps", appId, "devices", filters] as const,
   audit: (appId: string) => ["apps", appId, "audit"] as const,
   appSettings: (appId: string, section: string) => ["apps", appId, "settings", section] as const,
+  appCi: (appId: string) => ["apps", appId, "ci"] as const,
+  ciRefs: (appId: string) => ["apps", appId, "ci", "refs"] as const,
+  githubSetup: (appId: string) => ["apps", appId, "ci", "github-setup"] as const,
   channel: (channelId: string) => ["channels", channelId] as const,
   channelHistory: (channelId: string) => ["channels", channelId, "history"] as const,
   channelServed: (channelId: string) => ["channels", channelId, "served"] as const,
   build: (buildId: string) => ["builds", buildId] as const,
+  buildDetails: () => ["builds"] as const,
   apiKeys: () => ["api-keys"] as const,
   organization: (organizationId: string, section: string) =>
     ["organizations", organizationId, section] as const,
+  githubRepositories: (organizationId: string, installationId: string, search: string) =>
+    ["organizations", organizationId, "github", installationId, "repositories", search] as const,
+  githubApp: () => ["github", "app"] as const,
   invitation: (token: string) => ["invitation", token] as const,
 };

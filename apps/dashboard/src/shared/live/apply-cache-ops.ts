@@ -27,6 +27,10 @@ export function createCacheOpApplier(client: QueryClient, windowMs = 4000): Cach
           client.setQueryData([...op.key], op.update);
           continue;
         }
+        if (op.op === "updateMatching") {
+          client.setQueriesData({ queryKey: [...op.prefix] }, op.update);
+          continue;
+        }
         if (!op.throttle) {
           void client.invalidateQueries({ queryKey: [...op.key] });
           continue;

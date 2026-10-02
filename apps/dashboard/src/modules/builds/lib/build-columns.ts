@@ -27,15 +27,20 @@ export const BUILD_COLUMNS: AnyColumnDef<Build>[] = [
   },
   {
     id: "release",
-    accessorFn: (build) => build.version_name ?? "",
+    accessorFn: (build) =>
+      build.kind === "pipeline"
+        ? [build.title, build.workflow, build.trigger].filter(Boolean).join(" ")
+        : (build.version_name ?? ""),
     sortingFn: "alphanumeric",
-    size: 180,
+    size: 240,
     meta: {
       title: "Release",
       exportValue: (build) =>
-        build.version_name
-          ? `${build.version_name}${build.version_code ? ` (${build.version_code})` : ""}`
-          : null,
+        build.kind === "pipeline"
+          ? (build.title ?? build.workflow)
+          : build.version_name
+            ? `${build.version_name}${build.version_code ? ` (${build.version_code})` : ""}`
+            : null,
     },
   },
   {

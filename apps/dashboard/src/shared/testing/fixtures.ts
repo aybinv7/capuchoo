@@ -1,4 +1,4 @@
-import type { Build, BuildDetail } from "../types/build";
+import type { Build, BuildDetail, BuildJob } from "../types/build";
 import type { Bundle, Channel, NativeBuild, ReleaseCatalog } from "../types/release";
 
 export const APP = "app-1";
@@ -100,10 +100,42 @@ export function build(overrides: Partial<Build> = {}): Build {
     started_at: "2026-09-01T00:00:00.000Z",
     finished_at: null,
     created_at: "2026-09-01T00:00:00.000Z",
+    parent_id: null,
+    job_key: null,
+    run_attempt: null,
+    workflow: null,
+    title: null,
+    trigger: null,
     ...overrides,
   };
 }
 
 export function buildDetail(overrides: Partial<BuildDetail> = {}): BuildDetail {
-  return { ...build(overrides), events: overrides.events ?? [] };
+  return {
+    ...build(overrides),
+    events: overrides.events ?? [],
+    jobs: overrides.jobs ?? [],
+    plan: overrides.plan ?? null,
+    children: overrides.children ?? [],
+  };
+}
+
+export function buildJob(overrides: Partial<BuildJob> = {}): BuildJob {
+  return {
+    id: "job-1",
+    build_id: "build-1",
+    external_id: "9001",
+    plan_key: null,
+    name: "build",
+    stage: null,
+    status: "queued",
+    attempt: 1,
+    url: null,
+    runner: null,
+    steps: [],
+    started_at: null,
+    finished_at: null,
+    updated_at: "2026-09-01T00:00:00.000Z",
+    ...overrides,
+  };
 }

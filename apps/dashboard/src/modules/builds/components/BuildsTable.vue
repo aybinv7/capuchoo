@@ -9,6 +9,7 @@ import { RouteName } from "@/shared/router/route-names";
 import type { Build } from "@/shared/types/build";
 import { BUILD_COLUMNS } from "../lib/build-columns";
 import BuildSourceCell from "./BuildSourceCell.vue";
+import PipelineRowSummary from "./PipelineRowSummary.vue";
 
 const search = defineModel<string>("search", { default: "" });
 
@@ -41,7 +42,7 @@ const open = (build: Build) =>
     table-id="builds"
     :export-name="`${props.appName}-builds`"
     :facets="FACETS"
-    search-placeholder="Version, channel, branch, commit, author"
+    search-placeholder="Version, run, channel, branch, commit, author"
     :loading="props.loading"
     refreshable
     :refreshing="props.refreshing"
@@ -56,7 +57,8 @@ const open = (build: Build) =>
       <span class="bg-muted rounded px-1 font-mono text-[10px] uppercase">{{ row.kind }}</span>
     </template>
     <template #cell-release="{ row }">
-      <div class="flex items-center gap-2">
+      <PipelineRowSummary v-if="row.kind === 'pipeline'" :build="row" />
+      <div v-else class="flex items-center gap-2">
         <span class="bg-muted rounded px-1 font-mono text-[10px] uppercase">{{ row.kind }}</span>
         <span class="font-mono text-sm">{{ row.version_name ?? "—" }}</span>
         <span v-if="row.version_code" class="text-muted-foreground font-mono text-xs"

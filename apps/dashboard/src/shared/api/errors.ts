@@ -122,7 +122,16 @@ const TITLES: Record<string, string> = {
   "strands-bundle": "Delivery refused",
   "downgrade-needs-rollback": "Delivery refused",
   "rollback-not-lower": "Rollback refused",
+  github_not_configured: "No GitHub App",
+  github_not_linked: "GitHub not linked",
+  gitlab_not_linked: "GitLab not linked",
+  ci_not_linked: "No CI connected",
+  github_error: "GitHub refused",
+  gitlab_error: "GitLab refused",
+  unknown_channel: "Unknown channel",
 };
+
+const PROVIDERS: Record<string, string> = { github_error: "GitHub", gitlab_error: "GitLab" };
 
 /** A short heading for an error, keyed by the server's reason code. */
 export function errorTitle(error: unknown): string {
@@ -141,6 +150,11 @@ export function errorMessage(error: unknown): string {
   }
   if (error.reason === "csrf")
     return "The server refused a cross-site write. Open the dashboard from the server's own address.";
+  const provider = PROVIDERS[error.reason];
+  if (provider) {
+    const status = Number(error.details.upstream_status);
+    return `${provider}${Number.isFinite(status) && status > 0 ? ` (${status})` : ""}: ${error.message}`;
+  }
   if (error.reason === "server_error" && error.message === "Internal server error")
     return FALLBACK_MESSAGE.server_error ?? error.message;
   return error.message;

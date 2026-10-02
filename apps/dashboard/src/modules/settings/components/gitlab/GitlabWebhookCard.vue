@@ -10,16 +10,15 @@ import { Spinner } from "@/components/ui/spinner";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import RelativeTime from "@/shared/components/RelativeTime.vue";
-import { useAppPermissions } from "@/shared/composables/useAppPermissions";
-import { useCurrentApp } from "@/shared/composables/useCurrentApp";
-import GitlabSetupSteps from "../components/GitlabSetupSteps.vue";
-import SettingsSection from "../components/SettingsSection.vue";
-import { useGitlab } from "../composables/useGitlab";
+import GitlabSetupSteps from "./GitlabSetupSteps.vue";
+import SettingsSection from "../SettingsSection.vue";
+import { useGitlab } from "../../composables/useGitlab";
 
-const { appId } = useCurrentApp();
-const permissions = useAppPermissions();
-const isAdmin = computed(() => permissions.isAdmin.value);
-const { status, connect, disconnect } = useGitlab(appId, isAdmin);
+const props = defineProps<{ appId: string; isAdmin: boolean }>();
+const { status, connect, disconnect } = useGitlab(
+  () => props.appId,
+  () => props.isAdmin,
+);
 
 const project = ref("");
 const token = ref<string | null>(null);
@@ -52,8 +51,8 @@ function runDisconnect() {
 
 <template>
   <SettingsSection
-    v-if="!isAdmin"
-    title="GitLab"
+    v-if="!props.isAdmin"
+    title="GitLab pipelines"
     description="Only app admins can see or change the GitLab integration."
   />
   <template v-else>
@@ -62,7 +61,7 @@ function runDisconnect() {
     <template v-else>
       <SettingsSection
         title="GitLab pipelines"
-        description="GitLab calls the server on pipeline and job events; runs show up in Builds and on the canvas with their steps."
+        description="GitLab calls the server on pipeline and job events; runs show up in Builds with their job graph."
       >
         <template #actions>
           <span v-if="configured" class="text-success flex items-center gap-1.5 text-sm">

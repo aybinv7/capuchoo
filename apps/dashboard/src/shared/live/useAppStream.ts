@@ -8,7 +8,16 @@ import { createCacheOpApplier } from "./apply-cache-ops";
 import { reconnectDelay } from "./backoff";
 import { reduceStreamEvent } from "./stream-reducer";
 
-const EVENT_TYPES = ["ready", "ping", "build", "build_event", "channel", "device", "artefact"];
+const EVENT_TYPES = [
+  "ready",
+  "ping",
+  "build",
+  "build_event",
+  "build_job",
+  "channel",
+  "device",
+  "artefact",
+];
 const SILENCE_LIMIT_MS = 60_000;
 const SESSION_PROBE_AFTER = 3;
 

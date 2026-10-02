@@ -22,6 +22,12 @@ export const settingsRoutes: ModuleRoutes = {
       component: () => import("./pages/OrganizationPage.vue"),
       meta: { title: "Organization", section: "Workspace" },
     },
+    {
+      path: "settings/github",
+      name: RouteName.githubApp,
+      component: () => import("./pages/GithubAppPage.vue"),
+      meta: { title: "GitHub App", section: "Workspace" },
+    },
   ],
   app: [
     {
@@ -49,11 +55,12 @@ export const settingsRoutes: ModuleRoutes = {
           meta: { title: "Signing" },
         },
         {
-          path: "gitlab",
-          name: RouteName.appGitlab,
-          component: () => import("./pages/AppGitlabPage.vue"),
-          meta: { title: "GitLab" },
+          path: "ci",
+          name: RouteName.appCi,
+          component: () => import("./pages/AppCiPage.vue"),
+          meta: { title: "CI" },
         },
+        { path: "gitlab", redirect: { name: RouteName.appCi } },
         {
           path: "config",
           name: RouteName.appConfig,

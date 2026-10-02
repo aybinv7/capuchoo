@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Building2 } from "@lucide/vue";
 import { computed, ref } from "vue";
+import { useQueryClient } from "@tanstack/vue-query";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,14 +11,17 @@ import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import PageContainer from "@/shared/components/PageContainer.vue";
 import PageHeader from "@/shared/components/PageHeader.vue";
 import { useCurrentOrganization } from "@/shared/composables/useCurrentOrganization";
+import { queryKeys } from "@/shared/api/query-keys";
 import { useSession } from "@/shared/composables/useSession";
 import { canManageMembers } from "@/shared/lib/roles";
 import { RouteName } from "@/shared/router/route-names";
 import type { OrgRole } from "@/shared/types/session";
+import OrganizationGithubCard from "../components/github/OrganizationGithubCard.vue";
 import InviteMemberForm from "../components/InviteMemberForm.vue";
 import MembersTable from "../components/MembersTable.vue";
 import PendingInvitations from "../components/PendingInvitations.vue";
 import SettingsSection from "../components/SettingsSection.vue";
+import { useGithubReturnNotice } from "../composables/useGithubReturnNotice";
 import { useOrganizationMembers } from "../composables/useOrganizationMembers";
 import type { Member } from "../types/settings.types";
 
@@ -29,6 +33,14 @@ const { members, invitations, invite, changeRole, remove, revoke } = useOrganiza
   () => organization.value?.id ?? "",
   () => gate.value.ok,
 );
+
+const client = useQueryClient();
+useGithubReturnNotice(() => {
+  if (organization.value)
+    void client.invalidateQueries({
+      queryKey: queryKeys.organization(organization.value.id, "github"),
+    });
+});
 
 const revision = ref(0);
 const removing = ref<Member | null>(null);
@@ -114,6 +126,11 @@ function confirmRemove() {
           @revoke="revoke.mutate($event.id)"
         />
       </SettingsSection>
+
+      <OrganizationGithubCard
+        :organization-id="organization.id"
+        :organization-name="organization.name"
+      />
     </template>
 
     <ConfirmDialog

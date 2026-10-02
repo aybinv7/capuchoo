@@ -14,7 +14,7 @@ const SECTIONS: { name: RouteNameValue; label: string; adminOnly: boolean }[] = 
   { name: RouteName.appGeneral, label: "General", adminOnly: false },
   { name: RouteName.appPermissions, label: "Access", adminOnly: true },
   { name: RouteName.appSigning, label: "Signing", adminOnly: false },
-  { name: RouteName.appGitlab, label: "GitLab", adminOnly: true },
+  { name: RouteName.appCi, label: "CI", adminOnly: true },
   { name: RouteName.appConfig, label: "Remote config", adminOnly: false },
 ];
 </script>

@@ -67,7 +67,10 @@ const minimapColor = (node: { type?: string }) =>
       mask-color="color-mix(in oklch, var(--background) 70%, transparent)"
     />
     <Panel position="top-right">
-      <ArtefactShelf />
+      <div class="flex items-start gap-2">
+        <slot name="toolbar" />
+        <ArtefactShelf />
+      </div>
     </Panel>
     <Panel position="bottom-left">
       <CanvasLegend />

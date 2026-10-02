@@ -9,6 +9,7 @@ export const RouteName = {
   account: "settings-account",
   apiKeys: "settings-api-keys",
   organization: "settings-organization",
+  githubApp: "settings-github",
   canvas: "app-canvas",
   channels: "app-channels",
   channel: "app-channel",
@@ -21,7 +22,7 @@ export const RouteName = {
   appGeneral: "app-settings-general",
   appPermissions: "app-settings-permissions",
   appSigning: "app-settings-signing",
-  appGitlab: "app-settings-gitlab",
+  appCi: "app-settings-ci",
   appConfig: "app-settings-config",
   notFound: "not-found",
 } as const;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CirclePause, CirclePlay, ExternalLink, History, Rocket } from "@lucide/vue";
+import { CirclePause, CirclePlay, ExternalLink, History, Play, Rocket } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import {
@@ -18,9 +18,18 @@ import { useCanvasContext } from "../composables/useCanvasContext";
 const props = defineProps<{ channel: Channel }>();
 
 const router = useRouter();
-const { dialogs } = useCanvasContext();
+const { dialogs, pipeline } = useCanvasContext();
 const permissions = useAppPermissions();
 const gate = computed(() => permissions.deliver(props.channel.environment));
+const isClient = computed(() => props.channel.kind === "client");
+
+function publish() {
+  pipeline.run(
+    isClient.value
+      ? { action: "deliver", client: props.channel.name }
+      : { channel: props.channel.name },
+  );
+}
 </script>
 
 <template>
@@ -49,6 +58,16 @@ const gate = computed(() => permissions.deliver(props.channel.environment));
         <CirclePause v-else class="size-4" />
         {{ props.channel.paused ? "Resume…" : "Pause…" }}
       </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem :disabled="pipeline.reason.value !== null" @select="publish">
+        <Play class="size-4" />
+        {{ isClient ? "Deliver with a pipeline…" : "Publish to this channel…" }}
+      </ContextMenuItem>
+      <ContextMenuLabel
+        v-if="pipeline.reason.value"
+        class="text-muted-foreground text-xs font-normal text-pretty"
+        >{{ pipeline.reason.value }}</ContextMenuLabel
+      >
       <ContextMenuSeparator />
       <ContextMenuItem
         @select="router.push({ name: RouteName.channel, params: { channelId: props.channel.id } })"

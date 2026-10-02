@@ -68,6 +68,22 @@ describe("error presentation", () => {
     ).toContain("own address");
   });
 
+  it("names the provider and its status when GitHub or GitLab refused", () => {
+    const github = toApiError(502, {
+      error: "Resource not accessible by integration",
+      reason: "github_error",
+      upstream_status: 403,
+    });
+    expect(errorTitle(github)).toBe("GitHub refused");
+    expect(errorMessage(github)).toBe("GitHub (403): Resource not accessible by integration");
+    expect(errorMessage(toApiError(502, { error: "Not found", reason: "gitlab_error" }))).toBe(
+      "GitLab: Not found",
+    );
+    expect(errorTitle(toApiError(409, { error: "x", reason: "github_not_configured" }))).toBe(
+      "No GitHub App",
+    );
+  });
+
   it("describes network failures and foreign errors", () => {
     const offline = networkError();
     expect(isApiError(offline)).toBe(true);

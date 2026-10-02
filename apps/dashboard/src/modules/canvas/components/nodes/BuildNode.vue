@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Handle, Position } from "@vue-flow/core";
-import { GitCommitHorizontal, SquareArrowOutUpRight, TerminalSquare } from "@lucide/vue";
+import { GitCommitHorizontal, SquareArrowOutUpRight } from "@lucide/vue";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import BuildStatusBadge from "@/shared/components/BuildStatusBadge.vue";
 import ElapsedTime from "@/shared/components/ElapsedTime.vue";
+import ProviderIcon from "@/shared/components/ProviderIcon.vue";
 import { findArtefact } from "@/shared/delivery/lib/eligibility";
 import { shortId } from "@/shared/lib/format";
 import { isBuildActive } from "@/shared/lib/tone";
@@ -22,7 +23,16 @@ const props = defineProps<{ data: BuildNodeData }>();
 const build = computed(() => props.data.build);
 const active = computed(() => isBuildActive(build.value.status));
 const { catalog } = useCanvasContext();
-const detail = useBuild(computed(() => (active.value ? build.value.id : null)));
+const detail = useBuild(
+  computed(() => (active.value && build.value.kind !== "pipeline" ? build.value.id : null)),
+);
+
+const isRun = computed(() => build.value.kind === "pipeline");
+const heading = computed(() =>
+  isRun.value
+    ? (build.value.title ?? build.value.workflow ?? "Pipeline run")
+    : (build.value.version_name ?? "unversioned"),
+);
 
 const artefact = computed(() => {
   const id = build.value.bundle_id ?? build.value.native_id;
@@ -41,8 +51,8 @@ const artefact = computed(() => {
     <div class="space-y-2 px-3 py-2">
       <div class="flex items-center gap-2 text-xs">
         <span class="bg-muted rounded px-1 font-mono text-[10px] uppercase">{{ build.kind }}</span>
-        <span class="truncate font-mono font-medium">{{
-          build.version_name ?? "unversioned"
+        <span :class="['truncate font-medium', !isRun && 'font-mono']" :title="heading">{{
+          heading
         }}</span>
         <span
           v-if="build.channel_name"
@@ -50,7 +60,7 @@ const artefact = computed(() => {
           >→ {{ build.channel_name }}</span
         >
       </div>
-      <BuildStepStrip v-if="active" :events="detail.data.value?.events ?? []" />
+      <BuildStepStrip v-if="active && !isRun" :events="detail.data.value?.events ?? []" />
       <p
         v-else-if="build.error"
         class="text-destructive line-clamp-2 text-[11px]"
@@ -60,7 +70,7 @@ const artefact = computed(() => {
       </p>
       <ArtefactChip v-else-if="artefact" :artefact="artefact" show-flavour />
       <div class="text-muted-foreground flex items-center gap-2 text-[11px]">
-        <TerminalSquare v-if="build.source === 'cli'" class="size-3" />
+        <ProviderIcon v-if="build.source !== 'other'" :provider="build.source" class="size-3" />
         <GitCommitHorizontal v-else class="size-3" />
         <span>{{ build.source }}</span>
         <span v-if="build.commit_sha" class="font-mono">{{ shortId(build.commit_sha, 7) }}</span>
