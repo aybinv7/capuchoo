@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import DataTableDensityMenu from "./DataTableDensityMenu.vue";
 import DataTableExportMenu from "./DataTableExportMenu.vue";
 import DataTableFacetedFilter from "./DataTableFacetedFilter.vue";
-import DataTableGroupMenu from "./DataTableGroupMenu.vue";
 import DataTableSearch from "./DataTableSearch.vue";
 import DataTableViewOptions from "./DataTableViewOptions.vue";
 import type { DataTableFacet, DataTableFeatures, Density, ExportFormat } from "./types";
@@ -26,15 +25,12 @@ const props = defineProps<{
   exportDisabled: boolean;
   refreshable: boolean;
   refreshing: boolean;
-  grouping: { enabled: boolean; available: boolean; columns: readonly string[] };
 }>();
 const emit = defineEmits<{
   resetFilters: [];
   resetLayout: [];
   export: [format: ExportFormat];
   refresh: [];
-  toggleGroup: [id: string];
-  expandAll: [open: boolean];
 }>();
 
 const facetColumns = computed(() =>
@@ -70,14 +66,6 @@ const facetColumns = computed(() =>
     </Button>
     <div class="ml-auto flex items-center gap-2">
       <slot />
-      <DataTableGroupMenu
-        v-if="props.grouping.enabled"
-        :table="props.table"
-        :grouping="props.grouping.columns"
-        :available="props.grouping.available"
-        @toggle="emit('toggleGroup', $event)"
-        @expand-all="emit('expandAll', $event)"
-      />
       <DataTableDensityMenu v-if="props.features.density" v-model="density" />
       <DataTableViewOptions
         v-if="props.features.viewOptions"

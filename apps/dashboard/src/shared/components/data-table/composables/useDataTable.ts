@@ -188,7 +188,14 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
       rowSelection.value = apply(updater, rowSelection.value);
     },
     onColumnVisibilityChange: (updater) => {
-      prefs.value = { ...prefs.value, visibility: apply(updater, visibility.value) };
+      const next = apply(updater, visibility.value);
+      const firstHidden = (prefs.value.grouping ?? []).findIndex((id) => next[id] === false);
+      prefs.value = {
+        ...prefs.value,
+        visibility: next,
+        grouping:
+          firstHidden === -1 ? prefs.value.grouping : prefs.value.grouping.slice(0, firstHidden),
+      };
     },
     onColumnOrderChange: (updater) => {
       prefs.value = { ...prefs.value, order: apply(updater, columnOrder.value) };

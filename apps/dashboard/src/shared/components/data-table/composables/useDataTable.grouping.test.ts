@@ -60,6 +60,16 @@ describe("useDataTable grouping", () => {
     stop();
   });
 
+  it("ungroups a column the viewer hides, since its menu goes with it", async () => {
+    const { controller, stop } = setup();
+    controller.toggleGroup("kind");
+    await nextTick();
+    controller.table.getColumn("kind")!.toggleVisibility(false);
+    await nextTick();
+    expect(controller.grouping.value).toEqual([]);
+    stop();
+  });
+
   it("ignores columns that are not groupable", async () => {
     const { controller, stop } = setup();
     controller.toggleGroup("name");

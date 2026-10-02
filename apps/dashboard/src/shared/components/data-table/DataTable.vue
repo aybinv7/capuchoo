@@ -22,6 +22,7 @@ import {
   type DataTableFeatures,
   type Density,
   type ExportFormat,
+  type GroupingState,
 } from "./types";
 
 const props = withDefaults(
@@ -93,7 +94,7 @@ const controller = useDataTable<T>({
   pageSize: props.pageSize,
 });
 const { table, density, selectedRows, filtered, columnOrder, leafRows } = controller;
-const groupingState = computed(() => ({
+const groupingState = computed<GroupingState>(() => ({
   enabled: controller.groupingEnabled.value,
   available: controller.groupable.value,
   columns: controller.grouping.value,
@@ -187,9 +188,6 @@ watch(
       :export-disabled="props.data.length === 0"
       :refreshable="props.refreshable"
       :refreshing="props.refreshing"
-      :grouping="groupingState"
-      @toggle-group="controller.toggleGroup"
-      @expand-all="controller.setAllExpanded"
       @reset-filters="controller.resetFilters"
       @reset-layout="controller.resetLayout"
       @export="exportAs"
@@ -225,7 +223,10 @@ watch(
               :header="header"
               :order="columnOrder"
               :reorder="features.reorder"
+              :grouping="groupingState"
               @move="controller.move"
+              @group="controller.toggleGroup"
+              @expand-all="controller.setAllExpanded"
             />
           </TableRow>
         </TableHeader>

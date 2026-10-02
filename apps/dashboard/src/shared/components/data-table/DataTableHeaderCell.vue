@@ -5,6 +5,7 @@ import { TableHead } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import DataTableColumnHeader from "./DataTableColumnHeader.vue";
 import { pinningEdge, pinningStyle } from "./lib/pinning";
+import type { GroupingState } from "./types";
 
 const DRAG_TYPE = "application/x-capuchoo-column";
 
@@ -12,8 +13,13 @@ const props = defineProps<{
   header: Header<T, unknown>;
   order: readonly string[];
   reorder: boolean;
+  grouping: GroupingState;
 }>();
-const emit = defineEmits<{ move: [id: string, target: string] }>();
+const emit = defineEmits<{
+  move: [id: string, target: string];
+  group: [id: string];
+  expandAll: [open: boolean];
+}>();
 
 const column = computed(() => props.header.column);
 const meta = computed(() => column.value.columnDef.meta);
@@ -97,8 +103,11 @@ function moveBy(step: -1 | 1) {
         :reorder="movable"
         :can-move-left="neighbour(-1) !== undefined"
         :can-move-right="neighbour(1) !== undefined"
+        :grouping="props.grouping"
         @move-left="moveBy(-1)"
         @move-right="moveBy(1)"
+        @group="emit('group', column.id)"
+        @expand-all="emit('expandAll', $event)"
       />
       <FlexRender v-else :render="column.columnDef.header" :props="props.header.getContext()" />
     </template>

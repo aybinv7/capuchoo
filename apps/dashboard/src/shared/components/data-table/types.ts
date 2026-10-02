@@ -62,6 +62,16 @@ export const DEFAULT_FEATURES: DataTableFeatures = {
 
 export const PAGE_SIZES: readonly number[] = [10, 20, 50, 100];
 
+/** What a column header needs to offer grouping by its column. */
+export interface GroupingState {
+  /** The table enables grouping and has groupable columns. */
+  enabled: boolean;
+  /** False while only part of the rows is loaded: a group would count a slice. */
+  available: boolean;
+  /** Grouped column ids, outermost first. */
+  columns: readonly string[];
+}
+
 declare module "@tanstack/vue-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
     /** Header label, also used by the view menu, the column menu and exports. */
