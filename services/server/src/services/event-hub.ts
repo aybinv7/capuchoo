@@ -1,3 +1,5 @@
+import { EventBacklog } from "./event-backlog";
+
 export type HubEventType =
   | "build"
   | "build_event"
@@ -14,9 +16,10 @@ export interface HubEvent {
 
 type Listener = (event: HubEvent) => void;
 
-/** In-process fan-out of live events to SSE subscribers, per app. */
+/** In-process fan-out of live events to SSE subscribers, per app, plus a short backlog for polling. */
 export class EventHub {
   private readonly listeners = new Map<string, Set<Listener>>();
+  readonly backlog = new EventBacklog();
 
   subscribe(appId: string, listener: Listener): () => void {
     const set = this.listeners.get(appId) ?? new Set<Listener>();
@@ -29,6 +32,7 @@ export class EventHub {
   }
 
   publish(event: HubEvent): void {
+    this.backlog.record(event);
     const set = this.listeners.get(event.appId);
     if (!set) return;
     for (const listener of set) {

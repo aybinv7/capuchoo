@@ -140,6 +140,28 @@ describe("channel rollout", () => {
   });
 });
 
+describe("devices behind their channel", () => {
+  it("filters the device list by version and by lagging the channel's bundle", async () => {
+    await publish("1.0.0");
+    await publish("1.1.0");
+    await check("a", "1.1.0");
+    await check("c", "1.0.0");
+    await check("d", "builtin");
+    const ids = async (query: string) =>
+      (
+        await (
+          await ctx.request(`/api/apps/${appId}/devices?${query}`, { token: owner.token })
+        ).json()
+      ).devices
+        .map((row: { device_id: string }) => row.device_id)
+        .sort();
+    expect(await ids(`channel_id=${prodId}&behind=true`)).toEqual(["c", "d"]);
+    expect(await ids("version=builtin")).toEqual(["d"]);
+    expect(await ids("version=1.0.0&behind=true")).toEqual(["c"]);
+    expect(await ids("behind=false")).toEqual(["a", "c", "d"]);
+  });
+});
+
 describe("channel activity", () => {
   it("counts only this channel's events in the window", async () => {
     await publish("1.0.0");

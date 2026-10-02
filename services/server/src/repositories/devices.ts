@@ -124,6 +124,10 @@ export interface DeviceListQuery {
   channelId?: string | undefined;
   search?: string | undefined;
   activeSince?: Date | undefined;
+  /** Exact web version; `builtin` for devices that never applied a bundle. */
+  version?: string | undefined;
+  /** Only devices not running their channel's current bundle. */
+  behind?: boolean | undefined;
   limit: number;
   offset: number;
 }
@@ -132,6 +136,24 @@ export async function listDevices(db: Db, query: DeviceListQuery) {
   let base = db.selectFrom("devices").where("devices.app_id", "=", query.appId);
   if (query.channelId) base = base.where("devices.channel_id", "=", query.channelId);
   if (query.activeSince) base = base.where("devices.last_seen_at", ">=", query.activeSince);
+  if (query.version) {
+    base =
+      query.version === "builtin"
+        ? base.where(sql<boolean>`coalesce(devices.version_name, '') IN ('', 'builtin')`)
+        : base.where("devices.version_name", "=", query.version);
+  }
+  if (query.behind) {
+    base = base.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("channels as own")
+          .innerJoin("bundles as live", "live.id", "own.current_bundle_id")
+          .select("own.id")
+          .whereRef("own.id", "=", "devices.channel_id")
+          .where(sql<boolean>`live.version_name IS DISTINCT FROM devices.version_name`),
+      ),
+    );
+  }
   if (query.search) {
     const term = `%${query.search.replace(/[%_\\]/g, (match) => `\\${match}`)}%`;
     base = base.where((eb) =>

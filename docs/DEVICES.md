@@ -37,14 +37,14 @@ every member of the app, are searchable, and are deleted with the device.
 
 ## API
 
-| Method | Path                                                                         | Who    | Answer                                                                  |
-| ------ | ---------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------- |
-| GET    | `/api/apps/:id/devices?search=&channel_id=&active_days=`                     | viewer | `{ devices: Device[], total }` - `search` also matches attribute values |
-| GET    | `/api/devices/:id`                                                           | viewer | `DeviceDetail`                                                          |
-| GET    | `/api/devices/:id/events?before=&limit=&category=&from=&to=`                 | viewer | `{ events: DeviceEvent[], next: string \| null }`                       |
-| GET    | `/api/devices/:id/activity?from=&to=&bucket=&tz=`                            | viewer | `DeviceActivity`                                                        |
-| GET    | `/api/apps/:id/device-events?before=&limit=&category=&channel_id=&from=&to=` | viewer | `{ events: Array<DeviceEvent & { device: DeviceRef \| null }>, next }`  |
-| POST   | `/api/device_attributes`                                                     | device | `{ app_id, device_id, attributes }` -> `{ status, attributes }`         |
+| Method | Path                                                                         | Who    | Answer                                                                                                                                                                              |
+| ------ | ---------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/apps/:id/devices?search=&channel_id=&active_days=`                     | viewer | `{ devices: Device[], total }` - `search` also matches attribute values; `version=` (exact, `builtin` for none) and `behind=true` (not on their channel's current bundle) narrow it |
+| GET    | `/api/devices/:id`                                                           | viewer | `DeviceDetail`                                                                                                                                                                      |
+| GET    | `/api/devices/:id/events?before=&limit=&category=&from=&to=`                 | viewer | `{ events: DeviceEvent[], next: string \| null }`                                                                                                                                   |
+| GET    | `/api/devices/:id/activity?from=&to=&bucket=&tz=`                            | viewer | `DeviceActivity`                                                                                                                                                                    |
+| GET    | `/api/apps/:id/device-events?before=&limit=&category=&channel_id=&from=&to=` | viewer | `{ events: Array<DeviceEvent & { device: DeviceRef \| null }>, next }`                                                                                                              |
+| POST   | `/api/device_attributes`                                                     | device | `{ app_id, device_id, attributes }` -> `{ status, attributes }`                                                                                                                     |
 
 ```ts
 interface Device {

@@ -45,6 +45,8 @@ export function insightRoutes(): Hono<AppEnv> {
       appId: access.app.id,
       channelId: c.req.query("channel_id") || undefined,
       search: c.req.query("search")?.slice(0, 100) || undefined,
+      version: c.req.query("version")?.slice(0, 64) || undefined,
+      behind: c.req.query("behind") === "true",
       activeSince: days
         ? new Date(
             deps.now().getTime() - Math.min(365, Math.max(1, Number(days) || 1)) * 86_400_000,

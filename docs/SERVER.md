@@ -72,6 +72,7 @@ additions:
 | POST   | `/api/builds/:id/events`             | `{ step, status: running\|succeeded\|failed\|skipped, message }`           |
 | POST   | `/api/builds/:id/finish`             | `{ status, bundle_id?, native_id?, error? }`                               |
 | GET    | `/api/apps/:id/stream`               | SSE: `build`, `build_event`, `build_job`, `channel`, `device`              |
+| GET    | `/api/apps/:id/poll?after=&wait=`    | The same events as a long poll, for paths that buffer streams (see below)  |
 | POST   | `/api/integrations/gitlab/:appId`    | GitLab webhook, `X-Gitlab-Token`                                           |
 | POST   | `/api/integrations/github/webhook`   | GitHub App webhook, `X-Hub-Signature-256`                                  |
 
@@ -97,3 +98,15 @@ an HMAC link valid for `ARTEFACT_URL_TTL` seconds, with `Range` support so an AP
 boot unless `MIGRATE_ON_BOOT=false`. `GET /health` is liveness, `GET /ready` checks the database.
 Logs are JSON lines with a request id; passwords, tokens, keys and coordinates are redacted.
 `DEVICE_EVENT_RETENTION_DAYS` (default 90) bounds telemetry.
+
+## Live events behind a buffering proxy
+
+`GET /api/apps/:id/stream` is Server-Sent Events. Some paths hold a streamed response until it ends
+
+- Render's static-site `/api/*` rewrite held the first byte for 500 seconds, and corporate proxies
+  do the same - so the dashboard waits 5 s for the stream's `ready` and otherwise switches the tab
+  to `GET /api/apps/:id/poll`. The first call (no `after`) returns a cursor at once; each next call
+  returns the app's events after it as soon as there are any, or an empty page after `wait` seconds
+  (at most 25). The hub keeps the last 500 events or 5 minutes per app; a cursor older than that
+  comes back with `reset: true`, and the dashboard refetches instead of trusting a page with a hole
+  in it. The backlog is in memory, like the hub, so one server instance is assumed.

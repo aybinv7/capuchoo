@@ -21,6 +21,7 @@ import { deviceRoutes } from "./routes/device";
 import { githubRoutes } from "./routes/github";
 import { channelInsightRoutes } from "./routes/channel-insights";
 import { deviceInsightRoutes } from "./routes/device-insights";
+import { livePollRoutes } from "./routes/live-poll";
 import { insightRoutes } from "./routes/insights";
 import { organizationRoutes } from "./routes/organizations";
 import { systemRoutes } from "./routes/system";
@@ -128,6 +129,7 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", insightRoutes());
   app.route("/api", deviceInsightRoutes());
   app.route("/api", channelInsightRoutes());
+  app.route("/api", livePollRoutes());
   app.route("/api", ciRoutes());
   app.route("/api", githubRoutes());
   app.route("/api", demoRoutes());
