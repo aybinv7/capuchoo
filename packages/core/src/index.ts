@@ -159,3 +159,54 @@ export {
   type ReleaseClaim,
   type ReleaseKind,
 } from "./release-signing.js";
+
+export {
+  BUILD_SOURCES,
+  BUILD_STATUSES,
+  CI_PROVIDERS,
+  JOB_STATUSES,
+  PIPELINE_PLAN_LIMITS,
+  isBuildSource,
+  isBuildStatus,
+  isJobStatus,
+  isTerminalBuildStatus,
+  isTerminalJobStatus,
+  matchPlanJob,
+  mergeBuildStatus,
+  mergeJobStatus,
+  parsePipelinePlan,
+  planColumns,
+  planEdges,
+  type BuildSource,
+  type BuildStatus,
+  type CiProvider,
+  type JobStatus,
+  type PipelinePlan,
+  type PipelinePlanJob,
+  type PipelineStep,
+} from "./pipeline.js";
+
+export {
+  CI_BUILD_TYPES,
+  CI_RUN_ACTIONS,
+  GITHUB_WORKFLOW_INPUTS,
+  GITLAB_PIPELINE_VARIABLES,
+  describeCiRun,
+  githubDispatchInputs,
+  gitlabPipelineVariables,
+  parseCiRunRequest,
+  type CiBuildType,
+  type CiRunAction,
+  type CiRunRequest,
+  type CiRunRequestResult,
+} from "./ci-run.js";
+
+export {
+  GITHUB_WORKFLOW_PATH,
+  GITHUB_WORKFLOW_SECRETS,
+  GITHUB_WORKFLOW_VARIABLE,
+  renderGithubWorkflow,
+  resolveGithubWorkflowOptions,
+  type GithubWorkflowOptions,
+  type GithubWorkflowSecret,
+} from "./github-workflow.js";
