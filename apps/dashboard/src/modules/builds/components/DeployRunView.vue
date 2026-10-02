@@ -8,16 +8,13 @@ import PageHeader from "@/shared/components/PageHeader.vue";
 import { RouteName } from "@/shared/router/route-names";
 import type { BuildDetail } from "@/shared/types/build";
 import type { ReleaseCatalog } from "@/shared/types/release";
+import { deployTitle } from "../lib/run-meta";
 import BuildEventTimeline from "./BuildEventTimeline.vue";
 import BuildMeta from "./BuildMeta.vue";
 
 const props = defineProps<{ build: BuildDetail; catalog: ReleaseCatalog }>();
 
-const title = computed(() => {
-  const value = props.build;
-  const version = value.version_name ? ` ${value.version_name}` : "";
-  return `${value.kind.toUpperCase()}${version}${value.channel_name ? ` → ${value.channel_name}` : ""}`;
-});
+const title = computed(() => deployTitle(props.build));
 </script>
 
 <template>

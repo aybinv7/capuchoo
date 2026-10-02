@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ArrowLeft } from "@lucide/vue";
 import { computed } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { useRoute } from "vue-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import PageContainer from "@/shared/components/PageContainer.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
+import { useBreadcrumbLabel } from "@/shared/layouts/composables/useBreadcrumbLabel";
 import { useBuild } from "@/shared/queries/useBuilds";
 import { useCatalog } from "@/shared/queries/useCatalog";
-import { RouteName } from "@/shared/router/route-names";
 import DeployRunView from "../components/DeployRunView.vue";
 import PipelineRunView from "../components/pipeline/PipelineRunView.vue";
+import { buildTitle } from "../lib/run-meta";
 
 const route = useRoute();
 const { appId } = useCurrentApp();
@@ -19,18 +19,11 @@ const buildId = computed(() =>
 );
 const { data: build, isPending, error, refetch, dataUpdatedAt } = useBuild(buildId);
 const { catalog } = useCatalog(appId);
+useBreadcrumbLabel(() => (build.value ? buildTitle(build.value) : null));
 </script>
 
 <template>
   <PageContainer :width="build?.kind === 'pipeline' ? 'wide' : 'default'">
-    <RouterLink
-      :to="{ name: RouteName.builds }"
-      class="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-    >
-      <ArrowLeft class="size-3.5" />
-      Builds
-    </RouterLink>
-
     <ErrorNotice v-if="error && !build" :error="error" :retry="refetch" />
     <div v-else-if="isPending || !build" class="space-y-4">
       <Skeleton class="h-10 w-80" />

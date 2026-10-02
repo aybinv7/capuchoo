@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
   normalizeActivityEvent,
+  normalizeDeviceActivity,
   normalizeDeviceDetail,
   normalizeDeviceEvent,
   normalizeEventPage,
@@ -21,6 +22,7 @@ describe("normalizeDeviceDetail", () => {
       ...row,
       attributes: { rep: "K. Haddad" },
       attributes_updated_at: "2026-10-02T09:00:00Z",
+      retention_days: 90,
       channel: { id: "ch-1", name: "prod", environment: "prod" },
       assigned_channel: { id: "ch-1", name: "prod" },
       summary: {
@@ -33,6 +35,7 @@ describe("normalizeDeviceDetail", () => {
       },
     });
     expect(detail).toMatchObject({
+      retention_days: 90,
       attributes: { rep: "K. Haddad" },
       channel: { id: "ch-1", name: "prod", environment: "prod" },
       assigned_channel: { id: "ch-1", name: "prod" },
@@ -49,6 +52,7 @@ describe("normalizeDeviceDetail", () => {
     expect(detail).toMatchObject({
       attributes: null,
       attributes_updated_at: null,
+      retention_days: null,
       channel: null,
       assigned_channel: null,
       summary: { days: 30, checks: 0, last_delivered: null, last_failure: null },
@@ -107,5 +111,51 @@ describe("events", () => {
     expect(page.events.map((event) => event.id)).toEqual(["1"]);
     expect(page.next).toBeNull();
     expect(normalizeEventPage("oops", normalizeDeviceEvent)).toEqual({ events: [], next: null });
+  });
+});
+
+describe("normalizeDeviceActivity", () => {
+  const asked = {
+    from: "2026-09-26T00:00:00.000Z",
+    to: "2026-10-03T00:00:00.000Z",
+    bucket: "day" as const,
+    tz: "Africa/Algiers",
+  };
+
+  it("reads totals and buckets, dropping what it cannot place", () => {
+    const activity = normalizeDeviceActivity(
+      {
+        ...asked,
+        totals: { check: 40, delivered: 2, failed: 1, teleport: 9 },
+        series: [
+          { at: "2026-10-01", check: 30, delivered: 2, teleport: 3 },
+          { at: "2026-10-02", failed: 1, check: -4 },
+          { check: 10 },
+          "x",
+        ],
+      },
+      asked,
+    );
+    expect(activity.totals).toEqual({
+      check: 40,
+      downloading: 0,
+      delivered: 2,
+      failed: 1,
+      cancelled: 0,
+      lifecycle: 0,
+      other: 0,
+    });
+    expect(activity.series).toEqual([
+      { at: "2026-10-01", check: 30, delivered: 2 },
+      { at: "2026-10-02", failed: 1 },
+    ]);
+  });
+
+  it("falls back to the asked-for window on an empty body", () => {
+    expect(normalizeDeviceActivity(null, asked)).toMatchObject({
+      ...asked,
+      series: [],
+      totals: { check: 0, delivered: 0 },
+    });
   });
 });

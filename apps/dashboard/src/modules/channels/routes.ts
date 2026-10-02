@@ -13,7 +13,7 @@ export const channelsRoutes: ModuleRoutes = {
       path: "channels/:channelId",
       name: RouteName.channel,
       component: () => import("./pages/ChannelDetailPage.vue"),
-      meta: { title: "Channel", section: "Channels" },
+      meta: { title: "Channel", section: "Channels", parent: RouteName.channels },
     },
   ],
 };

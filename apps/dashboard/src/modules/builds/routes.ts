@@ -13,7 +13,7 @@ export const buildsRoutes: ModuleRoutes = {
       path: "builds/:buildId",
       name: RouteName.build,
       component: () => import("./pages/BuildDetailPage.vue"),
-      meta: { title: "Build", section: "Builds" },
+      meta: { title: "Build", section: "Builds", parent: RouteName.builds },
     },
   ],
 };

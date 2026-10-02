@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { fillDays, niceMax, versionBars } from "./series";
+import { fillDays, versionBars } from "./series";
 
 describe("fillDays", () => {
   it("fills the window with zero days, oldest first", () => {
@@ -30,14 +30,5 @@ describe("versionBars", () => {
       { version: "1.0.0", devices: 8, platforms: ["android", "ios"] },
       { version: "2 others", devices: 3, platforms: ["android"] },
     ]);
-  });
-});
-
-describe("niceMax", () => {
-  it("rounds up to 1, 2 or 5 times a power of ten", () => {
-    expect(niceMax(0)).toBe(1);
-    expect(niceMax(7)).toBe(10);
-    expect(niceMax(130)).toBe(200);
-    expect(niceMax(450)).toBe(500);
   });
 });

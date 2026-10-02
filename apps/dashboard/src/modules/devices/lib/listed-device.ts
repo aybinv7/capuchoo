@@ -18,7 +18,14 @@ export function findListedDevice(
     for (const page of pages) {
       if (!isPage(page)) continue;
       const row: Device | undefined = page.devices.find((device) => device.id === id);
-      if (row) return { ...row, channel: null, assigned_channel: null, summary: null };
+      if (row)
+        return {
+          ...row,
+          retention_days: null,
+          channel: null,
+          assigned_channel: null,
+          summary: null,
+        };
     }
   }
   return undefined;

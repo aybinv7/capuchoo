@@ -21,8 +21,16 @@ export const queryKeys = {
   device: (appId: string, deviceId: string) => ["apps", appId, "device", deviceId] as const,
   deviceDetail: (appId: string, deviceId: string) =>
     ["apps", appId, "device", deviceId, "detail"] as const,
-  deviceEvents: (appId: string, deviceId: string, filter: string) =>
-    ["apps", appId, "device", deviceId, "events", filter] as const,
+  deviceEvents: (
+    appId: string,
+    deviceId: string,
+    filter: string,
+    from: string | null,
+    to: string | null,
+  ) => ["apps", appId, "device", deviceId, "events", filter, from, to] as const,
+  /** Counts per bucket over one window; under the device's prefix so its reports refresh it. */
+  deviceActivity: (appId: string, deviceId: string, window: Record<string, unknown>) =>
+    ["apps", appId, "device", deviceId, "activity", window] as const,
   activityAll: (appId: string) => ["apps", appId, "activity"] as const,
   activity: (appId: string, filters: Record<string, unknown>) =>
     ["apps", appId, "activity", filters] as const,

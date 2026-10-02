@@ -36,6 +36,17 @@ export function runTitle(
     : "Pipeline run";
 }
 
+/** A deploy's title: `OTA 1.4.2 → production`. */
+export function deployTitle(build: Pick<Build, "kind" | "version_name" | "channel_name">): string {
+  const version = build.version_name ? ` ${build.version_name}` : "";
+  const channel = build.channel_name ? ` → ${build.channel_name}` : "";
+  return `${build.kind.toUpperCase()}${version}${channel}`;
+}
+
+/** The title a build page shows, whichever kind of run it is. */
+export const buildTitle = (build: Build): string =>
+  build.kind === "pipeline" ? runTitle(build) : deployTitle(build);
+
 /** Whether a ref names a tag rather than a branch, as far as the run tells. */
 export const isTagRef = (build: Pick<Build, "ref" | "trigger">): boolean =>
   build.trigger === "tag" || (build.ref ?? "").startsWith("refs/tags/");

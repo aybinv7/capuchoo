@@ -12,6 +12,7 @@ describe("findListedDevice", () => {
     ] as const;
     expect(findListedDevice(entries, "uuid-1")).toEqual({
       ...device,
+      retention_days: null,
       channel: null,
       assigned_channel: null,
       summary: null,

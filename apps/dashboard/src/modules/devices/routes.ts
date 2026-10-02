@@ -13,7 +13,7 @@ export const devicesRoutes: ModuleRoutes = {
       path: "devices/:deviceId",
       name: RouteName.device,
       component: () => import("./pages/DeviceDetailPage.vue"),
-      meta: { title: "Device", section: "Devices" },
+      meta: { title: "Device", section: "Devices", parent: RouteName.devices },
     },
     {
       path: "activity",

@@ -14,5 +14,7 @@ declare module "vue-router" {
     title?: string;
     /** Sidebar group this page belongs to. */
     section?: string;
+    /** The list page a detail page belongs to; the breadcrumb links its section crumb there. */
+    parent?: import("./src/shared/router/route-names").RouteNameValue;
   }
 }

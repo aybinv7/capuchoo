@@ -87,6 +87,7 @@ catalog:
   "@noble/hashes": ^2.4.0
   libsodium-wrappers: ^0.8.4
   "@types/libsodium-wrappers": ^0.8.2
+  "@internationalized/date": ^3.12.3
 
 overrides:
   vite: "catalog:"

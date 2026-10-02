@@ -2,22 +2,31 @@
 import { useElementSize } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { formatCount } from "@/shared/lib/format";
-import { niceMax } from "../lib/series";
-import type { BarSeries } from "../types/statistics.types";
+import { bucketTitle, tickLabel } from "./lib/bucket-label";
+import { niceMax } from "./lib/scale";
+import type { BarGranularity, BarSeries } from "./types";
 
 const props = withDefaults(
   defineProps<{
-    days: readonly string[];
+    /** One key per bar, oldest first: `YYYY-MM-DD` or `YYYY-MM-DDTHH`. */
+    buckets: readonly string[];
+    granularity?: BarGranularity;
     series: readonly BarSeries[];
     values: Readonly<Record<string, readonly number[]>>;
     height?: number;
     label: string;
+    legend?: boolean;
+    /** Bars answer a click with `select`. */
+    selectable?: boolean;
   }>(),
-  { height: 200 },
+  { granularity: "day", height: 200, legend: true, selectable: false },
 );
+
+const emit = defineEmits<{ select: [bucket: string] }>();
 
 const PAD = { top: 8, right: 8, bottom: 22, left: 36 };
 const GAP = 2;
+const TOOLTIP_HALF = 80;
 
 const host = ref<HTMLElement | null>(null);
 const { width } = useElementSize(host);
@@ -26,17 +35,17 @@ const hovered = ref<number | null>(null);
 const plotWidth = computed(() => Math.max(0, width.value - PAD.left - PAD.right));
 const plotHeight = computed(() => props.height - PAD.top - PAD.bottom);
 const totals = computed(() =>
-  props.days.map((_, index) =>
+  props.buckets.map((_, index) =>
     props.series.reduce((sum, entry) => sum + (props.values[entry.key]?.[index] ?? 0), 0),
   ),
 );
 const max = computed(() => niceMax(Math.max(0, ...totals.value)));
-const slot = computed(() => (props.days.length ? plotWidth.value / props.days.length : 0));
+const slot = computed(() => (props.buckets.length ? plotWidth.value / props.buckets.length : 0));
 const barWidth = computed(() => Math.max(2, Math.min(28, slot.value * 0.68)));
 const scale = (value: number) => (value / max.value) * plotHeight.value;
 
 const bars = computed(() =>
-  props.days.map((day, index) => {
+  props.buckets.map((bucket, index) => {
     let offset = 0;
     const x = PAD.left + index * slot.value + (slot.value - barWidth.value) / 2;
     const segments = props.series
@@ -49,7 +58,7 @@ const bars = computed(() =>
         return { key: entry.key, color: entry.color, y, height };
       })
       .filter((segment): segment is NonNullable<typeof segment> => segment !== null);
-    return { day, index, x, segments };
+    return { bucket, index, x, segments };
   }),
 );
 
@@ -59,27 +68,46 @@ const ticks = computed(() =>
     y: PAD.top + plotHeight.value * (1 - fraction),
   })),
 );
-const labelEvery = computed(() => Math.max(1, Math.ceil(props.days.length / 8)));
-const shortDay = (day: string) => day.slice(5).replace("-", "/");
+const labelEvery = computed(() => Math.max(1, Math.ceil(props.buckets.length / 8)));
 
 const tooltip = computed(() => {
   const index = hovered.value;
-  if (index === null) return null;
+  if (index === null || index >= props.buckets.length) return null;
   const x = PAD.left + index * slot.value + slot.value / 2;
   return {
-    day: props.days[index] ?? "",
-    left: Math.min(Math.max(x, 80), width.value - 80),
+    title: bucketTitle(props.buckets[index] ?? "", props.granularity),
+    left: Math.min(Math.max(x, TOOLTIP_HALF), width.value - TOOLTIP_HALF),
+    total: totals.value[index] ?? 0,
     rows: props.series.map((entry) => ({
       ...entry,
       value: props.values[entry.key]?.[index] ?? 0,
     })),
   };
 });
+
+function indexAt(event: PointerEvent | MouseEvent): number | null {
+  if (!slot.value) return null;
+  const bounds = host.value?.getBoundingClientRect();
+  if (!bounds) return null;
+  const index = Math.floor((event.clientX - bounds.left - PAD.left) / slot.value);
+  return index >= 0 && index < props.buckets.length ? index : null;
+}
+
+function track(event: PointerEvent) {
+  hovered.value = indexAt(event);
+}
+
+function choose(event: MouseEvent) {
+  if (!props.selectable) return;
+  const index = indexAt(event);
+  const bucket = index === null ? undefined : props.buckets[index];
+  if (bucket) emit("select", bucket);
+}
 </script>
 
 <template>
   <figure class="space-y-2">
-    <figcaption class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+    <figcaption v-if="props.legend" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
       <span
         v-for="entry in props.series"
         :key="entry.key"
@@ -89,11 +117,14 @@ const tooltip = computed(() => {
         {{ entry.label }}
       </span>
     </figcaption>
+    <figcaption v-else class="sr-only">{{ props.label }}</figcaption>
     <div
       ref="host"
-      class="relative"
+      :class="['relative touch-pan-y', props.selectable && hovered !== null && 'cursor-pointer']"
       :style="{ height: `${props.height}px` }"
-      @mouseleave="hovered = null"
+      @pointermove="track"
+      @pointerleave="hovered = null"
+      @click="choose"
     >
       <svg
         v-if="width > 0"
@@ -122,15 +153,16 @@ const tooltip = computed(() => {
             </text>
           </template>
         </g>
-        <g v-for="bar in bars" :key="bar.day">
-          <rect
-            :x="PAD.left + bar.index * slot"
-            :y="PAD.top"
-            :width="slot"
-            :height="plotHeight"
-            :fill="hovered === bar.index ? 'var(--accent)' : 'transparent'"
-            @mouseenter="hovered = bar.index"
-          />
+        <rect
+          v-if="hovered !== null"
+          :x="PAD.left + hovered * slot"
+          :y="PAD.top"
+          :width="slot"
+          :height="plotHeight"
+          fill="var(--accent)"
+          class="pointer-events-none"
+        />
+        <g v-for="bar in bars" :key="bar.bucket" class="pointer-events-none">
           <rect
             v-for="segment in bar.segments"
             :key="segment.key"
@@ -140,7 +172,6 @@ const tooltip = computed(() => {
             :height="segment.height"
             :fill="segment.color"
             rx="2"
-            class="pointer-events-none"
           />
           <text
             v-if="bar.index % labelEvery === 0"
@@ -149,7 +180,7 @@ const tooltip = computed(() => {
             text-anchor="middle"
             class="fill-muted-foreground font-mono text-[10px]"
           >
-            {{ shortDay(bar.day) }}
+            {{ tickLabel(bar.bucket, props.granularity) }}
           </text>
         </g>
       </svg>
@@ -158,7 +189,12 @@ const tooltip = computed(() => {
         class="bg-popover text-popover-foreground pointer-events-none absolute top-0 z-10 w-40 -translate-x-1/2 rounded-md border px-2.5 py-2 text-xs shadow-md"
         :style="{ left: `${tooltip.left}px` }"
       >
-        <div class="mb-1 font-mono font-medium">{{ tooltip.day }}</div>
+        <div class="mb-1 flex items-baseline justify-between gap-2">
+          <span class="font-medium">{{ tooltip.title }}</span>
+          <span class="text-muted-foreground font-mono tabular">{{
+            formatCount(tooltip.total, true)
+          }}</span>
+        </div>
         <div
           v-for="row in tooltip.rows"
           :key="row.key"
@@ -169,6 +205,9 @@ const tooltip = computed(() => {
             {{ row.label }}
           </span>
           <span class="font-mono tabular">{{ formatCount(row.value, true) }}</span>
+        </div>
+        <div v-if="props.selectable" class="text-muted-foreground mt-1.5 border-t pt-1.5">
+          Click to focus this {{ props.granularity }}
         </div>
       </div>
     </div>

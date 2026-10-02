@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ArrowLeft, CirclePause, CirclePlay, History, Rocket } from "@lucide/vue";
+import { CirclePause, CirclePlay, History, Rocket } from "@lucide/vue";
 import { computed, ref } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChannelStatusBadges from "@/shared/components/ChannelStatusBadges.vue";
@@ -15,6 +15,7 @@ import { useCurrentApp } from "@/shared/composables/useCurrentApp";
 import DeliveryDialogHost from "@/shared/delivery/components/DeliveryDialogHost.vue";
 import { useDeliveryDialogs } from "@/shared/delivery/composables/useDeliveryDialogs";
 import { findArtefact } from "@/shared/delivery/lib/eligibility";
+import { useBreadcrumbLabel } from "@/shared/layouts/composables/useBreadcrumbLabel";
 import { useCatalog } from "@/shared/queries/useCatalog";
 import { useChannelDetail, useChannelHistory } from "@/shared/queries/useChannelQueries";
 import { RouteName } from "@/shared/router/route-names";
@@ -41,6 +42,7 @@ const { catalog, channels } = useCatalog(appId);
 const channel = computed(
   () => channels.value.find((entry) => entry.id === channelId.value) ?? detail.data.value ?? null,
 );
+useBreadcrumbLabel(() => channel.value?.name);
 const bundle = computed(() => {
   const id = channel.value?.current_bundle_id;
   if (!id) return null;
@@ -62,14 +64,6 @@ const deleteOpen = ref(false);
 
 <template>
   <PageContainer width="wide">
-    <RouterLink
-      :to="{ name: RouteName.channels }"
-      class="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-    >
-      <ArrowLeft class="size-3.5" />
-      Channels
-    </RouterLink>
-
     <ErrorNotice
       v-if="detail.error.value && !channel"
       :error="detail.error.value"

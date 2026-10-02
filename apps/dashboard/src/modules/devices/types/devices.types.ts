@@ -63,6 +63,8 @@ export interface DeviceSummary {
  * held, before the detail itself arrives.
  */
 export interface DeviceDetail extends Device {
+  /** How many days of events the server keeps; null until the detail itself arrives. */
+  retention_days: number | null;
   channel: { id: string; name: string; environment: Environment | null } | null;
   assigned_channel: { id: string; name: string } | null;
   summary: DeviceSummary | null;
@@ -107,7 +109,36 @@ export interface EventPage<E extends DeviceEvent = DeviceEvent> {
 
 export type EventFilter = "all" | "delivered" | "failed" | "check" | "downloading" | "lifecycle";
 
-export interface ActivityFilters {
+/** An optional `[from, to)` window over events, as ISO instants. */
+export interface EventBounds {
+  from: string | null;
+  to: string | null;
+}
+
+export interface ActivityFilters extends EventBounds {
   category: EventFilter;
   channelId: string;
 }
+
+export type ActivityBucket = "hour" | "day";
+
+/** One bucket of `GET /api/devices/:id/activity`; `at` is its local start in the zone asked for. */
+export type ActivityRow = { at: string } & Partial<Record<DeviceEventCategory, number>>;
+
+/** `GET /api/devices/:id/activity`: counts per category over a window, only non-empty buckets. */
+export interface DeviceActivity {
+  from: string;
+  to: string;
+  bucket: ActivityBucket;
+  tz: string;
+  totals: Record<DeviceEventCategory, number>;
+  series: ActivityRow[];
+}
+
+/** What an activity chart is asked for: the window, its bucket size and the viewer's zone. */
+export type ActivityWindow = {
+  from: string;
+  to: string;
+  bucket: ActivityBucket;
+  tz: string;
+};

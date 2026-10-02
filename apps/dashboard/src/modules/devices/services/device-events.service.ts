@@ -5,6 +5,7 @@ import type {
   ActivityEvent,
   ActivityFilters,
   DeviceEvent,
+  EventBounds,
   EventFilter,
   EventPage,
 } from "../types/devices.types";
@@ -14,13 +15,20 @@ export const EVENT_PAGE_SIZE = 100;
 export const fetchDeviceEvents = async (
   deviceId: string,
   filter: EventFilter,
+  bounds: EventBounds,
   before: string | null,
   signal?: AbortSignal,
 ): Promise<EventPage<DeviceEvent>> =>
   normalizeEventPage(
     await http.get<unknown>(
       `/devices/${encodeURIComponent(deviceId)}/events`,
-      { before, limit: EVENT_PAGE_SIZE, category: categoryParam(filter) },
+      {
+        before,
+        limit: EVENT_PAGE_SIZE,
+        category: categoryParam(filter),
+        from: bounds.from,
+        to: bounds.to,
+      },
       signal,
     ),
     normalizeDeviceEvent,
@@ -40,6 +48,8 @@ export const fetchActivity = async (
         limit: EVENT_PAGE_SIZE,
         category: categoryParam(filters.category),
         channel_id: filters.channelId,
+        from: filters.from,
+        to: filters.to,
       },
       signal,
     ),

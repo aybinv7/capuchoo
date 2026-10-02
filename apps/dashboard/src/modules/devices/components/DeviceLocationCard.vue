@@ -22,13 +22,7 @@ const coordinates = computed(() =>
 </script>
 
 <template>
-  <section class="bg-card min-w-0 overflow-hidden rounded-lg border">
-    <header
-      class="text-muted-foreground flex items-center gap-2 border-b px-4 py-2.5 text-xs font-medium uppercase"
-    >
-      <MapPin class="size-3.5" />
-      Location
-    </header>
+  <section class="bg-card min-w-0 overflow-hidden rounded-lg border" aria-label="Location">
     <template v-if="located">
       <div class="bg-muted/40 h-52">
         <DeviceLocationMap
@@ -52,6 +46,9 @@ const coordinates = computed(() =>
         </span>
       </div>
     </template>
-    <p v-else class="text-muted-foreground px-4 py-6 text-sm">No location reported.</p>
+    <p v-else class="text-muted-foreground flex items-center gap-2 px-4 py-6 text-sm">
+      <MapPin class="size-3.5" aria-hidden="true" />
+      No location reported.
+    </p>
   </section>
 </template>

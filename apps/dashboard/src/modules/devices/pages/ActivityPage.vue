@@ -11,6 +11,8 @@ import PageHeader from "@/shared/components/PageHeader.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
 import { useQueryParam } from "@/shared/composables/useQueryParam";
 import { orderChannels } from "@/shared/lib/channels";
+import PeriodPicker from "@/shared/period/components/PeriodPicker.vue";
+import { usePeriod } from "@/shared/period/composables/usePeriod";
 import { useCatalog } from "@/shared/queries/useCatalog";
 import ActivityDeviceLink from "../components/ActivityDeviceLink.vue";
 import EventFilterChips from "../components/EventFilterChips.vue";
@@ -24,14 +26,21 @@ const { channels } = useCatalog(appId);
 const category = useQueryParam<EventFilter>("category", "all", isEventFilter);
 const channelId = useQueryParam("channel", "");
 
+const period = usePeriod(null);
+
 const filters = computed<ActivityFilters>(() => ({
   category: category.value,
   channelId: channelId.value,
+  from: period.bounds.value.from,
+  to: period.bounds.value.to,
 }));
 const feed = useActivityFeed(appId, filters);
 
 const ordered = computed(() => orderChannels(channels.value).map((row) => row.channel));
-const filtered = computed(() => category.value !== "all" || Boolean(channelId.value));
+const windowed = computed(() => Boolean(period.bounds.value.from || period.bounds.value.to));
+const filtered = computed(
+  () => category.value !== "all" || Boolean(channelId.value) || windowed.value,
+);
 const filterLabel = computed(
   () => EVENT_FILTERS.find((option) => option.value === category.value)?.label.toLowerCase() ?? "",
 );
@@ -54,15 +63,24 @@ const filterLabel = computed(
 
     <div class="flex flex-wrap items-center justify-between gap-3">
       <EventFilterChips v-model="category" />
-      <label class="flex items-center gap-2 text-sm">
-        <span class="text-muted-foreground text-xs">Channel</span>
-        <NativeSelect v-model="channelId" class="h-8 min-w-44 text-xs">
-          <NativeSelectOption value="">All channels</NativeSelectOption>
-          <NativeSelectOption v-for="channel in ordered" :key="channel.id" :value="channel.id">{{
-            channel.name
-          }}</NativeSelectOption>
-        </NativeSelect>
-      </label>
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="flex items-center gap-2 text-sm">
+          <span class="text-muted-foreground text-xs">Channel</span>
+          <NativeSelect v-model="channelId" class="h-8 min-w-44 text-xs">
+            <NativeSelectOption value="">All channels</NativeSelectOption>
+            <NativeSelectOption v-for="channel in ordered" :key="channel.id" :value="channel.id">{{
+              channel.name
+            }}</NativeSelectOption>
+          </NativeSelect>
+        </label>
+        <PeriodPicker
+          :period="period.period.value"
+          :resolved="period.resolved.value"
+          :now="period.now.value"
+          :retention-days="period.retention.value"
+          @change="period.setPeriod"
+        />
+      </div>
     </div>
 
     <ErrorNotice v-if="feed.error.value" :error="feed.error.value" :retry="feed.refetch" />
@@ -82,7 +100,7 @@ const filterLabel = computed(
       No {{ category === "all" ? "" : `${filterLabel} ` }}event{{
         channelId ? " on this channel" : ""
       }}
-      in the kept history.
+      {{ windowed ? "in this period" : "in the kept history" }}.
     </p>
     <section v-else class="bg-card rounded-lg border p-4">
       <EventTimeline

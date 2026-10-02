@@ -6,16 +6,17 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import EmptyState from "@/shared/components/EmptyState.vue";
 import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import PageContainer from "@/shared/components/PageContainer.vue";
+import StackedBars from "@/shared/components/charts/StackedBars.vue";
+import type { BarSeries } from "@/shared/components/charts/types";
 import PageHeader from "@/shared/components/PageHeader.vue";
 import StatTile from "@/shared/components/StatTile.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
 import { formatCount, formatPercent } from "@/shared/lib/format";
 import { useAppStats } from "@/shared/queries/useAppStats";
 import ChannelHealthTable from "../components/ChannelHealthTable.vue";
-import StackedDailyBars from "../components/StackedDailyBars.vue";
 import VersionDistribution from "../components/VersionDistribution.vue";
 import { fillDays } from "../lib/series";
-import { STAT_WINDOWS, type BarSeries, type StatWindow } from "../types/statistics.types";
+import { STAT_WINDOWS, type StatWindow } from "../types/statistics.types";
 
 const { appId } = useCurrentApp();
 const days = ref<StatWindow>(30);
@@ -116,8 +117,8 @@ function setDays(value: unknown) {
       <div class="grid gap-6 xl:grid-cols-2">
         <section class="bg-card rounded-lg border p-4">
           <h2 class="mb-3 text-sm font-medium">Installs and failures per day</h2>
-          <StackedDailyBars
-            :days="dayLabels"
+          <StackedBars
+            :buckets="dayLabels"
             :series="OUTCOMES"
             :values="outcomeValues"
             label="Installs and failures per day"
@@ -125,8 +126,8 @@ function setDays(value: unknown) {
         </section>
         <section class="bg-card rounded-lg border p-4">
           <h2 class="mb-3 text-sm font-medium">Update checks per day</h2>
-          <StackedDailyBars
-            :days="dayLabels"
+          <StackedBars
+            :buckets="dayLabels"
             :series="CHECKS"
             :values="checkValues"
             label="Update checks per day"

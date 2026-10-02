@@ -24,7 +24,8 @@ export function categoryParam(filter: EventFilter): DeviceEventCategory | "" {
   return filter === "all" ? "" : filter;
 }
 
-const CATEGORIES = new Set<DeviceEventCategory>([
+/** Every category the server classifies events into. */
+export const EVENT_CATEGORIES: readonly DeviceEventCategory[] = [
   "check",
   "downloading",
   "delivered",
@@ -32,7 +33,9 @@ const CATEGORIES = new Set<DeviceEventCategory>([
   "cancelled",
   "lifecycle",
   "other",
-]);
+];
+
+const CATEGORIES = new Set<DeviceEventCategory>(EVENT_CATEGORIES);
 
 /** A category from the wire; anything a newer server invents reads as `other`. */
 export function toCategory(value: unknown): DeviceEventCategory {

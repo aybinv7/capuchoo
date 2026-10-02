@@ -1,6 +1,8 @@
+import { compareVersions } from "@capuchoo/core";
 import type { Channel, ReleaseCatalog } from "@/shared/types/release";
 
-export type AlignmentState = "current" | "different" | "unknown";
+/** `different` when both versions are known but cannot be ordered. */
+export type AlignmentState = "current" | "behind" | "ahead" | "different" | "unknown";
 
 export interface Alignment {
   state: AlignmentState;
@@ -10,7 +12,13 @@ export interface Alignment {
 
 const UNKNOWN: Alignment = Object.freeze({ state: "unknown", served: null });
 
-/** Whether the device runs the bundle its channel points at now. */
+const direction = (delta: number): AlignmentState =>
+  delta === 0 ? "current" : delta < 0 ? "behind" : "ahead";
+
+/**
+ * Whether the device runs the bundle its channel points at now. `builtin` sorts oldest, so a device
+ * still on its shipped bundle reads as behind a channel that serves one.
+ */
 export function otaAlignment(
   running: string | null,
   channel: Channel | null,
@@ -21,10 +29,9 @@ export function otaAlignment(
     : undefined;
   if (!bundle) return UNKNOWN;
   if (!running) return { state: "unknown", served: bundle.version_name };
-  return {
-    state: running === bundle.version_name ? "current" : "different",
-    served: bundle.version_name,
-  };
+  if (running === bundle.version_name) return { state: "current", served: bundle.version_name };
+  const delta = compareVersions(running, bundle.version_name);
+  return { state: delta === 0 ? "different" : direction(delta), served: bundle.version_name };
 }
 
 /** Whether the device runs the native build its channel points at now, by version code. */
@@ -39,5 +46,5 @@ export function nativeAlignment(
   if (!build) return UNKNOWN;
   const served = `${build.version_name} (${build.version_code})`;
   if (versionCode === null) return { state: "unknown", served };
-  return { state: versionCode === build.version_code ? "current" : "different", served };
+  return { state: direction(versionCode - build.version_code), served };
 }
