@@ -42,6 +42,17 @@ const of = computed(() => {
   return props.hasMore ? `${formatCount(loaded.value, true)}+` : formatCount(loaded.value, true);
 });
 const selectedCount = computed(() => props.table.getFilteredSelectedRowModel().rows.length);
+const groups = computed(() =>
+  props.table.getState().grouping.length > 0
+    ? props.table.getPrePaginationRowModel().rows.length
+    : null,
+);
+const firstGroup = computed(() =>
+  groups.value ? state.value.pageIndex * state.value.pageSize + 1 : 0,
+);
+const lastGroup = computed(() =>
+  Math.min(groups.value ?? 0, (state.value.pageIndex + 1) * state.value.pageSize),
+);
 const canNext = computed(() => props.table.getCanNextPage() || props.hasMore);
 
 function setPageSize(value: unknown) {
@@ -56,13 +67,20 @@ function setPageSize(value: unknown) {
       <template v-if="props.selection && selectedCount > 0">
         {{ formatCount(selectedCount, true) }} of {{ formatCount(loaded, true) }} row(s) selected
       </template>
+      <template v-else-if="groups !== null">
+        Groups <span class="tabular">{{ firstGroup }}–{{ lastGroup }}</span> of
+        <span class="tabular">{{ formatCount(groups, true) }}</span> ·
+        <span class="tabular">{{ of }}</span> rows
+      </template>
       <template v-else>
         <span class="tabular">{{ firstRow }}–{{ lastRow }}</span> of
         <span class="tabular">{{ of }}</span>
       </template>
     </div>
     <div class="flex items-center gap-2">
-      <span class="text-muted-foreground hidden text-xs sm:inline">Rows per page</span>
+      <span class="text-muted-foreground hidden text-xs sm:inline">{{
+        groups !== null ? "Groups per page" : "Rows per page"
+      }}</span>
       <Select :model-value="String(state.pageSize)" @update:model-value="setPageSize">
         <SelectTrigger size="sm" class="h-8 w-[4.5rem]" aria-label="Rows per page">
           <SelectValue />

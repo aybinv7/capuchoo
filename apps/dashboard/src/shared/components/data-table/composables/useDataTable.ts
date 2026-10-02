@@ -170,6 +170,7 @@ export function useDataTable<T>(options: UseDataTableOptions<T>) {
       return groupable.value;
     },
     groupedColumnMode: false,
+    paginateExpandedRows: false,
     getRowCanExpand: (row) => row.getIsGrouped(),
     enableMultiSort: true,
     autoResetPageIndex: false,

@@ -52,6 +52,8 @@ describe("useDataTable grouping", () => {
     expect(rows).toHaveLength(5);
     expect(controller.leafRows.value.map((item) => item.id)).toEqual(["1", "3", "2"]);
 
+    expect(controller.table.getPageCount()).toBe(1);
+
     controller.setAllExpanded(false);
     await nextTick();
     expect(controller.table.getRowModel().rows).toHaveLength(2);
