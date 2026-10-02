@@ -386,7 +386,9 @@ describe("starting runs from Capuchoo", () => {
     const top = await (
       await ctx.request(`/api/apps/${app.id}/builds?scope=top`, { token: owner.token })
     ).json();
-    expect(top.map((build: { id: string }) => build.id)).toEqual([child.parent_id]);
+    expect(
+      top.map((build: { id: string; child_count: number }) => [build.id, build.child_count]),
+    ).toEqual([[child.parent_id, 1]]);
     const parent = await (
       await ctx.request(`/api/builds/${child.parent_id}`, { token: owner.token })
     ).json();

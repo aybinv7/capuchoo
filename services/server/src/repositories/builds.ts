@@ -223,7 +223,7 @@ export async function setBuildStatus(
     .executeTakeFirstOrThrow();
 }
 
-export function listBuilds(
+export async function listBuilds(
   db: Db,
   appId: string,
   limit: number,
@@ -234,9 +234,17 @@ export function listBuilds(
     .leftJoin("users", "users.id", "builds.actor_user_id")
     .select(BUILD_LIST_COLUMNS.map((column) => `builds.${column}` as const))
     .select("users.email as actor_email")
+    .select((eb) =>
+      eb
+        .selectFrom("builds as child")
+        .whereRef("child.parent_id", "=", "builds.id")
+        .select((inner) => inner.fn.countAll<string>().as("count"))
+        .as("child_count"),
+    )
     .where("builds.app_id", "=", appId);
   if (options.topLevel) query = query.where("builds.parent_id", "is", null);
-  return query.orderBy("builds.created_at", "desc").limit(limit).execute();
+  const rows = await query.orderBy("builds.created_at", "desc").limit(limit).execute();
+  return rows.map((row) => ({ ...row, child_count: Number(row.child_count ?? 0) }));
 }
 
 export function listChildBuilds(db: Db, parentId: string) {
