@@ -46,6 +46,8 @@ export function listDeviceEvents(
     channelId?: string | undefined;
     deviceUuid?: string | undefined;
     category?: string | undefined;
+    from?: Date | undefined;
+    to?: Date | undefined;
     limit: number;
     before?: string | undefined;
   },
@@ -78,6 +80,8 @@ export function listDeviceEvents(
   if (query.channelId) base = base.where("e.channel_id", "=", query.channelId);
   if (query.deviceUuid) base = base.where("e.device_uuid", "=", query.deviceUuid);
   if (query.category) base = base.where("e.category", "=", query.category);
+  if (query.from) base = base.where("e.created_at", ">=", query.from);
+  if (query.to) base = base.where("e.created_at", "<", query.to);
   if (query.before && /^\d{1,19}$/.test(query.before)) base = base.where("e.id", "<", query.before);
   return base.orderBy("e.id", "desc").limit(query.limit).execute();
 }
@@ -120,6 +124,29 @@ export async function deviceSummary(db: Db, deviceUuid: string, since: Date) {
       ? { action: failed.action, error: failed.error, at: failed.created_at }
       : null,
   };
+}
+
+/** Events per local hour or day and category, over [from, to), cut in time zone `tz`. */
+export function deviceActivitySeries(
+  db: Db,
+  query: { deviceUuid: string; from: Date; to: Date; bucket: "hour" | "day"; tz: string },
+) {
+  const unit = query.bucket;
+  const label = unit === "hour" ? 'YYYY-MM-DD"T"HH24' : "YYYY-MM-DD";
+  const local = sql`(device_events.created_at AT TIME ZONE ${query.tz})`;
+  return db
+    .selectFrom("device_events")
+    .select([
+      sql<string>`to_char(date_trunc(${unit}, ${local}), ${label})`.as("at"),
+      "category",
+      (eb) => eb.fn.countAll<string>().as("count"),
+    ])
+    .where("device_uuid", "=", query.deviceUuid)
+    .where("created_at", ">=", query.from)
+    .where("created_at", "<", query.to)
+    .groupBy([sql`1`, "category"])
+    .orderBy(sql`1`)
+    .execute();
 }
 
 export interface ChannelHealth {

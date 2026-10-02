@@ -37,13 +37,14 @@ every member of the app, are searchable, and are deleted with the device.
 
 ## API
 
-| Method | Path                                                               | Who    | Answer                                                                  |
-| ------ | ------------------------------------------------------------------ | ------ | ----------------------------------------------------------------------- |
-| GET    | `/api/apps/:id/devices?search=&channel_id=&active_days=`           | viewer | `{ devices: Device[], total }` - `search` also matches attribute values |
-| GET    | `/api/devices/:id`                                                 | viewer | `DeviceDetail`                                                          |
-| GET    | `/api/devices/:id/events?before=&limit=&category=`                 | viewer | `{ events: DeviceEvent[], next: string \| null }`                       |
-| GET    | `/api/apps/:id/device-events?before=&limit=&category=&channel_id=` | viewer | `{ events: Array<DeviceEvent & { device: DeviceRef \| null }>, next }`  |
-| POST   | `/api/device_attributes`                                           | device | `{ app_id, device_id, attributes }` -> `{ status, attributes }`         |
+| Method | Path                                                                         | Who    | Answer                                                                  |
+| ------ | ---------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------- |
+| GET    | `/api/apps/:id/devices?search=&channel_id=&active_days=`                     | viewer | `{ devices: Device[], total }` - `search` also matches attribute values |
+| GET    | `/api/devices/:id`                                                           | viewer | `DeviceDetail`                                                          |
+| GET    | `/api/devices/:id/events?before=&limit=&category=&from=&to=`                 | viewer | `{ events: DeviceEvent[], next: string \| null }`                       |
+| GET    | `/api/devices/:id/activity?from=&to=&bucket=&tz=`                            | viewer | `DeviceActivity`                                                        |
+| GET    | `/api/apps/:id/device-events?before=&limit=&category=&channel_id=&from=&to=` | viewer | `{ events: Array<DeviceEvent & { device: DeviceRef \| null }>, next }`  |
+| POST   | `/api/device_attributes`                                                     | device | `{ app_id, device_id, attributes }` -> `{ status, attributes }`         |
 
 ```ts
 interface Device {
@@ -53,6 +54,7 @@ interface Device {
 }
 
 interface DeviceDetail extends Device {
+  retention_days: number;
   channel: { id: string; name: string; environment: string } | null;
   assigned_channel: { id: string; name: string } | null;
   summary: {
@@ -63,6 +65,16 @@ interface DeviceDetail extends Device {
     last_delivered: { version: string | null; at: string } | null;
     last_failure: { action: string; error: string | null; at: string } | null;
   };
+}
+
+interface DeviceActivity {
+  from: string; // ISO instant, inclusive
+  to: string; // ISO instant, exclusive
+  bucket: "hour" | "day";
+  tz: string; // IANA zone the buckets were cut in
+  totals: Record<DeviceEvent["category"], number>;
+  /** Only buckets with events; the client zero-fills. `at` is the bucket's local start in `tz`. */
+  series: Array<{ at: string } & Partial<Record<DeviceEvent["category"], number>>>;
 }
 
 interface DeviceEvent {
@@ -91,7 +103,14 @@ interface DeviceRef {
 ```
 
 `before` is an opaque cursor from `next`. `limit` defaults to 100, at most 500. An unknown
-`category` is a 400, not an empty page.
+`category` is a 400, not an empty page. `from` (inclusive) and `to` (exclusive) are ISO instants;
+either may be omitted.
+
+`activity` requires `from` and `to`, at most 366 days apart; `bucket` is `day` (default) or `hour`,
+and `hour` is refused beyond 7 days. `tz` is an IANA zone (default `UTC`) so "today" and day
+boundaries are the viewer's, not the server's. `at` is `YYYY-MM-DD` for days and `YYYY-MM-DDTHH` for
+hours, local to `tz`. `DeviceDetail` also carries `retention_days`, the oldest a range can usefully
+start.
 
 ## Where the plugin's statistics show
 

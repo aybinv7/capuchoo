@@ -1,7 +1,12 @@
 import type { Db } from "../db/database";
 import type { Device } from "../db/schema";
 import { listChannels } from "../repositories/channels";
-import { deviceSummary, listDeviceEvents } from "../repositories/device-events";
+import {
+  deviceActivitySeries,
+  deviceSummary,
+  listDeviceEvents,
+} from "../repositories/device-events";
+import type { ActivityQuery } from "./event-range";
 
 const SUMMARY_DAYS = 30;
 const CATEGORIES = new Set([
@@ -16,6 +21,8 @@ const CATEGORIES = new Set([
 
 export interface EventPageQuery {
   appId: string;
+  from?: Date | undefined;
+  to?: Date | undefined;
   deviceUuid?: string | undefined;
   channelId?: string | undefined;
   category?: string | undefined;
@@ -28,7 +35,7 @@ type EventRow = Awaited<ReturnType<typeof listDeviceEvents>>[number];
 const memory = (value: Device["mem_used_bytes"]) => (value === null ? null : Number(value));
 
 /** A device with its channels resolved and what it did over the last 30 days. */
-export async function deviceDetail(db: Db, device: Device, now: Date) {
+export async function deviceDetail(db: Db, device: Device, now: Date, retentionDays: number) {
   const [channels, summary] = await Promise.all([
     listChannels(db, device.app_id),
     deviceSummary(db, device.id, new Date(now.getTime() - SUMMARY_DAYS * 86_400_000)),
@@ -44,6 +51,32 @@ export async function deviceDetail(db: Db, device: Device, now: Date) {
       : null,
     assigned_channel: assigned ? { id: assigned.id, name: assigned.name } : null,
     summary: { days: SUMMARY_DAYS, ...summary },
+    retention_days: retentionDays,
+  };
+}
+
+/** A device's events counted per category and per local hour or day of the window. */
+export async function deviceActivity(db: Db, device: Device, query: ActivityQuery) {
+  const rows = await deviceActivitySeries(db, { deviceUuid: device.id, ...query });
+  const totals: Record<string, number> = Object.fromEntries(
+    [...CATEGORIES].map((category) => [category, 0]),
+  );
+  const buckets = new Map<string, Record<string, number | string>>();
+  for (const row of rows) {
+    const category = row.category && CATEGORIES.has(row.category) ? row.category : "other";
+    const count = Number(row.count);
+    totals[category] = (totals[category] ?? 0) + count;
+    const bucket = buckets.get(row.at) ?? { at: row.at };
+    bucket[category] = Number(bucket[category] ?? 0) + count;
+    buckets.set(row.at, bucket);
+  }
+  return {
+    from: query.from.toISOString(),
+    to: query.to.toISOString(),
+    bucket: query.bucket,
+    tz: query.tz,
+    totals,
+    series: [...buckets.values()],
   };
 }
 

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { classifyUpdateEvent } from "@capuchoo/core";
 import { createTestContext, seedApp, type TestContext } from "./harness";
 
 let ctx: TestContext;
@@ -152,5 +153,99 @@ describe("device detail and activity", () => {
     expect([403, 404]).toContain(detail.status);
     const feed = await ctx.request(`/api/apps/${appId}/device-events`, { token: stranger.token });
     expect([403, 404]).toContain(feed.status);
+  });
+});
+
+describe("device activity over a range", () => {
+  async function seedEvents(rows: Array<{ action: string; at: string }>) {
+    await check();
+    const device = await onlyDevice();
+    await ctx.db
+      .insertInto("device_events")
+      .values(
+        rows.map((row) => ({
+          app_id: appId,
+          device_uuid: device.id,
+          channel_id: null,
+          kind: "ota" as const,
+          action: row.action,
+          category: classifyUpdateEvent(row.action),
+          status: null,
+          version_from: null,
+          version_to: "1.0.1",
+          error: null,
+          created_at: new Date(row.at),
+        })),
+      )
+      .execute();
+    return device;
+  }
+
+  it("buckets by the viewer's local day and counts per category", async () => {
+    const device = await seedEvents([
+      { action: "set", at: "2025-09-30T23:15:00Z" },
+      { action: "set", at: "2025-10-01T10:00:00Z" },
+      { action: "download_fail", at: "2025-10-01T23:30:00Z" },
+      { action: "set", at: "2025-10-05T10:00:00Z" },
+    ]);
+    const response = await ctx.request(
+      `/api/devices/${device.id}/activity?from=2025-09-30T00:00:00Z&to=2025-10-03T00:00:00Z&tz=Africa/Algiers`,
+      { token: owner.token },
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ bucket: "day", tz: "Africa/Algiers" });
+    expect(body.totals).toMatchObject({ delivered: 2, failed: 1, check: 0 });
+    expect(body.series).toEqual([
+      { at: "2025-10-01", delivered: 2 },
+      { at: "2025-10-02", failed: 1 },
+    ]);
+  });
+
+  it("buckets by hour and filters the timeline to the same window", async () => {
+    const device = await seedEvents([
+      { action: "set", at: "2025-10-01T10:05:00Z" },
+      { action: "set", at: "2025-10-01T10:50:00Z" },
+      { action: "set", at: "2025-10-02T10:00:00Z" },
+    ]);
+    const hourly = await (
+      await ctx.request(
+        `/api/devices/${device.id}/activity?from=2025-10-01T00:00:00Z&to=2025-10-02T00:00:00Z&bucket=hour`,
+        { token: owner.token },
+      )
+    ).json();
+    expect(hourly.series).toEqual([{ at: "2025-10-01T10", delivered: 2 }]);
+
+    const page = await (
+      await ctx.request(
+        `/api/devices/${device.id}/events?category=delivered&from=2025-10-01T00:00:00Z&to=2025-10-02T00:00:00Z`,
+        { token: owner.token },
+      )
+    ).json();
+    expect(page.events).toHaveLength(2);
+  });
+
+  it("refuses an unbounded, oversized or malformed window", async () => {
+    await check();
+    const device = await onlyDevice();
+    const base = `/api/devices/${device.id}/activity`;
+    for (const query of [
+      "",
+      "?from=2026-10-01T00:00:00Z",
+      "?from=2024-01-01T00:00:00Z&to=2026-01-01T00:00:00Z",
+      "?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z&bucket=hour",
+      "?from=2026-10-02T00:00:00Z&to=2026-10-01T00:00:00Z",
+      "?from=yesterday&to=2026-10-01T00:00:00Z",
+      "?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z&tz=Mars/Olympus",
+      "?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z&bucket=week",
+    ]) {
+      expect((await ctx.request(`${base}${query}`, { token: owner.token })).status, query).toBe(
+        400,
+      );
+    }
+    const detail = await (
+      await ctx.request(`/api/devices/${device.id}`, { token: owner.token })
+    ).json();
+    expect(detail.retention_days).toBe(90);
   });
 });
