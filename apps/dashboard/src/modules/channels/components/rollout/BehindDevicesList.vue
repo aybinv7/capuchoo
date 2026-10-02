@@ -89,7 +89,7 @@ const versionLabel = (version: string | null) =>
         None of them has been seen recently enough to list.
       </p>
       <RouterLink
-        :to="{ name: RouteName.devices, query: { channel: props.channelId } }"
+        :to="{ name: RouteName.devices, query: { channel: props.channelId, behind: '1' } }"
         class="text-primary mt-2 inline-flex items-center gap-1 self-start text-xs underline-offset-4 hover:underline"
       >
         View all {{ formatCount(props.behind, true) }} behind

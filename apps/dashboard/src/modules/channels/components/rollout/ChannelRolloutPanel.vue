@@ -115,7 +115,7 @@ const behind = computed(() =>
           Deliver
         </GateButton>
       </div>
-      <VersionMixBar v-if="segments.length" :segments="segments" />
+      <VersionMixBar v-if="segments.length" :segments="segments" :channel-id="props.channelId" />
     </div>
 
     <div v-else class="grid gap-x-8 gap-y-6 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
@@ -125,7 +125,7 @@ const behind = computed(() =>
           :devices="rollout.devices"
           :version="current.version"
         />
-        <VersionMixBar v-if="segments.length" :segments="segments" />
+        <VersionMixBar v-if="segments.length" :segments="segments" :channel-id="props.channelId" />
         <AdoptionCurve :points="curve" :current="current" :devices="rollout.devices" />
       </div>
       <BehindDevicesList

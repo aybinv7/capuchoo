@@ -40,8 +40,8 @@ export function useDeliveryDialogs() {
 
   return {
     state,
-    deliver: (channel: Channel, artefactId?: string | null) =>
-      open("deliver", channel, { artefactId }),
+    deliver: (channel: Channel, artefactId?: string | null, kind?: ArtefactKind) =>
+      open("deliver", channel, { artefactId, kind }),
     rollback: (channel: Channel, kind: ArtefactKind = "ota") => open("rollback", channel, { kind }),
     togglePause: (channel: Channel) => open("pause", channel),
     setOpen,

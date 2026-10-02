@@ -92,8 +92,8 @@ const deliverGate = computed(() =>
 const settingsOpen = ref(false);
 const deleteOpen = ref(false);
 
-function deliver() {
-  if (channel.value) dialogs.deliver(channel.value);
+function deliver(kind?: "ota" | "native") {
+  if (channel.value) dialogs.deliver(channel.value, null, kind);
 }
 </script>
 

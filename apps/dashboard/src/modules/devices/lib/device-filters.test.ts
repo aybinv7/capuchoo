@@ -8,7 +8,20 @@ describe("device filters", () => {
         { id: "channel", value: ["c-1"] },
         { id: "last_seen", value: ["7"] },
       ]),
-    ).toEqual({ search: "pixel", channelId: "c-1", activeDays: "7" });
+    ).toEqual({
+      search: "pixel",
+      channelId: "c-1",
+      activeDays: "7",
+      version: "",
+      behind: false,
+    });
+  });
+
+  it("carries the URL-only scopes: a version and devices behind their channel", () => {
+    expect(toDeviceFilters("", [], { version: " 1.9.0 ", behind: true })).toMatchObject({
+      version: "1.9.0",
+      behind: true,
+    });
   });
 
   it("drops values the endpoint does not accept", () => {
@@ -21,6 +34,8 @@ describe("device filters", () => {
       search: "",
       channelId: "",
       activeDays: "",
+      version: "",
+      behind: false,
     });
   });
 

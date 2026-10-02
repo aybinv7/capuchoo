@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import { RouterLink } from "vue-router";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCount, formatPercent } from "@/shared/lib/format";
+import { RouteName } from "@/shared/router/route-names";
 import { segmentFill, type MixSegment } from "../../lib/version-mix";
 
-const props = defineProps<{ segments: readonly MixSegment[] }>();
+const props = defineProps<{ segments: readonly MixSegment[]; channelId: string }>();
+
+const devicesOn = (segment: MixSegment) => ({
+  name: RouteName.devices,
+  query: { channel: props.channelId, version: segment.version },
+});
 
 const describe = (segment: MixSegment) =>
   `${segment.label} · ${formatCount(segment.devices, true)} ${segment.devices === 1 ? "device" : "devices"} (${formatPercent(segment.share)})`;
@@ -30,27 +37,30 @@ const describe = (segment: MixSegment) =>
       </Tooltip>
     </div>
     <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-      <li
-        v-for="segment in props.segments"
-        :key="segment.version"
-        class="flex items-center gap-1.5"
-      >
-        <span
-          class="size-2.5 shrink-0 rounded-sm"
-          :class="segment.hatched && 'ring-border ring-1 ring-inset'"
-          :style="{ background: segmentFill(segment) }"
-          aria-hidden="true"
-        />
-        <span
-          :class="[
-            segment.tone === 'current' ? 'text-foreground font-medium' : 'text-muted-foreground',
-            segment.tone === 'builtin' || segment.tone === 'other' ? '' : 'font-mono',
-          ]"
-          >{{ segment.label }}</span
+      <li v-for="segment in props.segments" :key="segment.version">
+        <component
+          :is="segment.tone === 'other' ? 'span' : RouterLink"
+          v-bind="segment.tone === 'other' ? {} : { to: devicesOn(segment) }"
+          class="flex items-center gap-1.5 rounded-sm underline-offset-4"
+          :class="segment.tone !== 'other' && 'hover:underline'"
         >
-        <span class="text-muted-foreground font-mono tabular">{{
-          formatCount(segment.devices)
-        }}</span>
+          <span
+            class="size-2.5 shrink-0 rounded-sm"
+            :class="segment.hatched && 'ring-border ring-1 ring-inset'"
+            :style="{ background: segmentFill(segment) }"
+            aria-hidden="true"
+          />
+          <span
+            :class="[
+              segment.tone === 'current' ? 'text-foreground font-medium' : 'text-muted-foreground',
+              segment.tone === 'builtin' || segment.tone === 'other' ? '' : 'font-mono',
+            ]"
+            >{{ segment.label }}</span
+          >
+          <span class="text-muted-foreground font-mono tabular">{{
+            formatCount(segment.devices)
+          }}</span>
+        </component>
       </li>
     </ul>
   </figure>

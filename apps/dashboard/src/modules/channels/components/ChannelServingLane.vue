@@ -15,7 +15,7 @@ const props = defineProps<{
   nativePending: boolean;
   deliverGate: Gate;
 }>();
-const emit = defineEmits<{ deliver: [] }>();
+const emit = defineEmits<{ deliver: [kind: "ota" | "native"] }>();
 
 const nativeTo = computed(() => ({
   name: RouteName.releases,
@@ -38,7 +38,7 @@ const bundleTo = computed(() => ({
           :to="nativeTo"
           :pending="props.nativePending"
           :deliver-gate="props.deliverGate"
-          @deliver="emit('deliver')"
+          @deliver="emit('deliver', 'native')"
         >
           <template #icon><Smartphone /></template>
         </ServingNode>
@@ -57,7 +57,7 @@ const bundleTo = computed(() => ({
           :to="bundleTo"
           :pending="props.bundlePending"
           :deliver-gate="props.deliverGate"
-          @deliver="emit('deliver')"
+          @deliver="emit('deliver', 'ota')"
         >
           <template #icon><Package /></template>
         </ServingNode>

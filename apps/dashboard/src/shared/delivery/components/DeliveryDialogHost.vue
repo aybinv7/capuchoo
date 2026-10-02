@@ -22,6 +22,7 @@ const channel = computed(() => {
     :open="state.active === 'deliver'"
     :channel="channel"
     :artefact-id="state.artefactId"
+    :kind="state.kind"
     @update:open="props.controller.setOpen('deliver', $event)"
   />
   <RollbackDialog

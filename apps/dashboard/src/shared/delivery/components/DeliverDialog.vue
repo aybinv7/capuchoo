@@ -28,7 +28,11 @@ import DeliverySummary from "./DeliverySummary.vue";
 
 const open = defineModel<boolean>("open", { required: true });
 
-const props = defineProps<{ channel: Channel | null; artefactId?: string | null }>();
+const props = defineProps<{
+  channel: Channel | null;
+  artefactId?: string | null;
+  kind?: ArtefactKind;
+}>();
 
 const context = useChannelDelivery(() => props.channel);
 const { point } = useDeliveryActions(context.appId);
@@ -44,7 +48,7 @@ watch(open, (value) => {
   reason.value = "";
   typed.value = "";
   const preset = props.artefactId ? findArtefact(context.catalog.value, props.artefactId) : null;
-  kind.value = preset?.kind ?? "ota";
+  kind.value = preset?.kind ?? props.kind ?? "ota";
   selectedId.value = preset?.id ?? null;
 });
 

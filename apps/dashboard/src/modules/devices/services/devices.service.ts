@@ -19,6 +19,8 @@ export const fetchDevices = async (
       search: filters.search.trim(),
       channel_id: filters.channelId,
       active_days: filters.activeDays,
+      version: filters.version,
+      behind: filters.behind ? "true" : undefined,
     },
     signal,
   );

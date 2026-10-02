@@ -8,13 +8,19 @@ function first(filters: ColumnFiltersState, id: string): string {
   return Array.isArray(value) && typeof value[0] === "string" ? value[0] : "";
 }
 
-/** The table's facet state as the query parameters `GET /apps/:id/devices` accepts. */
-export function toDeviceFilters(search: string, filters: ColumnFiltersState): DeviceFilters {
+/** The table's facet state, plus the URL-only scopes, as `GET /apps/:id/devices` takes them. */
+export function toDeviceFilters(
+  search: string,
+  filters: ColumnFiltersState,
+  scope: { version?: string; behind?: boolean } = {},
+): DeviceFilters {
   const days = first(filters, "last_seen") as DeviceFilters["activeDays"];
   return {
     search: search.trim(),
     channelId: first(filters, "channel"),
     activeDays: ACTIVE_DAYS.has(days) ? days : "",
+    version: scope.version?.trim().slice(0, 64) ?? "",
+    behind: scope.behind ?? false,
   };
 }
 

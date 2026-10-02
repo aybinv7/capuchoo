@@ -16,6 +16,7 @@ import { formatCount } from "@/shared/lib/format";
 import { useCatalog } from "@/shared/queries/useCatalog";
 import { RouteName } from "@/shared/router/route-names";
 import AssignChannelDialog from "../components/AssignChannelDialog.vue";
+import DeviceScopeChips from "../components/DeviceScopeChips.vue";
 import DevicesTable from "../components/DevicesTable.vue";
 import RemoveDeviceDialog from "../components/RemoveDeviceDialog.vue";
 import { useChannelFilterParam } from "../composables/useChannelFilterParam";
@@ -32,7 +33,14 @@ const { channels } = useCatalog(appId);
 const search = useQueryParam("q", "");
 const columnFilters = ref<ColumnFiltersState>([]);
 useChannelFilterParam(columnFilters);
-const filters = computed(() => toDeviceFilters(search.value, columnFilters.value));
+const versionScope = useQueryParam("version", "");
+const behindScope = useQueryParam<"" | "1">("behind", "", (value): value is "1" => value === "1");
+const filters = computed(() =>
+  toDeviceFilters(search.value, columnFilters.value, {
+    version: versionScope.value,
+    behind: behindScope.value === "1",
+  }),
+);
 const view = ref<"table" | "map">("table");
 const {
   devices,
@@ -55,7 +63,9 @@ const neverSeen = computed(
     total.value === 0 &&
     !filters.value.search &&
     !filters.value.channelId &&
-    !filters.value.activeDays,
+    !filters.value.activeDays &&
+    !filters.value.version &&
+    !filters.value.behind,
 );
 
 const selected = ref<Device | null>(null);
@@ -123,6 +133,12 @@ function setView(value: unknown) {
       </template>
     </PageHeader>
 
+    <DeviceScopeChips
+      :version="filters.version"
+      :behind="filters.behind"
+      @clear-version="versionScope = ''"
+      @clear-behind="behindScope = ''"
+    />
     <ErrorNotice v-if="error" :error="error" :retry="refetch" />
     <EmptyState
       v-else-if="neverSeen"

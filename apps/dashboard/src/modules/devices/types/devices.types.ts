@@ -45,6 +45,10 @@ export interface DeviceFilters {
   search: string;
   channelId: string;
   activeDays: "" | "1" | "7" | "30";
+  /** Exact web version, `builtin` for none applied; empty for any. */
+  version: string;
+  /** Only devices not running their channel's current bundle. */
+  behind: boolean;
 }
 
 export type LocatedDevice = Device & { latitude: number; longitude: number };
