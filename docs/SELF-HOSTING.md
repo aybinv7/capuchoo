@@ -87,11 +87,23 @@ variables passed through `-e`.
 
 ## Demo data
 
-`pnpm --filter @capuchoo/server run seed:demo` creates a fictional organization, Northwind
-Distribution, with an app on three flavours, client channels, signed releases, a rollback in the
-history, 140 tablets with 28 days of activity, builds and audit entries. It needs `DATABASE_URL`,
-`DEMO_EMAIL` and `DEMO_PASSWORD`, replaces the organization on every run, and refuses to run with
-`NODE_ENV=production` unless `ALLOW_DEMO_SEED=true`. It is what the landing page screenshots show.
+A fictional organization, Northwind Distribution, for presentations and screenshots:
+
+- **Northwind Field Sales**, shipped through GitHub Actions: dev, staging and prod with three client
+  channels at their own pace (one paused for a stock count), signed releases, a native release that
+  gates newer bundles, a rollback after a crash spike, and about twenty CI runs - one still running,
+  a delivery waiting for prod approval, a red pull request, a flaky staging build fixed on retry, a
+  native build that failed on its signing certificate - with their jobs, steps, logs and the deploys
+  inside them.
+- **Northwind Delivery**, shipped through GitLab CI: stage-ordered pipelines with manual native and
+  delivery jobs, one pipeline still waiting on a person.
+- About 200 devices across both apps with 28 days of checks, deliveries and failures.
+
+On a server with `DEMO_SEED=enabled`, an instance admin creates or resets it from the dashboard
+(Settings > Demo), or with `POST /api/admin/demo`. Locally, after a build,
+`DEMO_EMAIL=you@example.com pnpm --filter @capuchoo/server run seed:demo` does the same for an
+existing account. Either way the organization is replaced in one transaction and owned by that
+account. The in-progress run is closed by housekeeping after a day, so reset it before a demo.
 
 ## Operations
 

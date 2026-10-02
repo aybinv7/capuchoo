@@ -36,7 +36,10 @@ describe("parseGithubLog", () => {
   it("starts each step at GitHub's marker, not at the second-rounded step time", () => {
     const parsed = parseGithubLog(log, steps);
     const byNumber = Object.fromEntries(
-      parsed.steps.map((entry) => [entry.number, entry.lines.map((line) => line.text)]),
+      parsed.steps.map((entry) => [
+        entry.number,
+        entry.lines.filter((line) => line.kind !== "endgroup").map((line) => line.text),
+      ]),
     );
     expect(byNumber[1]).toEqual([
       "Current runner version: '2.337.0'",
@@ -61,6 +64,7 @@ describe("parseGithubLog", () => {
     expect(kinds).toContain("group");
     expect(kinds).toContain("command");
     expect(kinds).toContain("error");
+    expect(kinds).toContain("endgroup");
   });
 
   it("caps the number of lines and says so", () => {

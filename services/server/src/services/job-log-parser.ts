@@ -1,6 +1,14 @@
 import type { PipelineStep } from "@capuchoo/core";
 
-export type LogLineKind = "plain" | "command" | "group" | "error" | "warning" | "notice" | "debug";
+export type LogLineKind =
+  | "plain"
+  | "command"
+  | "group"
+  | "endgroup"
+  | "error"
+  | "warning"
+  | "notice"
+  | "debug";
 
 export interface LogLine {
   time: string | null;
@@ -25,13 +33,9 @@ const GITLAB_SECTION_END = /section_end:\d+:[^\r\n]+/;
 const ERASE_LINE = /\u001b\[0K/g;
 const OVERDUE_MS = 1_000;
 
-function classify(text: string): { text: string; kind: LogLineKind } | null {
+function classify(text: string): { text: string; kind: LogLineKind } {
   const marker = MARKER.exec(text);
-  if (marker) {
-    const kind = marker[1] as LogLineKind | "endgroup";
-    if (kind === "endgroup") return null;
-    return { text: marker[2] ?? "", kind };
-  }
+  if (marker) return { text: marker[2] ?? "", kind: marker[1] as LogLineKind };
   if (text.startsWith("[command]")) return { text: text.slice(9), kind: "command" };
   return { text, kind: "plain" };
 }
@@ -93,7 +97,6 @@ export function parseGithubLog(
       }
     }
     const line = classify(body);
-    if (!line) continue;
     const number = spans[index]?.step.number ?? null;
     const bucket = byNumber.get(number) ?? [];
     bucket.push({ time, text: clip(line.text), kind: line.kind });

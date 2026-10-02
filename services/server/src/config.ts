@@ -55,6 +55,7 @@ const schema = z
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GITLAB_ALLOWED_HOSTS: z.string().default(""),
+    DEMO_SEED: z.enum(["disabled", "enabled"]).default("disabled"),
     CI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   })
   .superRefine((value, context) => {
