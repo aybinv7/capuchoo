@@ -91,6 +91,10 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/tarballs"
           for dir in packages/*/; do
+            if [ ! -f "$dir/package.json" ]; then
+              echo "skipping $dir (not an npm package)"
+              continue
+            fi
             if [ "$(node -p "!!require('./$dir/package.json').private")" = "true" ]; then
               echo "skipping $dir (private)"
               continue
