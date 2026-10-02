@@ -52,7 +52,7 @@ const items = computed(() => {
       <p v-if="items.length === 0" class="text-muted-foreground py-4 text-center text-xs">
         Nothing uploaded yet.
       </p>
-      <ul v-else class="max-h-80 space-y-1.5 overflow-y-auto pr-1">
+      <ul v-else class="nowheel max-h-80 space-y-1.5 overflow-y-auto overscroll-contain pr-1">
         <li
           v-for="{ artefact, servedBy } in items"
           :key="artefact.id"

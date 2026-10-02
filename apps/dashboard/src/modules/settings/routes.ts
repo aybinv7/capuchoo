@@ -28,6 +28,12 @@ export const settingsRoutes: ModuleRoutes = {
       component: () => import("./pages/GithubAppPage.vue"),
       meta: { title: "GitHub App", section: "Workspace" },
     },
+    {
+      path: "settings/demo",
+      name: RouteName.demo,
+      component: () => import("./pages/DemoPage.vue"),
+      meta: { title: "Demo", section: "Workspace", instanceAdmin: true },
+    },
   ],
   app: [
     {

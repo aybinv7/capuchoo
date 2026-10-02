@@ -1,18 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { jobGroups } from "../../lib/job-selection";
 import type { PipelineModel } from "../../lib/pipeline-graph";
 import JobCard from "./JobCard.vue";
 
 const props = defineProps<{ model: PipelineModel; selectedId: string | null }>();
 const emit = defineEmits<{ open: [id: string] }>();
 
-const columns = computed(() =>
-  Array.from({ length: props.model.columns }, (_, column) => ({
-    column,
-    label: props.model.columnStages[column] ?? null,
-    nodes: props.model.nodes.filter((node) => node.column === column),
-  })).filter((entry) => entry.nodes.length > 0),
-);
+const columns = computed(() => jobGroups(props.model));
 </script>
 
 <template>

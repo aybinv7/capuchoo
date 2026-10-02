@@ -62,6 +62,31 @@ describe("buildCanvasGraph", () => {
     expect(edges.some((edge) => edge.includes("gone"))).toBe(false);
   });
 
+  it("links a pipeline run to every channel its deploys published to, once each", () => {
+    const run = (overrides: Parameters<typeof build>[0]) =>
+      buildCanvasGraph({
+        catalog: catalog({ channels: [dev, staging, prod] }),
+        stats,
+        builds: [build({ id: "run", kind: "pipeline", channel_id: null, ...overrides })],
+      }).edges.filter((edge) => edge.source === "build:run");
+
+    const live = run({ status: "running", target_channel_ids: ["staging", "prod", "staging"] });
+    expect(live.map((edge) => edge.id)).toEqual(["build:run:staging", "build:run:prod"]);
+    expect(live.every((edge) => edge.animated && edge.class === "edge-build-live")).toBe(true);
+
+    const failed = run({
+      status: "failed",
+      channel_id: "prod",
+      target_channel_ids: ["prod", "gone"],
+    });
+    expect(failed.map((edge) => [edge.id, edge.class])).toEqual([
+      ["build:run:prod", "edge-build-failed"],
+    ]);
+
+    expect(run({ status: "succeeded", target_channel_ids: [] })).toEqual([]);
+    expect(run({ status: "succeeded" })).toEqual([]);
+  });
+
   it("is deterministic and draws only lanes that have channels", () => {
     const again = buildCanvasGraph({
       catalog: catalog({ channels: [dev, staging, prod, acme], bundles: [bundle({ id: "b-1" })] }),

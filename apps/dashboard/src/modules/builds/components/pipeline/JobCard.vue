@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { cn } from "@/lib/utils";
 import ElapsedTime from "@/shared/components/ElapsedTime.vue";
-import { JOB_STATUS_LABEL, isJobFinished, jobCaption } from "../../lib/job-status";
+import { JOB_STATUS_LABEL, jobCaption, jobEndedAt } from "../../lib/job-status";
 import type { PipelineNodeModel } from "../../lib/pipeline-graph";
 import DeployStepTrack from "./DeployStepTrack.vue";
 import JobStatusIcon from "./JobStatusIcon.vue";
@@ -24,14 +24,10 @@ const SURFACE: Record<PipelineNodeModel["status"], string> = {
 
 const job = computed(() => props.node.job);
 const caption = computed(() => jobCaption(props.node));
-const endedAt = computed(() => {
-  const value = job.value;
-  if (!value) return null;
-  return value.finished_at ?? (isJobFinished(value.status) ? value.updated_at : null);
-});
+const endedAt = computed(() => jobEndedAt(job.value));
 const label = computed(
   () =>
-    `${props.node.name}, ${JOB_STATUS_LABEL[props.node.status]}. ${caption.value}. Open details`,
+    `${props.node.name}, ${JOB_STATUS_LABEL[props.node.status]}. ${caption.value}. Show details`,
 );
 </script>
 
@@ -39,6 +35,7 @@ const label = computed(
   <button
     type="button"
     :aria-label="label"
+    :aria-current="props.selected ? 'true' : undefined"
     :class="
       cn(
         'bg-card hover:border-foreground/25 focus-visible:ring-ring/50 block w-full overflow-hidden rounded-lg border text-left shadow-xs transition-[border-color,box-shadow] outline-none focus-visible:ring-3',

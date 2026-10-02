@@ -3,6 +3,7 @@ import {
   ChartColumn,
   Hammer,
   KeyRound,
+  Presentation,
   LayoutGrid,
   Package,
   Plug,
@@ -28,6 +29,8 @@ export interface NavItem {
   label: string;
   icon: Component;
   minRole?: AppRole;
+  /** Shown to instance administrators only. */
+  instanceAdmin?: boolean;
   /** Other route names that keep this item highlighted. */
   also?: RouteNameValue[];
   /** Sub-pages, shown as a collapsible list under the item. */
@@ -134,6 +137,13 @@ export const WORKSPACE_NAVIGATION: NavGroup[] = [
         icon: Plug,
         keywords: ["github", "ci", "actions", "integration", "installation"],
       },
+      {
+        name: RouteName.demo,
+        label: "Demo",
+        icon: Presentation,
+        instanceAdmin: true,
+        keywords: ["demo", "sample", "seed", "northwind", "presentation"],
+      },
     ],
   },
   {
@@ -145,6 +155,11 @@ export const WORKSPACE_NAVIGATION: NavGroup[] = [
   },
 ];
 
-export function navItemVisible(item: NavItem, role: AppRole | null | undefined): boolean {
+export function navItemVisible(
+  item: NavItem,
+  role: AppRole | null | undefined,
+  instanceAdmin = false,
+): boolean {
+  if (item.instanceAdmin && !instanceAdmin) return false;
   return !item.minRole || hasAppRole(role, item.minRole);
 }

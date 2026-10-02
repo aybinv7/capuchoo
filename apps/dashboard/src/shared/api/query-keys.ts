@@ -24,11 +24,15 @@ export const queryKeys = {
   channelServed: (channelId: string) => ["channels", channelId, "served"] as const,
   build: (buildId: string) => ["builds", buildId] as const,
   buildDetails: () => ["builds"] as const,
+  /** Outside `["builds"]` so invalidating a run or matching its children never refetches a log. */
+  jobLogs: (buildId: string, jobId: string, attempt: number) =>
+    ["job-logs", buildId, jobId, attempt] as const,
   apiKeys: () => ["api-keys"] as const,
   organization: (organizationId: string, section: string) =>
     ["organizations", organizationId, section] as const,
   githubRepositories: (organizationId: string, installationId: string, search: string) =>
     ["organizations", organizationId, "github", installationId, "repositories", search] as const,
   githubApp: () => ["github", "app"] as const,
+  demo: () => ["admin", "demo"] as const,
   invitation: (token: string) => ["invitation", token] as const,
 };

@@ -19,6 +19,10 @@ export function installGuards(router: Router, client: QueryClient): void {
     if (to.meta.public) return true;
     try {
       const me = await ensureSession(client);
+      if (to.meta.instanceAdmin && me.user.role !== "instance_admin") {
+        toast.warning("That page is for instance administrators.");
+        return { name: RouteName.apps };
+      }
       const appId = typeof to.params.appId === "string" ? to.params.appId : null;
       if (!appId) return true;
       const app = me.apps.find((entry) => entry.id === appId);

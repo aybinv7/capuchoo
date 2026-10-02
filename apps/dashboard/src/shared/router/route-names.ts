@@ -10,6 +10,7 @@ export const RouteName = {
   apiKeys: "settings-api-keys",
   organization: "settings-organization",
   githubApp: "settings-github",
+  demo: "settings-demo",
   canvas: "app-canvas",
   channels: "app-channels",
   channel: "app-channel",

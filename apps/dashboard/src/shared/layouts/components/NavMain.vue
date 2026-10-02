@@ -21,6 +21,7 @@ const props = defineProps<{
   groups: NavGroup[];
   role?: AppRole | null;
   params?: Record<string, string>;
+  instanceAdmin?: boolean;
 }>();
 
 const route = useRoute();
@@ -29,7 +30,7 @@ const visible = computed(() =>
   props.groups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => navItemVisible(item, props.role)),
+      items: group.items.filter((item) => navItemVisible(item, props.role, props.instanceAdmin)),
     }))
     .filter((group) => group.items.length > 0),
 );

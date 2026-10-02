@@ -162,22 +162,35 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
       draggable: false,
       connectable: false,
     });
-    if (build.channel_id && channelIds.has(build.channel_id)) {
-      const running = build.status === "running" || build.status === "queued";
+    const running = build.status === "running" || build.status === "queued";
+    const edgeClass = running
+      ? "edge-build-live"
+      : build.status === "failed"
+        ? "edge-build-failed"
+        : "edge-build";
+    for (const channelId of buildTargets(build)) {
+      if (!channelIds.has(channelId)) continue;
       edges.push({
-        id: `build:${build.id}:${build.channel_id}`,
+        id: `build:${build.id}:${channelId}`,
         source: `build:${build.id}`,
-        target: `channel:${build.channel_id}`,
+        target: `channel:${channelId}`,
         type: "default",
         animated: running,
-        class: running
-          ? "edge-build-live"
-          : build.status === "failed"
-            ? "edge-build-failed"
-            : "edge-build",
+        class: edgeClass,
       });
     }
   });
 
   return { nodes, edges };
+}
+
+/**
+ * Every channel a build reaches: its own target, then the channels its pipeline's deploys
+ * published to, each once and in that order.
+ */
+export function buildTargets(build: Pick<Build, "channel_id" | "target_channel_ids">): string[] {
+  const targets = new Set<string>();
+  if (build.channel_id) targets.add(build.channel_id);
+  for (const channelId of build.target_channel_ids ?? []) targets.add(channelId);
+  return [...targets];
 }

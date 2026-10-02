@@ -1,5 +1,6 @@
 import type { JobStatus, PipelineStep } from "@capuchoo/core";
 import type { Tone } from "@/shared/lib/tone";
+import type { BuildJob } from "@/shared/types/build";
 import type { PipelineNodeModel } from "./pipeline-graph";
 
 export const JOB_STATUS_LABEL: Record<JobStatus, string> = {
@@ -70,4 +71,12 @@ export function durationSeconds(from: string | null, to: string | null): number 
   if (!from || !to) return null;
   const value = (Date.parse(to) - Date.parse(from)) / 1000;
   return Number.isFinite(value) ? Math.max(0, Math.round(value)) : null;
+}
+
+/** When a job stopped: its finish time, else its last update once it is over, else null. */
+export function jobEndedAt(
+  job: Pick<BuildJob, "status" | "finished_at" | "updated_at"> | null,
+): string | null {
+  if (!job) return null;
+  return job.finished_at ?? (isJobFinished(job.status) ? job.updated_at : null);
 }

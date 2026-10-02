@@ -277,6 +277,26 @@ describe("reduceStreamEvent: child builds", () => {
     expect(parent.children[0]?.status).toBe("succeeded");
   });
 
+  it("adds a deploy's channel to its run's targets once", () => {
+    const run = build({ id: "run-1", kind: "pipeline", target_channel_ids: ["ch-dev"] });
+    const cache = new Map<string, unknown>([[key(queryKeys.builds(APP)), [run]]]);
+    const deploy = { ...child, channel_id: "ch-prod" };
+    applyAll(cache, reduceStreamEvent(APP, { type: "build", data: deploy }));
+    applyAll(cache, reduceStreamEvent(APP, { type: "build", data: deploy }));
+    const [entry] = cache.get(key(queryKeys.builds(APP))) as Build[];
+    expect(entry?.target_channel_ids).toEqual(["ch-dev", "ch-prod"]);
+  });
+
+  it("keeps a run's targets when a stream row leaves them out", () => {
+    const run = build({ id: "run-1", kind: "pipeline", target_channel_ids: ["ch-prod"] });
+    const cache = new Map<string, unknown>([[key(queryKeys.builds(APP)), [run]]]);
+    const { target_channel_ids: _targets, ...row } = { ...run, status: "succeeded" as const };
+    applyAll(cache, reduceStreamEvent(APP, { type: "build", data: row }));
+    const [entry] = cache.get(key(queryKeys.builds(APP))) as Build[];
+    expect(entry?.status).toBe("succeeded");
+    expect(entry?.target_channel_ids).toEqual(["ch-prod"]);
+  });
+
   it("keeps a run's jobs, children and plan when its row changes", () => {
     const plan = {
       provider: "github" as const,

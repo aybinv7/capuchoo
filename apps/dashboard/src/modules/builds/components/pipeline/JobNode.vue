@@ -7,7 +7,6 @@ import JobCard from "./JobCard.vue";
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{ node: PipelineNodeModel; selected: boolean }>();
-const emit = defineEmits<{ open: [id: string] }>();
 </script>
 
 <template>
@@ -18,7 +17,7 @@ const emit = defineEmits<{ open: [id: string] }>();
       :connectable="false"
       class="!size-1.5 !min-h-0 !min-w-0 !border-0 !bg-transparent"
     />
-    <JobCard :node="props.node" :selected="props.selected" @open="emit('open', $event)" />
+    <JobCard :node="props.node" :selected="props.selected" />
     <Handle
       type="source"
       :position="Position.Right"

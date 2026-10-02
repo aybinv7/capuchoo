@@ -43,6 +43,11 @@ export interface Build {
   trigger: string | null;
   /** Child deploys under a run, when the list endpoint counts them. */
   child_count?: number | null;
+  /**
+   * Channels the run's child deploys published to. The list endpoint sends it (empty for a plain
+   * deploy); a stream row may leave it out, in which case the cached value is kept.
+   */
+  target_channel_ids?: string[];
 }
 
 export interface BuildEvent {

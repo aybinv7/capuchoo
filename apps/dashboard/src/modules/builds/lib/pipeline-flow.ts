@@ -11,11 +11,13 @@ interface FlowNodeBase {
   draggable: false;
   selectable: false;
   connectable: false;
+  /** The card inside a job node is the one keyboard stop; the wrapper is not a second one. */
+  focusable: false;
 }
 
 export type FlowNode =
-  | (FlowNodeBase & { type: "job"; data: PipelineNodeModel; focusable: true })
-  | (FlowNodeBase & { type: "stage"; data: StageLabelData; focusable: false });
+  | (FlowNodeBase & { type: "job"; data: PipelineNodeModel })
+  | (FlowNodeBase & { type: "stage"; data: StageLabelData });
 
 export interface FlowEdge {
   id: string;
@@ -26,7 +28,12 @@ export interface FlowEdge {
   class: string;
 }
 
-const FIXED = { draggable: false, selectable: false, connectable: false } as const;
+const FIXED = {
+  draggable: false,
+  selectable: false,
+  connectable: false,
+  focusable: false,
+} as const;
 
 /** Vue Flow nodes for the run graph: one per job, plus a label per stage column. */
 export function toFlowNodes(
@@ -37,7 +44,6 @@ export function toFlowNodes(
     ...FIXED,
     id: node.id,
     type: "job",
-    focusable: true,
     position: layout.positions.get(node.id) ?? { x: 0, y: 0 },
     data: node,
   }));
@@ -45,7 +51,6 @@ export function toFlowNodes(
     ...FIXED,
     id: `stage:${stage.column}`,
     type: "stage",
-    focusable: false,
     position: { x: stage.x, y: stage.y },
     data: { label: stage.label },
   }));

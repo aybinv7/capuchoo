@@ -66,17 +66,35 @@ const BUILD_STATUSES = new Set<Build["status"]>([
 ]);
 const count = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
+const ids = (value: unknown): string[] | undefined =>
+  Array.isArray(value)
+    ? [
+        ...new Set(
+          value.filter((entry): entry is string => typeof entry === "string" && entry !== ""),
+        ),
+      ]
+    : undefined;
 
 /**
  * A build row from the stream or the REST API. Detail-only fields (`events`, `jobs`, `plan`,
  * `children`) are stripped so a row never overwrites what a detail query holds; fields a server
- * without CI support omits become null.
+ * without CI support omits become null. `target_channel_ids` is kept only when the row carries a
+ * list, so a stream row without it does not erase what the list query read.
  */
 export function normalizeBuild(value: unknown): Build | null {
   if (!isRow(value) || !text(value.id) || !text(value.app_id)) return null;
-  const { events: _events, jobs: _jobs, plan: _plan, children: _children, ...row } = value;
+  const {
+    events: _events,
+    jobs: _jobs,
+    plan: _plan,
+    children: _children,
+    target_channel_ids: rawTargets,
+    ...row
+  } = value;
+  const targets = ids(rawTargets);
   return {
     ...(row as unknown as Build),
+    ...(targets ? { target_channel_ids: targets } : {}),
     status: BUILD_STATUSES.has(value.status as Build["status"])
       ? (value.status as Build["status"])
       : "queued",

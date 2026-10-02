@@ -48,7 +48,7 @@ function pagesOf(
 /** Every page the viewer can open, and every app they can switch to. */
 export function useNavigationItems() {
   const { app, role } = useCurrentApp();
-  const { apps, organizations } = useSession();
+  const { apps, organizations, isInstanceAdmin } = useSession();
 
   const pages = computed<SearchItem[]>(() => {
     const current = app.value;
@@ -57,7 +57,10 @@ export function useNavigationItems() {
           navItemVisible(item, role.value),
         )
       : [];
-    return [...inApp, ...pagesOf(WORKSPACE_NAVIGATION, undefined, null, () => true)];
+    const workspace = pagesOf(WORKSPACE_NAVIGATION, undefined, null, (item) =>
+      navItemVisible(item, null, isInstanceAdmin.value),
+    );
+    return [...inApp, ...workspace];
   });
 
   const appItems = computed<SearchItem[]>(() => {

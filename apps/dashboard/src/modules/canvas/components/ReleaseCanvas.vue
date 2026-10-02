@@ -41,6 +41,8 @@ const minimapColor = (node: { type?: string }) =>
     :nodes-connectable="false"
     :elements-selectable="false"
     :zoom-on-double-click="false"
+    :zoom-on-scroll="true"
+    :prevent-scrolling="true"
     :min-zoom="0.3"
     :max-zoom="1.6"
     :fit-view-on-init="true"

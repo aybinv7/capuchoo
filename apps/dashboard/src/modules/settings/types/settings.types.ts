@@ -107,3 +107,24 @@ export interface ConfigInput {
   environment: "all" | Environment;
   channel: string | null;
 }
+
+/** `GET /api/admin/demo`: whether the server allows seeding, and the demo organization if any. */
+export interface DemoStatus {
+  enabled: boolean;
+  organization: { id: string; name: string; created_at: string; updated_at: string } | null;
+}
+
+export interface DemoApp {
+  id: string;
+  name: string;
+  devices: number;
+  events: number;
+  runs: number;
+}
+
+/** `POST /api/admin/demo`: the organization that replaced the previous demo, and what it holds. */
+export interface DemoSeed {
+  organization_id: string;
+  organization: string;
+  apps: DemoApp[];
+}

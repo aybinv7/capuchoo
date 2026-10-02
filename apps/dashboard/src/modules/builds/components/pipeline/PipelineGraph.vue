@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Controls } from "@vue-flow/controls";
-import { VueFlow, useVueFlow } from "@vue-flow/core";
+import { VueFlow, useVueFlow, type NodeMouseEvent } from "@vue-flow/core";
 import { computed, markRaw, onBeforeUnmount, watch } from "vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/controls/dist/style.css";
@@ -22,6 +22,7 @@ const emit = defineEmits<{ open: [id: string] }>();
 const MIN_HEIGHT = 200;
 const MAX_HEIGHT = 560;
 const FIT = { padding: 0.12, maxZoom: 1, duration: 0 } as const;
+const FIT_CONTROL = { padding: 0.12, maxZoom: 1, duration: 200 } as const;
 
 const { addNodes, removeNodes, updateNode, setNodes, setEdges, fitView } = useVueFlow(props.flowId);
 
@@ -62,6 +63,10 @@ function patch(model: PipelineModel) {
   if (changes.add.length || changes.remove.length) refit();
 }
 
+function onNodeClick({ node }: NodeMouseEvent) {
+  if (node.type === "job") emit("open", node.id);
+}
+
 watch(() => props.model, patch, { immediate: true });
 onBeforeUnmount(() => cancelAnimationFrame(frame));
 </script>
@@ -75,20 +80,19 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
       :nodes-focusable="false"
       :edges-focusable="false"
       :elements-selectable="false"
-      :zoom-on-scroll="false"
+      :zoom-on-scroll="true"
+      :zoom-on-pinch="true"
+      :pan-on-drag="true"
       :zoom-on-double-click="false"
-      :prevent-scrolling="false"
-      :min-zoom="0.35"
-      :max-zoom="1.5"
+      :prevent-scrolling="true"
+      :min-zoom="0.3"
+      :max-zoom="1.75"
       :fit-view-on-init="true"
       @nodes-initialized="refit"
+      @node-click="onNodeClick"
     >
       <template #node-job="{ id, data }">
-        <JobNode
-          :node="data as PipelineNodeModel"
-          :selected="id === props.selectedId"
-          @open="emit('open', $event)"
-        />
+        <JobNode :node="data as PipelineNodeModel" :selected="id === props.selectedId" />
       </template>
       <template #node-stage="{ data }">
         <span
@@ -96,7 +100,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
           >{{ (data as StageLabelData).label }}</span
         >
       </template>
-      <Controls :show-interactive="false" position="bottom-right" />
+      <Controls :show-interactive="false" :fit-view-params="FIT_CONTROL" position="bottom-right" />
     </VueFlow>
   </div>
 </template>
@@ -108,6 +112,18 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
   background: transparent;
   box-shadow: none;
   cursor: default;
+}
+
+.pipeline-graph .vue-flow__node-job {
+  cursor: pointer;
+}
+
+.pipeline-graph .vue-flow__pane {
+  cursor: grab;
+}
+
+.pipeline-graph .vue-flow__pane.dragging {
+  cursor: grabbing;
 }
 
 .pipeline-graph .vue-flow__edge-path {

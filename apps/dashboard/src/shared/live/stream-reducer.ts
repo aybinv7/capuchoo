@@ -105,8 +105,22 @@ function buildOps(appId: string, data: unknown): CacheOp[] {
         };
       }),
     );
+    const channelId = build.channel_id;
+    const parentId = build.parent_id;
+    if (channelId)
+      ops.push(update<Build[]>(queryKeys.builds(appId), withTarget(parentId, channelId)));
   }
   return ops;
+}
+
+/** A child deploy's channel joins its run's targets in the list, so the canvas links them live. */
+function withTarget(runId: string, channelId: string) {
+  return (builds: Build[]): Build[] => {
+    const run = builds.find((entry) => entry.id === runId);
+    if (!run || run.target_channel_ids?.includes(channelId)) return builds;
+    const target_channel_ids = [...(run.target_channel_ids ?? []), channelId];
+    return replaceById(builds, { ...run, target_channel_ids }) ?? builds;
+  };
 }
 
 /**
