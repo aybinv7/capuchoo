@@ -77,6 +77,15 @@ describe("provider inputs", () => {
     });
   });
 
+  it("keeps GitLab from expanding a variable named in the notes", () => {
+    const notes = parseCiRunRequest({ ref: "dev", notes: "cost $5 not $CAPUCHOO_API_KEY" });
+    if (!notes.ok) throw new Error("fixture");
+    expect(gitlabPipelineVariables(notes.request).CAPUCHOO_NOTES).toBe(
+      "cost $$5 not $$CAPUCHOO_API_KEY",
+    );
+    expect(githubDispatchInputs(notes.request).notes).toBe("cost $5 not $CAPUCHOO_API_KEY");
+  });
+
   it("describes the run", () => {
     expect(describeCiRun(parsed.request)).toBe("Build native to dev @ auto");
   });

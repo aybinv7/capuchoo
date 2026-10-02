@@ -122,8 +122,17 @@ function inputs(
 export const githubDispatchInputs = (request: CiRunRequest): Record<string, string> =>
   inputs(request, GITHUB_WORKFLOW_INPUTS);
 
+/**
+ * GitLab expands `$NAME` inside the value of a variable passed to a pipeline, so notes mentioning
+ * `$CAPUCHOO_API_KEY` would publish the key. `$$` is GitLab's literal dollar.
+ */
 export const gitlabPipelineVariables = (request: CiRunRequest): Record<string, string> =>
-  inputs(request, GITLAB_PIPELINE_VARIABLES);
+  Object.fromEntries(
+    Object.entries(inputs(request, GITLAB_PIPELINE_VARIABLES)).map(([key, value]) => [
+      key,
+      value.split("$").join("$$"),
+    ]),
+  );
 
 /** A short human title for a run that was started by hand. */
 export function describeCiRun(request: CiRunRequest): string {
