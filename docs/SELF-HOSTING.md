@@ -28,6 +28,27 @@ The compose file expects an existing Traefik on the external `traefik` network w
 resolver. Upload size is enforced by the server (`MAX_BUNDLE_BYTES`, `MAX_NATIVE_BYTES`) while it
 streams, so Traefik does not buffer bodies.
 
+## Connecting GitHub
+
+An instance admin creates the GitHub App from the dashboard (Settings > GitHub). Every URL in it is
+built from `PUBLIC_URL`, so set `PUBLIC_URL` to the address people sign in at - **the dashboard's
+origin** when the dashboard proxies `/api` - before creating it. GitHub sends the browser back to
+`PUBLIC_URL/api/github/...`, and the session cookie only exists on the dashboard's origin; a
+`PUBLIC_URL` on the server's own host comes back signed out. Webhooks go to the same origin and
+reach the server through the rewrite.
+
+The App's private key and secrets are stored encrypted under a key derived from `SECRET_KEY`.
+Changing `SECRET_KEY` makes them unreadable: delete the App in the dashboard and create it again,
+then reinstall it. To manage the App outside the database instead, set `GITHUB_APP_ID`,
+`GITHUB_APP_SLUG`, `GITHUB_APP_PRIVATE_KEY` (PEM, `\n`-escaped is accepted),
+`GITHUB_WEBHOOK_SECRET`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`; the App must request user
+authorization during installation, or installations cannot be verified and are refused.
+
+The dashboard's Content-Security-Policy needs `form-action 'self' https://github.com`, because
+creating the App is a form POST to GitHub. Starting GitLab pipelines needs no setting unless the
+GitLab is on a private network: then list its host in `GITLAB_ALLOWED_HOSTS`, which also lifts the
+https and public-address checks for those hosts. More in [CI-PROVIDERS.md](./CI-PROVIDERS.md).
+
 ## On Render
 
 `render.yaml` creates `capuchoo-server`, the `capuchoo-dashboard` static site and the database. The

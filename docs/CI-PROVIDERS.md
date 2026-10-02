@@ -5,8 +5,8 @@ starts runs from the dashboard, and sets a repository up without leaving the das
 
 The shared vocabulary is in `packages/core/src/pipeline.ts` (statuses, plans, layout),
 `packages/core/src/ci-run.ts` (what a started run asks for) and
-`packages/core/src/github-workflow.ts` (the workflow file). Nothing provider-specific goes past
-the server's edge.
+`packages/core/src/github-workflow.ts` (the workflow file). Nothing provider-specific goes past the
+server's edge.
 
 ## Shape
 
@@ -22,10 +22,9 @@ CLI in a job ── POST /api/apps/:id/builds {ci} ──▶ child build under t
 Dashboard ── POST /api/apps/:id/ci/runs ──▶ workflow_dispatch / GitLab pipeline API
 ```
 
-- **A run is a `builds` row** with `kind = 'pipeline'`, `source` = the provider and
-  `external_id` = the provider's run id. Its jobs are `build_jobs`. Its **plan** - the job graph
-  read from the workflow file - is `builds.plan`, so jobs that have not started yet are still
-  drawn.
+- **A run is a `builds` row** with `kind = 'pipeline'`, `source` = the provider and `external_id` =
+  the provider's run id. Its jobs are `build_jobs`. Its **plan** - the job graph read from the
+  workflow file - is `builds.plan`, so jobs that have not started yet are still drawn.
 - **The CLI's own deploy is a child build** (`parent_id` = the run, `job_key` = the job it ran in).
   Its `build_events` are the deploy steps (resolve, web, bundle, sign, upload), so the publish job
   on the canvas opens onto them.
@@ -48,14 +47,14 @@ from `SECRET_KEY` with HKDF). **Rotating `SECRET_KEY` makes them unreadable**: r
 Setting `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET`,
 `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in the environment overrides the stored App.
 
-Permissions requested: Actions read/write, Contents read/write, Pull requests read/write,
-Secrets read/write, Variables read/write, Workflows read/write, Metadata read. Events:
-`workflow_run`, `workflow_job`.
+Permissions requested: Actions read/write, Contents read/write, Pull requests read/write, Secrets
+read/write, Variables read/write, Workflows read/write, Metadata read. Events: `workflow_run`,
+`workflow_job`.
 
 **Linking an installation to an organization is verified**, not trusted. GitHub's install redirect
 carries an `installation_id` anyone could forge, so the App requests user authorization on install
-and the server checks, with that user's token, that the user can see the installation. The token
-is discarded afterwards.
+and the server checks, with that user's token, that the user can see the installation. The token is
+discarded afterwards.
 
 The dashboard's CSP must allow `form-action https://github.com` - the manifest is a form POST to
 GitHub. `render.yaml` and `deploy/dashboard/security-headers.conf` carry it.
@@ -68,8 +67,8 @@ so the run's id is known before GitHub starts it and the dashboard shows the run
 started any other way (push, tag, pull request) arrives through `workflow_run`.
 
 A repository can serve several apps. A run is attributed to every app linked to the repository
-**and** the workflow path. When more than one app shares the same workflow, only runs started
-from the dashboard (known by id) and runs a CLI deploy reports into are attributed.
+**and** the workflow path. When more than one app shares the same workflow, only runs started from
+the dashboard (known by id) and runs a CLI deploy reports into are attributed.
 
 ### Missed webhooks
 
@@ -79,13 +78,30 @@ public URL usable. Runs still unfinished after 24 hours are closed as failed.
 
 ## GitLab
 
-The webhook already records pipelines. The pipeline event carries every job and the stage order,
-so the plan comes from it rather than from `.gitlab-ci.yml`.
+The webhook already records pipelines. The pipeline event carries every job and the stage order, so
+the plan comes from it rather than from `.gitlab-ci.yml`.
 
 Starting a pipeline needs a **project access token** (`api` scope, Developer role) stored encrypted
 the same way. The server must reach the GitLab instance; a GitLab behind a VPN cannot be triggered
 from a server outside it. Started pipelines receive the `CAPUCHOO_*` variables of
 `GITLAB_PIPELINE_VARIABLES`, which the generated `.gitlab-ci.yml` reads.
+
+## Rules that matter
+
+- **Starting a run needs the role that publishing its target needs.** A run publishes with the
+  repository's key, not the caller's, so without this a developer could ship prod through CI. A run
+  with no channel takes it from the ref, which may be a tag, and is treated as prod.
+- **The server never sees a repository secret it does not own.** Keystores and passwords are sealed
+  in the browser; the server relays ciphertext to GitHub.
+- **The setup is a pull request, never a direct commit.** A person reviews what will run with the
+  repository's secrets.
+- **Only the linked workflow file is Capuchoo's.** Runs of other workflows in the repository are
+  ignored, including when one of their jobs is reported first.
+- **GitLab expands `$NAME` in pipeline variables**, so every value Capuchoo passes has its `$`
+  doubled.
+- **A GitLab base URL is an outbound request target.** It must be https and resolve to a public
+  address unless the operator lists the host in `GITLAB_ALLOWED_HOSTS`; an app admin cannot aim the
+  server at its own network.
 
 ## API
 
@@ -115,13 +131,13 @@ interface GithubAppStatus {
 
 ### Installations (organization)
 
-| Method | Path                                                          | Who       |
-| ------ | ------------------------------------------------------------- | --------- |
-| GET    | `/api/organizations/:orgId/github`                            | member    |
-| GET    | `/api/organizations/:orgId/github/install-url?return=/path`   | org admin |
-| GET    | `/api/github/setup`                                           | browser   |
-| DELETE | `/api/organizations/:orgId/github/installations/:id`          | org admin |
-| GET    | `/api/organizations/:orgId/github/installations/:id/repositories?q=` | member |
+| Method | Path                                                                 | Who       |
+| ------ | -------------------------------------------------------------------- | --------- |
+| GET    | `/api/organizations/:orgId/github`                                   | member    |
+| GET    | `/api/organizations/:orgId/github/install-url?return=/path`          | org admin |
+| GET    | `/api/github/setup`                                                  | browser   |
+| DELETE | `/api/organizations/:orgId/github/installations/:id`                 | org admin |
+| GET    | `/api/organizations/:orgId/github/installations/:id/repositories?q=` | member    |
 
 ```ts
 interface OrganizationGithub {
@@ -204,16 +220,20 @@ interface GithubSetup {
     html_url: string | null;
   };
   pull_request: { number: number; html_url: string; state: "open" | "closed" | "merged" } | null;
-  secrets: Array<{ name: GithubWorkflowSecret; present: boolean; required: "always" | "native" | "optional" }>;
+  secrets: Array<{
+    name: GithubWorkflowSecret;
+    present: boolean;
+    required: "always" | "native" | "optional";
+  }>;
   variable: { name: "CAPUCHOO_ENDPOINT"; value: string | null; expected: string };
   package_manager: "pnpm" | "npm" | "yarn" | "bun" | null;
 }
 ```
 
-Secrets are encrypted **in the browser** with the repository's public key (libsodium sealed box)
-and the server only relays the ciphertext: the keystore and its passwords never reach Capuchoo.
-The API key comes from `POST /api/api-keys` (`app_id` = the app, `role: "developer"`), whose
-plaintext the dashboard already receives once.
+Secrets are encrypted **in the browser** with the repository's public key (libsodium sealed box) and
+the server only relays the ciphertext: the keystore and its passwords never reach Capuchoo. The API
+key comes from `POST /api/api-keys` (`app_id` = the app, `role: "developer"`), whose plaintext the
+dashboard already receives once.
 
 ### Builds
 
@@ -249,17 +269,19 @@ interface BuildDetail extends Build {
   events: BuildEvent[];
   jobs: BuildJob[];
   plan: PipelinePlan | null;
-  children: Build[];
+  children: Array<Build & { events: BuildEvent[] }>;
 }
 ```
 
+`build` stream events leave the plan out, except the one sent when the plan is first read.
+
 `GET /api/apps/:id/builds?scope=top` leaves out child builds.
 
-Live stream additions: `build_job` (a `BuildJob`); child builds arrive as `build` with
-`parent_id` set.
+Live stream additions: `build_job` (a `BuildJob`); child builds arrive as `build` with `parent_id`
+set.
 
 ### CLI
 
 `POST /api/apps/:id/builds` accepts
-`ci: { provider: "github" | "gitlab", run_id, run_attempt, job }`. The server attaches the build
-to that run, creating the run's row if its webhook has not arrived yet.
+`ci: { provider: "github" | "gitlab", run_id, run_attempt, job }`. The server attaches the build to
+that run, creating the run's row if its webhook has not arrived yet.

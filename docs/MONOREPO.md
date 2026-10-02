@@ -240,7 +240,10 @@ Verified 2026-09-30 on a Redmi Note 14 against the server on PostgreSQL 18.
 
 **Not yet exercised**
 
-- A GitLab runner executing `packages/cli/templates/gitlab-ci.yml`.
+- A GitLab runner executing `packages/cli/templates/gitlab-ci.yml`, and a pipeline started through
+  the GitLab API.
+- A real GitHub App: the manifest flow, installation linking, webhooks and `workflow_dispatch` are
+  tested against a scripted GitHub, not github.com. The generated workflow has not run on Actions.
 - The Docker image and compose stack (no Docker on the development machine).
 - S3 storage against a real bucket; `fs` and `postgres` storage are exercised.
 - iOS anything.

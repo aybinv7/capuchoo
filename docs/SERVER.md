@@ -71,9 +71,14 @@ additions:
 | POST   | `/api/apps/:id/builds`               | `{ kind, channel, version, source, commit, ref, pipeline_url }` → `{ id }` |
 | POST   | `/api/builds/:id/events`             | `{ step, status: running\|succeeded\|failed\|skipped, message }`           |
 | POST   | `/api/builds/:id/finish`             | `{ status, bundle_id?, native_id?, error? }`                               |
-| GET    | `/api/apps/:id/stream`               | SSE: `build`, `build_event`, `channel`, `device`                           |
+| GET    | `/api/apps/:id/stream`               | SSE: `build`, `build_event`, `build_job`, `channel`, `device`              |
 | POST   | `/api/integrations/gitlab/:appId`    | GitLab webhook, `X-Gitlab-Token`                                           |
-| PUT    | `/api/apps/:id/signing`              | `{ public_key, require_signature }`                                        |
+| POST   | `/api/integrations/github/webhook`   | GitHub App webhook, `X-Hub-Signature-256`                                  |
+
+`POST /api/apps/:id/builds` also takes `ci: { provider, run_id, run_attempt, job }`, attaching the
+deploy to the CI run it runs in. Everything about CI providers - the GitHub App, installations,
+starting runs, the setup pull request - is in [CI-PROVIDERS.md](./CI-PROVIDERS.md). | PUT |
+`/api/apps/:id/signing` | `{ public_key, require_signature }` |
 
 Uploads (`/api/admin/upload`, `/api/admin/native-upload`) are authorized before the body is read and
 streamed to storage while hashed. They accept `signature`, `build_id`, `flavour` (required) and, for
