@@ -128,13 +128,7 @@ function setView(value: unknown) {
       title="No device has checked in yet"
       description="Devices appear after their first update check against this server."
     />
-    <template v-else-if="view === 'map'">
-      <p class="text-muted-foreground text-xs">
-        {{ located.length }} of the {{ devices.length }} loaded devices matching the table filters
-        reported a location. Devices without one are not placed.
-      </p>
-      <DevicesMap :devices="located" @open="open" />
-    </template>
+    <DevicesMap v-else-if="view === 'map'" :devices="located" @open="open" />
     <DevicesTable
       v-else
       v-model:search="search"

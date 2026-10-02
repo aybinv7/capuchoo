@@ -71,7 +71,9 @@ describe("publish → check → download", () => {
     expect(partial.headers.get("content-range")).toBe(`bytes 4-9/${bytes.length}`);
     expect(new TextDecoder().decode(await partial.arrayBuffer())).toBe("1.0.0-");
 
-    const tampered = await ctx.request(path.replace(/sig=[0-9a-f]/, "sig=0"));
+    const tampered = await ctx.request(
+      path.replace(/sig=([0-9a-f])/, (_, digit: string) => `sig=${digit === "0" ? "1" : "0"}`),
+    );
     expect(tampered.status).toBe(403);
   });
 
