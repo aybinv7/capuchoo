@@ -6,7 +6,8 @@ import { principal, type AppEnv } from "../http/context";
 import { notFound } from "../lib/errors";
 import { appCounts, findAppByBundleId } from "../repositories/apps";
 import { listAudit } from "../repositories/audit";
-import { listBuildEvents, listBuilds, findBuild } from "../repositories/builds";
+import { listBuilds } from "../repositories/builds";
+import { buildDetail } from "../services/build-detail";
 import { findChannel, listChannels } from "../repositories/channels";
 import {
   channelHealth,
@@ -198,7 +199,11 @@ export function insightRoutes(): Hono<AppEnv> {
       "viewer",
       "Listing builds",
     );
-    return c.json(await listBuilds(deps.db, access.app.id, queryInt(c, "limit", 30, 1, 200)));
+    return c.json(
+      await listBuilds(deps.db, access.app.id, queryInt(c, "limit", 30, 1, 200), {
+        topLevel: c.req.query("scope") === "top",
+      }),
+    );
   });
 
   router.post("/apps/:id/builds", async (c) => {
@@ -212,11 +217,7 @@ export function insightRoutes(): Hono<AppEnv> {
   });
 
   router.get("/builds/:id", async (c) => {
-    const deps = c.get("deps");
-    const build = await findBuild(deps.db, c.req.param("id"));
-    if (!build) throw notFound("Build");
-    await requireApp(deps.db, principal(c), build.app_id, "viewer", "Reading a build");
-    return c.json({ ...build, events: await listBuildEvents(deps.db, build.id) });
+    return c.json(await buildDetail(c.get("deps"), principal(c), c.req.param("id")));
   });
 
   router.post("/builds/:id/events", async (c) => {

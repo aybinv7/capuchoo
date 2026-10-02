@@ -24,6 +24,7 @@
     "hono": "^4.13.11",
     "kysely": "^0.29.6",
     "pg": "^8.23.0",
+    "yaml": "catalog:",
     "zod": "^4.6.5"
   },
   "devDependencies": {

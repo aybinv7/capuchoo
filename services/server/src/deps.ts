@@ -3,6 +3,7 @@ import { createDatabase, createPostgresDialect, type Db } from "./db/database";
 import type { Deps } from "./http/context";
 import { BackgroundTasks } from "./lib/background";
 import { createLogger } from "./lib/logger";
+import { CiRuntime } from "./services/ci-runtime";
 import { EventHub } from "./services/event-hub";
 import { RequestCache } from "./services/request-cache";
 import type { StorageDriver } from "./storage/driver";
@@ -39,6 +40,7 @@ export function createDeps(config: Config): Deps {
     hub: new EventHub(),
     cache: new RequestCache(),
     tasks: new BackgroundTasks(logger),
+    ci: new CiRuntime(config.SECRET_KEY),
     now: () => new Date(),
   };
 }

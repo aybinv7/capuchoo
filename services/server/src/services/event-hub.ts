@@ -1,4 +1,10 @@
-export type HubEventType = "build" | "build_event" | "channel" | "device" | "artefact";
+export type HubEventType =
+  | "build"
+  | "build_event"
+  | "build_job"
+  | "channel"
+  | "device"
+  | "artefact";
 
 export interface HubEvent {
   type: HubEventType;

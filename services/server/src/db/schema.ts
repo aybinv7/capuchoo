@@ -1,9 +1,12 @@
+import type { BuildSource, BuildStatus, JobStatus } from "@capuchoo/core";
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
 
 type Timestamp = ColumnType<Date, Date | string | undefined, Date | string>;
 type CreatedAt = ColumnType<Date, Date | string | undefined, never>;
+type UpdatedAt = ColumnType<Date, Date | string | undefined, Date | string>;
 type Json = ColumnType<unknown, string | undefined, string>;
 type BigCount = ColumnType<string | number, number | bigint | undefined, number | bigint>;
+type BigId = ColumnType<string | number, string | number | bigint, string | number | bigint>;
 
 export type OrgRole = "owner" | "admin" | "member";
 export type AppRoleColumn = "admin" | "developer" | "tester" | "viewer";
@@ -238,7 +241,7 @@ export interface DeviceEventsTable {
   created_at: CreatedAt;
 }
 
-export type BuildStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+export type { BuildStatus };
 
 export interface BuildsTable {
   id: Generated<string>;
@@ -250,7 +253,7 @@ export interface BuildsTable {
   version_name: string | null;
   version_code: number | null;
   flavour: EnvironmentColumn | null;
-  source: "cli" | "gitlab" | "github" | "other";
+  source: BuildSource;
   external_id: string | null;
   commit_sha: string | null;
   ref: string | null;
@@ -264,6 +267,32 @@ export interface BuildsTable {
   started_at: Timestamp | null;
   finished_at: Timestamp | null;
   created_at: CreatedAt;
+  parent_id: string | null;
+  job_key: string | null;
+  run_attempt: number | null;
+  plan: Json | null;
+  workflow: string | null;
+  title: string | null;
+  trigger: string | null;
+  updated_at: UpdatedAt;
+}
+
+export interface BuildJobsTable {
+  id: Generated<string>;
+  build_id: string;
+  external_id: string;
+  plan_key: string | null;
+  name: string;
+  stage: string | null;
+  status: JobStatus;
+  attempt: Generated<number>;
+  url: string | null;
+  runner: string | null;
+  steps: Json;
+  started_at: Timestamp | null;
+  finished_at: Timestamp | null;
+  created_at: CreatedAt;
+  updated_at: UpdatedAt;
 }
 
 export interface BuildEventsTable {
@@ -301,14 +330,47 @@ export interface AppConfigTable {
   updated_at: Timestamp;
 }
 
+export type IntegrationKind = "gitlab" | "github";
+
 export interface IntegrationsTable {
   id: Generated<string>;
   app_id: string;
-  kind: "gitlab";
-  secret_hash: string;
+  kind: IntegrationKind;
+  secret_hash: string | null;
   config: Json | null;
+  external_ref: string | null;
+  credential_enc: string | null;
   created_at: CreatedAt;
+  updated_at: UpdatedAt;
   last_event_at: Timestamp | null;
+}
+
+export interface GithubAppTable {
+  id: Generated<number>;
+  app_id: BigId;
+  slug: string;
+  name: string;
+  client_id: string;
+  client_secret_enc: string;
+  private_key_enc: string;
+  webhook_secret_enc: string;
+  html_url: string;
+  owner_login: string | null;
+  created_by: string | null;
+  created_at: CreatedAt;
+}
+
+export interface GithubInstallationsTable {
+  id: Generated<string>;
+  organization_id: string;
+  installation_id: BigId;
+  account_login: string;
+  account_type: "User" | "Organization";
+  repository_selection: "all" | "selected" | null;
+  suspended_at: Timestamp | null;
+  created_by: string | null;
+  created_at: CreatedAt;
+  updated_at: UpdatedAt;
 }
 
 export interface BlobsTable {
@@ -342,9 +404,12 @@ export interface Database {
   device_events: DeviceEventsTable;
   builds: BuildsTable;
   build_events: BuildEventsTable;
+  build_jobs: BuildJobsTable;
   audit_log: AuditLogTable;
   app_config: AppConfigTable;
   integrations: IntegrationsTable;
+  github_app: GithubAppTable;
+  github_installations: GithubInstallationsTable;
   blobs: BlobsTable;
   blob_chunks: BlobChunksTable;
 }
@@ -360,4 +425,8 @@ export type NewNativeBuild = Insertable<NativeBuildsTable>;
 export type Device = Selectable<DevicesTable>;
 export type Build = Selectable<BuildsTable>;
 export type BuildEvent = Selectable<BuildEventsTable>;
+export type BuildJob = Selectable<BuildJobsTable>;
+export type Integration = Selectable<IntegrationsTable>;
+export type GithubAppRow = Selectable<GithubAppTable>;
+export type GithubInstallation = Selectable<GithubInstallationsTable>;
 export type ApiKey = Selectable<ApiKeysTable>;

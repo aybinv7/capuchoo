@@ -42,6 +42,19 @@ const schema = z
     DEVICE_EVENT_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
     TRUST_PROXY: bool.default(false),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+    GITHUB_API_URL: z.string().url().default("https://api.github.com"),
+    GITHUB_WEB_URL: z.string().url().default("https://github.com"),
+    GITHUB_APP_ID: z.string().regex(/^\d+$/).optional(),
+    GITHUB_APP_SLUG: z
+      .string()
+      .regex(/^[a-z0-9-]+$/)
+      .optional(),
+    GITHUB_APP_PRIVATE_KEY: z.string().optional(),
+    GITHUB_WEBHOOK_SECRET: z.string().min(16).optional(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    GITLAB_ALLOWED_HOSTS: z.string().default(""),
+    CI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   })
   .superRefine((value, context) => {
     if (value.STORAGE_DRIVER === "s3") {
@@ -56,6 +69,25 @@ const schema = z
             code: "custom",
             path: [key],
             message: "required when STORAGE_DRIVER=s3",
+          });
+      }
+    }
+    const github = [
+      "GITHUB_APP_ID",
+      "GITHUB_APP_SLUG",
+      "GITHUB_APP_PRIVATE_KEY",
+      "GITHUB_WEBHOOK_SECRET",
+      "GITHUB_CLIENT_ID",
+      "GITHUB_CLIENT_SECRET",
+    ] as const;
+    const set = github.filter((key) => value[key]);
+    if (set.length > 0 && set.length < github.length) {
+      for (const key of github) {
+        if (!value[key])
+          context.addIssue({
+            code: "custom",
+            path: [key],
+            message: "the GITHUB_APP_* settings go together",
           });
       }
     }

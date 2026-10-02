@@ -1,23 +1,33 @@
 import type { AppContext } from "./context";
 import { badRequest, tooLarge } from "../lib/errors";
 
-/** Parses a JSON body with a hard size limit; an empty body is `{}`. */
-export async function readJson<T = Record<string, unknown>>(
-  c: AppContext,
-  maxBytes = 256 * 1024,
-): Promise<T> {
+/** The body as text, with a hard size limit; for signatures computed over the exact bytes. */
+export async function readText(c: AppContext, maxBytes = 256 * 1024): Promise<string> {
   const declared = Number(c.req.header("content-length") ?? 0);
   if (declared > maxBytes)
     throw tooLarge(`The request body exceeds ${Math.round(maxBytes / 1024)} KiB`);
   const text = await c.req.text();
   if (text.length > maxBytes)
     throw tooLarge(`The request body exceeds ${Math.round(maxBytes / 1024)} KiB`);
+  return text;
+}
+
+/** Parses JSON text; an empty body is `{}`. */
+export function parseJson<T>(text: string): T {
   if (!text.trim()) return {} as T;
   try {
     return JSON.parse(text) as T;
   } catch {
     throw badRequest("The request body is not valid JSON", "invalid_json");
   }
+}
+
+/** Parses a JSON body with a hard size limit; an empty body is `{}`. */
+export async function readJson<T = Record<string, unknown>>(
+  c: AppContext,
+  maxBytes = 256 * 1024,
+): Promise<T> {
+  return parseJson<T>(await readText(c, maxBytes));
 }
 
 /** A bounded integer query parameter. */

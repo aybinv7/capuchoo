@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { sql } from "kysely";
 import type { AppEnv } from "../http/context";
-import { readJson } from "../http/body";
-import { handleGitlabHook } from "../services/gitlab";
+import { readJson, readText } from "../http/body";
+import { handleGithubDelivery } from "../github/webhook";
+import { handleGitlabHook } from "../gitlab/webhook";
 
 /** Health probes and third-party webhooks. */
 export function systemRoutes(): Hono<AppEnv> {
@@ -31,6 +32,15 @@ export function systemRoutes(): Hono<AppEnv> {
       appReference: c.req.param("appId"),
       token: c.req.header("x-gitlab-token"),
       body: await readJson<unknown>(c, 2 * 1024 * 1024),
+    });
+    return c.json(result);
+  });
+
+  router.post("/api/integrations/github/webhook", async (c) => {
+    const result = await handleGithubDelivery(c.get("deps"), {
+      event: c.req.header("x-github-event"),
+      signature: c.req.header("x-hub-signature-256"),
+      body: await readText(c, 5 * 1024 * 1024),
     });
     return c.json(result);
   });

@@ -9,6 +9,7 @@ import { silentLogger } from "../src/lib/logger";
 import { createApiKey } from "../src/repositories/api-keys";
 import { createSession } from "../src/repositories/sessions";
 import { createUser } from "../src/repositories/users";
+import { CiRuntime } from "../src/services/ci-runtime";
 import { EventHub } from "../src/services/event-hub";
 import { RequestCache } from "../src/services/request-cache";
 import { createPostgresStorage } from "../src/storage/postgres";
@@ -16,6 +17,10 @@ import { createTestDatabase } from "./database";
 import type { AppRole } from "@capuchoo/core";
 
 export const BASE = "http://capuchoo.test";
+
+const refuseNetwork: typeof globalThis.fetch = async (input) => {
+  throw new Error(`Unexpected network call in a test: ${String(input)}`);
+};
 
 export interface TestContext {
   deps: Deps;
@@ -32,6 +37,7 @@ export interface TestContext {
 
 export async function createTestContext(
   overrides: Record<string, string> = {},
+  fetcher?: typeof globalThis.fetch,
 ): Promise<TestContext> {
   const db = await createTestDatabase();
   const config = loadConfig({
@@ -51,6 +57,7 @@ export async function createTestContext(
     hub: new EventHub(),
     cache: new RequestCache(0),
     tasks: new BackgroundTasks(silentLogger),
+    ci: new CiRuntime(config.SECRET_KEY, fetcher ?? refuseNetwork),
     now: () => new Date(clock),
   };
   const app = createApp(deps);

@@ -15,7 +15,9 @@ import { appRoutes } from "./routes/apps";
 import { artefactRoutes } from "./routes/artefacts";
 import { authRoutes } from "./routes/auth";
 import { channelRoutes } from "./routes/channels";
+import { ciRoutes } from "./routes/ci";
 import { deviceRoutes } from "./routes/device";
+import { githubRoutes } from "./routes/github";
 import { insightRoutes } from "./routes/insights";
 import { organizationRoutes } from "./routes/organizations";
 import { systemRoutes } from "./routes/system";
@@ -120,6 +122,8 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", channelRoutes());
   app.route("/api", artefactRoutes());
   app.route("/api", insightRoutes());
+  app.route("/api", ciRoutes());
+  app.route("/api", githubRoutes());
   app.get("/api/health", (c) => c.json({ status: "ok" }));
   app.all("/api/*", (c) => c.json({ error: "Not found", reason: "not_found" }, 404));
 

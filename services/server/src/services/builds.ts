@@ -5,7 +5,14 @@ import type { Build, BuildEvent, BuildStatus } from "../db/schema";
 import type { Deps } from "../http/context";
 import { badRequest, conflict, notFound } from "../lib/errors";
 import { isUuid } from "../repositories/apps";
-import { addBuildEvent, createBuild, findBuild, setBuildStatus } from "../repositories/builds";
+import {
+  addBuildEvent,
+  createBuild,
+  findBuild,
+  setBuildStatus,
+  upsertRun,
+} from "../repositories/builds";
+import { publishBuild, publishBuildEvent } from "./build-feed";
 import { findBundle, findNativeBuild } from "../repositories/artefacts";
 import { findChannelByName } from "../repositories/channels";
 
@@ -23,12 +30,43 @@ function optionalText(value: unknown, max: number): string | null {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
 }
 
-function publish(deps: Deps, build: Build, event?: BuildEvent): void {
-  deps.hub.publish({
-    type: event ? "build_event" : "build",
-    appId: build.app_id,
-    data: event ? { ...event, build_id: build.id } : build,
+const RUN_ID = /^[0-9]{1,20}$/;
+const JOB_KEY = /^[A-Za-z0-9_.:\- ()/]{1,255}$/;
+
+/**
+ * The CI run a deploy happens inside, created if its webhook has not arrived yet. Only the ids
+ * the CI runner exposes are trusted, and only to attach this app's deploy to this app's run.
+ */
+async function parentRun(
+  deps: Deps,
+  appId: string,
+  value: unknown,
+  facts: { commit: string | null; ref: string | null; pipelineUrl: string | null },
+): Promise<{ build: Build; job: string } | null> {
+  if (!value || typeof value !== "object") return null;
+  const ci = value as Record<string, unknown>;
+  const source = ci.provider === "github" || ci.provider === "gitlab" ? ci.provider : null;
+  const runId =
+    typeof ci.run_id === "string" || typeof ci.run_id === "number" ? String(ci.run_id) : "";
+  const job = typeof ci.job === "string" ? ci.job.trim() : "";
+  if (!source || !RUN_ID.test(runId) || !JOB_KEY.test(job)) return null;
+  const attempt =
+    Number.isInteger(ci.run_attempt) && (ci.run_attempt as number) > 0
+      ? (ci.run_attempt as number)
+      : null;
+  const { build, changed } = await upsertRun(deps.db, {
+    app_id: appId,
+    source,
+    external_id: runId,
+    status: "running",
+    run_attempt: attempt,
+    commit_sha: facts.commit,
+    ref: facts.ref,
+    pipeline_url: facts.pipelineUrl,
+    started_at: deps.now(),
   });
+  if (changed) publishBuild(deps, build);
+  return { build, job };
 }
 
 /** Opens a build record the CLI reports progress into. */
@@ -55,7 +93,15 @@ export async function openBuild(
     ? (body.source as Build["source"])
     : "cli";
 
+  const parent = await parentRun(deps, access.app.id, body.ci, {
+    commit: optionalText(body.commit, 64),
+    ref: optionalText(body.ref, 255),
+    pipelineUrl: optionalText(body.pipeline_url, 2000),
+  });
+
   const build = await createBuild(deps.db, {
+    parent_id: parent?.build.id ?? null,
+    job_key: parent?.job ?? null,
     app_id: access.app.id,
     channel_id: channel?.id ?? null,
     channel_name: channelName,
@@ -72,7 +118,7 @@ export async function openBuild(
     started_at: deps.now(),
     ...actorColumns(principal),
   });
-  publish(deps, build);
+  publishBuild(deps, build);
   return build;
 }
 
@@ -102,7 +148,7 @@ export async function appendBuildEvent(
     status,
     message: optionalText(body.message, 2000),
   });
-  publish(deps, build, event);
+  publishBuildEvent(deps, build, event);
   return event;
 }
 
@@ -130,6 +176,6 @@ export async function finishBuild(
     native_id: native?.app_id === build.app_id ? native.id : null,
     finished_at: deps.now(),
   });
-  publish(deps, updated);
+  publishBuild(deps, updated);
   return updated;
 }

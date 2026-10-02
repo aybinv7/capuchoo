@@ -297,9 +297,11 @@ describe("builds and live events", () => {
       json: {
         object_kind: "build",
         pipeline_id: 77,
+        build_id: 501,
         build_name: "publish:prod",
         build_status: "success",
         build_stage: "publish",
+        repository: { homepage: "https://gitlab.example/p" },
       },
     });
     await ctx.request(path, {
@@ -307,7 +309,15 @@ describe("builds and live events", () => {
       headers: { "x-gitlab-token": token },
       json: {
         ...pipeline,
-        object_attributes: { ...pipeline.object_attributes, status: "success" },
+        object_attributes: {
+          ...pipeline.object_attributes,
+          status: "success",
+          stages: ["check", "publish"],
+        },
+        builds: [
+          { id: 500, name: "check", stage: "check", status: "success" },
+          { id: 501, name: "publish:prod", stage: "publish", status: "running" },
+        ],
       },
     });
 
@@ -324,7 +334,17 @@ describe("builds and live events", () => {
     const detail = await (
       await ctx.request(`/api/builds/${builds[0].id}`, { token: owner.token })
     ).json();
-    expect(detail.events[0]).toMatchObject({ step: "publish:prod", status: "succeeded" });
+    expect(detail.plan).toMatchObject({ provider: "gitlab", stages: ["check", "publish"] });
+    const jobs = Object.fromEntries(
+      detail.jobs.map((job: { name: string; status: string; url: string | null }) => [
+        job.name,
+        [job.status, job.url],
+      ]),
+    );
+    expect(jobs).toEqual({
+      check: ["succeeded", null],
+      "publish:prod": ["succeeded", "https://gitlab.example/p/-/jobs/501"],
+    });
   });
 });
 
