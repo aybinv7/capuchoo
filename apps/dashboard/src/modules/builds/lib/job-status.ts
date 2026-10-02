@@ -45,7 +45,7 @@ export function jobCaption(
   const step = focusStep(steps);
   switch (node.status) {
     case "pending":
-      if (node.gated) return "Needs approval to run";
+      if (node.gated) return "Not started · may need approval";
       return node.condition ? `Runs if ${node.condition}` : "Not started";
     case "queued":
       return node.job?.runner ? `Queued on ${node.job.runner}` : "Waiting for a runner";

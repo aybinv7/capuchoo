@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from "vue";
-import type { RunPipelineDialogController } from "../composables/useRunPipelineDialog";
+import {
+  loadRunPipelineDialog,
+  type RunPipelineDialogController,
+} from "../composables/useRunPipelineDialog";
 
-const RunPipelineDialog = defineAsyncComponent(() => import("./RunPipelineDialog.vue"));
+const RunPipelineDialog = defineAsyncComponent(loadRunPipelineDialog);
 
 const props = defineProps<{ controller: RunPipelineDialogController }>();
 </script>

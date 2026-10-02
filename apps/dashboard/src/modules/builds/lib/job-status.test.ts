@@ -21,7 +21,9 @@ describe("jobCaption", () => {
 
   it("explains a job that has not started", () => {
     expect(jobCaption({ ...node, status: "pending" })).toBe("Not started");
-    expect(jobCaption({ ...node, status: "pending", gated: true })).toBe("Needs approval to run");
+    expect(jobCaption({ ...node, status: "pending", gated: true })).toBe(
+      "Not started · may need approval",
+    );
     expect(jobCaption({ ...node, status: "waiting", gated: true })).toBe("Waiting for approval");
   });
 

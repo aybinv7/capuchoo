@@ -11,7 +11,7 @@ const emit = defineEmits<{ open: [id: string] }>();
 </script>
 
 <template>
-  <div :style="{ width: `${PIPELINE_LAYOUT.nodeWidth}px` }">
+  <div class="nopan pointer-events-auto" :style="{ width: `${PIPELINE_LAYOUT.nodeWidth}px` }">
     <Handle
       type="target"
       :position="Position.Left"

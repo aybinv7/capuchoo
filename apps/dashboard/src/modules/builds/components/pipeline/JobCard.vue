@@ -51,7 +51,10 @@ const label = computed(
   >
     <div class="flex h-16 flex-col justify-center gap-1.5 px-3">
       <div class="flex items-center gap-2">
-        <JobStatusIcon :status="props.node.status" :gated="props.node.gated" />
+        <JobStatusIcon
+          :status="props.node.status"
+          :gated="props.node.gated && props.node.status === 'waiting'"
+        />
         <span class="min-w-0 flex-1 truncate text-[13px] leading-tight font-medium">{{
           props.node.name
         }}</span>
