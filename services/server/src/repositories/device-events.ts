@@ -1,3 +1,4 @@
+import { classifyUpdateEvent } from "@capuchoo/core";
 import { sql } from "kysely";
 import type { Db } from "../db/database";
 
@@ -26,6 +27,7 @@ export async function insertDeviceEvents(db: Db, events: NewDeviceEvent[]): Prom
         channel_id: event.channelId,
         kind: event.kind,
         action: event.action.slice(0, 64),
+        category: classifyUpdateEvent(event.action),
         status: event.status ?? null,
         version_from: event.versionFrom?.slice(0, 64) ?? null,
         version_to: event.versionTo?.slice(0, 64) ?? null,
@@ -43,6 +45,7 @@ export function listDeviceEvents(
     appId: string;
     channelId?: string | undefined;
     deviceUuid?: string | undefined;
+    category?: string | undefined;
     limit: number;
     before?: string | undefined;
   },
@@ -55,21 +58,66 @@ export function listDeviceEvents(
       "e.id",
       "e.kind",
       "e.action",
+      "e.category",
       "e.status",
       "e.version_from",
       "e.version_to",
       "e.version_code_to",
       "e.error",
+      "e.channel_id",
+      "e.device_uuid",
       "e.created_at",
       "devices.device_id",
+      "devices.custom_id",
+      "devices.device_name",
       "devices.model",
+      "devices.attributes",
       "channels.name as channel_name",
     ])
     .where("e.app_id", "=", query.appId);
   if (query.channelId) base = base.where("e.channel_id", "=", query.channelId);
   if (query.deviceUuid) base = base.where("e.device_uuid", "=", query.deviceUuid);
-  if (query.before) base = base.where("e.id", "<", query.before);
+  if (query.category) base = base.where("e.category", "=", query.category);
+  if (query.before && /^\d{1,19}$/.test(query.before)) base = base.where("e.id", "<", query.before);
   return base.orderBy("e.id", "desc").limit(query.limit).execute();
+}
+
+/** What one device did over a window: counts by category, its last delivery and last failure. */
+export async function deviceSummary(db: Db, deviceUuid: string, since: Date) {
+  const [counts, delivered, failed] = await Promise.all([
+    db
+      .selectFrom("device_events")
+      .select(["category", (eb) => eb.fn.countAll<string>().as("count")])
+      .where("device_uuid", "=", deviceUuid)
+      .where("created_at", ">=", since)
+      .groupBy("category")
+      .execute(),
+    db
+      .selectFrom("device_events")
+      .select(["version_to", "created_at"])
+      .where("device_uuid", "=", deviceUuid)
+      .where("category", "=", "delivered")
+      .orderBy("id", "desc")
+      .limit(1)
+      .executeTakeFirst(),
+    db
+      .selectFrom("device_events")
+      .select(["action", "error", "created_at"])
+      .where("device_uuid", "=", deviceUuid)
+      .where("category", "=", "failed")
+      .orderBy("id", "desc")
+      .limit(1)
+      .executeTakeFirst(),
+  ]);
+  const count = (category: string) =>
+    Number(counts.find((row) => row.category === category)?.count ?? 0);
+  return {
+    checks: count("check"),
+    delivered: count("delivered"),
+    failed: count("failed"),
+    last_delivered: delivered ? { version: delivered.version_to, at: delivered.created_at } : null,
+    last_failure: failed ? { action: failed.action, error: failed.error, at: failed.created_at } : null,
+  };
 }
 
 export interface ChannelHealth {

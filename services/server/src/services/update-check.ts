@@ -195,6 +195,7 @@ export async function checkForUpdate(
           latitude: request.latitude,
           longitude: request.longitude,
           locationAccuracy: request.locationAccuracy,
+          attributes: request.attributes,
         },
         now,
       ).then((row) =>

@@ -23,6 +23,7 @@ export interface DeviceObservation {
   latitude?: number | undefined;
   longitude?: number | undefined;
   locationAccuracy?: number | undefined;
+  attributes?: Record<string, unknown> | undefined;
 }
 
 const clip = (value: string | undefined, max = 120): string | undefined =>
@@ -62,6 +63,8 @@ export async function upsertDevice(
     longitude: located ? observation.longitude! : null,
     location_accuracy_m: located ? (observation.locationAccuracy ?? null) : null,
     location_reported_at: located ? now : null,
+    attributes: observation.attributes ? JSON.stringify(observation.attributes) : null,
+    attributes_updated_at: observation.attributes ? now : null,
     last_seen_at: now,
     updated_at: now,
   };
@@ -93,6 +96,8 @@ export async function upsertDevice(
         longitude: keep("longitude"),
         location_accuracy_m: keep("location_accuracy_m"),
         location_reported_at: keep("location_reported_at"),
+        attributes: keep("attributes"),
+        attributes_updated_at: keep("attributes_updated_at"),
         last_seen_at: (eb) => eb.ref("excluded.last_seen_at"),
         updated_at: (eb) => eb.ref("excluded.updated_at"),
       }),
@@ -135,6 +140,7 @@ export async function listDevices(db: Db, query: DeviceListQuery) {
         eb("devices.custom_id", "ilike", term),
         eb("devices.model", "ilike", term),
         eb("devices.device_name", "ilike", term),
+        eb(sql<string>`devices.attributes::text`, "ilike", term),
       ]),
     );
   }
@@ -175,4 +181,21 @@ export async function setSelfChannel(db: Db, id: string, channelId: string | nul
 
 export async function deleteDevice(db: Db, id: string): Promise<void> {
   await db.deleteFrom("devices").where("id", "=", id).execute();
+}
+
+/** Replaces a known device's attributes; undefined when the device has never checked in. */
+export function setDeviceAttributes(
+  db: Db,
+  appId: string,
+  deviceId: string,
+  attributes: Record<string, unknown>,
+  now: Date,
+): Promise<Device | undefined> {
+  return db
+    .updateTable("devices")
+    .set({ attributes: JSON.stringify(attributes), attributes_updated_at: now, updated_at: now })
+    .where("app_id", "=", appId)
+    .where("device_id", "=", deviceId)
+    .returningAll()
+    .executeTakeFirst();
 }

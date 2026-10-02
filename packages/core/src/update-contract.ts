@@ -10,6 +10,8 @@
  * always compared against 0.0.0.
  */
 
+import type { DeviceAttributes } from "./device-attributes.js";
+
 export type Platform = "android" | "ios" | "web";
 
 /** Deployment environments. A channel is bound to exactly one of these. */
@@ -166,6 +168,12 @@ export interface UpdateCheckRequest {
   longitude?: number;
   /** Meters, as reported by the OS. */
   locationAccuracy?: number;
+  /**
+   * What the app attached with `setDeviceAttributes` - the signed-in rep, a
+   * route - so a tester can tell whose device is whose. Omitted when unset, so
+   * a check never erases what the attributes endpoint stored.
+   */
+  attributes?: DeviceAttributes;
 }
 
 /** A native binary (APK/IPA) the device should install. */

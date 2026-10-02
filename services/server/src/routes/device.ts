@@ -5,7 +5,9 @@ import { badRequest, tooManyRequests } from "../lib/errors";
 import { RateLimiter } from "../lib/rate-limit";
 import { findAppByBundleId } from "../repositories/apps";
 import { listChannels } from "../repositories/channels";
-import { findDevice, setSelfChannel, upsertDevice } from "../repositories/devices";
+import { normaliseDeviceAttributes } from "@capuchoo/core";
+import { findDevice, setDeviceAttributes, setSelfChannel, upsertDevice } from "../repositories/devices";
+import { publishDevice } from "../services/live-events";
 import { parseDeviceRequest } from "../services/device-request";
 import { recordEvents } from "../services/telemetry";
 import { checkForUpdate } from "../services/update-check";
@@ -105,6 +107,39 @@ export function deviceRoutes(): Hono<AppEnv> {
     deps.cache.invalidate(`app:${identity.app.id}`);
     return c.json({ status: "ok", message: `Device moved to ${channel.name}` });
   };
+
+  router.post("/device_attributes", async (c) => {
+    const deps = c.get("deps");
+    const body = await readJson(c, DEVICE_BODY_BYTES);
+    const request = parseDeviceRequest(body);
+    if (!request) throw badRequest("app_id and device_id are required");
+    const wait = perDevice.take(`${request.appId}:${request.deviceId}`);
+    if (wait) throw tooManyRequests(wait);
+    const parsed = normaliseDeviceAttributes(body.attributes);
+    if (!parsed) throw badRequest("attributes must be an object");
+    const identity = await findAppByBundleId(deps.db, request.appId);
+    if (!identity) return c.json({ status: "error", error: "App not found" }, 404);
+    const device = await setDeviceAttributes(
+      deps.db,
+      identity.app.id,
+      request.deviceId,
+      parsed.attributes,
+      deps.now(),
+    );
+    if (!device) return c.json({ status: "error", error: "Device not seen yet" }, 404);
+    publishDevice(deps, identity.app.id, {
+      device_uuid: device.id,
+      device_id: device.device_id,
+      channel_id: device.channel_id,
+      event: "attributes",
+      status: null,
+      version: device.version_name,
+      version_code: device.version_code,
+      model: device.model,
+      at: deps.now().toISOString(),
+    });
+    return c.json({ status: "ok", attributes: parsed.attributes, dropped: parsed.dropped });
+  });
 
   router.get("/channel_self", (c) => selfChannel(c, true));
   router.post("/channel_self", (c) => selfChannel(c, true));

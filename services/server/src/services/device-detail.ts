@@ -1,0 +1,101 @@
+import type { Db } from "../db/database";
+import type { Device } from "../db/schema";
+import { listChannels } from "../repositories/channels";
+import { deviceSummary, listDeviceEvents } from "../repositories/device-events";
+
+const SUMMARY_DAYS = 30;
+const CATEGORIES = new Set([
+  "check",
+  "downloading",
+  "delivered",
+  "failed",
+  "cancelled",
+  "lifecycle",
+  "other",
+]);
+
+export interface EventPageQuery {
+  appId: string;
+  deviceUuid?: string | undefined;
+  channelId?: string | undefined;
+  category?: string | undefined;
+  before?: string | undefined;
+  limit: number;
+}
+
+type EventRow = Awaited<ReturnType<typeof listDeviceEvents>>[number];
+
+const memory = (value: Device["mem_used_bytes"]) => (value === null ? null : Number(value));
+
+/** A device with its channels resolved and what it did over the last 30 days. */
+export async function deviceDetail(db: Db, device: Device, now: Date) {
+  const [channels, summary] = await Promise.all([
+    listChannels(db, device.app_id),
+    deviceSummary(db, device.id, new Date(now.getTime() - SUMMARY_DAYS * 86_400_000)),
+  ]);
+  const byId = (id: string | null) => channels.find((channel) => channel.id === id);
+  const channel = byId(device.channel_id);
+  const assigned = byId(device.assigned_channel_id);
+  return {
+    ...device,
+    mem_used_bytes: memory(device.mem_used_bytes),
+    channel: channel
+      ? { id: channel.id, name: channel.name, environment: channel.environment }
+      : null,
+    assigned_channel: assigned ? { id: assigned.id, name: assigned.name } : null,
+    summary: { days: SUMMARY_DAYS, ...summary },
+  };
+}
+
+/** Rejects a category the classifier never produces instead of silently returning nothing. */
+export function parseCategory(raw: string | undefined): string | undefined | null {
+  if (!raw) return undefined;
+  return CATEGORIES.has(raw) ? raw : null;
+}
+
+function eventOf(row: EventRow) {
+  return {
+    id: row.id,
+    kind: row.kind,
+    action: row.action,
+    category: row.category,
+    status: row.status,
+    version_from: row.version_from,
+    version_to: row.version_to,
+    version_code_to: row.version_code_to,
+    error: row.error,
+    channel_id: row.channel_id,
+    channel_name: row.channel_name,
+    created_at: row.created_at,
+  };
+}
+
+function deviceRefOf(row: EventRow) {
+  if (!row.device_uuid || !row.device_id) return null;
+  return {
+    id: row.device_uuid,
+    device_id: row.device_id,
+    custom_id: row.custom_id,
+    device_name: row.device_name,
+    model: row.model,
+    attributes: row.attributes,
+  };
+}
+
+const nextCursor = (rows: EventRow[], limit: number) =>
+  rows.length === limit ? (rows.at(-1)?.id ?? null) : null;
+
+/** One device's timeline, newest first. */
+export async function deviceEventPage(db: Db, query: EventPageQuery) {
+  const rows = await listDeviceEvents(db, query);
+  return { events: rows.map(eventOf), next: nextCursor(rows, query.limit) };
+}
+
+/** Every device's events for an app, newest first, each with the device it came from. */
+export async function appActivityPage(db: Db, query: EventPageQuery) {
+  const rows = await listDeviceEvents(db, query);
+  return {
+    events: rows.map((row) => ({ ...eventOf(row), device: deviceRefOf(row) })),
+    next: nextCursor(rows, query.limit),
+  };
+}

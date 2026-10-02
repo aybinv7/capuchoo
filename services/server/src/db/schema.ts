@@ -220,6 +220,8 @@ export interface DevicesTable {
   longitude: number | null;
   location_accuracy_m: number | null;
   location_reported_at: Timestamp | null;
+  attributes: Json | null;
+  attributes_updated_at: Timestamp | null;
   last_seen_at: Timestamp;
   created_at: CreatedAt;
   updated_at: Timestamp;
@@ -238,6 +240,7 @@ export interface DeviceEventsTable {
   version_code_to: number | null;
   error: string | null;
   details: Json | null;
+  category: string | null;
   created_at: CreatedAt;
 }
 

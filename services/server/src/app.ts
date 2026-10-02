@@ -19,6 +19,7 @@ import { ciRoutes } from "./routes/ci";
 import { demoRoutes } from "./routes/demo";
 import { deviceRoutes } from "./routes/device";
 import { githubRoutes } from "./routes/github";
+import { deviceInsightRoutes } from "./routes/device-insights";
 import { insightRoutes } from "./routes/insights";
 import { organizationRoutes } from "./routes/organizations";
 import { systemRoutes } from "./routes/system";
@@ -37,6 +38,7 @@ const DEVICE_PATHS = [
   "/api/stats",
   "/api/native-updates/log",
   "/api/channel_self",
+  "/api/device_attributes",
   "/api/artefacts/*",
 ];
 
@@ -123,6 +125,7 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", channelRoutes());
   app.route("/api", artefactRoutes());
   app.route("/api", insightRoutes());
+  app.route("/api", deviceInsightRoutes());
   app.route("/api", ciRoutes());
   app.route("/api", githubRoutes());
   app.route("/api", demoRoutes());

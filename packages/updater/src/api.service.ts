@@ -1,12 +1,14 @@
 import {
   isBlockingResponse,
   resolveUpdate,
+  type DeviceAttributes,
   type ResolvedUpdate,
   type UpdateCheckRequest,
   type UpdateCheckResponse,
   type UpdateEvent,
   type UpdateEventPayload,
 } from "@capuchoo/core";
+import { getDeviceAttributes } from "./attributes.service.js";
 import { getChannel } from "./channel.service.js";
 import { isTransientError } from "./check-errors.js";
 import { getUpdaterConfig, describeConfigProblems } from "./config.js";
@@ -76,6 +78,7 @@ export interface DeviceFacts {
   latitude?: number | undefined;
   longitude?: number | undefined;
   locationAccuracy?: number | undefined;
+  attributes?: DeviceAttributes | null | undefined;
 }
 
 /**
@@ -121,6 +124,7 @@ export function buildCheckRequest(facts: DeviceFacts): UpdateCheckRequest {
       request.locationAccuracy = facts.locationAccuracy;
     }
   }
+  if (facts.attributes) request.attributes = facts.attributes;
 
   return request;
 }
@@ -141,6 +145,7 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     osFacts,
     locationFacts,
     channel,
+    attributes,
   ] = await Promise.all([
     getVersionCode(),
     getBundleVersion(),
@@ -150,6 +155,7 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     getOsFacts(),
     getLocationFacts(),
     getChannel(),
+    getDeviceAttributes(),
   ]);
 
   const request = buildCheckRequest({
@@ -164,6 +170,7 @@ export async function checkForUpdate(): Promise<ResolvedUpdate | null> {
     versionBuiltin,
     ...osFacts,
     ...locationFacts,
+    attributes,
   });
 
   const response = await withRetry(

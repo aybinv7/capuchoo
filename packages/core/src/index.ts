@@ -210,3 +210,13 @@ export {
   type GithubWorkflowOptions,
   type GithubWorkflowSecret,
 } from "./github-workflow.js";
+
+export {
+  DEVICE_ATTRIBUTE_LIMITS,
+  applyAttributePatch,
+  normaliseDeviceAttributes,
+  type DeviceAttributePatch,
+  type DeviceAttributeValue,
+  type DeviceAttributes,
+  type NormalisedAttributes,
+} from "./device-attributes.js";

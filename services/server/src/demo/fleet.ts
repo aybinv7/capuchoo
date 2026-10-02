@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { classifyUpdateEvent, type DeviceAttributes } from "@capuchoo/core";
 import { DAY, HOUR, MINUTE } from "./dice";
 import { ago, type DemoContext } from "./context";
 import type { SeededApp } from "./releases";
@@ -40,6 +41,27 @@ const CITIES: Array<[number, number]> = [
   [36.47, 2.83],
   [34.85, 5.73],
 ];
+const ROUTES = ["Oran West", "Oran Centre", "Algiers East", "Bab Ezzouar", "Setif North", "Blida", "Tizi Ouzou"];
+const DEPOTS = ["DEP-ALG-01", "DEP-ORN-02", "DEP-STF-03", "DEP-BLD-04"];
+
+/** What a signed-in app would attach: opaque ids and a route, never a name or a phone number. */
+function attributesFor(
+  context: DemoContext,
+  kind: DeviceKind,
+  channel: string,
+  serial: number,
+): DeviceAttributes | null {
+  const { dice } = context;
+  if (channel === "dev" || channel === "staging") {
+    return { tester: `QA-${String(dice.between(1, 6)).padStart(2, "0")}`, build: "internal" };
+  }
+  if (dice.chance(0.12)) return null;
+  const depot = dice.pick(DEPOTS);
+  return kind === "tablet"
+    ? { rep: `REP-${serial}`, route: dice.pick(ROUTES), depot, territory: dice.between(1, 40) }
+    : { driver: `DRV-${serial}`, vehicle: `VAN-${dice.between(10, 99)}`, depot };
+}
+
 const CRASH =
   "App crashed on start: TypeError: Cannot read properties of undefined (reading 'lines')";
 
@@ -96,11 +118,13 @@ async function insertDevices(
       const stale = dice.chance(0.06);
       const lastSeenMs = stale ? dice.between(4, 18) * DAY : dice.between(2, 44 * 60) * MINUTE;
       const [lat, lng] = dice.pick(CITIES);
+      const attributes = attributesFor(context, kind, group.channel, serial);
       const located = dice.chance(0.7);
       rows.push({
         app_id: seeded.id,
         device_id: randomUUID(),
         custom_id: `${group.prefix}-${String(serial).padStart(4, "0")}`,
+        attributes: attributes ? JSON.stringify(attributes) : null,
         platform: "android" as const,
         is_prod: group.channel !== "dev",
         is_emulator: false,
@@ -121,6 +145,9 @@ async function insertDevices(
         location_accuracy_m: located ? dice.between(8, 60) : null,
         location_reported_at: located ? ago(context, lastSeenMs) : null,
         last_seen_at: ago(context, lastSeenMs),
+        attributes_updated_at: attributes
+          ? ago(context, lastSeenMs + dice.between(1, 72) * HOUR)
+          : null,
         created_at: ago(context, dice.between(20, 100) * DAY),
         updated_at: ago(context, lastSeenMs),
       });
@@ -230,7 +257,9 @@ export async function seedFleet(
   kind: DeviceKind,
 ): Promise<{ devices: number; events: number }> {
   const devices = await insertDevices(context, seeded, groups, kind);
-  const events = devices.flatMap((device) => deviceEvents(context, seeded, device));
+  const events = devices
+    .flatMap((device) => deviceEvents(context, seeded, device))
+    .map((event) => ({ ...event, category: classifyUpdateEvent(event.action) }));
   for (let start = 0; start < events.length; start += 1_000) {
     await context.trx
       .insertInto("device_events")

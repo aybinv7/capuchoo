@@ -34,6 +34,12 @@ export {
   setChannel,
 } from "./channel.service.js";
 
+export {
+  clearDeviceAttributes,
+  getDeviceAttributes,
+  setDeviceAttributes,
+} from "./attributes.service.js";
+
 export { HttpError, NetworkError } from "./http.js";
 
 export { isExpiredLinkError, isTransientError } from "./check-errors.js";
@@ -119,6 +125,8 @@ export { applyOtaUpdate, discardBundle, getCurrentBundle, notifyAppReady } from 
 // Re-exported so an app does not need a direct @capuchoo/core dependency just
 // to type an update.
 export type {
+  DeviceAttributePatch,
+  DeviceAttributes,
   Environment,
   Platform,
   ResolvedUpdate,

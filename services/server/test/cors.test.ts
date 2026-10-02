@@ -26,6 +26,7 @@ describe("CORS", () => {
       "/api/stats",
       "/api/native-updates/log",
       "/api/channel_self",
+      "/api/device_attributes",
     ]) {
       const response = await preflight(path);
       expect(response.status, path).toBeLessThan(300);

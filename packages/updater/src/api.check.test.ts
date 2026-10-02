@@ -1,7 +1,10 @@
 import { UpdateMessage, type ResolvedUpdate } from "@capuchoo/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-const mocks = vi.hoisted(() => ({ channel: "prod" }));
+const mocks = vi.hoisted(() => ({
+  channel: "prod",
+  attributes: null as Record<string, string> | null,
+}));
 
 vi.mock("./device.js", () => ({
   getBuiltinVersion: async () => "1.5.0",
@@ -16,6 +19,7 @@ vi.mock("./device.js", () => ({
 }));
 
 vi.mock("./channel.service.js", () => ({ getChannel: async () => mocks.channel }));
+vi.mock("./attributes.service.js", () => ({ getDeviceAttributes: async () => mocks.attributes }));
 
 const { UpdateCheckBlockedError, checkForUpdate, reportUpdateEvent } =
   await import("./api.service.js");
@@ -44,6 +48,7 @@ beforeEach(() => {
     retryBaseDelayMs: 1_000,
   });
   mocks.channel = "prod";
+  mocks.attributes = null;
 });
 
 afterEach(() => {
@@ -156,5 +161,28 @@ describe("reportUpdateEvent", () => {
 
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe("checkForUpdate with device attributes", () => {
+  const sentBody = () => JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body ?? "{}"));
+
+  it("omits them until the app sets some", async () => {
+    fetchMock.mockResolvedValueOnce(answer(200, bundle));
+    await checkForUpdate();
+    expect(sentBody()).not.toHaveProperty("attributes");
+  });
+
+  it("sends them, and sends an empty set after a clear", async () => {
+    mocks.attributes = { rep: "R-1042" };
+    fetchMock.mockResolvedValueOnce(answer(200, bundle));
+    await checkForUpdate();
+    expect(sentBody().attributes).toEqual({ rep: "R-1042" });
+
+    fetchMock.mockReset();
+    mocks.attributes = {};
+    fetchMock.mockResolvedValueOnce(answer(200, bundle));
+    await checkForUpdate();
+    expect(sentBody().attributes).toEqual({});
   });
 });

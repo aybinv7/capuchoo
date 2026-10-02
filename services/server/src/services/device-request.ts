@@ -1,4 +1,4 @@
-import type { Platform } from "@capuchoo/core";
+import { normaliseDeviceAttributes, type DeviceAttributes, type Platform } from "@capuchoo/core";
 
 /** A device request after snake_case/camelCase aliases are folded together. */
 export interface DeviceRequest {
@@ -24,6 +24,8 @@ export interface DeviceRequest {
   latitude?: number | undefined;
   longitude?: number | undefined;
   locationAccuracy?: number | undefined;
+  /** Set when the app sent attributes; `{}` clears them. */
+  attributes?: DeviceAttributes | undefined;
 }
 
 type Body = Record<string, unknown>;
@@ -97,6 +99,7 @@ export function parseDeviceRequest(raw: unknown): DeviceRequest | null {
     latitude: number(location, "latitude", "lat"),
     longitude: number(location, "longitude", "lng", "lon"),
     locationAccuracy: number(location, "location_accuracy_m", "accuracy"),
+    attributes: normaliseDeviceAttributes(body.attributes)?.attributes,
   };
 }
 
