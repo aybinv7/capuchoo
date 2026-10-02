@@ -12,9 +12,8 @@ import { useChannelRollout } from "../../composables/useChannelRollout";
 import { fillCurve } from "../../lib/rollout-curve";
 import { versionMix } from "../../lib/version-mix";
 import AdoptionCurve from "./AdoptionCurve.vue";
-import AdoptionSummary from "./AdoptionSummary.vue";
 import BehindDevicesList from "./BehindDevicesList.vue";
-import VersionMixBar from "./VersionMixBar.vue";
+import RolloutMix from "./RolloutMix.vue";
 
 const props = defineProps<{ appId: string; channelId: string; deliverGate: Gate }>();
 const emit = defineEmits<{ deliver: [] }>();
@@ -76,14 +75,13 @@ const behind = computed(() =>
       aria-busy="true"
     >
       <div class="space-y-5">
-        <div class="flex items-center gap-5">
-          <Skeleton class="size-24 rounded-full" />
-          <div class="space-y-2">
-            <Skeleton class="h-9 w-32" />
+        <div class="flex items-center gap-6">
+          <Skeleton class="size-37 rounded-full" />
+          <div class="flex-1 space-y-2">
             <Skeleton class="h-4 w-48" />
+            <Skeleton v-for="index in 3" :key="index" class="h-6 w-full" />
           </div>
         </div>
-        <Skeleton class="h-3 w-full rounded-full" />
         <Skeleton class="h-32 w-full" />
       </div>
       <div class="space-y-2">
@@ -115,17 +113,25 @@ const behind = computed(() =>
           Deliver
         </GateButton>
       </div>
-      <VersionMixBar v-if="segments.length" :segments="segments" :channel-id="props.channelId" />
+      <RolloutMix
+        v-if="segments.length"
+        :segments="segments"
+        :devices="rollout.devices"
+        :on-current="0"
+        :version="null"
+        :channel-id="props.channelId"
+      />
     </div>
 
     <div v-else class="grid gap-x-8 gap-y-6 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <div class="min-w-0 space-y-6">
-        <AdoptionSummary
-          :on-current="rollout.on_current"
+        <RolloutMix
+          :segments="segments"
           :devices="rollout.devices"
+          :on-current="rollout.on_current"
           :version="current.version"
+          :channel-id="props.channelId"
         />
-        <VersionMixBar v-if="segments.length" :segments="segments" :channel-id="props.channelId" />
         <AdoptionCurve :points="curve" :current="current" :devices="rollout.devices" />
       </div>
       <BehindDevicesList
