@@ -32,6 +32,18 @@ export const queryKeys = {
   deviceActivity: (appId: string, deviceId: string, window: Record<string, unknown>) =>
     ["apps", appId, "device", deviceId, "activity", window] as const,
   activityAll: (appId: string) => ["apps", appId, "activity"] as const,
+  /** What a channel's devices report: refetched on telemetry and when its pointer moves. */
+  channelInsightsAll: (appId: string) => ["apps", appId, "channel"] as const,
+  channelInsights: (appId: string, channelId: string) =>
+    ["apps", appId, "channel", channelId] as const,
+  channelRollout: (appId: string, channelId: string, tz: string) =>
+    ["apps", appId, "channel", channelId, "rollout", tz] as const,
+  channelActivity: (appId: string, channelId: string, window: Record<string, unknown>) =>
+    ["apps", appId, "channel", channelId, "activity", window] as const,
+  /** Runs and deploys that targeted a channel; apart from insights, so telemetry never refetches them. */
+  channelBuildsAll: (appId: string) => ["apps", appId, "channel-builds"] as const,
+  channelBuilds: (appId: string, channelId: string) =>
+    ["apps", appId, "channel-builds", channelId] as const,
   activity: (appId: string, filters: Record<string, unknown>) =>
     ["apps", appId, "activity", filters] as const,
   /**

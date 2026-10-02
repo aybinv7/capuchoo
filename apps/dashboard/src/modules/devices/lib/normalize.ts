@@ -1,19 +1,15 @@
 import type { Environment } from "@capuchoo/core";
+import { toCategory } from "@/shared/activity/lib/categories";
+import { normalizeAttributes } from "@/shared/devices/lib/device-attributes";
 import type {
-  ActivityBucket,
   ActivityEvent,
-  ActivityRow,
   Device,
-  DeviceActivity,
   DeviceDetail,
-  DeviceEventCategory,
   DeviceEvent,
   DeviceRef,
   DeviceSummary,
   EventPage,
 } from "../types/devices.types";
-import { normalizeAttributes } from "./device-attributes";
-import { EVENT_CATEGORIES, toCategory } from "./event-filters";
 
 type Row = Record<string, unknown>;
 
@@ -133,43 +129,4 @@ export function normalizeEventPage<E extends DeviceEvent>(
     ? value.events.map(normalize).filter((event): event is E => event !== null)
     : [];
   return { events, next: text(value.next) };
-}
-
-function countsOf(value: unknown): Partial<Record<DeviceEventCategory, number>> {
-  const counts: Partial<Record<DeviceEventCategory, number>> = {};
-  if (!isRow(value)) return counts;
-  for (const category of EVENT_CATEGORIES) {
-    const raw = value[category];
-    if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) counts[category] = raw;
-  }
-  return counts;
-}
-
-/**
- * `GET /api/devices/:id/activity`, total over a partial body: unknown categories and unreadable
- * buckets are dropped, a missing total is zero. The asked-for window stands in for what is absent.
- */
-export function normalizeDeviceActivity(
-  value: unknown,
-  asked: { from: string; to: string; bucket: ActivityBucket; tz: string },
-): DeviceActivity {
-  const body = isRow(value) ? value : {};
-  const totals = countsOf(body.totals);
-  const series: ActivityRow[] = Array.isArray(body.series)
-    ? body.series.flatMap((row) => {
-        const at = isRow(row) ? text(row.at) : null;
-        return at ? [{ at, ...countsOf(row) }] : [];
-      })
-    : [];
-  const bucket = body.bucket === "hour" || body.bucket === "day" ? body.bucket : asked.bucket;
-  return {
-    from: text(body.from) ?? asked.from,
-    to: text(body.to) ?? asked.to,
-    bucket,
-    tz: text(body.tz) ?? asked.tz,
-    totals: Object.fromEntries(
-      EVENT_CATEGORIES.map((category) => [category, totals[category] ?? 0]),
-    ) as Record<DeviceEventCategory, number>,
-    series,
-  };
 }

@@ -1,4 +1,4 @@
-import type { DeviceAttributes } from "../types/devices.types";
+import type { DeviceAttributes } from "@capuchoo/core";
 
 export interface AttributeEntry {
   key: string;

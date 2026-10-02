@@ -61,6 +61,7 @@ function channelOps(appId: string, data: unknown): CacheOp[] {
     update<ChannelDetail>(queryKeys.channel(channel.id), (detail) => ({ ...detail, ...channel })),
     invalidate(queryKeys.channel(channel.id)),
     invalidate(queryKeys.channelHistory(channel.id)),
+    invalidate(queryKeys.channelInsights(appId, channel.id)),
     invalidate(queryKeys.statsAll(appId), true),
   ];
 }
@@ -110,7 +111,22 @@ function buildOps(appId: string, data: unknown): CacheOp[] {
     if (channelId)
       ops.push(update<Build[]>(queryKeys.builds(appId), withTarget(parentId, channelId)));
   }
+  ops.push({
+    op: "updateMatching",
+    prefix: queryKeys.channelBuildsAll(appId),
+    update: (current) => refreshListed(current, build),
+  });
+  if (build.channel_id)
+    ops.push(invalidate(queryKeys.channelBuilds(appId, build.channel_id), true));
   return ops;
+}
+
+/** A channel's run list takes a newer row of a run it already shows; a new run waits for a refetch. */
+function refreshListed(current: unknown, build: Build): Build[] | undefined {
+  if (!Array.isArray(current)) return undefined;
+  const list = current as Build[];
+  const known = list.find((entry) => entry.id === build.id);
+  return known ? (replaceById(list, { ...known, ...build }) ?? undefined) : undefined;
 }
 
 /** A child deploy's channel joins its run's targets in the list, so the canvas links them live. */
@@ -183,6 +199,7 @@ function deviceOps(appId: string, data: unknown): CacheOp[] {
     invalidate(queryKeys.devicesAll(appId), true),
     invalidate(queryKeys.statsAll(appId), true),
     invalidate(queryKeys.activityAll(appId), true),
+    invalidate(queryKeys.channelInsightsAll(appId), true),
   ];
   const uuid =
     typeof data === "object" && data !== null

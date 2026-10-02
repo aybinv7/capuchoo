@@ -19,7 +19,7 @@ import { notifyError } from "@/shared/lib/notify";
 import { hasAppRole } from "@/shared/lib/roles";
 import type { Build } from "@/shared/types/build";
 import type { useBuildActions } from "../../composables/useBuildActions";
-import { providerLabel } from "../../lib/run-meta";
+import { providerLabel } from "@/shared/lib/run-meta";
 
 const props = defineProps<{ build: Build; actions: ReturnType<typeof useBuildActions> }>();
 

@@ -1,11 +1,5 @@
+import type { LaneStatus } from "@/shared/components/release-lane/types";
 import type { Alignment } from "./channel-alignment";
-
-export type LaneTone = "success" | "warning" | "info" | "muted";
-
-export interface LaneStatus {
-  tone: LaneTone;
-  text: string;
-}
 
 /** What a version node says about the channel: on it, behind it, ahead of it, or nothing. */
 export function alignmentStatus(alignment: Alignment): LaneStatus | null {

@@ -22,7 +22,7 @@ import DeviceTimelineCard from "../components/DeviceTimelineCard.vue";
 import RemoveDeviceDialog from "../components/RemoveDeviceDialog.vue";
 import { useDeviceDetail } from "../composables/useDeviceDetail";
 import { useDeviceMutations } from "../composables/useDeviceMutations";
-import { deviceTitle } from "../lib/device-columns";
+import { deviceTitle } from "@/shared/devices/lib/device-title";
 
 const route = useRoute();
 const router = useRouter();

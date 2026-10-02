@@ -91,6 +91,7 @@ describe("reduceStreamEvent: channel", () => {
     expect(invalidated).toEqual(
       expect.arrayContaining([
         { key: key(queryKeys.channelHistory("ch-prod")), throttle: false },
+        { key: key(queryKeys.channelInsights(APP, "ch-prod")), throttle: false },
         { key: key(queryKeys.statsAll(APP)), throttle: true },
       ]),
     );
@@ -287,6 +288,22 @@ describe("reduceStreamEvent: child builds", () => {
     expect(entry?.target_channel_ids).toEqual(["ch-dev", "ch-prod"]);
   });
 
+  it("refreshes a run a channel lists, and refetches the list a deploy lands in", () => {
+    const run = build({ id: "run-1", kind: "pipeline", target_channel_ids: ["ch-prod"] });
+    const listKey = key(queryKeys.channelBuilds(APP, "ch-prod"));
+    const cache = new Map<string, unknown>([[listKey, [run]]]);
+    applyAll(cache, reduceStreamEvent(APP, { type: "build", data: { ...run, status: "failed" } }));
+    const [entry] = cache.get(listKey) as Build[];
+    expect(entry?.status).toBe("failed");
+    expect(entry?.target_channel_ids).toEqual(["ch-prod"]);
+    const invalidated = applyAll(
+      cache,
+      reduceStreamEvent(APP, { type: "build", data: { ...child, channel_id: "ch-prod" } }),
+    );
+    expect(invalidated).toContainEqual({ key: listKey, throttle: true });
+    expect((cache.get(listKey) as Build[]).map((row) => row.id)).toEqual(["run-1"]);
+  });
+
   it("keeps a run's targets when a stream row leaves them out", () => {
     const run = build({ id: "run-1", kind: "pipeline", target_channel_ids: ["ch-prod"] });
     const cache = new Map<string, unknown>([[key(queryKeys.builds(APP)), [run]]]);
@@ -418,6 +435,7 @@ describe("reduceStreamEvent: other events", () => {
       { op: "invalidate", key: queryKeys.devicesAll(APP), throttle: true },
       { op: "invalidate", key: queryKeys.statsAll(APP), throttle: true },
       { op: "invalidate", key: queryKeys.activityAll(APP), throttle: true },
+      { op: "invalidate", key: queryKeys.channelInsightsAll(APP), throttle: true },
     ]);
   });
 

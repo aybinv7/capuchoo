@@ -5,7 +5,7 @@ import { computed } from "vue";
 import { useBuild } from "@/shared/queries/useBuilds";
 import type { Build } from "@/shared/types/build";
 import { buildPipelineModel, pipelineProgress } from "../lib/pipeline-graph";
-import { runTitle, triggerLabel } from "../lib/run-meta";
+import { runTitle, triggerLabel } from "@/shared/lib/run-meta";
 
 const props = defineProps<{ build: Build }>();
 

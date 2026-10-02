@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { attributeChips, attributesText } from "../lib/device-attributes";
-import type { DeviceAttributes } from "../types/devices.types";
+import type { DeviceAttributes } from "@capuchoo/core";
 
 const props = withDefaults(
   defineProps<{ attributes: DeviceAttributes | null | undefined; limit?: number }>(),

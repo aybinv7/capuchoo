@@ -2,7 +2,7 @@
 import { Scissors, SquareArrowOutUpRight } from "@lucide/vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { BuildSource } from "@/shared/types/build";
-import { providerLabel } from "../../lib/run-meta";
+import { providerLabel } from "@/shared/lib/run-meta";
 
 const props = defineProps<{ provider: BuildSource; url: string | null }>();
 </script>

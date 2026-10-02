@@ -41,6 +41,9 @@ export function useDeliveryActions(appId: MaybeRefOrGetter<string>) {
       detail ? { ...detail, ...channel } : detail,
     );
     void client.invalidateQueries({ queryKey: queryKeys.channel(channel.id) });
+    void client.invalidateQueries({
+      queryKey: queryKeys.channelInsights(toValue(appId), channel.id),
+    });
     void client.invalidateQueries({ queryKey: queryKeys.statsAll(toValue(appId)) });
   }
 

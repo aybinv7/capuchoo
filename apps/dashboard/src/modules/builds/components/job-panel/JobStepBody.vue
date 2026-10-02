@@ -7,7 +7,7 @@ import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import type { BuildSource } from "@/shared/types/build";
 import { unavailableMessage, type StepView } from "../../lib/job-logs";
 import { isJobFinished } from "../../lib/job-status";
-import { providerLabel } from "../../lib/run-meta";
+import { providerLabel } from "@/shared/lib/run-meta";
 import type { UnavailableJobLogs } from "../../types/job-logs.types";
 import LogViewer from "./LogViewer.vue";
 

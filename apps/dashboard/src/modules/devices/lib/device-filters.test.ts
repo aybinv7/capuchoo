@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { toDeviceFilters } from "./device-filters";
+import { toDeviceFilters, withChannelFilter } from "./device-filters";
 
 describe("device filters", () => {
   it("maps single-value facets to query parameters", () => {
@@ -22,5 +22,14 @@ describe("device filters", () => {
       channelId: "",
       activeDays: "",
     });
+  });
+
+  it("sets or clears the channel facet, keeping the others", () => {
+    const filters = [{ id: "last_seen", value: ["7"] }];
+    expect(withChannelFilter(filters, "c-1")).toEqual([
+      { id: "last_seen", value: ["7"] },
+      { id: "channel", value: ["c-1"] },
+    ]);
+    expect(withChannelFilter([...filters, { id: "channel", value: ["c-0"] }], "")).toEqual(filters);
   });
 });

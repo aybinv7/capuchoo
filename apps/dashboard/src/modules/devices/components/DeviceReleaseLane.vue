@@ -3,12 +3,13 @@ import type { Environment } from "@capuchoo/core";
 import { ChevronRight, Package, Pin, Radio, Smartphone } from "@lucide/vue";
 import { computed } from "vue";
 import { cn } from "@/lib/utils";
+import ReleaseLaneNode from "@/shared/components/release-lane/ReleaseLaneNode.vue";
+import type { LaneStatus } from "@/shared/components/release-lane/types";
 import { RouteName } from "@/shared/router/route-names";
 import type { Channel, ReleaseCatalog } from "@/shared/types/release";
 import { nativeAlignment, otaAlignment } from "../lib/channel-alignment";
-import { alignmentStatus, channelHint, otaLabel, type LaneStatus } from "../lib/release-lane";
+import { alignmentStatus, channelHint, otaLabel } from "../lib/release-lane";
 import type { DeviceDetail } from "../types/devices.types";
-import ReleaseLaneNode from "./ReleaseLaneNode.vue";
 
 const props = defineProps<{
   device: DeviceDetail;

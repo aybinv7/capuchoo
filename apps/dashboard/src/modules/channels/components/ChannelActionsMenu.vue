@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CirclePause, CirclePlay, Ellipsis, History, Rocket, Trash2 } from "@lucide/vue";
+import { CirclePause, CirclePlay, Ellipsis, History, Rocket, Settings2, Trash2 } from "@lucide/vue";
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +14,14 @@ import { useAppPermissions } from "@/shared/composables/useAppPermissions";
 import type { DeliveryDialogController } from "@/shared/delivery/composables/useDeliveryDialogs";
 import type { Channel } from "@/shared/types/release";
 
-const props = defineProps<{ channel: Channel; dialogs: DeliveryDialogController }>();
-const emit = defineEmits<{ delete: [channel: Channel] }>();
+const props = defineProps<{
+  channel: Channel;
+  dialogs: DeliveryDialogController;
+  /** Offer the settings sheet, on a page that hosts it. */
+  withSettings?: boolean;
+  trigger?: "ghost" | "outline";
+}>();
+const emit = defineEmits<{ delete: [channel: Channel]; settings: [] }>();
 
 const permissions = useAppPermissions();
 const deliverGate = computed(() => permissions.deliver(props.channel.environment));
@@ -25,7 +31,11 @@ const manageGate = computed(() => permissions.manageChannels.value);
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="ghost" size="icon-sm" :aria-label="`Actions for ${props.channel.name}`">
+      <Button
+        :variant="props.trigger ?? 'ghost'"
+        size="icon-sm"
+        :aria-label="`Actions for ${props.channel.name}`"
+      >
         <Ellipsis />
       </Button>
     </DropdownMenuTrigger>
@@ -53,6 +63,10 @@ const manageGate = computed(() => permissions.manageChannels.value);
         {{ props.channel.paused ? "Resume" : "Pause" }}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
+      <DropdownMenuItem v-if="props.withSettings" @select="emit('settings')">
+        <Settings2 class="size-4" />
+        Settings
+      </DropdownMenuItem>
       <DropdownMenuItem
         variant="destructive"
         :disabled="!manageGate.ok"

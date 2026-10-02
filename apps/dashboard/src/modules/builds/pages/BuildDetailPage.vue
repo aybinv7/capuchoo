@@ -10,7 +10,7 @@ import { useBuild } from "@/shared/queries/useBuilds";
 import { useCatalog } from "@/shared/queries/useCatalog";
 import DeployRunView from "../components/DeployRunView.vue";
 import PipelineRunView from "../components/pipeline/PipelineRunView.vue";
-import { buildTitle } from "../lib/run-meta";
+import { buildTitle } from "@/shared/lib/run-meta";
 
 const route = useRoute();
 const { appId } = useCurrentApp();

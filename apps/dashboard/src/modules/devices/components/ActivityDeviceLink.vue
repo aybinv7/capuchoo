@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { RouteName } from "@/shared/router/route-names";
 import type { DeviceRef } from "../types/devices.types";
-import AttributeChips from "./AttributeChips.vue";
+import AttributeChips from "@/shared/devices/components/AttributeChips.vue";
 
 const props = defineProps<{ device: DeviceRef | null }>();
 

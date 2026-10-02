@@ -1,15 +1,8 @@
 import type { AnyColumnDef } from "@/shared/components/data-table";
 import { actionsColumn, selectionColumn } from "@/shared/components/data-table";
+import { attributesText } from "@/shared/devices/lib/device-attributes";
+import { deviceTitle } from "@/shared/devices/lib/device-title";
 import type { Device } from "../types/devices.types";
-import { attributesText } from "./device-attributes";
-
-export function deviceTitle(device: Device): string {
-  return (
-    device.device_name ||
-    [device.manufacturer, device.model].filter(Boolean).join(" ") ||
-    "Unknown device"
-  );
-}
 
 export const deviceChannelName = (device: Device) =>
   device.channel_name ?? device.reported_channel ?? "";

@@ -1,9 +1,9 @@
 import type { BarSeries } from "@/shared/components/charts/types";
 import { fillBuckets } from "@/shared/period/lib/buckets";
-import type { ActivityRow, DeviceEventCategory } from "../types/devices.types";
+import type { ActivityCategory, ActivityRow } from "../types";
 
 export type ChartedCategory = Extract<
-  DeviceEventCategory,
+  ActivityCategory,
   "delivered" | "failed" | "downloading" | "check"
 >;
 
@@ -26,3 +26,19 @@ export const activityValues = (
   keys: readonly string[],
   rows: readonly ActivityRow[],
 ): Record<ChartedCategory, number[]> => fillBuckets(keys, rows, CHARTED);
+
+/** Delivered over delivered plus failed; null when nothing finished. */
+export function successRate(
+  totals: Pick<Record<ActivityCategory, number>, "delivered" | "failed">,
+) {
+  const finished = totals.delivered + totals.failed;
+  return finished > 0 ? totals.delivered / finished : null;
+}
+
+export type RateTone = "success" | "warning" | "danger";
+
+/** How a success rate reads: healthy from 95%, a warning from 80%, a problem below. */
+export function rateTone(rate: number): RateTone {
+  if (rate >= 0.95) return "success";
+  return rate >= 0.8 ? "warning" : "danger";
+}

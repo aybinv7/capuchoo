@@ -8,9 +8,10 @@ import RelativeTime from "@/shared/components/RelativeTime.vue";
 import VersionTag from "@/shared/components/VersionTag.vue";
 import { RouteName } from "@/shared/router/route-names";
 import type { Channel } from "@/shared/types/release";
-import { DEVICE_COLUMNS, deviceTitle } from "../lib/device-columns";
+import { deviceTitle } from "@/shared/devices/lib/device-title";
+import { DEVICE_COLUMNS } from "../lib/device-columns";
 import type { Device } from "../types/devices.types";
-import AttributeChips from "./AttributeChips.vue";
+import AttributeChips from "@/shared/devices/components/AttributeChips.vue";
 import DeviceRowActions from "./DeviceRowActions.vue";
 
 const search = defineModel<string>("search", { required: true });

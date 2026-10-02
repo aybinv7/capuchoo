@@ -9,7 +9,7 @@ import type {
   LogsUnavailableReason,
 } from "../types/job-logs.types";
 import { isJobFinished } from "./job-status";
-import { providerLabel } from "./run-meta";
+import { providerLabel } from "@/shared/lib/run-meta";
 
 type Row = Record<string, unknown>;
 

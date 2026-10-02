@@ -3,8 +3,9 @@ import { useElementSize } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { formatCount } from "@/shared/lib/format";
 import { bucketTitle, tickLabel } from "./lib/bucket-label";
+import { markersAt } from "./lib/markers";
 import { niceMax } from "./lib/scale";
-import type { BarGranularity, BarSeries } from "./types";
+import type { BarGranularity, BarSeries, ChartMarker } from "./types";
 
 const props = withDefaults(
   defineProps<{
@@ -16,10 +17,12 @@ const props = withDefaults(
     height?: number;
     label: string;
     legend?: boolean;
+    /** Moments drawn over the bars, listed in the tooltip of their bucket. */
+    markers?: readonly ChartMarker[];
     /** Bars answer a click with `select`. */
     selectable?: boolean;
   }>(),
-  { granularity: "day", height: 200, legend: true, selectable: false },
+  { granularity: "day", height: 200, legend: true, selectable: false, markers: () => [] },
 );
 
 const emit = defineEmits<{ select: [bucket: string] }>();
@@ -27,6 +30,7 @@ const emit = defineEmits<{ select: [bucket: string] }>();
 const PAD = { top: 8, right: 8, bottom: 22, left: 36 };
 const GAP = 2;
 const TOOLTIP_HALF = 80;
+const WIDE_TOOLTIP_HALF = 112;
 
 const host = ref<HTMLElement | null>(null);
 const { width } = useElementSize(host);
@@ -74,16 +78,27 @@ const tooltip = computed(() => {
   const index = hovered.value;
   if (index === null || index >= props.buckets.length) return null;
   const x = PAD.left + index * slot.value + slot.value / 2;
+  const moments = markersAt(props.markers, index);
+  const half = moments.length ? WIDE_TOOLTIP_HALF : TOOLTIP_HALF;
   return {
     title: bucketTitle(props.buckets[index] ?? "", props.granularity),
-    left: Math.min(Math.max(x, TOOLTIP_HALF), width.value - TOOLTIP_HALF),
+    left: Math.min(Math.max(x, half), width.value - half),
+    wide: moments.length > 0,
     total: totals.value[index] ?? 0,
     rows: props.series.map((entry) => ({
       ...entry,
       value: props.values[entry.key]?.[index] ?? 0,
     })),
+    moments,
   };
 });
+
+const rules = computed(() =>
+  props.markers.map((marker) => ({
+    ...marker,
+    x: PAD.left + (marker.index + marker.offset) * slot.value,
+  })),
+);
 
 function indexAt(event: PointerEvent | MouseEvent): number | null {
   if (!slot.value) return null;
@@ -183,10 +198,25 @@ function choose(event: MouseEvent) {
             {{ tickLabel(bar.bucket, props.granularity) }}
           </text>
         </g>
+        <g v-for="rule in rules" :key="rule.key" class="pointer-events-none">
+          <line
+            :x1="rule.x"
+            :x2="rule.x"
+            :y1="PAD.top + 3"
+            :y2="PAD.top + plotHeight"
+            :stroke="rule.color"
+            stroke-width="1.5"
+            stroke-dasharray="3 2"
+          />
+          <circle :cx="rule.x" :cy="PAD.top + 3" r="3" :fill="rule.color" />
+        </g>
       </svg>
       <div
         v-if="tooltip"
-        class="bg-popover text-popover-foreground pointer-events-none absolute top-0 z-10 w-40 -translate-x-1/2 rounded-md border px-2.5 py-2 text-xs shadow-md"
+        :class="[
+          'bg-popover text-popover-foreground pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-md border px-2.5 py-2 text-xs shadow-md',
+          tooltip.wide ? 'w-56' : 'w-40',
+        ]"
         :style="{ left: `${tooltip.left}px` }"
       >
         <div class="mb-1 flex items-baseline justify-between gap-2">
@@ -206,6 +236,12 @@ function choose(event: MouseEvent) {
           </span>
           <span class="font-mono tabular">{{ formatCount(row.value, true) }}</span>
         </div>
+        <ul v-if="tooltip.moments.length" class="mt-1.5 space-y-1 border-t pt-1.5">
+          <li v-for="moment in tooltip.moments" :key="moment.key" class="flex items-start gap-1.5">
+            <span class="mt-1 size-2 shrink-0 rounded-full" :style="{ background: moment.color }" />
+            <span class="min-w-0 break-words">{{ moment.label }}</span>
+          </li>
+        </ul>
         <div v-if="props.selectable" class="text-muted-foreground mt-1.5 border-t pt-1.5">
           Click to focus this {{ props.granularity }}
         </div>

@@ -4,7 +4,7 @@ import { computed, ref } from "vue";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCopyToast } from "@/shared/composables/useCopyToast";
 import { useWrapOverflow } from "@/shared/composables/useWrapOverflow";
-import { attributeEntries } from "../lib/device-attributes";
+import { attributeEntries } from "@/shared/devices/lib/device-attributes";
 import type { DeviceAttributes } from "../types/devices.types";
 import AttributeChip from "./AttributeChip.vue";
 import AttributeEmptyChip from "./AttributeEmptyChip.vue";

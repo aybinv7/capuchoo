@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { categoryParam, EVENT_FILTERS, isEventFilter, toCategory } from "./event-filters";
+import { categoryParam, EVENT_FILTERS, isEventFilter } from "./event-filters";
 
 describe("event filters", () => {
   it("offers All plus the five categories worth filtering by, in order", () => {
@@ -23,11 +23,5 @@ describe("event filters", () => {
     expect(isEventFilter("failed")).toBe(true);
     expect(isEventFilter("cancelled")).toBe(false);
     expect(isEventFilter("")).toBe(false);
-  });
-
-  it("reads an unknown or missing category as other", () => {
-    expect(toCategory("delivered")).toBe("delivered");
-    expect(toCategory("teleported")).toBe("other");
-    expect(toCategory(undefined)).toBe("other");
   });
 });

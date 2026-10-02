@@ -10,20 +10,6 @@ export interface TimelineDay<E extends DeviceEvent> {
   items: TimelineItem<E>[];
 }
 
-/** A function mapping an ISO instant to its calendar day, `YYYY-MM-DD`, in `timeZone`. */
-export function dayKeyFormatter(timeZone?: string): (iso: string) => string {
-  const format = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  return (iso) => {
-    const time = Date.parse(iso);
-    return Number.isNaN(time) ? "unknown" : format.format(time);
-  };
-}
-
 function closeRun<E extends DeviceEvent>(run: E[], items: TimelineItem<E>[]) {
   if (run.length === 1) items.push({ type: "event", key: run[0]!.id, event: run[0]! });
   else if (run.length > 1)
@@ -66,31 +52,6 @@ export function groupTimeline<E extends DeviceEvent>(
   }
   if (current) closeRun(run, current.items);
   return days;
-}
-
-const dayHeading = new Intl.DateTimeFormat("en", {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  timeZone: "UTC",
-});
-const dayHeadingWithYear = new Intl.DateTimeFormat("en", {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-/** `Today`, `Yesterday`, `Mon, Sep 28`, or with the year when it is not the current one. */
-export function dayLabel(day: string, today: string, yesterday: string): string {
-  if (day === today) return "Today";
-  if (day === yesterday) return "Yesterday";
-  const date = new Date(`${day}T12:00:00Z`);
-  if (Number.isNaN(date.getTime())) return "Unknown day";
-  return day.slice(0, 4) === today.slice(0, 4)
-    ? dayHeading.format(date)
-    : dayHeadingWithYear.format(date);
 }
 
 /** How many devices a run of app-wide events came from; null for one device's own timeline. */

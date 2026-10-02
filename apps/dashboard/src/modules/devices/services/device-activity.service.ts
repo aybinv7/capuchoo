@@ -1,13 +1,13 @@
 import { http } from "@/shared/api/http";
-import { normalizeDeviceActivity } from "../lib/normalize";
-import type { ActivityWindow, DeviceActivity } from "../types/devices.types";
+import { normalizeActivity } from "@/shared/activity/lib/normalize-activity";
+import type { Activity, ActivityWindow } from "@/shared/activity/types";
 
 export const fetchDeviceActivity = async (
   deviceId: string,
   window: ActivityWindow,
   signal?: AbortSignal,
-): Promise<DeviceActivity> =>
-  normalizeDeviceActivity(
+): Promise<Activity> =>
+  normalizeActivity(
     await http.get<unknown>(
       `/devices/${encodeURIComponent(deviceId)}/activity`,
       { from: window.from, to: window.to, bucket: window.bucket, tz: window.tz },

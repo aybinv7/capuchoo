@@ -119,26 +119,3 @@ export interface ActivityFilters extends EventBounds {
   category: EventFilter;
   channelId: string;
 }
-
-export type ActivityBucket = "hour" | "day";
-
-/** One bucket of `GET /api/devices/:id/activity`; `at` is its local start in the zone asked for. */
-export type ActivityRow = { at: string } & Partial<Record<DeviceEventCategory, number>>;
-
-/** `GET /api/devices/:id/activity`: counts per category over a window, only non-empty buckets. */
-export interface DeviceActivity {
-  from: string;
-  to: string;
-  bucket: ActivityBucket;
-  tz: string;
-  totals: Record<DeviceEventCategory, number>;
-  series: ActivityRow[];
-}
-
-/** What an activity chart is asked for: the window, its bucket size and the viewer's zone. */
-export type ActivityWindow = {
-  from: string;
-  to: string;
-  bucket: ActivityBucket;
-  tz: string;
-};

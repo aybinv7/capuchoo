@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { activityEvent, deviceEvent } from "./test-events";
-import { dayKeyFormatter, dayLabel, deviceCount, groupTimeline } from "./timeline";
+import { dayKeyFormatter } from "@/shared/period/lib/day-heading";
+import { deviceCount, groupTimeline } from "./timeline";
 
 const utc = dayKeyFormatter("UTC");
 
@@ -83,15 +84,6 @@ describe("groupTimeline", () => {
 
   it("returns nothing for no events", () => {
     expect(groupTimeline([], utc)).toEqual([]);
-  });
-});
-
-describe("dayLabel", () => {
-  it("names today and yesterday, and dates the rest", () => {
-    expect(dayLabel("2026-10-02", "2026-10-02", "2026-10-01")).toBe("Today");
-    expect(dayLabel("2026-10-01", "2026-10-02", "2026-10-01")).toBe("Yesterday");
-    expect(dayLabel("2026-09-28", "2026-10-02", "2026-10-01")).toBe("Mon, Sep 28");
-    expect(dayLabel("2025-12-31", "2026-10-02", "2026-10-01")).toBe("Wed, Dec 31, 2025");
   });
 });
 

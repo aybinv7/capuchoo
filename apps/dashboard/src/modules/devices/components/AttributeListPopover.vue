@@ -5,7 +5,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import RelativeTime from "@/shared/components/RelativeTime.vue";
 import { useCopyToast } from "@/shared/composables/useCopyToast";
-import type { AttributeEntry } from "../lib/device-attributes";
+import type { AttributeEntry } from "@/shared/devices/lib/device-attributes";
 
 const props = defineProps<{
   entries: readonly AttributeEntry[];

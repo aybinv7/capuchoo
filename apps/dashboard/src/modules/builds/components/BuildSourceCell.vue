@@ -3,7 +3,7 @@ import { GitBranch, SquareArrowOutUpRight, Tag } from "@lucide/vue";
 import ProviderIcon from "@/shared/components/ProviderIcon.vue";
 import { shortId } from "@/shared/lib/format";
 import type { Build } from "@/shared/types/build";
-import { displayRef, isTagRef, providerLabel } from "../lib/run-meta";
+import { displayRef, isTagRef, providerLabel } from "@/shared/lib/run-meta";
 
 defineProps<{ build: Build }>();
 </script>

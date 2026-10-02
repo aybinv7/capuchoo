@@ -3,7 +3,7 @@ import { CircleArrowDown, CircleArrowUp, CircleCheck, CircleDot } from "@lucide/
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import type { LaneStatus, LaneTone } from "../lib/release-lane";
+import type { LaneStatus, LaneTone } from "./types";
 
 const props = defineProps<{
   label: string;
@@ -62,5 +62,6 @@ const ICON = {
       </span>
       <span v-else class="text-muted-foreground mt-0.5 block text-[11px]">&nbsp;</span>
     </span>
+    <slot name="aside" />
   </component>
 </template>

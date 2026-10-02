@@ -18,6 +18,7 @@ import { RouteName } from "@/shared/router/route-names";
 import AssignChannelDialog from "../components/AssignChannelDialog.vue";
 import DevicesTable from "../components/DevicesTable.vue";
 import RemoveDeviceDialog from "../components/RemoveDeviceDialog.vue";
+import { useChannelFilterParam } from "../composables/useChannelFilterParam";
 import { useDeviceMutations } from "../composables/useDeviceMutations";
 import { useDevices } from "../composables/useDevices";
 import { toDeviceFilters } from "../lib/device-filters";
@@ -30,6 +31,7 @@ const { appId, app } = useCurrentApp();
 const { channels } = useCatalog(appId);
 const search = useQueryParam("q", "");
 const columnFilters = ref<ColumnFiltersState>([]);
+useChannelFilterParam(columnFilters);
 const filters = computed(() => toDeviceFilters(search.value, columnFilters.value));
 const view = ref<"table" | "map">("table");
 const {

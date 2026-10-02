@@ -17,3 +17,12 @@ export function toDeviceFilters(search: string, filters: ColumnFiltersState): De
     activeDays: ACTIVE_DAYS.has(days) ? days : "",
   };
 }
+
+/** The facets with the channel one set to `channelId`, or removed for an empty id. */
+export function withChannelFilter(
+  filters: ColumnFiltersState,
+  channelId: string,
+): ColumnFiltersState {
+  const others = filters.filter((filter) => filter.id !== "channel");
+  return channelId ? [...others, { id: "channel", value: [channelId] }] : others;
+}

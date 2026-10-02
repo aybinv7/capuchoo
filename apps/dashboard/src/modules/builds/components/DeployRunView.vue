@@ -8,7 +8,7 @@ import PageHeader from "@/shared/components/PageHeader.vue";
 import { RouteName } from "@/shared/router/route-names";
 import type { BuildDetail } from "@/shared/types/build";
 import type { ReleaseCatalog } from "@/shared/types/release";
-import { deployTitle } from "../lib/run-meta";
+import { deployTitle } from "@/shared/lib/run-meta";
 import BuildEventTimeline from "./BuildEventTimeline.vue";
 import BuildMeta from "./BuildMeta.vue";
 

@@ -22,6 +22,8 @@ const props = defineProps<{
   channel: Channel;
   channels: readonly Channel[];
   history: readonly ChannelHistoryEntry[];
+  /** History has answered, so whether the environment is locked is known. */
+  historyReady: boolean;
 }>();
 
 const permissions = useAppPermissions();
@@ -80,22 +82,25 @@ const lockedByServer = computed(
 </script>
 
 <template>
-  <section class="bg-card rounded-lg border">
-    <header class="flex items-center justify-between border-b px-4 py-2.5">
-      <span class="text-muted-foreground text-xs font-medium uppercase">Delivery settings</span>
-      <span
-        v-if="!gate.ok"
-        class="text-muted-foreground flex items-center gap-1 text-xs"
-        :title="gate.reason"
+  <div class="space-y-6">
+    <p
+      v-if="!gate.ok"
+      class="bg-surface text-muted-foreground flex items-start gap-2 rounded-md border px-3 py-2 text-xs text-pretty"
+    >
+      <Lock class="mt-0.5 size-3.5 shrink-0" />
+      {{ gate.reason }}
+    </p>
+
+    <section class="space-y-3" aria-labelledby="channel-settings-identity">
+      <h3
+        id="channel-settings-identity"
+        class="text-muted-foreground text-[11px] font-medium tracking-wide uppercase"
       >
-        <Lock class="size-3" />
-        read only
-      </span>
-    </header>
-    <div class="divide-y">
-      <div class="grid grid-cols-[8rem_1fr] items-center gap-2 px-4 py-3 text-sm">
-        <span class="text-muted-foreground">Kind</span>
-        <span>
+        Channel
+      </h3>
+      <dl class="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 text-sm">
+        <dt class="text-muted-foreground">Kind</dt>
+        <dd class="min-w-0">
           {{ props.channel.kind === "client" ? "Client channel" : "Release channel" }}
           <template v-if="base">
             following
@@ -105,10 +110,13 @@ const lockedByServer = computed(
               >{{ base.name }}</RouterLink
             >
           </template>
-        </span>
-        <span class="text-muted-foreground">Environment</span>
-        <div class="flex items-center gap-2">
-          <EnvBadge v-if="environmentLock || !gate.ok" :environment="props.channel.environment" />
+        </dd>
+        <dt class="text-muted-foreground">Environment</dt>
+        <dd class="flex items-center gap-2">
+          <EnvBadge
+            v-if="environmentLock || !gate.ok || !props.historyReady"
+            :environment="props.channel.environment"
+          />
           <NativeSelect
             v-else
             :key="environmentKey"
@@ -121,35 +129,46 @@ const lockedByServer = computed(
               env
             }}</NativeSelectOption>
           </NativeSelect>
-        </div>
-        <p v-if="environmentLock" class="text-muted-foreground col-span-2 text-xs">
-          {{ environmentLock }}
-        </p>
-      </div>
-      <div v-if="environmentError" class="px-4 py-3">
+        </dd>
+      </dl>
+      <p v-if="environmentLock" class="text-muted-foreground text-xs text-pretty">
+        {{ environmentLock }}
+      </p>
+      <div v-if="environmentError" class="space-y-2">
         <ErrorNotice :error="environmentError" />
-        <p v-if="lockedByServer" class="text-muted-foreground mt-2 text-xs">
+        <p v-if="lockedByServer" class="text-muted-foreground text-xs text-pretty">
           The server keeps the environment of a channel that has delivered, so devices never cross
           environments.
         </p>
       </div>
-      <Field
-        v-for="flag in DELIVERY_FLAGS"
-        :key="flag.key"
-        orientation="horizontal"
-        class="px-4 py-3"
+    </section>
+
+    <section class="space-y-1" aria-labelledby="channel-settings-delivery">
+      <h3
+        id="channel-settings-delivery"
+        class="text-muted-foreground text-[11px] font-medium tracking-wide uppercase"
       >
-        <FieldContent>
-          <FieldLabel :for="`flag-${flag.key}`">{{ flag.label }}</FieldLabel>
-          <FieldDescription class="text-xs">{{ flag.description }}</FieldDescription>
-        </FieldContent>
-        <Switch
-          :id="`flag-${flag.key}`"
-          :model-value="props.channel[flag.key]"
-          :disabled="!gate.ok || pendingFlag !== null"
-          @update:model-value="setFlag(flag.key, $event)"
-        />
-      </Field>
-    </div>
-  </section>
+        Who is served
+      </h3>
+      <div class="divide-y rounded-lg border">
+        <Field
+          v-for="flag in DELIVERY_FLAGS"
+          :key="flag.key"
+          orientation="horizontal"
+          class="px-3 py-3"
+        >
+          <FieldContent>
+            <FieldLabel :for="`flag-${flag.key}`">{{ flag.label }}</FieldLabel>
+            <FieldDescription class="text-xs">{{ flag.description }}</FieldDescription>
+          </FieldContent>
+          <Switch
+            :id="`flag-${flag.key}`"
+            :model-value="props.channel[flag.key]"
+            :disabled="!gate.ok || pendingFlag !== null"
+            @update:model-value="setFlag(flag.key, $event)"
+          />
+        </Field>
+      </div>
+    </section>
+  </div>
 </template>

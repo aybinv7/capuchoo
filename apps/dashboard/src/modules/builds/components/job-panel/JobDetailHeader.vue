@@ -7,7 +7,7 @@ import ProviderIcon from "@/shared/components/ProviderIcon.vue";
 import type { BuildSource } from "@/shared/types/build";
 import { jobCaption, jobEndedAt } from "../../lib/job-status";
 import type { PipelineNodeModel } from "../../lib/pipeline-graph";
-import { providerLabel } from "../../lib/run-meta";
+import { providerLabel } from "@/shared/lib/run-meta";
 import JobStatusIcon from "../pipeline/JobStatusIcon.vue";
 
 const props = defineProps<{

@@ -8,7 +8,7 @@ import RelativeTime from "@/shared/components/RelativeTime.vue";
 import { shortId } from "@/shared/lib/format";
 import type { Build } from "@/shared/types/build";
 import type { JobProgress } from "../../lib/pipeline-graph";
-import { displayRef, isTagRef, providerLabel, runTitle, triggerLabel } from "../../lib/run-meta";
+import { displayRef, isTagRef, providerLabel, runTitle, triggerLabel } from "@/shared/lib/run-meta";
 
 const props = defineProps<{ build: Build; progress: JobProgress }>();
 
