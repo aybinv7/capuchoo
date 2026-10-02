@@ -7,6 +7,7 @@ import {
   nextPrerelease,
   nextPublishedCode,
   publishedBundleVersions,
+  publishedWebVersions,
   resolveReleaseVersion,
 } from "./release-version.js";
 
@@ -126,5 +127,42 @@ describe("describeTakenVersion", () => {
     expect(
       describeTakenVersion({ ...input, kind: "native", version: "0.1.10", environment: "prod" }),
     ).toBeNull();
+  });
+});
+
+describe("publishedWebVersions", () => {
+  it("numbers the next OTA after an APK's built-in web version too", () => {
+    const withNative: AppArtefacts = {
+      bundles: [
+        {
+          id: "b1",
+          version_name: "3.0.1-dev.2",
+          platform: "android",
+          flavour: "dev",
+          created_at: "",
+        },
+      ],
+      native_builds: [
+        {
+          id: "n1",
+          version_name: "3.0.1-dev.3",
+          version_code: 13,
+          platform: "android",
+          flavour: "dev",
+          created_at: "",
+        },
+        {
+          id: "n2",
+          version_name: "3.0.1-dev.7",
+          version_code: 14,
+          platform: "ios",
+          flavour: "dev",
+          created_at: "",
+        },
+      ],
+    };
+    const published = publishedWebVersions(withNative, "android");
+    expect(published.sort()).toEqual(["3.0.1-dev.2", "3.0.1-dev.3"]);
+    expect(nextPrerelease("3.0.0", "dev", published)).toBe("3.0.1-dev.4");
   });
 });

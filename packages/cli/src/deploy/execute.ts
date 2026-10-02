@@ -39,7 +39,7 @@ import {
   describeTakenVersion,
   describeVersionRequestProblem,
   nextPublishedCode,
-  publishedBundleVersions,
+  publishedWebVersions,
   resolveReleaseVersion,
   type VersionRequest,
 } from "./release-version.js";
@@ -387,7 +387,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
           ? (artefacts?.native_builds ?? [])
               .filter((build) => build.platform === platform)
               .map((build) => build.version_name)
-          : publishedBundleVersions(artefacts, platform),
+          : publishedWebVersions(artefacts, platform),
       });
   const version = resolution.version;
   const bump = requested !== undefined && requested !== "auto" && !gradleOnly;

@@ -78,6 +78,19 @@ export function publishedBundleVersions(
     .map((bundle) => bundle.version_name);
 }
 
+/**
+ * Every version a device of this platform could already be running: published bundles, and the
+ * web build inside each published APK, which carries the APK's version. An OTA numbered only after
+ * the bundles could equal an APK's built-in version, and a device running that APK would never
+ * see it as an update.
+ */
+export function publishedWebVersions(artefacts: AppArtefacts | null, platform: Platform): string[] {
+  const natives = (artefacts?.native_builds ?? [])
+    .filter((build) => build.platform === platform)
+    .map((build) => build.version_name);
+  return [...new Set([...publishedBundleVersions(artefacts, platform), ...natives])];
+}
+
 /** The build number after the highest the server holds for this flavour, or 1. */
 export function nextPublishedCode(
   artefacts: AppArtefacts | null,
