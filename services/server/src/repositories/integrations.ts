@@ -117,3 +117,15 @@ function safeParse(text: string): unknown {
     return null;
   }
 }
+
+export async function setIntegrationConfig(
+  db: Db,
+  id: string,
+  config: Record<string, unknown>,
+): Promise<void> {
+  await db
+    .updateTable("integrations")
+    .set({ config: JSON.stringify(config), updated_at: new Date() })
+    .where("id", "=", id)
+    .execute();
+}

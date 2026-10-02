@@ -72,7 +72,7 @@ export async function githubSetupStatus(deps: Deps, link: GithubLink, endpoint: 
   const github = asInstallation(deps, link.installationId);
   const repo = asRecord(await github.call<unknown>("GET", `/repos/${link.repository}`));
   const defaultBranch = asText(repo.default_branch) ?? link.defaultBranch;
-  const [workflow, pull, secrets, variable, root] = await Promise.all([
+  const [workflow, pull, secrets, variable, root, expectedVersion] = await Promise.all([
     readFile(github, link, link.workflowPath, defaultBranch),
     setupPullRequest(github, link, "all"),
     github.list<{ name?: string }>(`/repos/${link.repository}/actions/secrets`, {
@@ -90,6 +90,7 @@ export async function githubSetupStatus(deps: Deps, link: GithubLink, endpoint: 
       query: { ref: defaultBranch },
       allow: [404],
     }),
+    latestCliVersion(deps),
   ]);
   const present = new Set(secrets.items.map((secret) => secret.name));
   const rootNames = new Set(
@@ -104,6 +105,7 @@ export async function githubSetupStatus(deps: Deps, link: GithubLink, endpoint: 
       exists: text !== null,
       generated: version !== null,
       version,
+      expected_version: expectedVersion,
       html_url: text ? `${link.htmlUrl}/blob/${defaultBranch}/${link.workflowPath}` : null,
     },
     pull_request: pull,
@@ -121,19 +123,29 @@ export async function githubSetupStatus(deps: Deps, link: GithubLink, endpoint: 
   };
 }
 
-async function latestCliVersion(deps: Deps): Promise<string> {
+const CLI_VERSION_TTL_MS = 60 * 60_000;
+
+/** The newest published CLI, cached for an hour; null when the registry cannot be reached. */
+async function latestCliVersion(deps: Deps): Promise<string | null> {
+  const now = deps.now().getTime();
+  const cached = deps.ci.cliVersion;
+  if (cached && cached.expiresAt > now) return cached.value;
+  let value: string | null = null;
   try {
     const response = await deps.ci.fetch("https://registry.npmjs.org/@capuchoo/cli/latest", {
       headers: { accept: "application/json" },
       signal: AbortSignal.timeout(5_000),
     });
     const payload = (await response.json()) as { version?: unknown };
-    return typeof payload.version === "string" && /^\d+\.\d+\.\d+/.test(payload.version)
-      ? payload.version
-      : "latest";
+    value =
+      typeof payload.version === "string" && /^\d+\.\d+\.\d+/.test(payload.version)
+        ? payload.version
+        : null;
   } catch {
-    return "latest";
+    value = null;
   }
+  deps.ci.cliVersion = { value, expiresAt: now + (value ? CLI_VERSION_TTL_MS : 60_000) };
+  return value;
 }
 
 export interface SetupPullRequestInput {
@@ -170,7 +182,7 @@ export async function openSetupPullRequest(
   let content: string;
   try {
     content = renderGithubWorkflow({
-      cliVersion: optional(input.cli_version) ?? (await latestCliVersion(deps)),
+      cliVersion: optional(input.cli_version) ?? (await latestCliVersion(deps)) ?? "latest",
       appDir: optional(input.app_dir),
       defaultBranch: base,
       devBranch: optional(input.dev_branch),

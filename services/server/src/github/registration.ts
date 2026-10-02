@@ -16,18 +16,25 @@ export interface ManifestRequest {
   name?: string | null;
 }
 
-/** What GitHub needs to create the App, pointing every URL back at this server. */
-export function buildManifest(baseUrl: string, input: ManifestRequest): Record<string, unknown> {
-  const host = new URL(baseUrl).host;
+export interface ManifestUrls {
+  /** Where browsers sign in: GitHub sends people back here, and only here carries the session. */
+  dashboard: string;
+  /** Where GitHub's servers deliver webhooks: the API itself, with no proxy in between. */
+  api: string;
+}
+
+/** What GitHub needs to create the App, pointing every URL back at this instance. */
+export function buildManifest(urls: ManifestUrls, input: ManifestRequest): Record<string, unknown> {
+  const host = new URL(urls.dashboard).host;
   const name = (input.name?.trim() || `Capuchoo ${host}`).slice(0, 34);
   return {
     name,
-    url: baseUrl,
+    url: urls.dashboard,
     description: "Records CI runs, starts pipelines and sets repositories up for Capuchoo.",
-    hook_attributes: { url: `${baseUrl}/api/integrations/github/webhook`, active: true },
-    redirect_url: `${baseUrl}/api/github/app/callback`,
-    callback_urls: [`${baseUrl}/api/github/setup`],
-    setup_url: `${baseUrl}/api/github/setup`,
+    hook_attributes: { url: `${urls.api}/api/integrations/github/webhook`, active: true },
+    redirect_url: `${urls.dashboard}/api/github/app/callback`,
+    callback_urls: [`${urls.dashboard}/api/github/setup`],
+    setup_url: `${urls.dashboard}/api/github/setup`,
     setup_on_update: true,
     request_oauth_on_install: true,
     public: input.visibility === "public",
@@ -48,7 +55,7 @@ export function buildManifest(baseUrl: string, input: ManifestRequest): Record<s
 export async function manifestForm(
   deps: Deps,
   who: Principal,
-  baseUrl: string,
+  urls: ManifestUrls,
   input: ManifestRequest,
 ): Promise<{ action: string; manifest: string }> {
   if (!who.isInstanceAdmin) throw forbidden("Only an instance admin can create the GitHub App");
@@ -75,7 +82,7 @@ export async function manifestForm(
     : "/settings/apps/new";
   return {
     action: `${web}${path}?state=${encodeURIComponent(state)}`,
-    manifest: JSON.stringify(buildManifest(baseUrl, input)),
+    manifest: JSON.stringify(buildManifest(urls, input)),
   };
 }
 

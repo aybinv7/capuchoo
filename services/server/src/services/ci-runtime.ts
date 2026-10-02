@@ -17,6 +17,7 @@ export class CiRuntime {
   readonly inflightTokens = new Map<string, Promise<CachedToken>>();
   readonly syncedAt = new Map<string, number>();
   appCache: { value: unknown; expiresAt: number } | null = null;
+  cliVersion: { value: string | null; expiresAt: number } | null = null;
 
   constructor(
     secretKey: string,

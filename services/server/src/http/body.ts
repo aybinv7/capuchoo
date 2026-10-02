@@ -70,3 +70,9 @@ export function baseUrl(c: AppContext): string {
   }
   return url.origin;
 }
+
+/** The public address of the dashboard, which a third party sends browsers back to. */
+export function dashboardUrl(c: AppContext): string {
+  const configured = c.get("deps").config.DASHBOARD_URL;
+  return configured ? configured.replace(/\/+$/, "") : baseUrl(c);
+}

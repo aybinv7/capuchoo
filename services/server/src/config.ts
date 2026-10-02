@@ -10,6 +10,7 @@ const schema = z
     PORT: z.coerce.number().int().positive().default(3000),
     HOST: z.string().default("0.0.0.0"),
     PUBLIC_URL: z.string().url().optional(),
+    DASHBOARD_URL: z.string().url().optional(),
     DATABASE_URL: z.string().min(1),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
     DATABASE_SSL: bool.optional(),

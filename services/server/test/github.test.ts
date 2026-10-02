@@ -264,6 +264,18 @@ describe("GitHub webhook", () => {
     ).toEqual([["555", "running"]]);
   });
 
+  it("follows a renamed repository", async () => {
+    const { owner, app } = await linkedApp(ctx);
+    const renamed = runPayload();
+    renamed.repository.full_name = "acme/renamed";
+    await ctx.request("/api/integrations/github/webhook", githubDelivery("workflow_run", renamed));
+    const ci = await (await ctx.request(`/api/apps/${app.id}/ci`, { token: owner.token })).json();
+    expect(ci.github.repository).toMatchObject({
+      full_name: "acme/renamed",
+      html_url: "https://github.com/acme/renamed",
+    });
+  });
+
   it("drops the links of an uninstalled installation", async () => {
     const { owner, app } = await linkedApp(ctx);
     await ctx.request(
@@ -503,7 +515,7 @@ describe("GitHub App creation", () => {
         owner: { login: "acme" },
       },
     });
-    const ctx = await createTestContext({}, github.fetch);
+    const ctx = await createTestContext({ DASHBOARD_URL: "https://dash.example" }, github.fetch);
     try {
       const member = await ctx.user("member@acme.test");
       const admin = await ctx.user("admin@acme.test", { admin: true });
@@ -526,6 +538,9 @@ describe("GitHub App creation", () => {
       expect(JSON.parse(form.manifest)).toMatchObject({
         request_oauth_on_install: true,
         public: false,
+        redirect_url: "https://dash.example/api/github/app/callback",
+        setup_url: "https://dash.example/api/github/setup",
+        hook_attributes: { url: "http://capuchoo.test/api/integrations/github/webhook" },
       });
       const state = new URL(form.action).searchParams.get("state")!;
       const callback = await ctx.request(

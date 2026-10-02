@@ -1,10 +1,9 @@
 import { sql } from "kysely";
-import type { Integration } from "../db/schema";
+import type { Build, Integration } from "../db/schema";
 import type { Deps } from "../http/context";
 import { parseJson } from "../http/body";
 import { hmacHex, safeEqual } from "../lib/crypto";
 import { unauthorized } from "../lib/errors";
-import type { Build } from "../db/schema";
 import { findRunByExternalId, upsertRun } from "../repositories/builds";
 import {
   removeInstallationEverywhere,
@@ -13,6 +12,7 @@ import {
 import {
   findIntegrationsByRef,
   integrationConfig,
+  setIntegrationConfig,
   touchIntegrations,
 } from "../repositories/integrations";
 import { asInstallation, requireGithubApp } from "./client";
@@ -47,17 +47,38 @@ async function targets(deps: Deps, payload: Record<string, unknown>): Promise<Ta
   const installationId = asText(asRecord(payload.installation).id, 32);
   if (!repositoryId || !installationId) return [];
   const integrations = await findIntegrationsByRef(deps.db, "github", repositoryId);
-  return integrations.flatMap((integration) => {
+  const fullName = asText(repository.full_name);
+  const matched: Target[] = [];
+  for (const integration of integrations) {
     const config = integrationConfig(integration);
-    if (String(config.installation_id ?? "") !== installationId) return [];
-    return [
-      {
-        integration,
-        installationId,
-        repository: asText(repository.full_name) ?? String(config.repository ?? ""),
-        workflowPath: String(config.workflow_path ?? ""),
-      },
-    ];
+    if (asText(config.installation_id, 32) !== installationId) continue;
+    if (fullName && REPOSITORY.test(fullName) && config.repository !== fullName) {
+      await renameRepository(deps, integration, config, fullName);
+    }
+    matched.push({
+      integration,
+      installationId,
+      repository: fullName ?? asText(config.repository) ?? "",
+      workflowPath: asText(config.workflow_path, 300) ?? "",
+    });
+  }
+  return matched;
+}
+
+const REPOSITORY = /^[\w.-]+\/[\w.-]+$/;
+
+/** A renamed or transferred repository keeps its id; the stored name follows it. */
+async function renameRepository(
+  deps: Deps,
+  integration: Integration,
+  config: Record<string, unknown>,
+  fullName: string,
+): Promise<void> {
+  const web = deps.config.GITHUB_WEB_URL.replace(/\/+$/, "");
+  await setIntegrationConfig(deps.db, integration.id, {
+    ...config,
+    repository: fullName,
+    html_url: `${web}/${fullName}`,
   });
 }
 

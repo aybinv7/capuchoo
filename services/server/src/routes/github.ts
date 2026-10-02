@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Principal } from "../auth/principal";
-import { baseUrl, readJson } from "../http/body";
+import { baseUrl, dashboardUrl, readJson } from "../http/body";
 import { principal, type AppContext, type AppEnv } from "../http/context";
 import { notFound } from "../lib/errors";
 import { writeAudit } from "../repositories/audit";
@@ -62,11 +62,16 @@ export function githubRoutes(): Hono<AppEnv> {
   router.post("/github/app/manifest", async (c) => {
     const body = await readJson(c, 4 * 1024);
     return c.json(
-      await manifestForm(c.get("deps"), principal(c), baseUrl(c), {
-        organization: typeof body.organization === "string" ? body.organization : null,
-        visibility: body.visibility === "public" ? "public" : "private",
-        name: typeof body.name === "string" ? body.name : null,
-      }),
+      await manifestForm(
+        c.get("deps"),
+        principal(c),
+        { dashboard: dashboardUrl(c), api: baseUrl(c) },
+        {
+          organization: typeof body.organization === "string" ? body.organization : null,
+          visibility: body.visibility === "public" ? "public" : "private",
+          name: typeof body.name === "string" ? body.name : null,
+        },
+      ),
     );
   });
 
