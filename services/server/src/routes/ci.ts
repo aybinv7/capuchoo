@@ -16,6 +16,7 @@ import {
 import { removeGitlabTrigger, saveGitlabTrigger } from "../gitlab/runs";
 import { appCi, cancelRun, rerunRun, runRefs, startRun, syncRun } from "../services/ci";
 import { buildDetail } from "../services/build-detail";
+import { jobLogs } from "../services/job-logs";
 import { serializeBuild } from "../services/build-feed";
 
 function audit(
@@ -172,6 +173,10 @@ export function ciRoutes(): Hono<AppEnv> {
       ),
     });
   });
+
+  router.get("/builds/:id/jobs/:jobId/logs", async (c) =>
+    c.json(await jobLogs(c.get("deps"), principal(c), c.req.param("id"), c.req.param("jobId"))),
+  );
 
   router.post("/builds/:id/sync", async (c) => {
     const deps = c.get("deps");

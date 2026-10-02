@@ -401,6 +401,7 @@ describe("starting runs from Capuchoo", () => {
     expect(
       top.map((build: { id: string; child_count: number }) => [build.id, build.child_count]),
     ).toEqual([[child.parent_id, 1]]);
+    expect(top[0].target_channel_ids).toEqual([child.channel_id]);
     const parent = await (
       await ctx.request(`/api/builds/${child.parent_id}`, { token: owner.token })
     ).json();

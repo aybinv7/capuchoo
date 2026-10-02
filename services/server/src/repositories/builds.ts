@@ -1,7 +1,7 @@
 import { isTerminalBuildStatus, mergeBuildStatus } from "@capuchoo/core";
 import type { Db } from "../db/database";
 import type { Build, BuildEvent, BuildStatus, BuildsTable } from "../db/schema";
-import type { Insertable, Updateable } from "kysely";
+import { sql, type Insertable, type Updateable } from "kysely";
 
 /** Every column but the plan, which only the detail view needs. */
 export const BUILD_LIST_COLUMNS = [
@@ -241,10 +241,24 @@ export async function listBuilds(
         .select((inner) => inner.fn.countAll<string>().as("count"))
         .as("child_count"),
     )
+    .select((eb) =>
+      eb
+        .selectFrom("builds as deploy")
+        .whereRef("deploy.parent_id", "=", "builds.id")
+        .where("deploy.channel_id", "is not", null)
+        .select(sql<string[]>`coalesce(array_agg(distinct deploy.channel_id), '{}')`.as("ids"))
+        .as("target_channel_ids"),
+    )
     .where("builds.app_id", "=", appId);
   if (options.topLevel) query = query.where("builds.parent_id", "is", null);
   const rows = await query.orderBy("builds.created_at", "desc").limit(limit).execute();
-  return rows.map((row) => ({ ...row, child_count: Number(row.child_count ?? 0) }));
+  return rows.map((row) => ({
+    ...row,
+    child_count: Number(row.child_count ?? 0),
+    target_channel_ids: Array.isArray(row.target_channel_ids)
+      ? row.target_channel_ids.map(String)
+      : [],
+  }));
 }
 
 export function listChildBuilds(db: Db, parentId: string) {

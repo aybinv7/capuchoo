@@ -295,6 +295,13 @@ export interface BuildJobsTable {
   updated_at: UpdatedAt;
 }
 
+export interface BuildJobLogsTable {
+  job_id: string;
+  content: string;
+  truncated: Generated<boolean>;
+  fetched_at: CreatedAt;
+}
+
 export interface BuildEventsTable {
   id: Generated<string>;
   build_id: string;
@@ -405,6 +412,7 @@ export interface Database {
   builds: BuildsTable;
   build_events: BuildEventsTable;
   build_jobs: BuildJobsTable;
+  build_job_logs: BuildJobLogsTable;
   audit_log: AuditLogTable;
   app_config: AppConfigTable;
   integrations: IntegrationsTable;

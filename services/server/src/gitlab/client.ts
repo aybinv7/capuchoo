@@ -109,7 +109,7 @@ export async function gitlabCall<T>(
   target: GitlabTarget,
   method: string,
   path: string,
-  options: { body?: unknown; query?: Record<string, string | number> } = {},
+  options: { body?: unknown; query?: Record<string, string | number>; text?: boolean } = {},
 ): Promise<T> {
   const url = new URL(
     `${target.baseUrl}/api/v4/projects/${encodeURIComponent(target.project)}${path}`,
@@ -134,6 +134,7 @@ export async function gitlabCall<T>(
     throw new GitlabApiError(502, "unreachable from the Capuchoo server");
   }
   const text = await response.text();
+  if (options.text && response.ok) return text.slice(0, 4 * 1024 * 1024) as T;
   if (text.length > 4 * 1024 * 1024) throw new GitlabApiError(502, "response too large");
   let payload: unknown = null;
   try {
