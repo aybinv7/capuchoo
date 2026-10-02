@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
   <div class="overflow-hidden rounded-lg border">
     <div
       ref="host"
-      class="h-[calc(100svh-17rem)] min-h-96 w-full"
+      class="isolate h-[calc(100svh-17rem)] min-h-96 w-full"
       role="region"
       aria-label="Devices that reported a location"
     />

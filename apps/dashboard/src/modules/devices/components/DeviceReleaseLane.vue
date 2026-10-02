@@ -37,7 +37,9 @@ const assigned = computed(() =>
 const channelStatus = computed<LaneStatus | null>(() => {
   const hint = channelHint(props.device, channelName.value);
   if (hint) return { tone: assigned.value ? "muted" : "warning", text: hint };
-  return environment.value ? { tone: "muted", text: environment.value } : null;
+  return environment.value && environment.value !== channelName.value
+    ? { tone: "muted", text: environment.value }
+    : null;
 });
 
 const ota = computed(() => otaLabel(props.device.version_name));

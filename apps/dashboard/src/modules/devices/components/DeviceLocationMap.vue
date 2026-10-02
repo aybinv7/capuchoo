@@ -48,5 +48,5 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="host" class="h-52 w-full" role="region" aria-label="Last reported location" />
+  <div ref="host" class="isolate h-52 w-full" role="region" aria-label="Last reported location" />
 </template>
