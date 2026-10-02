@@ -84,9 +84,9 @@ catalog:
   "@tanstack/vue-table": ^8.21.3
   yaml: ^2.9.0
   tweetnacl: ^1.0.3
-  '@noble/hashes': ^2.4.0
+  "@noble/hashes": ^2.4.0
   libsodium-wrappers: ^0.8.4
-  '@types/libsodium-wrappers': ^0.8.2
+  "@types/libsodium-wrappers": ^0.8.2
 
 overrides:
   vite: "catalog:"
