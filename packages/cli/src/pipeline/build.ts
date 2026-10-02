@@ -135,7 +135,14 @@ export async function buildWeb(
 export async function syncCapacitor(
   context: StepContext,
   platform: "android" | "ios",
+  native: { dir: string; required: boolean },
 ): Promise<StepOutcome> {
+  if (!native.required && !fs.existsSync(path.resolve(context.toolchain.appDir, native.dir))) {
+    return {
+      ran: false,
+      reason: `no ${native.dir}/ project, and an OTA bundle does not need one`,
+    };
+  }
   const bin = resolveBin("cap", context.toolchain.appDir);
   if (!bin) {
     return { ran: false, reason: "@capacitor/cli is not installed" };

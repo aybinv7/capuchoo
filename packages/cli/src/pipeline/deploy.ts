@@ -362,14 +362,21 @@ export async function runDeploy(
     }
 
     reporter.begin("sync");
-    const sync = await syncCapacitor(context, request.platform);
+    const nativeDir =
+      request.platform === "ios" ? request.project.iosDir : request.project.androidDir;
+    const sync = await syncCapacitor(context, request.platform, {
+      dir: nativeDir,
+      required: request.kind === "native",
+    });
     if (!sync.ran) {
       reporter.skip(sync.reason);
       skipped.push({ step: "sync", reason: sync.reason });
-      warnings.push(
-        "Capacitor sync did not run, so the native project may still hold the " +
-          "previous build's web assets",
-      );
+      if (fs.existsSync(path.resolve(request.appDir, nativeDir))) {
+        warnings.push(
+          "Capacitor sync did not run, so the native project may still hold the " +
+            "previous build's web assets",
+        );
+      }
     }
   } else {
     skipped.push({ step: "build", reason: "--skip-build" });
