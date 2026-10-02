@@ -417,7 +417,25 @@ describe("reduceStreamEvent: other events", () => {
     expect(ops).toEqual([
       { op: "invalidate", key: queryKeys.devicesAll(APP), throttle: true },
       { op: "invalidate", key: queryKeys.statsAll(APP), throttle: true },
+      { op: "invalidate", key: queryKeys.activityAll(APP), throttle: true },
     ]);
+  });
+
+  it("also refetches the reporting device's own page, throttled", () => {
+    const ops = reduceStreamEvent(APP, {
+      type: "device",
+      data: { device_uuid: "dev-1", event: "get", status: null },
+    });
+    expect(ops).toContainEqual({
+      op: "invalidate",
+      key: queryKeys.device(APP, "dev-1"),
+      throttle: true,
+    });
+    expect(
+      reduceStreamEvent(APP, { type: "device", data: { device_uuid: "" } }).some(
+        (op) => op.op === "invalidate" && op.key[2] === "device",
+      ),
+    ).toBe(false);
   });
 
   it("does nothing for heartbeats and unknown events", () => {

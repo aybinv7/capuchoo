@@ -10,6 +10,7 @@ const props = defineProps<{
   device: Device | null;
   remove: ReturnType<typeof useDeviceMutations>["remove"];
 }>();
+const emit = defineEmits<{ removed: [deviceId: string] }>();
 
 watch(open, (value) => {
   if (value) props.remove.reset();
@@ -22,6 +23,7 @@ function confirm() {
     onSuccess: () => {
       toast.success("Device removed");
       open.value = false;
+      emit("removed", device.id);
     },
   });
 }

@@ -5,6 +5,17 @@ const whole = new Intl.NumberFormat("en");
 const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 });
 const dateTime = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
 const relative = new Intl.RelativeTimeFormat("en", { numeric: "auto", style: "short" });
+const clock = new Intl.DateTimeFormat("en", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+const shortClock = new Intl.DateTimeFormat("en", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
 
 const UNITS = ["B", "KB", "MB", "GB", "TB"] as const;
 
@@ -38,6 +49,14 @@ export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "—" : dateTime.format(date);
+}
+
+/** Time of day, `14:32:05`, or `14:32` when `seconds` is false. */
+export function formatClock(value: string | null | undefined, seconds = true): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return (seconds ? clock : shortClock).format(date);
 }
 
 const STEPS: [Intl.RelativeTimeFormatUnit, number][] = [

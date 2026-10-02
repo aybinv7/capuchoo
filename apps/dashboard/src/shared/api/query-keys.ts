@@ -14,6 +14,24 @@ export const queryKeys = {
   devicesAll: (appId: string) => ["apps", appId, "devices"] as const,
   devices: (appId: string, filters: Record<string, unknown>) =>
     ["apps", appId, "devices", filters] as const,
+  /**
+   * One device's detail and the head of its timeline. Outside `devicesAll`, so a report from any
+   * device refetches the lists, and only that device's own report refetches its page.
+   */
+  device: (appId: string, deviceId: string) => ["apps", appId, "device", deviceId] as const,
+  deviceDetail: (appId: string, deviceId: string) =>
+    ["apps", appId, "device", deviceId, "detail"] as const,
+  deviceEvents: (appId: string, deviceId: string, filter: string) =>
+    ["apps", appId, "device", deviceId, "events", filter] as const,
+  activityAll: (appId: string) => ["apps", appId, "activity"] as const,
+  activity: (appId: string, filters: Record<string, unknown>) =>
+    ["apps", appId, "activity", filters] as const,
+  /**
+   * Pages older than a frozen cursor. They never change, so they live outside `["apps", ...]` and
+   * no reconnect or live event refetches them.
+   */
+  eventHistory: (scope: readonly unknown[], anchor: string) =>
+    ["event-history", ...scope, anchor] as const,
   audit: (appId: string) => ["apps", appId, "audit"] as const,
   appSettings: (appId: string, section: string) => ["apps", appId, "settings", section] as const,
   appCi: (appId: string) => ["apps", appId, "ci"] as const,

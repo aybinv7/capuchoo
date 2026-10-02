@@ -2,6 +2,7 @@
 import { Map as MapIcon, Smartphone, TableProperties } from "@lucide/vue";
 import type { ColumnFiltersState } from "@tanstack/vue-table";
 import { computed, defineAsyncComponent, ref } from "vue";
+import { useRouter } from "vue-router";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import EmptyState from "@/shared/components/EmptyState.vue";
@@ -13,6 +14,7 @@ import { useQueryParam } from "@/shared/composables/useQueryParam";
 import { orderChannels } from "@/shared/lib/channels";
 import { formatCount } from "@/shared/lib/format";
 import { useCatalog } from "@/shared/queries/useCatalog";
+import { RouteName } from "@/shared/router/route-names";
 import AssignChannelDialog from "../components/AssignChannelDialog.vue";
 import DevicesTable from "../components/DevicesTable.vue";
 import RemoveDeviceDialog from "../components/RemoveDeviceDialog.vue";
@@ -23,6 +25,7 @@ import type { Device } from "../types/devices.types";
 
 const DevicesMap = defineAsyncComponent(() => import("../components/DevicesMap.vue"));
 
+const router = useRouter();
 const { appId, app } = useCurrentApp();
 const { channels } = useCatalog(appId);
 const search = useQueryParam("q", "");
@@ -56,6 +59,10 @@ const neverSeen = computed(
 const selected = ref<Device | null>(null);
 const assignOpen = ref(false);
 const removeOpen = ref(false);
+
+function open(device: Device) {
+  void router.push({ name: RouteName.device, params: { deviceId: device.id } });
+}
 
 function assign(device: Device) {
   selected.value = device;
@@ -126,7 +133,7 @@ function setView(value: unknown) {
         {{ located.length }} of the {{ devices.length }} loaded devices matching the table filters
         reported a location. Devices without one are not placed.
       </p>
-      <DevicesMap :devices="located" />
+      <DevicesMap :devices="located" @open="open" />
     </template>
     <DevicesTable
       v-else
@@ -140,6 +147,7 @@ function setView(value: unknown) {
       :loading-more="isFetchingNextPage"
       :refreshing="isFetching && !isPending && !isFetchingNextPage"
       :app-name="app?.name ?? 'devices'"
+      @open="open"
       @assign="assign"
       @remove="remove"
       @load-more="loadMore"

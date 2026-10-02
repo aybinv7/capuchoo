@@ -1,6 +1,7 @@
 import type { AnyColumnDef } from "@/shared/components/data-table";
 import { actionsColumn, selectionColumn } from "@/shared/components/data-table";
 import type { Device } from "../types/devices.types";
+import { attributesText } from "./device-attributes";
 
 export function deviceTitle(device: Device): string {
   return (
@@ -20,6 +21,13 @@ export const deviceChannelName = (device: Device) =>
 export const DEVICE_COLUMNS: AnyColumnDef<Device>[] = [
   selectionColumn<Device>(),
   { id: "device", accessorFn: deviceTitle, size: 240, meta: { title: "Device" } },
+  {
+    id: "attributes",
+    accessorFn: (device) => attributesText(device.attributes),
+    enableSorting: false,
+    size: 280,
+    meta: { title: "Attributes" },
+  },
   {
     id: "device_id",
     accessorFn: (device) => device.device_id,

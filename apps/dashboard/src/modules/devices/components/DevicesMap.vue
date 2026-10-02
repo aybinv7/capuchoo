@@ -1,32 +1,63 @@
 <script setup lang="ts">
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { RouteName } from "@/shared/router/route-names";
+import { createBaseMap, markerColor } from "../lib/leaflet-map";
 import type { LocatedDevice } from "../types/devices.types";
 
 const props = defineProps<{ devices: readonly LocatedDevice[] }>();
+const emit = defineEmits<{ open: [device: LocatedDevice] }>();
 
+const router = useRouter();
 const host = ref<HTMLElement | null>(null);
 let map: L.Map | null = null;
 let layer: L.LayerGroup | null = null;
 
-function escape(value: string | null | undefined): string {
-  return (value ?? "").replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
+function line(tag: string, content: string, className?: string): HTMLElement {
+  const element = document.createElement(tag);
+  element.textContent = content;
+  if (className) element.className = className;
+  return element;
 }
 
-function popup(device: LocatedDevice): string {
-  const name = escape(device.device_name || device.model || device.device_id);
-  const accuracy = device.location_accuracy_m
-    ? `±${Math.round(device.location_accuracy_m)} m`
-    : "accuracy unknown";
-  return `<strong>${name}</strong><br><code>${escape(device.version_name ?? "builtin")}</code> on ${escape(device.channel_name ?? "no channel")}<br><span>${accuracy}</span>`;
+function popup(device: LocatedDevice): HTMLElement {
+  const root = document.createElement("div");
+  root.append(
+    line("strong", device.device_name || device.model || device.device_id),
+    document.createElement("br"),
+    line("code", device.version_name ?? "builtin"),
+    document.createTextNode(` on ${device.channel_name ?? "no channel"}`),
+    document.createElement("br"),
+    line(
+      "span",
+      device.location_accuracy_m
+        ? `±${Math.round(device.location_accuracy_m)} m`
+        : "accuracy unknown",
+    ),
+    document.createElement("br"),
+  );
+  const link = line("a", "Open device");
+  link.setAttribute(
+    "href",
+    router.resolve({
+      name: RouteName.device,
+      params: { appId: device.app_id, deviceId: device.id },
+    }).href,
+  );
+  link.addEventListener("click", (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    emit("open", device);
+  });
+  root.append(link);
+  return root;
 }
 
 function render() {
   if (!map || !layer) return;
   layer.clearLayers();
-  const style = getComputedStyle(document.documentElement);
-  const color = style.getPropertyValue("--primary").trim() || "#c96442";
+  const color = markerColor();
   for (const device of props.devices) {
     L.circleMarker([device.latitude, device.longitude], {
       radius: 6,
@@ -35,7 +66,7 @@ function render() {
       fillColor: color,
       fillOpacity: 0.5,
     })
-      .bindPopup(popup(device))
+      .bindPopup(() => popup(device))
       .addTo(layer);
   }
   if (props.devices.length) {
@@ -48,11 +79,7 @@ function render() {
 
 onMounted(() => {
   if (!host.value) return;
-  map = L.map(host.value, { zoomControl: true, attributionControl: true, preferCanvas: true });
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  }).addTo(map);
+  map = createBaseMap(host.value);
   map.setView([20, 0], 2);
   layer = L.layerGroup().addTo(map);
   render();

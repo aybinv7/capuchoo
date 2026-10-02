@@ -1,3 +1,7 @@
+import type { DeviceAttributes, Environment, UpdateEventCategory } from "@capuchoo/core";
+
+export type { DeviceAttributes };
+
 /** One row of `GET /api/apps/:id/devices`. */
 export interface Device {
   id: string;
@@ -28,6 +32,8 @@ export interface Device {
   created_at: string;
   updated_at: string;
   channel_name: string | null;
+  attributes: DeviceAttributes | null;
+  attributes_updated_at: string | null;
 }
 
 export interface DevicePage {
@@ -42,3 +48,66 @@ export interface DeviceFilters {
 }
 
 export type LocatedDevice = Device & { latitude: number; longitude: number };
+
+export interface DeviceSummary {
+  days: number;
+  checks: number;
+  delivered: number;
+  failed: number;
+  last_delivered: { version: string | null; at: string } | null;
+  last_failure: { action: string; error: string | null; at: string } | null;
+}
+
+/**
+ * `GET /api/devices/:id`. `summary` is null while the page shows the row the devices list already
+ * held, before the detail itself arrives.
+ */
+export interface DeviceDetail extends Device {
+  channel: { id: string; name: string; environment: Environment | null } | null;
+  assigned_channel: { id: string; name: string } | null;
+  summary: DeviceSummary | null;
+}
+
+export type DeviceEventCategory = UpdateEventCategory;
+
+/** One row of `GET /api/devices/:id/events`. */
+export interface DeviceEvent {
+  id: string;
+  kind: "ota" | "native" | "check";
+  action: string;
+  category: DeviceEventCategory;
+  status: string | null;
+  version_from: string | null;
+  version_to: string | null;
+  version_code_to: number | null;
+  error: string | null;
+  channel_id: string | null;
+  created_at: string;
+}
+
+/** The fields of a device an app-wide event names. */
+export interface DeviceRef {
+  id: string;
+  custom_id: string | null;
+  device_name: string | null;
+  model: string | null;
+  attributes: DeviceAttributes | null;
+}
+
+/** One row of `GET /api/apps/:id/device-events`. */
+export interface ActivityEvent extends DeviceEvent {
+  device: DeviceRef | null;
+}
+
+/** A cursor page: `next` is passed back as `before` for the page after it. */
+export interface EventPage<E extends DeviceEvent = DeviceEvent> {
+  events: E[];
+  next: string | null;
+}
+
+export type EventFilter = "all" | "delivered" | "failed" | "check" | "downloading" | "lifecycle";
+
+export interface ActivityFilters {
+  category: EventFilter;
+  channelId: string;
+}

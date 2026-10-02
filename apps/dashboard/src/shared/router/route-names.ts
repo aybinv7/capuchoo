@@ -16,6 +16,8 @@ export const RouteName = {
   channel: "app-channel",
   releases: "app-releases",
   devices: "app-devices",
+  device: "app-device",
+  activity: "app-activity",
   statistics: "app-statistics",
   builds: "app-builds",
   build: "app-build",

@@ -1,5 +1,6 @@
 import type { AppRole } from "@capuchoo/core";
 import {
+  Activity,
   ChartColumn,
   Hammer,
   KeyRound,
@@ -83,7 +84,14 @@ export const APP_NAVIGATION: NavGroup[] = [
         name: RouteName.devices,
         label: "Devices",
         icon: Smartphone,
-        keywords: ["installations", "map", "tablets"],
+        also: [RouteName.device],
+        keywords: ["installations", "map", "tablets", "attributes", "user"],
+      },
+      {
+        name: RouteName.activity,
+        label: "Activity",
+        icon: Activity,
+        keywords: ["events", "telemetry", "deliveries", "failures", "checks", "logs"],
       },
       {
         name: RouteName.statistics,

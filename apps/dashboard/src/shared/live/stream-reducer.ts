@@ -177,6 +177,21 @@ function buildEventOps(data: unknown): CacheOp[] {
   ];
 }
 
+/** Telemetry refetches the lists and the activity feed, and the reporting device's own page. */
+function deviceOps(appId: string, data: unknown): CacheOp[] {
+  const ops = [
+    invalidate(queryKeys.devicesAll(appId), true),
+    invalidate(queryKeys.statsAll(appId), true),
+    invalidate(queryKeys.activityAll(appId), true),
+  ];
+  const uuid =
+    typeof data === "object" && data !== null
+      ? (data as Record<string, unknown>).device_uuid
+      : undefined;
+  if (typeof uuid === "string" && uuid) ops.push(invalidate(queryKeys.device(appId, uuid), true));
+  return ops;
+}
+
 /**
  * Turns one `GET /api/apps/:id/stream` message into cache operations. Events that carry a whole
  * entity update it in place; events that only name a change invalidate, throttled when they arrive
@@ -195,10 +210,7 @@ export function reduceStreamEvent(appId: string, message: StreamMessage): CacheO
     case "artefact":
       return [invalidate(queryKeys.catalog(appId))];
     case "device":
-      return [
-        invalidate(queryKeys.devicesAll(appId), true),
-        invalidate(queryKeys.statsAll(appId), true),
-      ];
+      return deviceOps(appId, message.data);
     default:
       return [];
   }

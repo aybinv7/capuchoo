@@ -51,11 +51,7 @@ export function useDeviceHits(appId: Ref<string>, term: Ref<string>, enabled: Re
             .join(" · "),
           keywords: [device.device_id, device.custom_id ?? "", term.value],
           icon: MonitorSmartphone,
-          to: {
-            name: RouteName.devices,
-            params: { appId: appId.value },
-            query: { q: device.custom_id ?? device.device_id },
-          },
+          to: { name: RouteName.device, params: { appId: appId.value, deviceId: device.id } },
         }))
       : [],
   );

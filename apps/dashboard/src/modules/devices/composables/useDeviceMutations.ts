@@ -14,7 +14,10 @@ export function useDeviceMutations(appId: MaybeRefOrGetter<string>) {
   const assign = useMutation({
     mutationFn: ({ deviceId, channelId }: { deviceId: string; channelId: string | null }) =>
       assignDeviceChannel(deviceId, channelId),
-    onSuccess: refresh,
+    onSuccess: (_device, { deviceId }) => {
+      refresh();
+      void client.invalidateQueries({ queryKey: queryKeys.device(toValue(appId), deviceId) });
+    },
   });
 
   const remove = useMutation({
