@@ -119,7 +119,7 @@ describe("setupProgress", () => {
 
 describe("github messages", () => {
   it("explains known install errors and falls back for unknown ones", () => {
-    expect(installErrorMessage("not_yours")).toMatch(/another organization/);
+    expect(installErrorMessage("not_yours")).toMatch(/cannot see that installation/);
     expect(installErrorMessage("weird")).toMatch(/weird/);
   });
 

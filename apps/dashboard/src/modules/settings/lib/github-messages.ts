@@ -6,7 +6,7 @@ const SETUP_ERRORS: Record<string, string> = {
   no_installation: "GitHub did not return an installation. Install the App and pick an account.",
   unverified: "GitHub could not confirm you can see that installation, so it was not linked.",
   forbidden: "Linking an installation needs the admin role in this organization.",
-  not_yours: "That installation is already linked to another organization.",
+  not_yours: "Your GitHub account cannot see that installation, so it was not linked.",
   failed: "GitHub did not complete the installation. Try again.",
 };
 

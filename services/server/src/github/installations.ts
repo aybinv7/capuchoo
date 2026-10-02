@@ -82,7 +82,7 @@ export interface SetupQuery {
 }
 
 export type SetupOutcome =
-  | { returnPath: string; result: "linked" }
+  | { returnPath: string; result: "linked" | "updated" }
   | { returnPath: string; error: string };
 
 async function userCanSee(deps: Deps, userToken: string, installationId: string): Promise<boolean> {
@@ -128,6 +128,7 @@ export async function completeSetup(
     deps.now(),
   );
   const returnPath = safeReturnPath(claims?.r);
+  if (!claims && query.setup_action === "update") return { returnPath, result: "updated" };
   if (!claims) return { returnPath, error: "expired" };
   if (!who || who.userId !== claims.u) return { returnPath, error: "signed_out" };
   if (query.setup_action === "request") return { returnPath, error: "requested" };

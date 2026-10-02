@@ -24,6 +24,7 @@ export function useGithubReturnNotice(onReturn?: () => void) {
     };
 
     if (value("github") === "linked") toast.success("GitHub installation linked");
+    if (value("github") === "updated") toast.success("GitHub installation updated");
     const installError = value("github_error");
     if (installError)
       toast.error("GitHub was not linked", { description: installErrorMessage(installError) });

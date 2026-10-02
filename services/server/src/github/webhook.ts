@@ -156,6 +156,20 @@ async function onWorkflowJob(deps: Deps, payload: Record<string, unknown>): Prom
   return { handled: apps > 0, apps };
 }
 
+/** Repositories added to or removed from an installation; only the selection mode is kept. */
+async function onRepositorySelection(
+  deps: Deps,
+  payload: Record<string, unknown>,
+): Promise<Outcome> {
+  const installationId = asText(asRecord(payload.installation).id, 32);
+  const selection = payload.repository_selection;
+  if (!installationId || (selection !== "all" && selection !== "selected")) {
+    return { handled: false };
+  }
+  await updateInstallationState(deps.db, installationId, { repositorySelection: selection });
+  return { handled: true };
+}
+
 async function onInstallation(deps: Deps, payload: Record<string, unknown>): Promise<Outcome> {
   const installation = asRecord(payload.installation);
   const installationId = asText(installation.id, 32);
@@ -207,6 +221,8 @@ export async function handleGithubDelivery(deps: Deps, delivery: GithubDelivery)
       return onWorkflowJob(deps, payload);
     case "installation":
       return onInstallation(deps, payload);
+    case "installation_repositories":
+      return onRepositorySelection(deps, payload);
     default:
       return { handled: false };
   }

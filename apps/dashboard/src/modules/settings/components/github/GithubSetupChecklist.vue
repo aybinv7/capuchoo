@@ -64,14 +64,14 @@ const extra = computed(() => (value.value ? otherSecrets(value.value) : []));
     </div>
 
     <ol>
-      <SetupStep :index="1" title="Add the workflow" :state="progress.workflow">
-        <WorkflowStep :setup="value" :pull-request="pullRequest" />
-      </SetupStep>
-      <SetupStep :index="2" title="Give it an API key" :state="progress.apiKey">
+      <SetupStep :index="1" title="Give it an API key" :state="progress.apiKey">
         <ApiKeyStep :present="apiKeyPresent" :api-key="secrets.apiKey" />
       </SetupStep>
-      <SetupStep :index="3" title="Point it at this server" :state="progress.endpoint">
+      <SetupStep :index="2" title="Point it at this server" :state="progress.endpoint">
         <EndpointStep :setup="value" :variable="variable" />
+      </SetupStep>
+      <SetupStep :index="3" title="Add the workflow" :state="progress.workflow">
+        <WorkflowStep :setup="value" :pull-request="pullRequest" />
       </SetupStep>
       <SetupStep :index="4" title="Sign Android releases" :state="progress.android">
         <AndroidSigningStep :configured="androidCount" :store="secrets.store" />
