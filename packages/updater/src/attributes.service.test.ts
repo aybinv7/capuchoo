@@ -43,7 +43,11 @@ describe("device attributes", () => {
 
   it("merge a patch, remember it and tell the server", async () => {
     await attributes.setDeviceAttributes({ rep: "R-1042", route: "Oran West" });
-    const next = await attributes.setDeviceAttributes({ route: null, store: 12, bad: undefined as never });
+    const next = await attributes.setDeviceAttributes({
+      route: null,
+      store: 12,
+      bad: undefined as never,
+    });
     await flush();
 
     expect(next).toEqual({ rep: "R-1042", store: 12 });

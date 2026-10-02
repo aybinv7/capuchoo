@@ -7,8 +7,8 @@ so a tester can tell whose tablet is whose.
 
 - **Each update check** (`POST /api/update`) upserts the `devices` row: versions, OS, model,
   channel, memory, optional location, and the device's **attributes** when the app set some.
-- **Each event** (`POST /api/stats`, `POST /api/native-updates/log`) becomes a `device_events`
-  row: checks, downloads, deliveries, failures, rollbacks, lifecycle. They are classified by
+- **Each event** (`POST /api/stats`, `POST /api/native-updates/log`) becomes a `device_events` row:
+  checks, downloads, deliveries, failures, rollbacks, lifecycle. They are classified by
   `classifyUpdateEvent` in core (`check`, `downloading`, `delivered`, `failed`, `cancelled`,
   `lifecycle`, `other`) and kept `DEVICE_EVENT_RETENTION_DAYS` days.
 - **Attributes on their own** (`POST /api/device_attributes`) - sent the moment the app sets them,
@@ -27,23 +27,23 @@ await clearDeviceAttributes(); // on sign-out
 ```
 
 Limits (`DEVICE_ATTRIBUTE_LIMITS` in core): 20 keys; a key starts with a letter and is at most 40
-characters of letters, digits, `_`, `.`, `-`; a value is a string (at most 200 characters), a
-finite number or a boolean; 4 KiB in all. Anything else is dropped, never stored half-valid.
+characters of letters, digits, `_`, `.`, `-`; a value is a string (at most 200 characters), a finite
+number or a boolean; 4 KiB in all. Anything else is dropped, never stored half-valid.
 
-**These are often personal data.** A name, a phone number or an employee id identifies a person,
-and Law 18-07 applies to storing it. Prefer an opaque id the team can look up over a name or a
-phone number, never send credentials, and clear the attributes on sign-out. Attributes are
-visible to every member of the app, are searchable, and are deleted with the device.
+**These are often personal data.** A name, a phone number or an employee id identifies a person, and
+Law 18-07 applies to storing it. Prefer an opaque id the team can look up over a name or a phone
+number, never send credentials, and clear the attributes on sign-out. Attributes are visible to
+every member of the app, are searchable, and are deleted with the device.
 
 ## API
 
-| Method | Path | Who | Answer |
-| ------ | ---- | --- | ------ |
-| GET | `/api/apps/:id/devices?search=&channel_id=&active_days=` | viewer | `{ devices: Device[], total }` - `search` also matches attribute values |
-| GET | `/api/devices/:id` | viewer | `DeviceDetail` |
-| GET | `/api/devices/:id/events?before=&limit=&category=` | viewer | `{ events: DeviceEvent[], next: string \| null }` |
-| GET | `/api/apps/:id/device-events?before=&limit=&category=&channel_id=` | viewer | `{ events: Array<DeviceEvent & { device: DeviceRef \| null }>, next }` |
-| POST | `/api/device_attributes` | device | `{ app_id, device_id, attributes }` -> `{ status, attributes }` |
+| Method | Path                                                               | Who    | Answer                                                                  |
+| ------ | ------------------------------------------------------------------ | ------ | ----------------------------------------------------------------------- |
+| GET    | `/api/apps/:id/devices?search=&channel_id=&active_days=`           | viewer | `{ devices: Device[], total }` - `search` also matches attribute values |
+| GET    | `/api/devices/:id`                                                 | viewer | `DeviceDetail`                                                          |
+| GET    | `/api/devices/:id/events?before=&limit=&category=`                 | viewer | `{ events: DeviceEvent[], next: string \| null }`                       |
+| GET    | `/api/apps/:id/device-events?before=&limit=&category=&channel_id=` | viewer | `{ events: Array<DeviceEvent & { device: DeviceRef \| null }>, next }`  |
+| POST   | `/api/device_attributes`                                           | device | `{ app_id, device_id, attributes }` -> `{ status, attributes }`         |
 
 ```ts
 interface Device {

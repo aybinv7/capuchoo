@@ -13,9 +13,13 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     CREATE INDEX device_events_category_idx ON device_events (app_id, category, id DESC);
   `,
   );
-  const actions = await sql<{ action: string }>`SELECT DISTINCT action FROM device_events`.execute(db);
+  const actions = await sql<{ action: string }>`SELECT DISTINCT action FROM device_events`.execute(
+    db,
+  );
   for (const { action } of actions.rows) {
-    await sql`UPDATE device_events SET category = ${classifyUpdateEvent(action)} WHERE action = ${action}`.execute(db);
+    await sql`UPDATE device_events SET category = ${classifyUpdateEvent(action)} WHERE action = ${action}`.execute(
+      db,
+    );
   }
 }
 

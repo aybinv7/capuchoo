@@ -6,7 +6,12 @@ import { RateLimiter } from "../lib/rate-limit";
 import { findAppByBundleId } from "../repositories/apps";
 import { listChannels } from "../repositories/channels";
 import { normaliseDeviceAttributes } from "@capuchoo/core";
-import { findDevice, setDeviceAttributes, setSelfChannel, upsertDevice } from "../repositories/devices";
+import {
+  findDevice,
+  setDeviceAttributes,
+  setSelfChannel,
+  upsertDevice,
+} from "../repositories/devices";
 import { publishDevice } from "../services/live-events";
 import { parseDeviceRequest } from "../services/device-request";
 import { recordEvents } from "../services/telemetry";

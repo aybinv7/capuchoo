@@ -116,7 +116,9 @@ export async function deviceSummary(db: Db, deviceUuid: string, since: Date) {
     delivered: count("delivered"),
     failed: count("failed"),
     last_delivered: delivered ? { version: delivered.version_to, at: delivered.created_at } : null,
-    last_failure: failed ? { action: failed.action, error: failed.error, at: failed.created_at } : null,
+    last_failure: failed
+      ? { action: failed.action, error: failed.error, at: failed.created_at }
+      : null,
   };
 }
 

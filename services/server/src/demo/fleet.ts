@@ -41,7 +41,15 @@ const CITIES: Array<[number, number]> = [
   [36.47, 2.83],
   [34.85, 5.73],
 ];
-const ROUTES = ["Oran West", "Oran Centre", "Algiers East", "Bab Ezzouar", "Setif North", "Blida", "Tizi Ouzou"];
+const ROUTES = [
+  "Oran West",
+  "Oran Centre",
+  "Algiers East",
+  "Bab Ezzouar",
+  "Setif North",
+  "Blida",
+  "Tizi Ouzou",
+];
 const DEPOTS = ["DEP-ALG-01", "DEP-ORN-02", "DEP-STF-03", "DEP-BLD-04"];
 
 /** What a signed-in app would attach: opaque ids and a route, never a name or a phone number. */

@@ -31,7 +31,9 @@ function setAttributes(attributes: unknown, deviceId = identity.device_id) {
 }
 
 async function onlyDevice() {
-  const list = await (await ctx.request(`/api/apps/${appId}/devices`, { token: owner.token })).json();
+  const list = await (
+    await ctx.request(`/api/apps/${appId}/devices`, { token: owner.token })
+  ).json();
   expect(list.devices).toHaveLength(1);
   return list.devices[0];
 }
@@ -83,10 +85,18 @@ describe("device detail and activity", () => {
 
   it("summarises what a device did and pages its classified timeline", async () => {
     await check({ attributes: { rep: "R-7" } });
-    await report(["download_10", "download_complete", "set", "download_fail", "app_moved_to_foreground"]);
+    await report([
+      "download_10",
+      "download_complete",
+      "set",
+      "download_fail",
+      "app_moved_to_foreground",
+    ]);
     const device = await onlyDevice();
 
-    const detail = await (await ctx.request(`/api/devices/${device.id}`, { token: owner.token })).json();
+    const detail = await (
+      await ctx.request(`/api/devices/${device.id}`, { token: owner.token })
+    ).json();
     expect(detail.summary).toMatchObject({ days: 30, delivered: 2, failed: 1 });
     expect(detail.summary.last_delivered.version).toBe("1.0.1");
     expect(detail.summary.last_failure.action).toBe("download_fail");
@@ -108,7 +118,9 @@ describe("device detail and activity", () => {
     const failures = await (
       await ctx.request(`/api/devices/${device.id}/events?category=failed`, { token: owner.token })
     ).json();
-    expect(failures.events.map((event: { action: string }) => event.action)).toEqual(["download_fail"]);
+    expect(failures.events.map((event: { action: string }) => event.action)).toEqual([
+      "download_fail",
+    ]);
     expect(failures.next).toBeNull();
 
     const unknown = await ctx.request(`/api/devices/${device.id}/events?category=nope`, {
@@ -121,10 +133,15 @@ describe("device detail and activity", () => {
     await check({ attributes: { rep: "R-9" } });
     await report(["set"]);
     const feed = await (
-      await ctx.request(`/api/apps/${appId}/device-events?category=delivered`, { token: owner.token })
+      await ctx.request(`/api/apps/${appId}/device-events?category=delivered`, {
+        token: owner.token,
+      })
     ).json();
     expect(feed.events).toHaveLength(1);
-    expect(feed.events[0].device).toMatchObject({ device_id: "tablet-1", attributes: { rep: "R-9" } });
+    expect(feed.events[0].device).toMatchObject({
+      device_id: "tablet-1",
+      attributes: { rep: "R-9" },
+    });
   });
 
   it("is hidden from someone outside the app", async () => {
