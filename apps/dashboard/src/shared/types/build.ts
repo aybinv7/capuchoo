@@ -48,6 +48,8 @@ export interface Build {
    * deploy); a stream row may leave it out, in which case the cached value is kept.
    */
   target_channel_ids?: string[];
+  /** The same channels by name, for display. */
+  target_channel_names?: string[];
 }
 
 export interface BuildEvent {

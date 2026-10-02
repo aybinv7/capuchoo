@@ -249,6 +249,14 @@ export async function listBuilds(
         .select(sql<string[]>`coalesce(array_agg(distinct deploy.channel_id), '{}')`.as("ids"))
         .as("target_channel_ids"),
     )
+    .select((eb) =>
+      eb
+        .selectFrom("builds as deploy")
+        .whereRef("deploy.parent_id", "=", "builds.id")
+        .where("deploy.channel_name", "is not", null)
+        .select(sql<string[]>`coalesce(array_agg(distinct deploy.channel_name), '{}')`.as("names"))
+        .as("target_channel_names"),
+    )
     .where("builds.app_id", "=", appId);
   if (options.topLevel) query = query.where("builds.parent_id", "is", null);
   const rows = await query.orderBy("builds.created_at", "desc").limit(limit).execute();

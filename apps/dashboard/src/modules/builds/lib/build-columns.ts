@@ -45,7 +45,7 @@ export const BUILD_COLUMNS: AnyColumnDef<Build>[] = [
   },
   {
     id: "channel",
-    accessorFn: (build) => build.channel_name ?? "",
+    accessorFn: (build) => build.channel_name ?? build.target_channel_names?.join(", ") ?? "",
     size: 160,
     meta: { title: "Channel" },
   },

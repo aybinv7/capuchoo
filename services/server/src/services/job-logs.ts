@@ -48,7 +48,7 @@ async function fetchFromProvider(
       const text = await asInstallation(deps, link.installationId).call<unknown>(
         "GET",
         `/repos/${link.repository}/actions/jobs/${encodeURIComponent(job.external_id)}/logs`,
-        { accept: "text/plain", allow: [404, 410] },
+        { allow: [404, 410] },
       );
       return typeof text === "string" ? text : "expired";
     }

@@ -40,7 +40,7 @@ const label = computed(
       cn(
         'bg-card hover:border-foreground/25 focus-visible:ring-ring/50 block w-full overflow-hidden rounded-lg border text-left shadow-xs transition-[border-color,box-shadow] outline-none focus-visible:ring-3',
         SURFACE[props.node.status],
-        props.selected && 'border-primary ring-primary/25 ring-2',
+        props.selected && 'border-foreground/40 ring-foreground/10 ring-2',
         props.class,
       )
     "

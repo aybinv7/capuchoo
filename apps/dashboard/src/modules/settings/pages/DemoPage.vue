@@ -103,7 +103,7 @@ function start() {
         <template #actions>
           <span v-if="existing" class="text-muted-foreground flex items-center gap-1.5 text-sm">
             <Presentation class="size-4" />
-            Created <RelativeTime :value="existing.created_at" />
+            Reset <RelativeTime :value="existing.updated_at" />
           </span>
           <span v-else class="text-muted-foreground flex items-center gap-1.5 text-sm">
             <CircleDashed class="size-4" />

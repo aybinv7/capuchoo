@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown, Package } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RelativeTime from "@/shared/components/RelativeTime.vue";
 import ArtefactKindToggle from "@/shared/delivery/components/ArtefactKindToggle.vue";
@@ -12,7 +12,24 @@ import ArtefactChip from "./ArtefactChip.vue";
 const SHELF_SIZE = 12;
 
 const { catalog } = useCanvasContext();
-const open = ref(true);
+const STORAGE_KEY = "capuchoo.canvas.shelf-open";
+const open = ref(readOpen());
+
+function readOpen(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+watch(open, (value) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(value));
+  } catch {
+    return;
+  }
+});
 const kind = ref<ArtefactKind>("ota");
 
 const newestFirst = (a: Artefact, b: Artefact) =>
@@ -34,11 +51,10 @@ const items = computed(() => {
 </script>
 
 <template>
-  <Collapsible
-    v-model:open="open"
-    class="bg-card/95 w-72 rounded-lg border shadow-md backdrop-blur"
-  >
-    <CollapsibleTrigger class="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium">
+  <Collapsible v-model:open="open" class="relative">
+    <CollapsibleTrigger
+      class="hover:bg-accent flex h-8 items-center gap-2 rounded-md border px-3 text-sm font-medium"
+    >
       <Package class="size-4" />
       Releases
       <span class="text-muted-foreground text-xs font-normal">drag onto a channel</span>
@@ -47,7 +63,9 @@ const items = computed(() => {
         :class="open && 'rotate-180'"
       />
     </CollapsibleTrigger>
-    <CollapsibleContent class="space-y-2 border-t p-3">
+    <CollapsibleContent
+      class="bg-card/95 absolute top-full right-0 mt-2 w-72 space-y-2 rounded-lg border p-3 shadow-md backdrop-blur"
+    >
       <ArtefactKindToggle v-model="kind" />
       <p v-if="items.length === 0" class="text-muted-foreground py-4 text-center text-xs">
         Nothing uploaded yet.

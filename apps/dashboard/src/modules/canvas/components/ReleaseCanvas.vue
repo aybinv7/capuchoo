@@ -33,51 +33,53 @@ const minimapColor = (node: { type?: string }) =>
 </script>
 
 <template>
-  <VueFlow
-    :id="props.flowId"
-    :nodes="props.graph.nodes"
-    :edges="props.graph.edges"
-    :nodes-draggable="false"
-    :nodes-connectable="false"
-    :elements-selectable="false"
-    :zoom-on-double-click="false"
-    :zoom-on-scroll="true"
-    :prevent-scrolling="true"
-    :min-zoom="0.3"
-    :max-zoom="1.6"
-    :fit-view-on-init="true"
-    class="release-canvas"
-  >
-    <template #node-channel="{ data }">
-      <ChannelNode :data="data as ChannelNodeData" />
-    </template>
-    <template #node-build="{ data }">
-      <BuildNode :data="data as BuildNodeData" />
-    </template>
-    <template #node-lane="{ data }">
-      <LaneNode :data="data as LaneNodeData" />
-    </template>
+  <div class="flex h-full flex-col">
+    <div
+      class="bg-background/95 relative z-10 flex h-12 shrink-0 items-center justify-end gap-2 border-b px-3 backdrop-blur"
+    >
+      <slot name="toolbar" />
+      <ArtefactShelf />
+    </div>
+    <VueFlow
+      :id="props.flowId"
+      :nodes="props.graph.nodes"
+      :edges="props.graph.edges"
+      :nodes-draggable="false"
+      :nodes-connectable="false"
+      :elements-selectable="false"
+      :zoom-on-double-click="false"
+      :zoom-on-scroll="true"
+      :prevent-scrolling="true"
+      :min-zoom="0.3"
+      :max-zoom="1.6"
+      :fit-view-on-init="true"
+      class="release-canvas min-h-0 flex-1"
+    >
+      <template #node-channel="{ data }">
+        <ChannelNode :data="data as ChannelNodeData" />
+      </template>
+      <template #node-build="{ data }">
+        <BuildNode :data="data as BuildNodeData" />
+      </template>
+      <template #node-lane="{ data }">
+        <LaneNode :data="data as LaneNodeData" />
+      </template>
 
-    <Background variant="dots" :gap="18" :size="1" pattern-color="var(--grid)" />
-    <Controls :show-interactive="false" position="bottom-right" />
-    <MiniMap
-      pannable
-      zoomable
-      position="bottom-right"
-      class="!right-12 hidden md:block"
-      :node-color="minimapColor"
-      mask-color="color-mix(in oklch, var(--background) 70%, transparent)"
-    />
-    <Panel position="top-right">
-      <div class="flex items-start gap-2">
-        <slot name="toolbar" />
-        <ArtefactShelf />
-      </div>
-    </Panel>
-    <Panel position="bottom-left">
-      <CanvasLegend />
-    </Panel>
-  </VueFlow>
+      <Background variant="dots" :gap="18" :size="1" pattern-color="var(--grid)" />
+      <Controls :show-interactive="false" position="bottom-right" />
+      <MiniMap
+        pannable
+        zoomable
+        position="bottom-right"
+        class="!right-12 hidden md:block"
+        :node-color="minimapColor"
+        mask-color="color-mix(in oklch, var(--background) 70%, transparent)"
+      />
+      <Panel position="bottom-left">
+        <CanvasLegend />
+      </Panel>
+    </VueFlow>
+  </div>
 </template>
 
 <style>

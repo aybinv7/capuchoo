@@ -409,6 +409,59 @@ describe("starting runs from Capuchoo", () => {
     expect(parent.children[0]).toMatchObject({ job_key: "publish-ota", events: [{ step: "web" }] });
   });
 
+  it("reads a finished job's log from GitHub once, with the media type GitHub accepts", async () => {
+    const { owner, app } = await linkedApp(ctx);
+    github.on(`GET /repos/${REPO}/actions/jobs/:id/logs`, (call) =>
+      call.headers.get("accept") === "application/vnd.github+json"
+        ? {
+            body: "2026-10-02T10:01:00.10Z ##[group]Run capuchoo deploy ota\n2026-10-02T10:01:02.00Z Published",
+            headers: { "content-type": "text/plain" },
+          }
+        : { status: 415, body: { message: "Unsupported 'Accept' header" } },
+    );
+    await ctx.request(
+      "/api/integrations/github/webhook",
+      githubDelivery("workflow_run", runPayload()),
+    );
+    await ctx.request(
+      "/api/integrations/github/webhook",
+      githubDelivery(
+        "workflow_job",
+        jobPayload({
+          status: "completed",
+          conclusion: "success",
+          completed_at: "2026-10-02T10:01:05Z",
+          steps: [
+            {
+              name: "Publish",
+              status: "completed",
+              conclusion: "success",
+              number: 1,
+              started_at: "2026-10-02T10:01:00Z",
+              completed_at: "2026-10-02T10:01:05Z",
+            },
+          ],
+        }),
+      ),
+    );
+    const [run] = await (
+      await ctx.request(`/api/apps/${app.id}/builds`, { token: owner.token })
+    ).json();
+    const detail = await (
+      await ctx.request(`/api/builds/${run.id}`, { token: owner.token })
+    ).json();
+    const path = `/api/builds/${run.id}/jobs/${detail.jobs[0].id}/logs`;
+    const first = await (await ctx.request(path, { token: owner.token })).json();
+    expect(first).toMatchObject({ available: true, source: "github" });
+    expect(first.steps[0].lines.map((line: { text: string }) => line.text)).toEqual([
+      "Run capuchoo deploy ota",
+      "Published",
+    ]);
+    const second = await (await ctx.request(path, { token: owner.token })).json();
+    expect(second.source).toBe("archive");
+    expect(github.calls.filter((call) => call.url.pathname.endsWith("/logs"))).toHaveLength(1);
+  });
+
   it("throttles manual syncs per run", async () => {
     const { owner, app } = await linkedApp(ctx);
     github
