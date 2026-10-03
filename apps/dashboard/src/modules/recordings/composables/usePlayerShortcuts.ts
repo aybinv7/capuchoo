@@ -12,8 +12,11 @@ export interface PlayerShortcuts {
 export function usePlayerShortcuts(actions: PlayerShortcuts): void {
   useEventListener(window, "keydown", (event: KeyboardEvent) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
-    const target = event.target as HTMLElement | null;
-    if (target?.closest("input, textarea, select, [contenteditable], [role=slider], [role=menu]")) {
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest("input, textarea, select, [contenteditable], [role=slider], [role=menu]")
+    ) {
       return;
     }
     const step = event.shiftKey ? 30_000 : 5000;

@@ -9,6 +9,7 @@ import { fetchSegmentText } from "../services/recordings.service";
 import type { Lanes, RecordingSegment } from "../types/recordings.types";
 
 const PARALLEL = 4;
+const PUBLISH_MS = 32;
 
 type ReplayEvent = Lanes["replay"][number];
 
@@ -33,19 +34,22 @@ export function useRecordingEvents(input: {
   let generation = 0;
   let controller = new AbortController();
   let chain: Promise<void> = Promise.resolve();
-  let publishing: number | null = null;
+  let publishing: ReturnType<typeof setTimeout> | null = null;
 
-  /** Segments land many to a frame on open; everything downstream recomputes once per frame. */
+  /**
+   * Segments land many at a time on open; everything downstream recomputes once per batch. A timer
+   * rather than an animation frame, so a replay opened in a background tab still loads.
+   */
   function publish() {
     if (publishing !== null) return;
-    publishing = requestAnimationFrame(() => {
+    publishing = setTimeout(() => {
       publishing = null;
       lanes.value = { ...lanes.value };
-    });
+    }, PUBLISH_MS);
   }
 
   function cancelPublish() {
-    if (publishing !== null) cancelAnimationFrame(publishing);
+    if (publishing !== null) clearTimeout(publishing);
     publishing = null;
   }
 
