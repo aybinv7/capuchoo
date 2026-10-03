@@ -181,6 +181,8 @@ export interface RecorderCheckIn {
   device_id: string;
   device_uuid: string | null;
   custom_id: string | null;
+  model: string | null;
+  manufacturer: string | null;
   platform: string;
   version_name: string;
   channel: string | null;

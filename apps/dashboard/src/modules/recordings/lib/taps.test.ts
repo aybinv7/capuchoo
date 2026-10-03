@@ -80,6 +80,21 @@ describe("issues", () => {
     expect(adjacentIssue(issues, 9000, 1)).toBeNull();
   });
 
+  it("walks every issue when each jump lands a lead before it", () => {
+    const lead = 1500;
+    const issues = [15_000, 16_000, 31_000].map((t) => ({ t, kind: "error" as const, label: "x" }));
+    const visited: number[] = [];
+    let playhead = 0;
+    for (;;) {
+      const next = adjacentIssue(issues, playhead + lead, 1);
+      if (!next) break;
+      visited.push(next.t);
+      playhead = next.t - lead;
+    }
+    expect(visited).toEqual([15_000, 16_000, 31_000]);
+    expect(adjacentIssue(issues, playhead + lead, -1)?.t).toBe(16_000);
+  });
+
   it("writes a bug report with links at each moment", () => {
     const session = {
       id: "s",

@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { LocateFixed, Search, X } from "@lucide/vue";
+import {
+  Database,
+  Gauge,
+  Globe,
+  ListTree,
+  LocateFixed,
+  Radio,
+  Search,
+  SquareTerminal,
+  X,
+} from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -95,6 +105,15 @@ const TABS = computed(() => [
   { value: "perf" as const, label: "Performance", count: lists.value.perf.length, alert: 0 },
 ]);
 
+const TAB_ICONS = {
+  activity: ListTree,
+  console: SquareTerminal,
+  network: Globe,
+  database: Database,
+  telemetry: Radio,
+  perf: Gauge,
+} as const;
+
 function select(current: Tab, item: { id: string }) {
   selected.value = { tab: current, id: item.id };
 }
@@ -139,7 +158,7 @@ function openFromActivity(item: ActivityItem) {
 </script>
 
 <template>
-  <div class="bg-background flex h-full min-h-0 flex-col">
+  <div class="bg-background @container flex h-full min-h-0 flex-col">
     <Tabs v-model="tab" class="border-b">
       <TabsList
         class="h-auto w-full justify-start gap-0 overflow-x-auto rounded-none bg-transparent p-0"
@@ -148,9 +167,12 @@ function openFromActivity(item: ActivityItem) {
           v-for="item in TABS"
           :key="item.value"
           :value="item.value"
-          class="data-[state=active]:border-primary flex-none gap-1.5 rounded-none border-0 border-b-2 border-transparent px-3 py-2 text-xs data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          class="data-[state=active]:border-primary flex-none gap-1.5 rounded-none border-0 border-b-2 border-transparent px-2.5 py-2 text-xs data-[state=active]:bg-transparent data-[state=active]:shadow-none @md:px-3"
+          :title="item.label"
+          :aria-label="item.label"
         >
-          {{ item.label }}
+          <component :is="TAB_ICONS[item.value]" class="size-3.5 @md:hidden" aria-hidden="true" />
+          <span class="hidden @md:inline">{{ item.label }}</span>
           <span
             v-if="item.alert"
             class="bg-destructive tabular rounded-full px-1.5 text-[10px] text-white"
@@ -284,6 +306,7 @@ function openFromActivity(item: ActivityItem) {
         :entry="detail.entry"
         :all="props.lanes.database"
         :schemas="props.lanes.schemas"
+        :snapshots="props.lanes.snapshots"
         :playhead="props.playhead"
         @open-table="(db, table) => emit('openTable', db, table)"
       />

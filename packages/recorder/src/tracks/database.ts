@@ -76,7 +76,7 @@ export function createDatabaseTrack(
     },
     snapshot(maxRows) {
       snapshotting?.abort();
-      if (maxRows <= 0 || running.length === 0) return;
+      if (running.length === 0) return;
       const controller = new AbortController();
       snapshotting = controller;
       const current = running;

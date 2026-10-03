@@ -58,7 +58,8 @@ function goLive(minutes: number | null) {
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-60">
       <DropdownMenuLabel class="text-muted-foreground text-xs font-normal text-pretty">
-        The device streams every second while it is open. It notices at its next policy check.
+        The device starts streaming within a second if the app is open, or as soon as it is opened
+        next.
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem v-for="minutes in DURATIONS" :key="minutes" @select="goLive(minutes)">

@@ -44,7 +44,7 @@ answers a held request in under two seconds, the device falls back to polling ev
 
 Each policy request carries the recorder's own health (worker or not, OPFS or memory, each database
 source's state, dropped segments, last error). The server keeps the latest per device, writing only
-when it changed or every five minutes, and **Recordings → Connect an app** shows it live.
+when it changed or every two minutes, and **Recordings → Connect an app** shows it live.
 
 ## Invariants that bite
 

@@ -14,7 +14,12 @@ const props = defineProps<{ device: RecorderCheckIn }>();
 
 const checks = computed(() => (props.device.health ? healthChecks(props.device.health) : []));
 const tone = computed(() => (props.device.online ? overallTone(checks.value) : "muted"));
-const label = computed(() => props.device.custom_id ?? `${props.device.device_id.slice(0, 8)}…`);
+const label = computed(
+  () =>
+    props.device.custom_id ??
+    ([props.device.manufacturer, props.device.model].filter(Boolean).join(" ") ||
+      `${props.device.device_id.slice(0, 8)}…`),
+);
 </script>
 
 <template>
@@ -22,10 +27,7 @@ const label = computed(() => props.device.custom_id ?? `${props.device.device_id
     <header class="flex items-center gap-2">
       <StatusDot :tone="tone" :pulse="props.device.online" />
       <PlatformIcon :platform="props.device.platform" class="text-muted-foreground size-3.5" />
-      <span
-        class="min-w-0 flex-1 truncate font-mono text-xs font-medium"
-        :title="props.device.device_id"
-      >
+      <span class="min-w-0 flex-1 truncate text-xs font-medium" :title="props.device.device_id">
         {{ label }}
       </span>
       <Badge v-if="props.device.health" variant="outline" class="font-mono text-[10px]">

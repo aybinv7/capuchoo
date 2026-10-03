@@ -106,4 +106,19 @@ describe("sqlChangesSource", () => {
     expect(snapshots[0]!.columns).toEqual(["id", "name", "price", "photo"]);
     expect(snapshots[0]!.rows[0]).toEqual([1, "item 1", 0.1, null]);
   });
+
+  it("announces the schema again with every session's snapshot, even without rows", async () => {
+    const { execute, bus } = openDb();
+    const announced: string[][] = [];
+    const sink: DatabaseSink = {
+      ...collectingSink().sink,
+      schema: (tables) => announced.push(tables.map((table) => table.name)),
+    };
+    const source = sqlChangesSource({ name: "app", execute, bus });
+    await source.start(sink, ["item"]);
+    await source.snapshot!(sink, 0, new AbortController().signal);
+    await source.stop();
+
+    expect(announced).toEqual([["item"], ["item"]]);
+  });
 });

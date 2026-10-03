@@ -2,12 +2,12 @@ import type { RecorderHealth, RecordingPolicyRequest } from "@capuchoo/core";
 import type { Deps } from "../http/context";
 import { upsertRecorderHealth } from "../repositories/recorder-health";
 
-const REFRESH_MS = 5 * 60_000;
+const REFRESH_MS = 2 * 60_000;
 const MAX_TRACKED = 20_000;
 
 /**
  * Decides which health reports reach the database. A device asks for its policy about once a
- * minute; only a change, or the first report in five minutes, is written.
+ * minute; only a change, or the first report in two minutes, is written.
  */
 export class HealthGate {
   private readonly written = new Map<string, { digest: string; at: number }>();

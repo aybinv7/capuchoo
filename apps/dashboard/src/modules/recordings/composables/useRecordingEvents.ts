@@ -33,8 +33,24 @@ export function useRecordingEvents(input: {
   let generation = 0;
   let controller = new AbortController();
   let chain: Promise<void> = Promise.resolve();
+  let publishing: number | null = null;
+
+  /** Segments land many to a frame on open; everything downstream recomputes once per frame. */
+  function publish() {
+    if (publishing !== null) return;
+    publishing = requestAnimationFrame(() => {
+      publishing = null;
+      lanes.value = { ...lanes.value };
+    });
+  }
+
+  function cancelPublish() {
+    if (publishing !== null) cancelAnimationFrame(publishing);
+    publishing = null;
+  }
 
   function reset() {
+    cancelPublish();
     generation++;
     controller.abort();
     controller = new AbortController();
@@ -89,7 +105,7 @@ export function useRecordingEvents(input: {
             replay.push(raw);
           }
           appendToLanes(lanes.value, events, `${segment.seq}`);
-          lanes.value = { ...lanes.value };
+          publish();
           loaded.value++;
           if (replay.length > 0) input.onReplay?.(replay);
         } catch (cause) {
@@ -112,6 +128,7 @@ export function useRecordingEvents(input: {
   );
 
   onScopeDispose(() => {
+    cancelPublish();
     generation++;
     controller.abort();
   });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { DecodedChange } from "./changeset";
 import { tableAt } from "./db-model";
+import { lastChangeAt } from "./db-tables";
 import type { DatabaseLaneEntry, DatabaseSnapshot } from "../types/recordings.types";
 
 const KEY = [true, false, false];
@@ -88,5 +89,16 @@ describe("tableAt", () => {
       ["2", "inserted"],
       ["3", "inserted"],
     ]);
+  });
+});
+
+describe("lastChangeAt", () => {
+  it("lands on the change at or before the playhead, so a seek to a change shows it", () => {
+    const entries = [{ t: 100 }, { t: 250 }, { t: 250 }, { t: 900 }];
+    expect(lastChangeAt(entries, 50)).toBe(Number.NEGATIVE_INFINITY);
+    expect(lastChangeAt(entries, 250)).toBe(250);
+    expect(lastChangeAt(entries, 899)).toBe(250);
+    expect(lastChangeAt(entries, 5000)).toBe(900);
+    expect(lastChangeAt([], 5000)).toBe(Number.NEGATIVE_INFINITY);
   });
 });

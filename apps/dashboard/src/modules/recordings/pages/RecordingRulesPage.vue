@@ -125,7 +125,7 @@ const scopeTitle = computed(() => {
   <PageContainer width="wide">
     <PageHeader
       title="What devices record"
-      description="Rules apply from the app down: a channel overrides the app, a device overrides its channel. Devices pick up a change at their next policy check."
+      description="Rules apply from the app down: a channel overrides the app, a device overrides its channel. An open app picks up a change within a second; others when they next start or come to the foreground."
     />
 
     <ErrorNotice

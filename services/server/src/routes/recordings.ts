@@ -44,8 +44,8 @@ import { cachedRules } from "../services/recording-policy";
 
 const RULE_BODY_BYTES = 16 * 1024;
 const HEALTH_LIST_LIMIT = 50;
-/** A device writes its health at least every five minutes while it runs. */
-const ONLINE_WINDOW_MS = 6 * 60_000;
+/** A device writes its health at least every two minutes while it runs. */
+const ONLINE_WINDOW_MS = 3 * 60_000;
 
 function parseCursor(raw: string | undefined): { startedAt: Date; id: string } | undefined {
   if (!raw) return undefined;
@@ -211,6 +211,8 @@ export function recordingRoutes(): Hono<AppEnv> {
         device_id: row.device_id,
         device_uuid: row.device_uuid,
         custom_id: row.custom_id,
+        model: row.model,
+        manufacturer: row.manufacturer,
         platform: row.platform,
         version_name: row.version_name,
         channel: row.channel,

@@ -19,7 +19,7 @@ const tables = computed(() => {
   <span class="flex shrink-0 gap-1 font-mono text-[10px]">
     <template v-if="props.entry.kind === 'changeset'">
       <span v-if="summary.insert" class="text-success">+{{ summary.insert }}</span>
-      <span v-if="summary.update" class="text-info">~{{ summary.update }}</span>
+      <span v-if="summary.update" class="text-warning">~{{ summary.update }}</span>
       <span v-if="summary.delete" class="text-destructive">−{{ summary.delete }}</span>
     </template>
     <span v-else class="text-muted-foreground uppercase">{{ props.entry.type }}</span>

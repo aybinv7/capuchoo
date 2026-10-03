@@ -4,13 +4,19 @@ import { cn } from "@/lib/utils";
 import { changeKey, type DecodedChange } from "../../lib/changeset";
 import { stateAt } from "../../lib/db-state";
 import { columnNames, displayValue } from "../../lib/display";
-import type { DatabaseColumn, DatabaseLaneEntry } from "../../types/recordings.types";
+import type {
+  DatabaseColumn,
+  DatabaseLaneEntry,
+  DatabaseSnapshot,
+} from "../../types/recordings.types";
 
 const props = defineProps<{
   entry: DatabaseLaneEntry;
   /** Every database entry of the session, for the state view. */
   all: readonly DatabaseLaneEntry[];
   schemas: Record<string, Record<string, DatabaseColumn[]>>;
+  /** Starting states, whose column names stand in when a session carries no schema. */
+  snapshots: Record<string, Record<string, DatabaseSnapshot>>;
   playhead: number;
 }>();
 
@@ -18,12 +24,16 @@ const emit = defineEmits<{ openTable: [db: string, table: string] }>();
 const view = ref<"change" | "state">("change");
 const OP_STYLE = {
   insert: "bg-success-soft text-success",
-  update: "bg-info-soft text-info",
+  update: "bg-warning-soft text-warning",
   delete: "bg-danger-soft text-destructive",
 } as const;
 
 const columnsOf = (table: string, count: number) =>
-  columnNames(props.schemas[props.entry.db]?.[table], count);
+  columnNames(
+    props.schemas[props.entry.db]?.[table] ??
+      props.snapshots[props.entry.db]?.[table]?.columns.map((name) => ({ name })),
+    count,
+  );
 
 const before = computed(() => {
   if (view.value !== "change") return null;
@@ -137,7 +147,7 @@ const tables = computed(() => {
                 :class="
                   cn(
                     'px-2 py-0.5 break-all',
-                    change.op === 'update' && change.new[column] !== undefined && 'bg-info-soft',
+                    change.op === 'update' && change.new[column] !== undefined && 'bg-warning-soft',
                     cell(change, column).inferred && 'text-muted-foreground italic',
                   )
                 "

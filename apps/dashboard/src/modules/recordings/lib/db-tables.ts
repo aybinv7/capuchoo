@@ -21,6 +21,25 @@ export function entriesOf(lanes: Lanes, db: string): DatabaseLaneEntry[] {
   return lanes.database.filter((entry) => entry.db === db);
 }
 
+/**
+ * The moment the database last changed at or before `time`, or -Infinity before its first change.
+ * The grid is built for this moment, so it is exact at a change and rebuilt only when one is crossed.
+ */
+export function lastChangeAt(entries: readonly { t: number }[], time: number): number {
+  let low = 0;
+  let high = entries.length - 1;
+  let found = Number.NEGATIVE_INFINITY;
+  while (low <= high) {
+    const middle = (low + high) >> 1;
+    const t = entries[middle]!.t;
+    if (t <= time) {
+      found = t;
+      low = middle + 1;
+    } else high = middle - 1;
+  }
+  return found;
+}
+
 /** What the table list shows: how many writes of each kind each table took up to the playhead. */
 export function summarizeTables(lanes: Lanes, db: string, time: number): TableSummary[] {
   const snapshots = lanes.snapshots[db] ?? {};

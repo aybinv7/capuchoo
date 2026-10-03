@@ -7,6 +7,9 @@ export interface Issue {
   label: string;
 }
 
+/** A shake and the report its prompt sends are one report, not two. */
+const REPORT_MERGE_MS = 120_000;
+
 /** The moments worth jumping to, in time order: errors, failed requests, rage taps and reports. */
 export function issuesOf(lanes: Lanes, rage: readonly Tap[]): Issue[] {
   const issues: Issue[] = [];
@@ -26,11 +29,14 @@ export function issuesOf(lanes: Lanes, rage: readonly Tap[]): Issue[] {
     }
   }
   for (const tap of rage) issues.push({ t: tap.t, kind: "rage", label: "Rage tap" });
+  let lastReport = Number.NEGATIVE_INFINITY;
   for (const marker of lanes.markers) {
     if (
       marker.kind === "trigger" &&
       (marker.data.trigger === "shake" || marker.data.trigger === "manual")
     ) {
+      if (marker.t - lastReport < REPORT_MERGE_MS) continue;
+      lastReport = marker.t;
       issues.push({ t: marker.t, kind: "report", label: marker.label });
     } else if (marker.kind === "database-unavailable") {
       issues.push({ t: marker.t, kind: "error", label: marker.label });

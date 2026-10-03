@@ -41,6 +41,8 @@ export function listRecorderHealth(db: Db, appId: string, limit: number) {
       "recorder_health.health",
       "recorder_health.seen_at",
       "devices.custom_id",
+      "devices.model",
+      "devices.manufacturer",
     ])
     .where("recorder_health.app_id", "=", appId)
     .orderBy("recorder_health.seen_at", "desc")

@@ -105,6 +105,8 @@ export function normalizeCheckIn(raw: unknown): RecorderCheckIn | null {
     device_id: raw.device_id,
     device_uuid: opt(raw.device_uuid),
     custom_id: opt(raw.custom_id),
+    model: opt(raw.model),
+    manufacturer: opt(raw.manufacturer),
     platform: str(raw.platform, "android"),
     version_name: str(raw.version_name, "builtin"),
     channel: opt(raw.channel),

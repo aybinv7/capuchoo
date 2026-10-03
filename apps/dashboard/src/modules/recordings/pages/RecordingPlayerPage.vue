@@ -88,8 +88,11 @@ const markers = computed(() => timelineMarkers(events.lanes.value, bounds.value,
 const playhead = computed(() => bounds.value.start + player.time.value);
 const ripples = computed(() => recentTaps(taps.value, playhead.value));
 const issues = computed(() => issuesOf(events.lanes.value, rage.value));
+/** A jump lands this long before an issue, so where the player stands is judged from the issue. */
+const ISSUE_LEAD_MS = 1500;
+const issueAnchor = computed(() => playhead.value + ISSUE_LEAD_MS);
 const issueIndex = computed(
-  () => issues.value.filter((issue) => issue.t <= playhead.value + 400).length,
+  () => issues.value.filter((issue) => issue.t <= issueAnchor.value + 400).length,
 );
 
 const view = useStorage<PlayerView>("capuchoo.recording.view", "screen");
@@ -156,9 +159,9 @@ function jumpLive() {
 }
 
 function goToIssue(direction: 1 | -1) {
-  const target = adjacentIssue(issues.value, playhead.value, direction);
+  const target = adjacentIssue(issues.value, issueAnchor.value, direction);
   if (!target) return;
-  seekWall(Math.max(bounds.value.start, target.t - 1500));
+  seekWall(Math.max(bounds.value.start, target.t - ISSUE_LEAD_MS));
   toast(target.label.split(/\r?\n/)[0] ?? "Issue", { duration: 2500 });
 }
 
@@ -232,7 +235,9 @@ async function remove() {
 </script>
 
 <template>
-  <div class="flex h-[calc(100svh-4rem)] min-h-[600px] flex-col gap-3 px-4 pt-4 pb-3 md:px-6">
+  <div
+    class="flex h-[calc(100svh-4rem)] min-h-[600px] flex-col gap-3 px-4 pt-4 pb-3 md:h-[calc(100svh-5rem)] md:px-6"
+  >
     <EmptyState
       v-if="missing"
       :icon="Clapperboard"
@@ -296,16 +301,19 @@ async function remove() {
               />
             </div>
             <div
-              v-if="view !== 'screen'"
+              v-show="view !== 'screen'"
               :class="['min-h-0 min-w-0', view === 'both' && 'border-l']"
             >
-              <DataView
-                v-model:focus="dataFocus"
-                :lanes="events.lanes.value"
-                :playhead="playhead"
-                :origin="bounds.start"
-                @seek="seekWall"
-              />
+              <KeepAlive>
+                <DataView
+                  v-if="view !== 'screen'"
+                  v-model:focus="dataFocus"
+                  :lanes="events.lanes.value"
+                  :playhead="playhead"
+                  :origin="bounds.start"
+                  @seek="seekWall"
+                />
+              </KeepAlive>
             </div>
           </div>
         </ResizablePanel>

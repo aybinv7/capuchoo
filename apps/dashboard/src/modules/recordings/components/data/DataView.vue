@@ -18,6 +18,7 @@ import {
   busiestTable,
   databasesOf,
   entriesOf,
+  lastChangeAt,
   summarizeTables,
   tableShape,
 } from "../../lib/db-tables";
@@ -29,12 +30,10 @@ const props = defineProps<{ lanes: Lanes; playhead: number; origin: number }>();
 const emit = defineEmits<{ seek: [time: number] }>();
 const focus = defineModel<{ db: string; table: string } | null>("focus", { default: null });
 
-/** The grid rebuilds four times a second at most, however fast the playhead moves. */
-const STEP_MS = 250;
-const stepped = computed(() => Math.floor(props.playhead / STEP_MS) * STEP_MS);
-
 const databases = computed(() => databasesOf(props.lanes));
 const db = ref<string>("");
+const entries = computed(() => (db.value ? entriesOf(props.lanes, db.value) : []));
+const at = computed(() => lastChangeAt(entries.value, props.playhead));
 const table = ref<string>("");
 const chosen = ref(false);
 const changedOnly = ref(false);
@@ -60,9 +59,7 @@ function choose(name: string) {
   chosen.value = true;
 }
 
-const tables = computed(() =>
-  db.value ? summarizeTables(props.lanes, db.value, stepped.value) : [],
-);
+const tables = computed(() => (db.value ? summarizeTables(props.lanes, db.value, at.value) : []));
 const busiest = computed(() => (db.value ? busiestTable(props.lanes, db.value) : null));
 watch(
   [tables, busiest],
@@ -82,8 +79,8 @@ const view = computed(() => {
     columns: shape.columns,
     keyColumns: shape.keyColumns,
     snapshot: props.lanes.snapshots[db.value]?.[table.value] ?? null,
-    entries: entriesOf(props.lanes, db.value),
-    time: stepped.value,
+    entries: entries.value,
+    time: at.value,
   });
 });
 
@@ -100,7 +97,7 @@ const rows = computed(() => {
 const log = computed(() => {
   if (!db.value || !table.value) return [];
   const items: Array<{ id: string; t: number; op: string; key: string }> = [];
-  for (const entry of entriesOf(props.lanes, db.value)) {
+  for (const entry of entries.value) {
     entry.changes.forEach((change, index) => {
       if (change.table === table.value) {
         items.push({

@@ -7,8 +7,9 @@ const PAUSE_MS = 30;
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Reads each table's starting state in small chunks with a pause between them, so the app's own
- * queries never wait long behind it on the database's single connection.
+ * Announces the watched tables again, so every session carries its own schema, then reads each
+ * table's starting state in small chunks with a pause between them, so the app's own queries never
+ * wait long behind it on the database's single connection.
  */
 export async function snapshotTables(input: {
   execute: ExecuteSql;
@@ -17,6 +18,7 @@ export async function snapshotTables(input: {
   maxRows: number;
   signal: AbortSignal;
 }): Promise<void> {
+  if (input.tables.length > 0) input.sink.schema([...input.tables]);
   if (input.maxRows <= 0) return;
   for (const table of input.tables) {
     const columns = table.columns.map((column) => column.name);

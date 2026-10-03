@@ -26,7 +26,9 @@ const { appId } = useCurrentApp();
       :stack="props.entry.stack"
     />
     <p v-if="props.entry.source !== 'console'" class="text-muted-foreground">
-      From an {{ props.entry.source }} error
+      {{
+        props.entry.source === "rejection" ? "An unhandled promise rejection" : "An uncaught error"
+      }}
     </p>
   </div>
 </template>

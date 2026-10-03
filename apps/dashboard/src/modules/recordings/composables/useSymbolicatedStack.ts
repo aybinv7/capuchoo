@@ -1,6 +1,6 @@
 import type { TraceMap } from "@jridgewell/trace-mapping";
 import { useQueries, useQuery } from "@tanstack/vue-query";
-import { computed, shallowRef, toValue, watch, type MaybeRefOrGetter } from "vue";
+import { computed, markRaw, shallowRef, toValue, watch, type MaybeRefOrGetter } from "vue";
 import { queryKeys } from "@/shared/api/query-keys";
 import { bundlePath, parseStack, type ResolvedFrame } from "../lib/stack";
 import { loadTraceMapping, parseMap, resolveFrames } from "../lib/symbolicate";
@@ -59,9 +59,11 @@ export function useSymbolicatedStack(input: {
         queryKey: queryKeys.sourceMap(toValue(input.appId), toValue(input.version), path),
         queryFn: async ({ signal }: { signal: AbortSignal }): Promise<TraceMap | null> => {
           const loaded = mapping.value ?? (await loadTraceMapping());
-          return parseMap(
-            loaded,
-            await fetchSourceMap(toValue(input.appId), toValue(input.version), path, signal),
+          return markRaw(
+            parseMap(
+              loaded,
+              await fetchSourceMap(toValue(input.appId), toValue(input.version), path, signal),
+            ),
           );
         },
         staleTime: Number.POSITIVE_INFINITY,
