@@ -107,15 +107,17 @@ account. The in-progress run is closed by housekeeping after a day, so reset it 
 
 ## Operations
 
-| Concern          | How                                                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Migrations       | Applied on boot (`MIGRATE_ON_BOOT=true`), or `node server/dist/migrate.mjs` before rollout                            |
-| Health           | `GET /health` liveness, `GET /ready` database + storage                                                               |
-| Backups          | The `backup` service writes `pg_dump -Fc` daily to the `backups` volume, kept 14 days                                 |
-| Restore          | `pg_restore --clean --no-owner -d capuchoo capuchoo-<stamp>.dump`, then restart `server`                              |
-| Logs             | JSON lines on stdout with `request_id`; secrets, tokens and coordinates are redacted                                  |
-| Retention        | Device events older than `DEVICE_EVENT_RETENTION_DAYS` (90) are purged hourly                                         |
-| Artefact backups | Back up the `artefacts` volume (or the S3 bucket) with the database; a restored row without its file cannot be served |
+| Concern          | How                                                                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Migrations       | Applied on boot (`MIGRATE_ON_BOOT=true`), or `node server/dist/migrate.mjs` before rollout                                                                                     |
+| Health           | `GET /health` liveness, `GET /ready` database + storage                                                                                                                        |
+| Backups          | The `backup` service writes `pg_dump -Fc` daily to the `backups` volume, kept 14 days                                                                                          |
+| Restore          | `pg_restore --clean --no-owner -d capuchoo capuchoo-<stamp>.dump`, then restart `server`                                                                                       |
+| Logs             | JSON lines on stdout with `request_id`; secrets, tokens and coordinates are redacted                                                                                           |
+| Retention        | Device events older than `DEVICE_EVENT_RETENTION_DAYS` (90) are purged hourly                                                                                                  |
+| Artefact backups | Back up the `artefacts` volume (or the S3 bucket) with the database; a restored row without its file cannot be served                                                          |
+| Overload         | Past `DEVICE_MAX_INFLIGHT` device requests at once (default twice `DATABASE_POOL_MAX`, at least 32) a process answers 503 with `Retry-After`; see [CAPACITY.md](./CAPACITY.md) |
+| Telemetry queue  | Past `BACKGROUND_TASK_LIMIT` (1000) pending writes, device telemetry is skipped and counted rather than queued                                                                 |
 
 Test a restore before you need one. A backup that has never been restored is a hope.
 
