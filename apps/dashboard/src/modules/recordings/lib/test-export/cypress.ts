@@ -1,5 +1,5 @@
 import type { StepTarget } from "@capuchoo/core";
-import { bestCss, exactText, hasStableId, joinUrl, textFinds } from "./locators";
+import { bestCss, hasStableId, joinUrl, textFinds } from "./locators";
 import type { ExportPlan, NetworkStub, PlanStep } from "./plan";
 import type { ExportOptions, ExportResult } from "./types";
 
@@ -10,7 +10,7 @@ const typed = (value: string) => js(value.replace(/\{/g, "{{}"));
 
 function locate(target: StepTarget): string {
   if (!hasStableId(target) && textFinds(target)) {
-    return `cy.contains(${js(target.tag)}, ${exactText(target.text)})`;
+    return `cy.contains(${js(target.tag)}, ${js(target.text)})`;
   }
   return `cy.get(${js(bestCss(target))})`;
 }
@@ -52,9 +52,9 @@ export function toCypress(plan: ExportPlan, options: ExportOptions): ExportResul
     ...plan.stubs.map(stub),
     ...plan.steps.map((step) => command(step, options.baseUrl)),
   ];
-  const warnings = plan.variables.length
-    ? [`Masked values are read from Cypress.env: ${plan.variables.join(", ")}.`]
-    : [];
+  const warnings = [...plan.notes];
+  if (plan.variables.length)
+    warnings.push(`Masked values are read from Cypress.env: ${plan.variables.join(", ")}.`);
   if (!options.complete) return { code: `${lines.join("\n")}\n`, warnings };
   const body = lines.map((line) => `    ${line}`).join("\n");
   return {

@@ -75,7 +75,7 @@ export function toChromeRecorder(plan: ExportPlan, options: ExportOptions): Expo
   }
   for (const step of plan.steps) steps.push(...stepsOf(step, options.baseUrl));
 
-  const warnings: string[] = [];
+  const warnings = [...plan.notes];
   if (plan.variables.length) {
     warnings.push(
       `The recording format has no variables: masked fields (${plan.variables.join(", ")}) are left empty.`,

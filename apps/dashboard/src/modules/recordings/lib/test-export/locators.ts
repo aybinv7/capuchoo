@@ -28,21 +28,16 @@ export const hasStableId = (target: StepTarget): boolean =>
 
 /**
  * Selector alternatives in Chrome Recorder's syntax, best first; the player tries each in turn.
- * The accessible name comes first only when the text behind it was unique.
+ * The recorded path comes before names and text, which Chrome matches across the whole page; an
+ * accessible name is offered only when it came from a label rather than the visible text.
  */
 export function recorderSelectors(target: StepTarget): string[][] {
   const selectors: string[][] = [];
   if (hasStableId(target)) selectors.push([bestCss(target)]);
-  if (target.name && textFinds(target)) selectors.push([`aria/${target.name}`]);
   if (!selectors.some(([selector]) => selector === target.css)) selectors.push([target.css]);
+  if (target.name && target.name !== target.text) selectors.push([`aria/${target.name}`]);
   if (textFinds(target)) selectors.push([`text/${target.text}`]);
   return selectors;
-}
-
-/** A regular expression literal that matches exactly this text, ignoring surrounding space. */
-export function exactText(text: string): string {
-  const escaped = text.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
-  return `/^\\s*${escaped}\\s*$/`;
 }
 
 /** The app's address for a recorded route, whatever slashes either side brings. */

@@ -27,6 +27,8 @@ export interface ExportPlan {
   stubs: NetworkStub[];
   /** Names of the values a masked field held, which the test reads from its environment. */
   variables: string[];
+  /** What every format has to say about this stretch, whatever it is written as. */
+  notes: string[];
   /** `android`, `ios` or `web`, as the recorder reported it. */
   platform: string;
 }
@@ -82,6 +84,9 @@ function stubsOf(network: readonly NetworkLaneEntry[], from: number, to: number)
   return stubs;
 }
 
+/** A route the History API reported, so the address bar shows it and a test can check it. */
+const inAddressBar = (route: { data: Record<string, unknown> }) => route.data.source === "history";
+
 /** Whether one of the user's own steps came shortly before `t`, so a route then was its result. */
 function ledThere(steps: readonly PlanStep[], t: number): boolean {
   for (let index = steps.length - 1; index >= 0; index--) {
@@ -102,11 +107,12 @@ export function buildExportPlan(input: PlanInput): ExportPlan {
   const steps: PlanStep[] = [];
   const variables = new Set<string>();
 
-  const routes = lanes.markers.filter((marker) => marker.kind === "route");
+  const allRoutes = lanes.markers.filter((marker) => marker.kind === "route");
+  const routes = allRoutes.filter(inAddressBar);
   let opening = routes[0];
   for (const route of routes) if (route.t <= from) opening = route;
-  const openingUrl = typeof opening?.data.url === "string" ? opening.data.url : null;
-  if (openingUrl) steps.push({ kind: "visit", t: from, url: openingUrl });
+  const openingUrl = typeof opening?.data.url === "string" ? opening.data.url : "/";
+  steps.push({ kind: "visit", t: from, url: openingUrl });
 
   for (const entry of lanes.steps) {
     if (entry.t < from || entry.t > to) continue;
@@ -158,7 +164,15 @@ export function buildExportPlan(input: PlanInput): ExportPlan {
   }
   steps.sort((a, b) => a.t - b.t || (a.kind === "url" ? 1 : 0) - (b.kind === "url" ? 1 : 0));
 
+  const notes: string[] = [];
+  if (allRoutes.some((route) => !inAddressBar(route) && route.t > from && route.t <= to)) {
+    notes.push(
+      "Routes the app's own router marked (not in the address bar) are not checked, since the URL never shows them.",
+    );
+  }
+
   return {
+    notes,
     title: input.title,
     steps,
     viewport: input.viewport,

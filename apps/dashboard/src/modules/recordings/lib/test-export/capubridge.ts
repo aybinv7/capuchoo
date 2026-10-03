@@ -20,7 +20,7 @@ export function toCapubridge(
   options: ExportOptions,
   newId: () => string = () => crypto.randomUUID(),
 ): ExportResult {
-  const warnings = new Set<string>();
+  const warnings = new Set<string>(plan.notes);
   const steps: FlowStep[] = [];
   let count = 0;
   const add = (step: Omit<FlowStep, "id">) =>

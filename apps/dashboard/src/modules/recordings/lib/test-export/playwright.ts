@@ -7,7 +7,8 @@ const js = (value: string) => JSON.stringify(value);
 
 /**
  * Playwright's own locators where they are certain to find this one element: a `data-testid`, a
- * role whose name is the element's unique text, or that text. A CSS selector otherwise.
+ * stable id, or the element's tag holding its text - the same containment the recorder checked was
+ * unique. A CSS selector otherwise.
  */
 function locate(target: StepTarget): string {
   if (target.testId?.attribute === "data-testid" && target.unique.testId) {
@@ -15,10 +16,7 @@ function locate(target: StepTarget): string {
   }
   if (hasStableId(target)) return `page.locator(${js(bestCss(target))})`;
   if (textFinds(target)) {
-    if (target.role && target.name === target.text) {
-      return `page.getByRole(${js(target.role)}, { name: ${js(target.name)}, exact: true })`;
-    }
-    return `page.getByText(${js(target.text)}, { exact: true })`;
+    return `page.locator(${js(target.tag)}).filter({ hasText: ${js(target.text)} })`;
   }
   return `page.locator(${js(target.css)})`;
 }
@@ -61,9 +59,11 @@ export function toPlaywright(plan: ExportPlan, options: ExportOptions): ExportRe
     ...plan.stubs.map(stub),
     ...plan.steps.map((step) => command(step, options.baseUrl)),
   ].flatMap((line) => line.split("\n"));
-  const warnings = plan.variables.length
-    ? [`Masked values are read from environment variables: ${plan.variables.join(", ")}.`]
-    : [];
+  const warnings = [...plan.notes];
+  if (plan.variables.length)
+    warnings.push(
+      `Masked values are read from environment variables: ${plan.variables.join(", ")}.`,
+    );
   if (!options.complete) return { code: `${lines.join("\n")}\n`, warnings };
   const device = deviceOptions(plan);
   const body = lines.map((line) => `  ${line}`).join("\n");

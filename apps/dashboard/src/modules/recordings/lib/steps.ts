@@ -1,13 +1,25 @@
 import type { RecordedStep, StepTarget } from "@capuchoo/core";
 
-/** What a person would call the element: its name, its text, its test id, or its tag. */
+/** The class a CSS path ends on, which names what was tapped when nothing else does. */
+function lastClass(css: string): string | null {
+  const segment = css.split(">").pop() ?? "";
+  return /\.([\w-]+)/.exec(segment)?.[1] ?? null;
+}
+
+/**
+ * What a person would call the element: its name, its text, its test id or id, the icon it shows,
+ * the kind of field, or the class that says what it is.
+ */
 export function targetName(target: StepTarget): string {
   return (
     target.name ??
     target.text ??
     target.testId?.value ??
     target.id ??
-    (target.inputType ? `${target.inputType} field` : target.tag)
+    (target.icon ? `${target.icon.replace(/_/g, " ")} icon` : null) ??
+    (target.inputType ? `${target.inputType} field` : null) ??
+    lastClass(target.css)?.replace(/-/g, " ") ??
+    target.tag
   );
 }
 

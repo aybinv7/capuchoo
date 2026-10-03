@@ -23,6 +23,8 @@ export interface StepTarget {
   /** Whether each locator alone found exactly this element at the time. */
   unique: { testId: boolean; id: boolean; text: boolean };
   inputType: string | null;
+  /** The name of the icon the element shows, for one that has no text: `search`, `back`. */
+  icon?: string | null;
 }
 
 export interface RecordedStep {
@@ -69,6 +71,7 @@ function parseTarget(raw: unknown): StepTarget | null {
       text: unique.text === true,
     },
     inputType: str(raw.inputType),
+    ...(typeof raw.icon === "string" ? { icon: raw.icon } : {}),
   };
 }
 

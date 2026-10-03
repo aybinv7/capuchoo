@@ -70,6 +70,61 @@ describe("steps", () => {
     expect(target.css).not.toMatch(/ember|f7-panel|active|ripple/);
   });
 
+  it("leaves out classes a finger or a page transition added, which a test run never sees", () => {
+    document.body.innerHTML = `
+      <div class="page page-current"><div class="toolbar">
+        <a class="tab-link tab-link-active active-state">One</a><a class="tab-link">Two</a>
+      </div></div>
+      <div class="page page-previous"><div class="toolbar"><a class="tab-link">Three</a></div></div>`;
+    start();
+    click(document.querySelector("a")!);
+    const css = steps[0]!.target.css;
+    expect(css).not.toMatch(/active|current|previous/);
+    document.querySelector("a")!.className = "tab-link";
+    expect(document.querySelectorAll(css)).toHaveLength(1);
+    expect(document.querySelector(css)!.textContent).toBe("One");
+  });
+
+  it("keeps the class that says what the element is, over the ones everything shares", () => {
+    document.body.innerHTML = `
+      <div class="navbar"><a class="link icon-only back"><i class="icon icon-back"></i></a>
+      <a class="link icon-only">x</a><a class="link icon-only">y</a></div>`;
+    start();
+    click(document.querySelector("a.back i")!);
+    expect(steps[0]!.target.css).toContain(".back");
+    expect(steps[0]!.target.icon).toBe("back");
+  });
+
+  it("names a button with no text by the icon it shows", () => {
+    document.body.innerHTML = `<a class="link icon-only searchbar-enable"><i class="icon f7-icons">search</i></a>`;
+    start();
+    click(document.querySelector("a")!);
+    expect(steps[0]!.target).toMatchObject({ text: null, name: null, icon: "search" });
+  });
+
+  it("reads a label as a person does: icon glyph names left out, pieces spaced", () => {
+    document.body.innerHTML = `
+      <a class="tab-link"><i class="icon f7-icons">bolt</i><span class="tabbar-label">Reactive</span></a>
+      <a class="item-link"><div class="item-title">SO-208978</div><div class="item-after">3,370</div></a>
+      <div class="title">Reactive orders</div>`;
+    start();
+    click(document.querySelector(".tab-link span")!);
+    click(document.querySelector(".item-link")!);
+    expect(steps[0]!.target).toMatchObject({
+      text: "Reactive",
+      name: "Reactive",
+      unique: { text: true },
+    });
+    expect(steps[1]!.target).toMatchObject({ text: "SO-208978 3,370", unique: { text: false } });
+  });
+
+  it("does not trust a text another element of the same kind contains", () => {
+    document.body.innerHTML = `<button>Save</button><button>Save order</button>`;
+    start();
+    click(document.querySelector("button")!);
+    expect(steps[0]!.target.unique.text).toBe(false);
+  });
+
   it("records the value a field was left with, and Enter after it once", () => {
     document.body.innerHTML = `<label for="q">Customer</label><input id="q" type="search">`;
     start();

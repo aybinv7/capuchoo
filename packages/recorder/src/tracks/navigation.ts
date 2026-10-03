@@ -1,12 +1,17 @@
 type Push = (data: Record<string, unknown>) => void;
 
 /**
- * Route changes as markers, from the History API. A router that keeps its own stack (Framework7
- * without browser history) should call `recorder.mark("route", { url })` itself.
+ * Route changes as markers, from the History API, tagged `source: "history"` because they are in the
+ * address bar: a test can check them there. A router that keeps its own stack (Framework7 without
+ * browser history) calls `recorder.mark("route", { url })` itself, and those are not.
  */
 export function watchNavigation(push: Push): () => void {
   const emit = () =>
-    push({ kind: "route", url: `${location.pathname}${location.search}${location.hash}` });
+    push({
+      kind: "route",
+      url: `${location.pathname}${location.search}${location.hash}`,
+      source: "history",
+    });
   const { pushState, replaceState } = history;
 
   history.pushState = function recordedPush(...args: Parameters<History["pushState"]>) {

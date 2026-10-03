@@ -70,7 +70,7 @@ function lanesWith(
     t,
     kind: "route",
     label: url,
-    data: { kind: "route", url },
+    data: { kind: "route", url, source: "history" },
   }));
   lanes.network = network;
   return lanes;
@@ -145,6 +145,58 @@ describe("export plan", () => {
     expect(plan().steps[5]).toMatchObject({ kind: "url", url: "/#/orders/42" });
   });
 
+  it("checks only routes in the address bar, and says so when the app's router marked others", () => {
+    const marked = emptyLanes();
+    marked.steps = lanes.steps;
+    marked.markers = [
+      {
+        id: "h",
+        t: 0,
+        kind: "route",
+        label: "/",
+        data: { kind: "route", url: "/", source: "history" },
+      },
+      {
+        id: "a",
+        t: 2400,
+        kind: "route",
+        label: "/demo/order/2/",
+        data: { kind: "route", url: "/demo/order/2/" },
+      },
+    ];
+    const result = buildExportPlan({
+      lanes: marked,
+      from: 0,
+      to: 10_000,
+      title: "t",
+      viewport: null,
+      platform: "android",
+      stubs: false,
+    });
+    expect(result.steps.filter((step) => step.kind === "url")).toEqual([]);
+    expect(result.steps[0]).toMatchObject({ kind: "visit", url: "/" });
+    expect(result.notes.join(" ")).toMatch(/router/);
+    expect(toCypress(result, options).warnings.join(" ")).toMatch(/router/);
+  });
+
+  it("opens the app's root when no route was recorded", () => {
+    const bare = emptyLanes();
+    bare.steps = lanes.steps;
+    const result = buildExportPlan({
+      lanes: bare,
+      from: 0,
+      to: 10_000,
+      title: "t",
+      viewport: null,
+      platform: "android",
+      stubs: false,
+    });
+    expect(result.steps[0]).toMatchObject({ kind: "visit", url: "/" });
+    expect(JSON.parse(toCapubridge(result, options, () => "x").code).steps[0]).toMatchObject({
+      op: "openApp",
+    });
+  });
+
   it("does not assert a route that no step led to", () => {
     expect(plan(0, 30_000).steps.filter((step) => step.kind === "url")).toHaveLength(1);
   });
@@ -182,7 +234,7 @@ describe("Cypress", () => {
     expect(code).toContain('cy.get("#q").clear().type("Benali");');
     expect(code).toContain('cy.get("#q").type("{enter}");');
     expect(code).toContain('cy.get("[data-testid=\\"save-order\\"]").click();');
-    expect(code).toContain('cy.contains("button", /^\\s*Cancel\\s*$/).click();');
+    expect(code).toContain('cy.contains("button", "Cancel").click();');
     expect(code).toContain('cy.url().should("include", "/#/orders/42");');
     expect(code).toMatch(/^describe\("Xiaomi · 1\.0", \(\) => \{/);
   });
@@ -233,9 +285,7 @@ describe("Playwright", () => {
       "test.use({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2.75, isMobile: true, hasTouch: true });",
     );
     expect(code).toContain('await page.getByTestId("save-order").click();');
-    expect(code).toContain(
-      'await page.getByRole("button", { name: "Cancel", exact: true }).click();',
-    );
+    expect(code).toContain('await page.locator("button").filter({ hasText: "Cancel" }).click();');
     expect(code).toContain('await page.locator("#q").fill("Benali");');
     expect(code).toContain('await page.locator("#q").press("Enter");');
     expect(code).toContain(
@@ -269,7 +319,6 @@ describe("Chrome Recorder", () => {
     expect(click).toMatchObject({ offsetX: 12, offsetY: 8 });
     expect(click.selectors).toEqual([
       ['[data-testid="save-order"]'],
-      ["aria/Save order"],
       ["div.page > button:nth-of-type(2)"],
       ["text/Save order"],
     ]);
