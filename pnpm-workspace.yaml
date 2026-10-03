@@ -109,10 +109,10 @@ peerDependencyRules:
 minimumReleaseAgeExclude:
   - "@hono/node-server@2.1.3"
   - hono@4.13.11
-  - '@rrweb/record@2.1.7'
-  - '@rrweb/types@2.1.7'
-  - '@rrweb/utils@2.1.7'
+  - "@rrweb/record@2.1.7"
+  - "@rrweb/types@2.1.7"
+  - "@rrweb/utils@2.1.7"
   - rrdom@2.1.7
   - rrweb-snapshot@2.1.7
   - rrweb@2.1.7
-  - '@rrweb/replay@2.1.7'
+  - "@rrweb/replay@2.1.7"
