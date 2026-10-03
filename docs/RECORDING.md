@@ -146,6 +146,19 @@ Maps are kept while any recording still runs their version, and purged with reco
 `cap sync` copied into `app/src/main/assets/public` before Gradle runs (the app's own build output
 keeps them) and stores them for the native version.
 
+## Errors
+
+The recorder fingerprints each error it records: the message without its numbers, ids and urls, plus
+the script of the top frame without its build hash, so one bug keeps a single group across sessions,
+devices and builds. Up to five distinct errors per segment travel in the segment's metadata with
+their count and first time. The server counts them into `recording_issues` in the same transaction
+that records the segment, so a retried upload counts nothing twice; it still never opens a segment.
+
+**Recordings → Errors** lists them with their events, devices, versions and the top frame read
+through source maps, each opening onto the sessions it happened in and a replay link a moment before
+it. Resolving hides an error; a device hitting it again marks it regressed. Errors no device has hit
+within the recording retention are purged.
+
 ## The player
 
 The screen, an inspector (activity, console, network, database, telemetry, performance) and a
