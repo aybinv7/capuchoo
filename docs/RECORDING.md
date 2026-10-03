@@ -23,6 +23,11 @@ server decides what each device records; the device does the work off the thread
 - **session** uploads every `flushMs`.
 - **live** uploads every `liveFlushMs` and beats every 5 s so a viewer can tell idle from gone.
 
+An error while the app is in the background (locked, or another app in front) stays in the buffer
+but does not raise a session: there is no screen and nobody looking. In debug builds Capacitor logs
+every failed native call with `console.error` - an offline update check among them - which would
+otherwise record a session per check while a locked phone is out of coverage.
+
 A trigger (`shake`, `error`, `manual` report, `app` code) raises the device to a session for
 `postRollMs`, never above `ceiling`. Raising from buffer keeps the buffer: the session starts at the
 oldest segment still on the device, so it shows what led up to the trigger. When the post-roll ends
@@ -180,5 +185,9 @@ timeline with a lane per track and markers for errors, failed requests, rage tap
 - The recording endpoints carry their own CORS (`x-capuchoo-recording`, `x-capuchoo-asset`) and
   their own rate limits; a segment is at most 2 MiB, an asset 4 MiB.
 - Capacity per process is in [CAPACITY.md](./CAPACITY.md).
+- The player serves the app's stylesheets from `blob:` URLs so their fonts resolve against the
+  server's copies. A dashboard's Content-Security-Policy must allow `style-src blob:`, or replays
+  render unstyled; `render.yaml` and `deploy/dashboard/security-headers.conf` do, and a test keeps
+  them that way.
 - On the Render deploy storage is PostgreSQL, so recordings take database space; prefer S3 or the
   filesystem driver before turning recording on for a fleet.

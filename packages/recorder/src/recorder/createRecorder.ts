@@ -48,6 +48,15 @@ const defaultLogger: RecorderLogger = {
 };
 
 const ASSET_DELAY_MS = 3000;
+
+/**
+ * An app behind the lock screen or another app has no screen to show and nobody looking at it: an
+ * error there stays in the buffer, where the next report or foreground error still finds it, but
+ * does not raise a session of its own.
+ */
+function isBackgrounded(): boolean {
+  return typeof document !== "undefined" && document.visibilityState === "hidden";
+}
 const LIVE_HEARTBEAT_MS = 5000;
 
 interface OpenSession {
@@ -98,7 +107,9 @@ export function createRecorder(options: RecorderOptions): Recorder {
   const tracks = new TrackSet(
     [
       replay,
-      createConsoleTrack(() => trigger("error")),
+      createConsoleTrack(() => {
+        if (!isBackgrounded()) trigger("error");
+      }),
       createNetworkTrack(options.network ?? {}, () => ({
         bodies: policy()?.network.bodies ?? false,
         maxBodyBytes: policy()?.network.maxBodyBytes ?? 0,

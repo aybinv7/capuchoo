@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MonitorOff, TriangleAlert } from "@lucide/vue";
+import { EyeOff, MonitorOff, TriangleAlert } from "@lucide/vue";
 import { computed, useTemplateRef } from "vue";
 import { Spinner } from "@/components/ui/spinner";
 import type { ReplayerState } from "../../composables/useReplayer";
@@ -32,6 +32,13 @@ const frame = computed(() => {
     "--replay-scale": String(props.scale),
   };
 });
+/** A WebView behind the lock screen or another app reports no size: there was nothing to show. */
+const backgrounded = computed(
+  () =>
+    props.state === "ready" &&
+    props.viewport !== null &&
+    (props.viewport.width === 0 || props.viewport.height === 0),
+);
 const waiting = computed(
   () => props.hasScreen && props.state !== "ready" && props.state !== "failed",
 );
@@ -43,7 +50,7 @@ const waiting = computed(
     class="bg-muted/40 dot-grid relative flex h-full min-h-72 w-full items-center justify-center overflow-hidden"
   >
     <div
-      v-show="props.state === 'ready'"
+      v-show="props.state === 'ready' && !backgrounded"
       class="ring-foreground/85 relative overflow-hidden rounded-[22px] bg-white shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-[6px]"
       :style="frame"
     >
@@ -84,6 +91,17 @@ const waiting = computed(
       <p class="text-foreground font-medium">No screen recording</p>
       <p class="text-pretty">
         Replay was off for this session. Its console, network and database lanes still play.
+      </p>
+    </div>
+    <div
+      v-else-if="backgrounded"
+      class="text-muted-foreground flex max-w-xs flex-col items-center gap-2 text-center text-sm"
+    >
+      <EyeOff class="size-6" aria-hidden="true" />
+      <p class="text-foreground font-medium">The app was in the background</p>
+      <p class="text-pretty">
+        Its screen was locked or another app was in front, so there was nothing to show. Its
+        console, network and database lanes still play, and the screen returns if the app did.
       </p>
     </div>
     <div

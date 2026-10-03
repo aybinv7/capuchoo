@@ -56,7 +56,7 @@ export function useReplayer(input: {
   function fit() {
     const stage = input.stage.value;
     const size = viewport.value;
-    if (!stage || !size) return;
+    if (!stage || !size || size.width <= 0 || size.height <= 0) return;
     const box = stage.getBoundingClientRect();
     scale.value = Math.min(1, (box.width - 32) / size.width, (box.height - 32) / size.height);
   }

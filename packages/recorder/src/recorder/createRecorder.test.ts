@@ -135,6 +135,21 @@ describe("createRecorder", () => {
     );
   });
 
+  it("keeps an error in the background in the buffer instead of raising a session", async () => {
+    serve(() => ({ policy: policy({ mode: "buffer" }), known_assets: [] }));
+    const recorder = createRecorder({ identity, shake: false });
+    await recorder.start();
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    console.error(new Error("offline while locked"));
+    expect(recorder.status.mode).toBe("buffer");
+
+    visibility.mockReturnValue("visible");
+    console.error(new Error("broke on screen"));
+    expect(recorder.status.mode).toBe("session");
+    visibility.mockRestore();
+    await recorder.stop();
+  });
+
   it("ignores a trigger the policy does not allow", async () => {
     serve(() => ({ policy: policy({ mode: "buffer", triggers: ["error"] }), known_assets: [] }));
     const recorder = createRecorder({ identity, shake: false });
