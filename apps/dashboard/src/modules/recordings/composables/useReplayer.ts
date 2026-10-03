@@ -19,10 +19,15 @@ function loadReplay() {
   return loader;
 }
 
+/** Within this of the screen recording's end, the player is held rather than started again. */
+const END_SLACK_MS = 50;
+
 /**
  * Drives the rrweb player inside `root`, scaled to fit `stage`. `time` is milliseconds from the
- * start of the timeline, and keeps moving on a clock of its own when the session has no screen
- * recording, so the lanes still play.
+ * start of the timeline. The timeline is the session's - console, network and database included -
+ * and outlasts the screen whenever the UI sits still, so a clock of its own runs it: rrweb follows
+ * while the playhead is inside the span it has events for, and holds its first or last frame
+ * outside it. rrweb's `finish` only means the screen has nothing more to show.
  */
 export function useReplayer(input: {
   root: Ref<HTMLElement | null>;
@@ -43,6 +48,10 @@ export function useReplayer(input: {
   let clockAnchor = 0;
   let clockStartedAt = 0;
   let pending: ReplayEvent[] = [];
+  /** rrweb is playing on its own timer and the playhead follows it. */
+  let following = false;
+  /** The offset rrweb was last paused at, so holding a frame does not re-seek every tick. */
+  let heldAt: number | null = null;
 
   function fit() {
     const stage = input.stage.value;
@@ -53,17 +62,62 @@ export function useReplayer(input: {
   }
   useResizeObserver(input.stage, fit);
 
+  function anchor(at: number) {
+    clockAnchor = at;
+    clockStartedAt = performance.now();
+  }
+
+  /** The timeline span the screen recording has events for, once a player exists. */
+  function span(): { start: number; end: number } | null {
+    const player = replayer.value;
+    if (!player) return null;
+    const start = lead();
+    return { start, end: start + player.getMetaData().totalTime };
+  }
+
+  function hold(offset: number) {
+    following = false;
+    if (heldAt === offset) return;
+    heldAt = offset;
+    replayer.value?.pause(offset);
+  }
+
+  /** Puts the screen where the playhead is: playing inside its span, held at an edge outside it. */
+  function engage() {
+    const player = replayer.value;
+    const range = span();
+    if (!player || !range) return;
+    const offset = time.value - range.start;
+    const inside = time.value >= range.start && time.value < range.end - END_SLACK_MS;
+    if (!inside) {
+      hold(Math.max(0, Math.min(range.end - range.start, offset)));
+      return;
+    }
+    if (following) return;
+    following = true;
+    heldAt = null;
+    player.play(offset);
+  }
+
   function tick() {
     frame = 0;
     if (!playing.value) return;
     const player = replayer.value;
-    time.value = player
-      ? player.getCurrentTime() + lead()
-      : Math.min(duration, clockAnchor + (performance.now() - clockStartedAt) * speed.value);
-    if (!player && time.value >= duration) {
+    if (following && player) {
+      time.value = Math.min(duration, player.getCurrentTime() + lead());
+      anchor(time.value);
+    } else {
+      time.value = Math.min(
+        duration,
+        clockAnchor + (performance.now() - clockStartedAt) * speed.value,
+      );
+    }
+    if (time.value >= duration) {
       playing.value = false;
+      if (following) hold(Math.max(0, time.value - lead()));
       return;
     }
+    if (!following) engage();
     frame = requestAnimationFrame(tick);
   }
 
@@ -88,7 +142,10 @@ export function useReplayer(input: {
         insertStyleRules: ["html, body { scrollbar-width: none; }"],
       });
       player.on("finish", () => {
-        playing.value = false;
+        if (!following) return;
+        following = false;
+        heldAt = null;
+        anchor(time.value);
       });
       player.on("resize", (payload) => {
         const { width, height } = payload as { width: number; height: number };
@@ -103,7 +160,10 @@ export function useReplayer(input: {
         | undefined;
       if (meta?.width && meta.height) viewport.value = { width: meta.width, height: meta.height };
       fit();
-      player.pause(replayOffset(time.value));
+      heldAt = null;
+      following = false;
+      if (playing.value) engage();
+      else hold(replayOffset(time.value));
       state.value = "ready";
     } catch {
       state.value = "failed";
@@ -141,35 +201,37 @@ export function useReplayer(input: {
     },
 
     play() {
-      if (time.value >= duration - 50) time.value = 0;
+      if (time.value >= duration - END_SLACK_MS) time.value = 0;
       playing.value = true;
-      clockAnchor = time.value;
-      clockStartedAt = performance.now();
-      replayer.value?.play(replayOffset(time.value));
+      anchor(time.value);
+      following = false;
+      engage();
       startTicking();
     },
 
     pause() {
+      const player = replayer.value;
+      if (following && player) time.value = Math.min(duration, player.getCurrentTime() + lead());
       playing.value = false;
-      replayer.value?.pause();
-      if (replayer.value) time.value = replayer.value.getCurrentTime() + lead();
+      following = false;
+      heldAt = null;
+      player?.pause();
     },
 
     seek(to: number) {
       const target = Math.max(0, Math.min(duration, to));
       time.value = target;
-      clockAnchor = target;
-      clockStartedAt = performance.now();
-      const player = replayer.value;
-      if (!player) return;
-      if (playing.value) player.play(replayOffset(target));
-      else player.pause(replayOffset(target));
+      anchor(target);
+      following = false;
+      heldAt = null;
+      if (!replayer.value) return;
+      if (playing.value) engage();
+      else hold(replayOffset(target));
     },
 
     setSpeed(value: number) {
       speed.value = value;
-      clockAnchor = time.value;
-      clockStartedAt = performance.now();
+      anchor(time.value);
       replayer.value?.setConfig({ speed: value });
     },
 
@@ -186,6 +248,8 @@ export function useReplayer(input: {
     destroy() {
       cancelAnimationFrame(frame);
       frame = 0;
+      following = false;
+      heldAt = null;
       replayer.value?.destroy();
       replayer.value = null;
       pending = [];

@@ -18,6 +18,20 @@ export interface ReplayOptions {
 }
 
 const EVENT_INCREMENTAL = 3;
+const SOURCE_MEDIA = 7;
+
+/**
+ * rrweb records `play` and `pause` wherever they fire, and Capacitor fires `pause` and `resume` on
+ * the document when the app leaves and returns to the foreground. Replayed, that media event lands
+ * on the document and throws, so only events on real media elements are kept.
+ */
+function isStrayMediaEvent(event: { type: number; data?: unknown }): boolean {
+  if (event.type !== EVENT_INCREMENTAL) return false;
+  const data = event.data as { source?: number; id?: number } | undefined;
+  if (data?.source !== SOURCE_MEDIA || typeof data.id !== "number") return false;
+  const node = record.mirror.getNode(data.id);
+  return node?.nodeName !== "AUDIO" && node?.nodeName !== "VIDEO";
+}
 const SOURCE_MUTATION = 0;
 
 interface MutationData {
@@ -75,6 +89,7 @@ export function createReplayTrack(options: ReplayOptions = {}): ReplayTrack {
     stopRecording =
       record({
         emit(event) {
+          if (isStrayMediaEvent(event as { type: number; data?: unknown })) return;
           const weight = mutationWeight(event as { type: number; data?: unknown });
           if (weight > 0) {
             const now = Date.now();

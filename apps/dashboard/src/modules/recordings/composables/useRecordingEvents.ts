@@ -5,6 +5,7 @@ import type { AssetMap } from "../lib/asset-rewrite";
 import { rewriteReplayEvent } from "../lib/asset-rewrite";
 import { appendToLanes, emptyLanes } from "../lib/lanes";
 import { parseSegment } from "../lib/ndjson";
+import { keepReplayEvent } from "../lib/replay-filter";
 import { fetchSegmentText } from "../services/recordings.service";
 import type { Lanes, RecordingSegment } from "../types/recordings.types";
 
@@ -31,6 +32,7 @@ export function useRecordingEvents(input: {
   const total = ref(0);
   const error = ref<unknown>(null);
   const applied = new Set<number>();
+  const documents = new Set<number>();
   let generation = 0;
   let controller = new AbortController();
   let chain: Promise<void> = Promise.resolve();
@@ -59,6 +61,7 @@ export function useRecordingEvents(input: {
     controller.abort();
     controller = new AbortController();
     applied.clear();
+    documents.clear();
     lanes.value = emptyLanes();
     loaded.value = 0;
     total.value = 0;
@@ -105,6 +108,7 @@ export function useRecordingEvents(input: {
           for (const event of events) {
             if (event.k !== "replay") continue;
             const raw = event.d as ReplayEvent;
+            if (!keepReplayEvent(raw, documents)) continue;
             rewriteReplayEvent(raw, input.assets.value);
             replay.push(raw);
           }
