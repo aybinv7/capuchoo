@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 import { RECORDING_ASSET_HEADER, RECORDING_HEADER, encodeRecordingHeader } from "@capuchoo/core";
 import type { HubEvent } from "../src/services/event-hub";
@@ -298,6 +298,22 @@ describe("recording segments", () => {
     });
     expect(served.headers.get("content-encoding")).toBe("gzip");
     expect(Buffer.from(await served.arrayBuffer())).toEqual(gzipSync(lines(1)));
+  });
+
+  it("keeps the first body of a segment when the same number is sent again", async () => {
+    expect((await postSegment(0)).status).toBe(201);
+    const replay = await postSegment(0, { body: gzipSync("") });
+    expect(replay.status).toBe(200);
+
+    const list = await (
+      await ctx.request(`/api/apps/${appId}/recordings`, { token: owner.token })
+    ).json();
+    const served = await ctx.request(`/api/recordings/${list.sessions[0].id}/segments/0`, {
+      token: owner.token,
+    });
+    expect(gunzipSync(Buffer.from(await served.arrayBuffer())).toString()).toBe(lines(0));
+    const blobs = await ctx.deps.db.selectFrom("blobs").select("key").execute();
+    expect(blobs.filter((blob) => blob.key.includes("/0-"))).toHaveLength(1);
   });
 
   it("takes a note that arrives after the session's first segments", async () => {

@@ -135,7 +135,7 @@ export function createPipeline(deps: PipelineDeps) {
     const now = deps.now();
     const segment: StoredSegment = {
       sessionId: session.stored.meta.sessionId,
-      seq: session.nextSeq++,
+      seq: session.nextSeq,
       startedAt: closed?.startedAt ?? now,
       endedAt: closed?.endedAt ?? now,
       events: closed?.events ?? 0,
@@ -146,6 +146,8 @@ export function createPipeline(deps: PipelineDeps) {
       final,
       stored: 0,
     };
+    session.nextSeq += 1;
+    session.stored.nextSeq = session.nextSeq;
     const text = closed?.text ?? "";
 
     serial(async () => {
@@ -221,7 +223,11 @@ export function createPipeline(deps: PipelineDeps) {
         stored.meta = { ...stored.meta, start: "error", note: stored.meta.note ?? RECOVERED_NOTE };
       }
       if (!stored.segments.some((segment) => segment.final)) {
-        const seq = Math.max(-1, ...stored.segments.map((segment) => segment.seq)) + 1;
+        const seq = Math.max(
+          stored.nextSeq ?? 0,
+          ...stored.segments.map((segment) => segment.seq + 1),
+        );
+        stored.nextSeq = seq + 1;
         const bytes = await deps.compress("");
         await deps.store.writeSegment(id, seq, bytes);
         const at = Math.max(
@@ -274,7 +280,12 @@ export function createPipeline(deps: PipelineDeps) {
         case "begin":
           end();
           current = {
-            stored: { meta: command.session, promoted: uploads(command.mode), segments: [] },
+            stored: {
+              meta: command.session,
+              promoted: uploads(command.mode),
+              segments: [],
+              nextSeq: 0,
+            },
             mode: command.mode,
             nextSeq: 0,
           };

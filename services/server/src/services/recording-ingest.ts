@@ -6,7 +6,7 @@ import { conflict } from "../lib/errors";
 import { findAppByBundleId } from "../repositories/apps";
 import { findDevice } from "../repositories/devices";
 import { hasAsset, insertAsset } from "../repositories/recording-assets";
-import { ensureSession, recordSegment } from "../repositories/recording-sessions";
+import { ensureSession, findSegment, recordSegment } from "../repositories/recording-sessions";
 
 export type SegmentOutcome =
   | { status: "unknown_app" }
@@ -41,7 +41,11 @@ export async function ingestSegment(
     throw conflict("That recording belongs to another device", "session_owner");
   }
 
-  const key = `recordings/${appId}/${header.session.sessionId}/${header.segment.seq}.ndjson.gz`;
+  if (await findSegment(deps.db, session.id, header.segment.seq)) {
+    body.stream.resume();
+    return { status: "duplicate", sessionId: session.id };
+  }
+  const key = `recordings/${appId}/${header.session.sessionId}/${header.segment.seq}-${randomUUID()}.ndjson.gz`;
   const sizeBytes = await deps.storage.put(key, body.stream, "application/gzip");
   const stored = await recordSegment(deps.db, {
     sessionId: session.id,
@@ -56,21 +60,23 @@ export async function ingestSegment(
     },
   });
 
-  if (stored) {
-    deps.hub.publish({
-      type: "recording",
-      appId,
-      data: {
-        session_id: session.id,
-        device_uuid: session.device_uuid,
-        seq: header.segment.seq,
-        final: header.segment.final,
-        errors: header.segment.errors,
-        ended_at: new Date(header.segment.endedAt).toISOString(),
-      },
-    });
+  if (!stored) {
+    await deps.storage.delete(key).catch(() => undefined);
+    return { status: "duplicate", sessionId: session.id };
   }
-  return { status: stored ? "stored" : "duplicate", sessionId: session.id };
+  deps.hub.publish({
+    type: "recording",
+    appId,
+    data: {
+      session_id: session.id,
+      device_uuid: session.device_uuid,
+      seq: header.segment.seq,
+      final: header.segment.final,
+      errors: header.segment.errors,
+      ended_at: new Date(header.segment.endedAt).toISOString(),
+    },
+  });
+  return { status: "stored", sessionId: session.id };
 }
 
 /** Stores a stylesheet, font or image a replay needs, once per app, version and path. */

@@ -214,6 +214,26 @@ describe("pipeline", () => {
     expect((await store.listSessions()).map((session) => session.meta.sessionId)).toEqual([]);
   });
 
+  it("ends a live session killed after every upload with a new number, never a reused one", async () => {
+    const store = createMemoryStore();
+    const killed = setup([], store);
+    killed.pipeline.handle({ type: "configure", settings });
+    killed.pipeline.handle({ type: "begin", mode: "live", session: meta({ mode: "live" }) });
+    killed.pipeline.handle({ type: "events", events: checkout(Date.now()) });
+    killed.pipeline.handle({ type: "flush" });
+    await drain(killed.pipeline);
+    killed.pipeline.handle({ type: "events", events: [{ k: "console", t: Date.now(), d: {} }] });
+    killed.pipeline.handle({ type: "flush" });
+    await drain(killed.pipeline);
+    expect(killed.sent.map((item) => item.segment.seq)).toEqual([0, 1]);
+
+    const restarted = setup([], store);
+    restarted.pipeline.handle({ type: "configure", settings });
+    await drain(restarted.pipeline);
+
+    expect(restarted.sent.map((item) => item.segment)).toMatchObject([{ seq: 2, final: true }]);
+  });
+
   it("starts a new segment at the size limit", async () => {
     const { pipeline, sent } = setup();
     pipeline.handle({ type: "configure", settings });

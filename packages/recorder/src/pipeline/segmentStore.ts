@@ -12,6 +12,11 @@ export interface StoredSession {
   promoted: boolean;
   /** Segments kept on the device, not yet uploaded. */
   segments: StoredSegment[];
+  /**
+   * The next segment number. Uploaded segments leave `segments`, so after a crash only this says
+   * where numbering stopped; reusing a number the server already holds loses that segment.
+   */
+  nextSeq?: number;
 }
 
 export interface SegmentStore {
