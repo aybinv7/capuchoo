@@ -3,6 +3,7 @@ import { MonitorOff, TriangleAlert } from "@lucide/vue";
 import { computed, useTemplateRef } from "vue";
 import { Spinner } from "@/components/ui/spinner";
 import type { ReplayerState } from "../../composables/useReplayer";
+import type { Tap } from "../../lib/taps";
 
 const props = defineProps<{
   state: ReplayerState;
@@ -13,6 +14,10 @@ const props = defineProps<{
   loaded: number;
   total: number;
   live: boolean;
+  /** Taps just before the playhead, drawn as ripples. */
+  taps: readonly Tap[];
+  /** Wall clock of the playhead, for each ripple's age. */
+  playhead: number;
 }>();
 
 const stage = useTemplateRef<HTMLElement>("stage");
@@ -43,6 +48,17 @@ const waiting = computed(
       :style="frame"
     >
       <div ref="root" class="replay-root absolute inset-0" />
+      <span
+        v-for="tap in props.taps"
+        :key="tap.t"
+        class="tap-ripple pointer-events-none absolute rounded-full"
+        :style="{
+          left: `${tap.x * props.scale}px`,
+          top: `${tap.y * props.scale}px`,
+          '--age': String(Math.min(1, (props.playhead - tap.t) / 650)),
+        }"
+        aria-hidden="true"
+      />
     </div>
 
     <span
@@ -85,6 +101,15 @@ const waiting = computed(
 .replay-root :deep(.replayer-wrapper) {
   transform: scale(var(--replay-scale, 1));
   transform-origin: top left;
+}
+.tap-ripple {
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 2px solid color-mix(in oklch, var(--primary) 85%, transparent);
+  background: color-mix(in oklch, var(--primary) 22%, transparent);
+  transform: scale(calc(0.45 + var(--age) * 0.75));
+  opacity: calc(1 - var(--age));
 }
 .replay-root :deep(iframe) {
   border: 0;

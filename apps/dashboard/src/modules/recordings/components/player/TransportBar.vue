@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import { FastForward, Pause, Play, Radio, RotateCcw, RotateCw } from "@lucide/vue";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FastForward,
+  Keyboard,
+  Pause,
+  Play,
+  Radio,
+  RotateCcw,
+  RotateCw,
+} from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -22,6 +33,9 @@ const props = defineProps<{
   skipInactive: boolean;
   live: boolean;
   following: boolean;
+  issueCount: number;
+  /** 1-based position of the last issue at or before the playhead; 0 before the first. */
+  issueIndex: number;
 }>();
 const emit = defineEmits<{
   toggle: [];
@@ -29,9 +43,17 @@ const emit = defineEmits<{
   speed: [value: number];
   skipInactive: [value: boolean];
   follow: [];
+  issue: [direction: 1 | -1];
 }>();
 
 const SPEEDS = [0.5, 1, 2, 4, 8];
+const SHORTCUTS: Array<[string[], string]> = [
+  [["Space"], "Play or pause"],
+  [["←", "→"], "Back or forward 5 s (with Shift, 30 s)"],
+  [["N", "P"], "Next or previous issue"],
+  [["S", "D", "B"], "Screen, data, or both"],
+  [["F"], "Follow a live session"],
+];
 </script>
 
 <template>
@@ -74,6 +96,33 @@ const SPEEDS = [0.5, 1, 2, 4, 8];
       <span class="text-muted-foreground"> / {{ formatOffset(props.duration) }}</span>
     </span>
 
+    <div
+      v-if="props.issueCount > 0"
+      class="border-destructive/30 bg-danger-soft/50 flex items-center rounded-full border"
+    >
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        class="rounded-full"
+        aria-label="Previous issue"
+        @click="emit('issue', -1)"
+      >
+        <ChevronLeft />
+      </Button>
+      <span class="text-destructive tabular px-1 text-[11px] font-medium">
+        Issue {{ props.issueIndex }}/{{ props.issueCount }}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        class="rounded-full"
+        aria-label="Next issue"
+        @click="emit('issue', 1)"
+      >
+        <ChevronRight />
+      </Button>
+    </div>
+
     <div class="ml-auto flex flex-wrap items-center gap-3">
       <Button
         v-if="props.live"
@@ -109,6 +158,23 @@ const SPEEDS = [0.5, 1, 2, 4, 8];
           </SelectItem>
         </SelectContent>
       </Select>
+      <Popover>
+        <PopoverTrigger as-child>
+          <Button variant="ghost" size="icon-sm" aria-label="Keyboard shortcuts">
+            <Keyboard />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" class="w-72">
+          <dl class="space-y-2 text-xs">
+            <div v-for="[keys, label] in SHORTCUTS" :key="label" class="flex items-center gap-3">
+              <dt class="flex w-20 shrink-0 gap-1">
+                <Kbd v-for="key in keys" :key="key">{{ key }}</Kbd>
+              </dt>
+              <dd class="text-muted-foreground">{{ label }}</dd>
+            </div>
+          </dl>
+        </PopoverContent>
+      </Popover>
     </div>
   </div>
 </template>

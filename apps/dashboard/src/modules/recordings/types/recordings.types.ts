@@ -120,9 +120,17 @@ export interface DatabaseColumn {
   pk: number;
 }
 
+export interface DatabaseSnapshot {
+  columns: string[];
+  rows: unknown[][];
+  /** When the snapshot was read; the table's state at that moment. */
+  at: number;
+  truncated: boolean;
+}
+
 export interface DatabaseLaneEntry extends LaneEntry {
   db: string;
-  kind: "changeset" | "change";
+  kind: "changeset" | "rows" | "change";
   changes: DecodedChange[];
   table: string | null;
   type: string | null;
@@ -161,6 +169,8 @@ export interface Lanes {
   markers: MarkerLaneEntry[];
   /** Table name to columns, per database, from the schema each source announced. */
   schemas: Record<string, Record<string, DatabaseColumn[]>>;
+  /** Starting state per database and table, assembled from snapshot chunks. */
+  snapshots: Record<string, Record<string, DatabaseSnapshot>>;
 }
 
 export type LaneName = "console" | "network" | "database" | "telemetry" | "perf" | "markers";

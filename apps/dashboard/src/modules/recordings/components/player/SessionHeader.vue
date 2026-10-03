@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import { ArrowLeft, Ellipsis, MessageSquareQuote, Smartphone, Trash2 } from "@lucide/vue";
+import {
+  ArrowLeft,
+  Columns2,
+  Ellipsis,
+  FileText,
+  Link,
+  MessageSquareQuote,
+  Monitor,
+  Share2,
+  Smartphone,
+  Table2,
+  Trash2,
+} from "@lucide/vue";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { Button } from "@/components/ui/button";
@@ -10,6 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import CopyButton from "@/shared/components/CopyButton.vue";
 import PlatformIcon from "@/shared/components/PlatformIcon.vue";
 import VersionTag from "@/shared/components/VersionTag.vue";
@@ -20,8 +34,17 @@ import { sessionDeviceLabel } from "../../lib/recording-columns";
 import type { RecordingSession } from "../../types/recordings.types";
 import StartBadge from "../StartBadge.vue";
 
-const props = defineProps<{ session: RecordingSession }>();
-const emit = defineEmits<{ remove: [] }>();
+export type PlayerView = "screen" | "data" | "both";
+
+const props = defineProps<{ session: RecordingSession; time: number }>();
+const emit = defineEmits<{ remove: []; copyLink: []; copyReport: [] }>();
+const view = defineModel<PlayerView>("view", { required: true });
+
+const VIEWS: Array<{ value: PlayerView; label: string; icon: typeof Monitor; key: string }> = [
+  { value: "screen", label: "Screen", icon: Monitor, key: "S" },
+  { value: "both", label: "Both", icon: Columns2, key: "B" },
+  { value: "data", label: "Data", icon: Table2, key: "D" },
+];
 
 const screen = computed(() => {
   const value = props.session.device?.screen;
@@ -78,6 +101,42 @@ const facts = computed(() =>
         </p>
       </div>
       <div class="flex items-center gap-1">
+        <ToggleGroup
+          v-model="view"
+          type="single"
+          variant="outline"
+          size="sm"
+          class="mr-1"
+          aria-label="What the player shows"
+        >
+          <Tooltip v-for="option in VIEWS" :key="option.value">
+            <TooltipTrigger as-child>
+              <ToggleGroupItem :value="option.value" :aria-label="option.label" class="px-2.5">
+                <component :is="option.icon" />
+                <span class="hidden xl:inline">{{ option.label }}</span>
+              </ToggleGroupItem>
+            </TooltipTrigger>
+            <TooltipContent>{{ option.label }} · {{ option.key }}</TooltipContent>
+          </Tooltip>
+        </ToggleGroup>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="sm">
+              <Share2 />
+              Share
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-64">
+            <DropdownMenuItem @select="emit('copyLink')">
+              <Link />
+              Copy link at {{ formatOffset(props.time) }}
+            </DropdownMenuItem>
+            <DropdownMenuItem @select="emit('copyReport')">
+              <FileText />
+              Copy bug report (Markdown)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button v-if="props.session.device_uuid" variant="outline" size="sm" as-child>
           <RouterLink
             :to="{ name: RouteName.device, params: { deviceId: props.session.device_uuid } }"

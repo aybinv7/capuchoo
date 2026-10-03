@@ -1,5 +1,5 @@
 import type { RecordedEvent } from "@capuchoo/core";
-import { decodeChangeset, fromBase64 } from "./changeset";
+import { decodeChangeset, fromBase64, type ChangeValue, type DecodedChange } from "./changeset";
 import type {
   ConsoleLaneEntry,
   DatabaseColumn,
@@ -35,6 +35,7 @@ export function emptyLanes(): Lanes {
     perf: [],
     markers: [],
     schemas: {},
+    snapshots: {},
   };
 }
 
@@ -55,8 +56,61 @@ function sortedInsert<T extends { t: number }>(lane: T[], entry: T): void {
   lane.splice(index, 0, entry);
 }
 
-function databaseEntry(id: string, t: number, data: Data): DatabaseLaneEntry | null {
+/** A trigger-captured row, keyed by column name, laid out like a changeset row. */
+function rowChange(
+  raw: Data,
+  columns: readonly DatabaseColumn[] | undefined,
+): DecodedChange | null {
+  const table = text(raw.table);
+  const op = raw.op === "insert" || raw.op === "update" || raw.op === "delete" ? raw.op : null;
+  if (!table || !op) return null;
+  const before = record(raw.old);
+  const after = record(raw.new);
+  const names = columns?.map((column) => column.name) ?? Object.keys(after ?? before ?? {});
+  const primaryKey = names.map(
+    (name) => (columns?.find((column) => column.name === name)?.pk ?? 0) > 0,
+  );
+  const layout = (row: Data | null) =>
+    names.map((name) => (row ? ((row[name] as ChangeValue) ?? null) : undefined));
+  if (op === "update" && before && after) {
+    const old = layout(before);
+    const next = layout(after);
+    return {
+      table,
+      op,
+      indirect: false,
+      primaryKey,
+      old: old.map((value, index) =>
+        primaryKey[index] || value !== next[index] ? value : undefined,
+      ),
+      new: next.map((value, index) =>
+        !primaryKey[index] && value !== old[index] ? value : undefined,
+      ),
+    };
+  }
+  return {
+    table,
+    op,
+    indirect: false,
+    primaryKey,
+    old: op === "insert" ? [] : layout(before),
+    new: op === "delete" ? [] : layout(after),
+  };
+}
+
+function databaseEntry(
+  id: string,
+  t: number,
+  data: Data,
+  schemas: Lanes["schemas"],
+): DatabaseLaneEntry | null {
   const db = text(data.db) ?? "database";
+  if (data.kind === "rows" && Array.isArray(data.changes)) {
+    const changes = (data.changes as Data[])
+      .map((raw) => rowChange(raw, schemas[db]?.[text(raw.table) ?? ""]))
+      .filter((change): change is DecodedChange => change !== null);
+    return { id, t, db, kind: "rows", changes, table: null, type: null, rows: null, error: null };
+  }
   if (data.kind === "changeset") {
     const encoded = text(record(data.bytes)?.$b64);
     if (!encoded) return null;
@@ -163,7 +217,11 @@ export function appendToLanes(
           }
           return;
         }
-        const entry = databaseEntry(id, event.t, data);
+        if (data.kind === "snapshot") {
+          addSnapshotChunk(lanes, event.t, data);
+          return;
+        }
+        const entry = databaseEntry(id, event.t, data, lanes.schemas);
         if (entry) sortedInsert(lanes.database, entry);
         return;
       }
@@ -224,4 +282,22 @@ export function lastAtOrBefore(lane: readonly { t: number }[], time: number): nu
     } else high = middle - 1;
   }
   return found;
+}
+
+function addSnapshotChunk(lanes: Lanes, t: number, data: Data): void {
+  const db = text(data.db) ?? "database";
+  const table = text(data.table);
+  if (!table || !Array.isArray(data.columns) || !Array.isArray(data.rows)) return;
+  const tables = (lanes.snapshots[db] ??= {});
+  const existing = tables[table];
+  if (existing && num(data.offset) === 0) return;
+  const snapshot = existing ?? {
+    columns: (data.columns as unknown[]).map(String),
+    rows: [],
+    at: t,
+    truncated: false,
+  };
+  snapshot.rows.push(...(data.rows as unknown[][]));
+  snapshot.truncated = snapshot.truncated || data.truncated === true;
+  tables[table] = snapshot;
 }

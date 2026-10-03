@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Flag, MapPin, PauseCircle, TriangleAlert } from "@lucide/vue";
+import { Flag, MapPin, PauseCircle, TriangleAlert, Zap } from "@lucide/vue";
 import { computed, ref, useTemplateRef } from "vue";
 import { formatOffset } from "../../lib/activity";
 import type { TimelineTrack } from "../../lib/timeline";
@@ -29,6 +29,7 @@ const MARKER_ICONS: Record<string, typeof Flag> = {
   route: MapPin,
   "replay-paused": PauseCircle,
   "database-unsupported": TriangleAlert,
+  rage: Zap,
 };
 const visibleMarkers = computed(() =>
   props.markers.filter((marker) => marker.kind in MARKER_ICONS),
@@ -99,7 +100,13 @@ const position = (ratio: number) => ({
         v-for="marker in visibleMarkers"
         :key="marker.id"
         class="text-muted-foreground absolute top-0 -translate-x-1/2"
-        :class="marker.kind === 'trigger' || marker.kind === 'escalate' ? 'text-primary' : ''"
+        :class="
+          marker.kind === 'rage'
+            ? 'text-destructive'
+            : marker.kind === 'trigger' || marker.kind === 'escalate'
+              ? 'text-primary'
+              : ''
+        "
         :style="position(marker.at)"
         :title="marker.label"
       >

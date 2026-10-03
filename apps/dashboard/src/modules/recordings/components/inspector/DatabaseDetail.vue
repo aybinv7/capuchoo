@@ -14,6 +14,7 @@ const props = defineProps<{
   playhead: number;
 }>();
 
+const emit = defineEmits<{ openTable: [db: string, table: string] }>();
 const view = ref<"change" | "state">("change");
 const OP_STYLE = {
   insert: "bg-success-soft text-success",
@@ -107,6 +108,13 @@ const tables = computed(() => {
             >{{ change.op }}</span
           >
           <span class="font-mono">{{ change.table }}</span>
+          <button
+            type="button"
+            class="text-primary text-[11px] underline-offset-2 hover:underline"
+            @click="emit('openTable', props.entry.db, change.table)"
+          >
+            Open table
+          </button>
           <span class="text-muted-foreground ml-auto font-mono">#{{ changeKey(change) }}</span>
         </header>
         <table class="w-full font-mono text-[11px]">

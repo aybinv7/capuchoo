@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Clapperboard } from "@lucide/vue";
-import { useEventListener } from "@vueuse/core";
+import { useClipboard, useStorage } from "@vueuse/core";
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, ref, useTemplateRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { isApiError } from "@/shared/api/errors";
@@ -14,15 +15,20 @@ import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
 import { useBreadcrumbLabel } from "@/shared/layouts/composables/useBreadcrumbLabel";
 import { RouteName } from "@/shared/router/route-names";
+import DataView from "../components/data/DataView.vue";
 import InspectorPanel from "../components/inspector/InspectorPanel.vue";
 import ReplayStage from "../components/player/ReplayStage.vue";
 import ScrubberTimeline from "../components/player/ScrubberTimeline.vue";
-import SessionHeader from "../components/player/SessionHeader.vue";
+import SessionHeader, { type PlayerView } from "../components/player/SessionHeader.vue";
 import TransportBar from "../components/player/TransportBar.vue";
 import { useAssetMap } from "../composables/useAssetMap";
 import { useRecording } from "../composables/useRecording";
 import { useRecordingEvents } from "../composables/useRecordingEvents";
+import { usePlayerShortcuts } from "../composables/usePlayerShortcuts";
 import { useReplayer, useReplayerDisposal } from "../composables/useReplayer";
+import { bugReport, linkAt } from "../lib/bug-report";
+import { adjacentIssue, issuesOf } from "../lib/issues";
+import { rageTaps, recentTaps, tapsOf } from "../lib/taps";
 import { sessionDeviceLabel } from "../lib/recording-columns";
 import { buildTimeline, sessionBounds, timelineMarkers } from "../lib/timeline";
 import { deleteRecording } from "../services/recordings.service";
@@ -76,8 +82,18 @@ watch(bounds, (value) => player.setTimeline(value.start, value.end - value.start
 });
 
 const tracks = computed(() => buildTimeline(events.lanes.value, bounds.value));
-const markers = computed(() => timelineMarkers(events.lanes.value, bounds.value));
+const taps = computed(() => tapsOf(events.lanes.value.replay));
+const rage = computed(() => rageTaps(taps.value));
+const markers = computed(() => timelineMarkers(events.lanes.value, bounds.value, rage.value));
 const playhead = computed(() => bounds.value.start + player.time.value);
+const ripples = computed(() => recentTaps(taps.value, playhead.value));
+const issues = computed(() => issuesOf(events.lanes.value, rage.value));
+const issueIndex = computed(
+  () => issues.value.filter((issue) => issue.t <= playhead.value + 400).length,
+);
+
+const view = useStorage<PlayerView>("capuchoo.recording.view", "screen");
+const dataFocus = ref<{ db: string; table: string } | null>(null);
 const loadedRatio = computed(() =>
   events.total.value === 0 ? 1 : events.loaded.value / events.total.value,
 );
@@ -118,19 +134,66 @@ function seekOffset(ms: number) {
 }
 
 function jumpLive() {
+  if (!live.value) return;
   followLive.value = true;
   player.seek(duration.value - LIVE_LAG_MS);
   player.play();
 }
 
-useEventListener(window, "keydown", (event: KeyboardEvent) => {
-  const target = event.target as HTMLElement | null;
-  if (target?.closest("input, textarea, select, [contenteditable], [role=slider]")) return;
-  if (event.code === "Space") {
-    event.preventDefault();
-    toggle();
-  }
+function goToIssue(direction: 1 | -1) {
+  const target = adjacentIssue(issues.value, playhead.value, direction);
+  if (!target) return;
+  seekWall(Math.max(bounds.value.start, target.t - 1500));
+  toast(target.label.split(/\r?\n/)[0] ?? "Issue", { duration: 2500 });
+}
+
+function openTable(db: string, table: string) {
+  dataFocus.value = { db, table };
+  if (view.value === "screen") view.value = "both";
+}
+
+usePlayerShortcuts({
+  toggle,
+  seekBy: (ms) => seekOffset(player.time.value + ms),
+  issue: goToIssue,
+  view: (next) => {
+    view.value = next;
+  },
+  follow: jumpLive,
 });
+
+const { copy } = useClipboard({ legacy: true });
+const pageUrl = () => `${window.location.origin}${route.path}`;
+
+async function copyLink() {
+  await copy(linkAt(pageUrl(), player.time.value));
+  toast.success("Link copied - it opens the replay at this moment");
+}
+
+async function copyReport() {
+  if (!session.value) return;
+  await copy(
+    bugReport({
+      session: session.value,
+      issues: issues.value,
+      origin: bounds.value.start,
+      pageUrl: pageUrl(),
+    }),
+  );
+  toast.success("Bug report copied as Markdown");
+}
+
+const startAt = Number(route.query.t);
+if (Number.isFinite(startAt) && startAt > 0) {
+  const stop = watch(
+    () => player.state.value,
+    (state) => {
+      if (state !== "ready") return;
+      player.seek(startAt);
+      stop();
+    },
+  );
+}
 
 const removeOpen = ref(false);
 const removing = ref(false);
@@ -178,7 +241,14 @@ async function remove() {
       <Skeleton class="h-24" />
     </div>
     <template v-else>
-      <SessionHeader :session="session" @remove="removeOpen = true" />
+      <SessionHeader
+        v-model:view="view"
+        :session="session"
+        :time="player.time.value"
+        @remove="removeOpen = true"
+        @copy-link="copyLink"
+        @copy-report="copyReport"
+      />
 
       <ResizablePanelGroup
         direction="horizontal"
@@ -186,16 +256,39 @@ async function remove() {
         class="min-h-0 flex-1 overflow-hidden rounded-xl border"
       >
         <ResizablePanel :default-size="62" :min-size="35">
-          <ReplayStage
-            ref="stageView"
-            :state="player.state.value"
-            :viewport="player.viewport.value"
-            :scale="player.scale.value"
-            :has-screen="hasScreen"
-            :loaded="events.loaded.value"
-            :total="events.total.value"
-            :live="live && followLive"
-          />
+          <div
+            :class="[
+              'grid h-full min-h-0',
+              view === 'both' ? 'grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' : 'grid-cols-1',
+            ]"
+          >
+            <div v-show="view !== 'data'" class="min-h-0 min-w-0">
+              <ReplayStage
+                ref="stageView"
+                :state="player.state.value"
+                :viewport="player.viewport.value"
+                :scale="player.scale.value"
+                :has-screen="hasScreen"
+                :loaded="events.loaded.value"
+                :total="events.total.value"
+                :live="live && followLive"
+                :taps="ripples"
+                :playhead="playhead"
+              />
+            </div>
+            <div
+              v-if="view !== 'screen'"
+              :class="['min-h-0 min-w-0', view === 'both' && 'border-l']"
+            >
+              <DataView
+                v-model:focus="dataFocus"
+                :lanes="events.lanes.value"
+                :playhead="playhead"
+                :origin="bounds.start"
+                @seek="seekWall"
+              />
+            </div>
+          </div>
         </ResizablePanel>
         <ResizableHandle with-handle />
         <ResizablePanel :default-size="38" :min-size="24">
@@ -204,7 +297,9 @@ async function remove() {
             :lanes="events.lanes.value"
             :playhead="playhead"
             :origin="bounds.start"
+            :rage="rage"
             @seek="seekWall"
+            @open-table="openTable"
           />
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -218,7 +313,10 @@ async function remove() {
           :skip-inactive="player.skipInactive.value"
           :live="live"
           :following="followLive"
+          :issue-count="issues.length"
+          :issue-index="issueIndex"
           @toggle="toggle"
+          @issue="goToIssue"
           @seek="seekOffset"
           @speed="player.setSpeed"
           @skip-inactive="player.setSkipInactive"

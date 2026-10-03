@@ -30,8 +30,18 @@ export function networkTone(status: number | null, error: string | null): LaneTo
  * The story of a session in one list: what the user did and what went wrong. Plain logs and
  * performance samples stay in their own tabs; everything here is worth reading on its own.
  */
-export function buildActivity(lanes: Lanes): ActivityItem[] {
-  const items: ActivityItem[] = [];
+export function buildActivity(
+  lanes: Lanes,
+  rage: ReadonlyArray<{ t: number }> = [],
+): ActivityItem[] {
+  const items: ActivityItem[] = rage.map((tap, index) => ({
+    id: `rage:${index}`,
+    t: tap.t,
+    lane: "marker" as const,
+    tone: "danger" as const,
+    title: "Rage tap",
+    detail: "three or more taps on one spot",
+  }));
 
   for (const marker of lanes.markers) {
     items.push({

@@ -115,14 +115,26 @@ export function buildTimeline(lanes: Lanes, bounds: TimelineBounds, count = 160)
   return tracks;
 }
 
-/** Markers drawn on the scrubber itself: what started the recording, routes, pauses. */
-export function timelineMarkers(lanes: Lanes, bounds: TimelineBounds) {
-  return lanes.markers.map((marker) => ({
-    id: marker.id,
-    at: position(marker.t, bounds),
-    kind: marker.kind,
-    label: marker.label,
-  }));
+/** Markers drawn on the scrubber itself: what started the recording, routes, pauses, rage taps. */
+export function timelineMarkers(
+  lanes: Lanes,
+  bounds: TimelineBounds,
+  rage: ReadonlyArray<{ t: number }> = [],
+) {
+  return [
+    ...lanes.markers.map((marker) => ({
+      id: marker.id,
+      at: position(marker.t, bounds),
+      kind: marker.kind,
+      label: marker.label,
+    })),
+    ...rage.map((tap, index) => ({
+      id: `rage:${index}`,
+      at: position(tap.t, bounds),
+      kind: "rage",
+      label: "Rage tap: three or more taps on one spot",
+    })),
+  ];
 }
 
 export function sessionBounds(lanes: Lanes, startedAt: number, endedAt: number): TimelineBounds {

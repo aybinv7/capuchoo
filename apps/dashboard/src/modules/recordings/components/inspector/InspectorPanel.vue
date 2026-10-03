@@ -28,8 +28,13 @@ import TextDetail from "./TextDetail.vue";
 
 type Tab = "activity" | "console" | "network" | "database" | "telemetry" | "perf";
 
-const props = defineProps<{ lanes: Lanes; playhead: number; origin: number }>();
-const emit = defineEmits<{ seek: [time: number] }>();
+const props = defineProps<{
+  lanes: Lanes;
+  playhead: number;
+  origin: number;
+  rage: ReadonlyArray<{ t: number }>;
+}>();
+const emit = defineEmits<{ seek: [time: number]; openTable: [db: string, table: string] }>();
 const follow = defineModel<boolean>("follow", { required: true });
 
 const tab = ref<Tab>("activity");
@@ -40,7 +45,7 @@ watch(tab, () => {
   needle.value = "";
 });
 
-const activity = computed(() => buildActivity(props.lanes));
+const activity = computed(() => buildActivity(props.lanes, props.rage));
 
 function matches(...parts: Array<string | null | undefined>): boolean {
   const query = needle.value.trim().toLowerCase();
@@ -277,6 +282,7 @@ function openFromActivity(item: ActivityItem) {
         :all="props.lanes.database"
         :schemas="props.lanes.schemas"
         :playhead="props.playhead"
+        @open-table="(db, table) => emit('openTable', db, table)"
       />
       <TextDetail
         v-else-if="detail.kind === 'console'"
