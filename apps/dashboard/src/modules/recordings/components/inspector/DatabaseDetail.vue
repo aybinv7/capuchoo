@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { cn } from "@/lib/utils";
-import { changeKey } from "../../lib/changeset";
+import { changeKey, type DecodedChange } from "../../lib/changeset";
 import { stateAt } from "../../lib/db-state";
 import { columnNames, displayValue } from "../../lib/display";
 import type { DatabaseColumn, DatabaseLaneEntry } from "../../types/recordings.types";
@@ -24,6 +24,29 @@ const OP_STYLE = {
 const columnsOf = (table: string, count: number) =>
   columnNames(props.schemas[props.entry.db]?.[table], count);
 
+const before = computed(() => {
+  if (view.value !== "change") return null;
+  const index = props.all.indexOf(props.entry);
+  return stateAt(
+    index < 0 ? [] : props.all.slice(0, index),
+    Number.POSITIVE_INFINITY,
+    props.entry.db,
+  );
+});
+
+/** The change's own value, or - for a column an update left alone - the last value the session saw. */
+function cell(change: DecodedChange, column: number): { text: string; inferred: boolean } {
+  const own =
+    change.op === "delete" || (change.op === "update" && change.new[column] === undefined)
+      ? change.old[column]
+      : change.new[column];
+  if (own !== undefined) return { text: displayValue(own), inferred: false };
+  const seen = before.value?.get(change.table)?.get(changeKey(change))?.values[column];
+  return { text: displayValue(seen), inferred: seen !== undefined };
+}
+
+const rowsLabel = (count: number) => `${count} ${count === 1 ? "row" : "rows"}`;
+
 const tables = computed(() => {
   if (view.value !== "state") return [];
   const state = stateAt(props.all, props.playhead, props.entry.db);
@@ -40,7 +63,7 @@ const tables = computed(() => {
       <span class="text-muted-foreground"
         >{{ props.entry.db }} ·
         {{
-          props.entry.kind === "changeset" ? `${props.entry.changes.length} rows` : "write"
+          props.entry.kind === "changeset" ? rowsLabel(props.entry.changes.length) : "write"
         }}</span
       >
       <div class="bg-muted flex rounded-md p-0.5">
@@ -68,8 +91,8 @@ const tables = computed(() => {
     <p v-else-if="props.entry.kind === 'change'" class="text-muted-foreground text-pretty">
       {{ props.entry.type }} on
       <span class="text-foreground font-mono">{{ props.entry.table }}</span>
-      <template v-if="props.entry.rows !== null"> · {{ props.entry.rows }} rows</template>. This
-      engine reports which table changed, not the values.
+      <template v-if="props.entry.rows !== null"> · {{ rowsLabel(props.entry.rows) }}</template
+      >. This engine reports which table changed, not the values.
     </p>
 
     <template v-else-if="view === 'change'">
@@ -107,19 +130,17 @@ const tables = computed(() => {
                   cn(
                     'px-2 py-0.5 break-all',
                     change.op === 'update' && change.new[column] !== undefined && 'bg-info-soft',
+                    cell(change, column).inferred && 'text-muted-foreground italic',
                   )
                 "
                 :colspan="change.op === 'update' ? 1 : 2"
+                :title="
+                  cell(change, column).inferred
+                    ? 'Unchanged; last value this session saw'
+                    : undefined
+                "
               >
-                {{
-                  displayValue(
-                    change.op === "delete"
-                      ? change.old[column]
-                      : change.op === "update" && change.new[column] === undefined
-                        ? change.old[column]
-                        : change.new[column],
-                  )
-                }}
+                {{ cell(change, column).text }}
               </td>
             </tr>
           </tbody>

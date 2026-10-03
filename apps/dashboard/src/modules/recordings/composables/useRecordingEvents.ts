@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/vue-query";
-import { onScopeDispose, ref, shallowRef, triggerRef, watch, type Ref } from "vue";
+import { onScopeDispose, ref, shallowRef, watch, type Ref } from "vue";
 import { queryKeys } from "@/shared/api/query-keys";
 import type { AssetMap } from "../lib/asset-rewrite";
 import { rewriteReplayEvent } from "../lib/asset-rewrite";
@@ -89,7 +89,7 @@ export function useRecordingEvents(input: {
             replay.push(raw);
           }
           appendToLanes(lanes.value, events, `${segment.seq}`);
-          triggerRef(lanes);
+          lanes.value = { ...lanes.value };
           loaded.value++;
           if (replay.length > 0) input.onReplay?.(replay);
         } catch (cause) {

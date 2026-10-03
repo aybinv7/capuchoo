@@ -29,6 +29,7 @@ function observe(
 export function createPerfTrack(): Track {
   let observers: PerformanceObserver[] = [];
   let memoryTimer: ReturnType<typeof setInterval> | null = null;
+  const reported = new Set<number>();
 
   return {
     name: "perf",
@@ -46,7 +47,18 @@ export function createPerfTrack(): Track {
         observe(
           "event",
           (entries) => {
-            for (const entry of entries as PerformanceEventTiming[]) {
+            const slowest = new Map<number, PerformanceEventTiming>();
+            for (const entry of entries as Array<
+              PerformanceEventTiming & { interactionId?: number }
+            >) {
+              const id = entry.interactionId ?? 0;
+              if (id === 0 || reported.has(id)) continue;
+              const current = slowest.get(id);
+              if (!current || entry.duration > current.duration) slowest.set(id, entry);
+            }
+            for (const [id, entry] of slowest) {
+              reported.add(id);
+              if (reported.size > 500) reported.delete(reported.values().next().value!);
               ctx.push(
                 "perf",
                 {

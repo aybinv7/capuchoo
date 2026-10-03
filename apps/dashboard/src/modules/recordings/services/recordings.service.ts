@@ -63,7 +63,9 @@ export const fetchSegmentText = (id: string, seq: number, signal?: AbortSignal) 
 export const fetchAssetText = (assetId: string, signal?: AbortSignal) =>
   requestText(`/recording-assets/${encodeURIComponent(assetId)}`, signal);
 
-export const assetUrl = (assetId: string) => `/api/recording-assets/${encodeURIComponent(assetId)}`;
+/** Absolute, because a stylesheet served from a blob: URL cannot resolve a path against it. */
+export const assetUrl = (assetId: string) =>
+  `${window.location.origin}/api/recording-assets/${encodeURIComponent(assetId)}`;
 
 export const deleteRecording = (id: string) => http.delete(`/recordings/${encodeURIComponent(id)}`);
 
