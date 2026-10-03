@@ -615,7 +615,7 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       reporter.note(`${formatBytes(artifact.byteSize)} accepted`);
       if (published.warning) outcome.warnings.push(published.warning);
 
-      if (kind === "ota" && artifact.sourceMaps?.length) {
+      if (artifact.sourceMaps?.length) {
         const maps = await uploadSourceMaps({
           cloud,
           cloudAppId: project.cloudAppId,

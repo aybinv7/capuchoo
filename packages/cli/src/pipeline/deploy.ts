@@ -18,6 +18,7 @@ import {
 } from "./android.js";
 import { chooseFlavor, describeAmbiguousFlavor } from "./gradle-variant.js";
 import { buildWeb, generateAssets, syncCapacitor, type StepContext } from "./build.js";
+import { androidWebAssets, findSourceMaps, stripSourceMaps } from "./source-maps.js";
 import {
   buildEnvironment,
   describeFlavourProblems,
@@ -93,7 +94,7 @@ export interface DeployArtifact {
   signed?: boolean;
   /** OTA only. */
   fileCount?: number;
-  /** OTA only: source maps the build produced, uploaded after the bundle and never shipped. */
+  /** Source maps the build produced, uploaded after the artefact and never shipped. */
   sourceMaps?: Array<{ path: string; file: string }>;
 }
 
@@ -426,6 +427,9 @@ export async function runDeploy(
     if (flavor)
       reporter.note(`flavour ${flavor} (${choice.kind === "chosen" ? choice.because : ""})`);
 
+    const stripped = stripSourceMaps(androidWebAssets(androidDir));
+    if (stripped) reporter.note(`${stripped} source maps kept out of the binary`);
+
     await assembleAndroid(androidDir, request.buildType, runOptions, flavor);
     const built = collectAndroidArtifact(
       androidDir,
@@ -445,6 +449,7 @@ export async function runDeploy(
       filePath: built.apkPath,
       byteSize: built.byteSize,
       signed: built.signed,
+      sourceMaps: findSourceMaps(path.resolve(request.appDir, request.project.webDir)),
     };
   }
 
