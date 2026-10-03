@@ -176,29 +176,34 @@ function openFromActivity(item: ActivityItem) {
 
 <template>
   <div class="bg-background @container flex h-full min-h-0 flex-col">
-    <Tabs v-model="tab" class="border-b">
-      <TabsList
-        class="h-auto w-full justify-start gap-0 overflow-x-auto rounded-none bg-transparent p-0"
-      >
-        <TabsTrigger
-          v-for="item in TABS"
-          :key="item.value"
-          :value="item.value"
-          class="data-[state=active]:border-primary flex-none gap-1.5 rounded-none border-0 border-b-2 border-transparent px-2.5 py-2 text-xs data-[state=active]:bg-transparent data-[state=active]:shadow-none @md:px-3"
-          :title="item.label"
-          :aria-label="item.label"
+    <div class="flex items-center border-b">
+      <Tabs v-model="tab" class="min-w-0 flex-1">
+        <TabsList
+          class="h-auto w-full justify-start gap-0 overflow-x-auto rounded-none bg-transparent p-0 [scrollbar-width:none]"
         >
-          <component :is="TAB_ICONS[item.value]" class="size-3.5 @md:hidden" aria-hidden="true" />
-          <span class="hidden @md:inline">{{ item.label }}</span>
-          <span
-            v-if="item.alert"
-            class="bg-destructive tabular rounded-full px-1.5 text-[10px] text-white"
-            >{{ item.alert }}</span
+          <TabsTrigger
+            v-for="item in TABS"
+            :key="item.value"
+            :value="item.value"
+            class="data-[state=active]:border-primary flex-none gap-1.5 rounded-none border-0 border-b-2 border-transparent px-2.5 py-2 text-xs data-[state=active]:bg-transparent data-[state=active]:shadow-none @md:px-3"
+            :title="item.label"
+            :aria-label="item.label"
           >
-          <span v-else class="text-muted-foreground tabular text-[10px]">{{ item.count }}</span>
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+            <component :is="TAB_ICONS[item.value]" class="size-3.5 @md:hidden" aria-hidden="true" />
+            <span class="hidden @md:inline">{{ item.label }}</span>
+            <span
+              v-if="item.alert"
+              class="bg-destructive tabular rounded-full px-1.5 text-[10px] text-white"
+              >{{ item.alert }}</span
+            >
+            <span v-else class="text-muted-foreground tabular text-[10px]">{{ item.count }}</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+      <div v-if="$slots.actions" class="flex shrink-0 items-center px-1">
+        <slot name="actions" />
+      </div>
+    </div>
 
     <KeepAlive>
       <DataView

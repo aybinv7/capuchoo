@@ -169,15 +169,24 @@ within the recording retention are purged.
 The screen and an inspector side by side, a timeline underneath. The app's sidebar folds while a
 replay is open. The screen's column is as wide as the recorded viewport needs at the full height
 available - a portrait phone gets a tall narrow column, a tablet a wide one - and the inspector
-takes the rest; below 1024 px they stack, with playback pinned to the bottom. The replay follows
-every viewport the app reported, so a phone that started sideways turns upright when it did.
+takes the rest; below 1024 px they stack, with playback pinned to the bottom. The column follows
+the viewport the app held longest, so a phone that reports landscape for a moment while it unlocks
+does not reshape the page; the replay itself follows every viewport the app reported.
+
+- **Playback:** one row - play, ±10 s, the time, a LIVE badge on a live session - then the
+  scrubber, whose rail carries every issue and the markers that explain the recording (hover names
+  them), then the issue navigator, speed, skip idle and the activity lanes toggle. The lanes sit
+  under the rail, labelled, and are hidden below 768 px.
 
 - **Inspector tabs:** Activity (the story: navigation, taps, errors, requests, and each burst of
   database writes as one line), Console, Network, Database, Telemetry, Performance, and **Data** -
   each table at the playhead, inserted rows green, updated rows amber with the changed cells marked
   and their previous value on hover, deleted rows red, with a change log that seeks.
-- **Toolbar:** one row - the device, how the session started, version and channel, a details card,
-  the user's note, sharing.
+- **Toolbar:** one row - the device (a link to it), how the session started, version, channel and
+  length (hover for every detail), errors, the user's note; then Go live, Share and a menu. Go live
+  puts the device live from the player and opens the live session as soon as the device starts it;
+  while a live window is open the button waits, then becomes Watch live. The inspector's own tab
+  strip hides it; a button on the screen brings it back.
 - **Keys:** Space plays, ←/→ step 5 s (Shift 30 s), N/P jump between issues, S hides or shows the
   inspector, D opens the data tables, B brings the inspector back, F follows a live session.
 - **Share:** a link that opens the replay at the current moment (`?t=`), or a Markdown bug report

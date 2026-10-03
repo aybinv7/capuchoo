@@ -1,31 +1,13 @@
 import { useResizeObserver } from "@vueuse/core";
 import { onScopeDispose, ref, shallowRef, type Ref } from "vue";
 import type { Replayer as ReplayerType } from "@rrweb/replay";
+import { dominantSize, insertSize, sizeAt, sizeOf, type SizeAt } from "../lib/viewport-sizes";
 import type { Lanes } from "../types/recordings.types";
 
 type ReplayEvent = Lanes["replay"][number];
 
 const FULL_SNAPSHOT = 2;
-const INCREMENTAL = 3;
 const META = 4;
-const SOURCE_VIEWPORT_RESIZE = 4;
-
-interface SizeAt {
-  t: number;
-  width: number;
-  height: number;
-}
-
-/** The viewport an event announces: a meta event, or a viewport resize. */
-function sizeOf(event: ReplayEvent): SizeAt | null {
-  const data = event.data as { source?: number; width?: number; height?: number } | null;
-  const announces =
-    event.type === META || (event.type === INCREMENTAL && data?.source === SOURCE_VIEWPORT_RESIZE);
-  if (!announces || typeof data?.width !== "number" || typeof data.height !== "number") {
-    return null;
-  }
-  return { t: event.timestamp, width: data.width, height: data.height };
-}
 
 export type ReplayerState = "waiting" | "loading" | "ready" | "failed";
 
@@ -58,6 +40,8 @@ export function useReplayer(input: {
   const speed = ref(1);
   const skipInactive = ref(true);
   const viewport = ref<{ width: number; height: number } | null>(null);
+  /** The size the screen held longest, which the page lays itself out for. */
+  const shape = shallowRef<{ width: number; height: number } | null>(null);
   const scale = ref(1);
   const replayer = shallowRef<ReplayerType | null>(null);
 
@@ -79,27 +63,26 @@ export function useReplayer(input: {
   const sizes: SizeAt[] = [];
 
   function noteSizes(events: readonly ReplayEvent[]) {
+    let changed = false;
     for (const event of events) {
       const size = sizeOf(event);
       if (!size) continue;
-      let index = sizes.length;
-      while (index > 0 && sizes[index - 1]!.t > size.t) index--;
-      sizes.splice(index, 0, size);
+      insertSize(sizes, size);
+      changed = true;
     }
+    if (changed) reshape();
   }
 
-  function sizeAt(wall: number): SizeAt | null {
-    let found: SizeAt | null = sizes[0] ?? null;
-    for (const size of sizes) {
-      if (size.t > wall) break;
-      found = size;
-    }
-    return found;
+  function reshape() {
+    const next = dominantSize(sizes, origin + duration);
+    const current = shape.value;
+    if (next && current && next.width === current.width && next.height === current.height) return;
+    shape.value = next;
   }
 
   /** Gives the replay the viewport the app had at the playhead, whatever rrweb last announced. */
   function applySize() {
-    const size = sizeAt(origin + time.value);
+    const size = sizeAt(sizes, origin + time.value);
     if (!size) return;
     const iframe = replayer.value?.iframe;
     const width = String(size.width);
@@ -249,12 +232,14 @@ export function useReplayer(input: {
     speed,
     skipInactive,
     viewport,
+    shape,
     scale,
 
     /** Sets the timeline the clock runs over: wall-clock start and length in milliseconds. */
     setTimeline(start: number, length: number) {
       origin = start;
       duration = length;
+      if (sizes.length > 0) reshape();
     },
 
     /** Feeds replay events as segments arrive; the player is built once a full snapshot exists. */
@@ -325,6 +310,7 @@ export function useReplayer(input: {
       following = false;
       heldAt = null;
       sizes.length = 0;
+      shape.value = null;
       replayer.value?.destroy();
       replayer.value = null;
       pending = [];

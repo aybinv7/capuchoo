@@ -51,6 +51,20 @@ export async function fetchRecordings(
   };
 }
 
+/** A device's newest session, or null when it has none. */
+export async function fetchLatestRecording(
+  appId: string,
+  deviceId: string,
+  signal?: AbortSignal,
+): Promise<RecordingSession | null> {
+  const page = await http.get<{ sessions?: unknown[] }>(
+    `/apps/${encodeURIComponent(appId)}/recordings`,
+    { limit: 1, device_id: deviceId },
+    signal,
+  );
+  return normalizeSession(page?.sessions?.[0]) ?? null;
+}
+
 export async function fetchRecording(id: string, signal?: AbortSignal): Promise<RecordingDetail> {
   const detail = normalizeDetail(
     await http.get<unknown>(`/recordings/${encodeURIComponent(id)}`, undefined, signal),

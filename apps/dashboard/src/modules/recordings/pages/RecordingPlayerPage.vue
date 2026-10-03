@@ -16,10 +16,10 @@ import { useBreadcrumbLabel } from "@/shared/layouts/composables/useBreadcrumbLa
 import { RouteName } from "@/shared/router/route-names";
 import InspectorPanel from "../components/inspector/InspectorPanel.vue";
 import ReplayStage from "../components/player/ReplayStage.vue";
-import ScrubberTimeline from "../components/player/ScrubberTimeline.vue";
+import InspectorToggle from "../components/player/InspectorToggle.vue";
+import PlaybackDock from "../components/player/PlaybackDock.vue";
 import PlayerToolbar from "../components/player/PlayerToolbar.vue";
 import { isInspectorTab, type InspectorTab } from "../components/inspector/tabs";
-import TransportBar from "../components/player/TransportBar.vue";
 import { useAssetMap } from "../composables/useAssetMap";
 import { useCollapsedSidebar } from "../composables/useCollapsedSidebar";
 import { useRecording } from "../composables/useRecording";
@@ -32,6 +32,7 @@ import { adjacentIssue, issuesOf } from "../lib/issues";
 import { rageTaps, recentTaps, tapsOf } from "../lib/taps";
 import { sessionDeviceLabel } from "../lib/recording-columns";
 import { buildTimeline, sessionBounds, timelineMarkers } from "../lib/timeline";
+import { trackMarks } from "../lib/track-marks";
 import { deleteRecording } from "../services/recordings.service";
 
 const LIVE_LAG_MS = 2500;
@@ -85,10 +86,12 @@ watch(bounds, (value) => player.setTimeline(value.start, value.end - value.start
 const tracks = computed(() => buildTimeline(events.lanes.value, bounds.value));
 const taps = computed(() => tapsOf(events.lanes.value.replay));
 const rage = computed(() => rageTaps(taps.value));
-const markers = computed(() => timelineMarkers(events.lanes.value, bounds.value, rage.value));
 const playhead = computed(() => bounds.value.start + player.time.value);
 const ripples = computed(() => recentTaps(taps.value, playhead.value));
 const issues = computed(() => issuesOf(events.lanes.value, rage.value));
+const marks = computed(() =>
+  trackMarks(issues.value, timelineMarkers(events.lanes.value, bounds.value), bounds.value),
+);
 /** A jump lands this long before an issue, so where the player stands is judged from the issue. */
 const ISSUE_LEAD_MS = 1500;
 const issueAnchor = computed(() => playhead.value + ISSUE_LEAD_MS);
@@ -104,7 +107,7 @@ useCollapsedSidebar();
 const workspace = useTemplateRef<HTMLElement>("workspace");
 const { stageStyle } = useStageLayout({
   workspace,
-  viewport: player.viewport,
+  viewport: computed(() => player.shape.value ?? player.viewport.value),
   fallback: computed(() => session.value?.device?.screen ?? null),
   panel,
 });
@@ -158,7 +161,7 @@ function goToIssue(direction: 1 | -1) {
   const target = adjacentIssue(issues.value, issueAnchor.value, direction);
   if (!target) return;
   seekWall(Math.max(bounds.value.start, target.t - ISSUE_LEAD_MS));
-  toast(target.label.split(/\r?\n/)[0] ?? "Issue", { duration: 2500 });
+  toast(target.label.split(/\r?\n/)[0] ?? "Issue", { duration: 2500, position: "top-center" });
 }
 
 usePlayerShortcuts({
@@ -258,7 +261,7 @@ async function remove() {
     </div>
     <template v-else>
       <PlayerToolbar
-        v-model:panel="panel"
+        :app-id="appId"
         :session="session"
         :time="player.time.value"
         @remove="removeOpen = true"
@@ -272,7 +275,7 @@ async function remove() {
       >
         <section
           :class="[
-            'flex min-h-0 min-w-0 shrink-0 flex-col',
+            'relative flex min-h-0 min-w-0 shrink-0 flex-col',
             panel
               ? 'h-[56svh] border-b lg:h-auto lg:border-r lg:border-b-0'
               : 'h-[72svh] flex-1 lg:h-auto',
@@ -280,6 +283,7 @@ async function remove() {
           :style="stageStyle"
           aria-label="Screen"
         >
+          <InspectorToggle v-if="!panel" v-model="panel" class="absolute top-3 right-3 z-10" />
           <ReplayStage
             ref="stageView"
             :state="player.state.value"
@@ -307,15 +311,19 @@ async function remove() {
             :rage="rage"
             :version="session.version_name"
             @seek="seekWall"
-          />
+          >
+            <template #actions>
+              <InspectorToggle v-model="panel" class="hidden lg:inline-flex" />
+            </template>
+          </InspectorPanel>
         </section>
       </div>
 
       <section
-        class="bg-card rounded-xl border px-3 pt-1.5 pb-2 max-lg:sticky max-lg:bottom-2 max-lg:z-20 max-lg:shadow-lg"
+        class="bg-card max-lg:bg-background/95 rounded-xl border px-2 py-1 max-lg:sticky max-lg:bottom-2 max-lg:z-20 max-lg:shadow-lg max-lg:backdrop-blur-md"
         aria-label="Playback"
       >
-        <TransportBar
+        <PlaybackDock
           :playing="player.playing.value"
           :time="player.time.value"
           :duration="duration"
@@ -325,20 +333,15 @@ async function remove() {
           :following="followLive"
           :issue-count="issues.length"
           :issue-index="issueIndex"
+          :tracks="tracks"
+          :marks="marks"
+          :loaded="loadedRatio"
           @toggle="toggle"
           @issue="goToIssue"
           @seek="seekOffset"
           @speed="player.setSpeed"
           @skip-inactive="player.setSkipInactive"
           @follow="jumpLive"
-        />
-        <ScrubberTimeline
-          :tracks="tracks"
-          :markers="markers"
-          :duration="duration"
-          :time="player.time.value"
-          :loaded="loadedRatio"
-          @seek="seekOffset"
         />
       </section>
 

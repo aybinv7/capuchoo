@@ -1,46 +1,43 @@
 <script setup lang="ts">
-import { Flag, MapPin, PauseCircle, TriangleAlert, Zap } from "@lucide/vue";
 import { computed, ref, useTemplateRef } from "vue";
 import { formatOffset } from "../../lib/activity";
 import type { TimelineTrack } from "../../lib/timeline";
+import { marksNear, type TrackMark } from "../../lib/track-marks";
+import { TONE_COLOR } from "../../lib/tones";
 import TimelineLanes from "./TimelineLanes.vue";
 
 const props = defineProps<{
   tracks: readonly TimelineTrack[];
-  markers: ReadonlyArray<{ id: string; at: number; kind: string; label: string }>;
+  marks: readonly TrackMark[];
   duration: number;
   time: number;
   /** How much of the timeline has loaded, 0..1. */
   loaded: number;
+  lanes: boolean;
 }>();
 const emit = defineEmits<{ seek: [ms: number] }>();
 
+/** How close, in pixels, the pointer has to be for a mark's label to show. */
+const MARK_REACH_PX = 6;
+
 const surface = useTemplateRef<HTMLElement>("surface");
 const hover = ref<number | null>(null);
+const hoverWidth = ref(1);
 const dragging = ref(false);
 
 const progress = computed(() =>
   props.duration > 0 ? Math.min(1, props.time / props.duration) : 0,
 );
-
-const MARKER_ICONS: Record<string, typeof Flag> = {
-  trigger: Flag,
-  escalate: Flag,
-  route: MapPin,
-  "replay-paused": PauseCircle,
-  "database-unsupported": TriangleAlert,
-  "database-unavailable": TriangleAlert,
-  rage: Zap,
-};
-const visibleMarkers = computed(() =>
-  props.markers.filter((marker) => marker.kind in MARKER_ICONS),
-);
+const hovered = computed(() => {
+  if (hover.value === null) return [];
+  return marksNear(props.marks, hover.value, MARK_REACH_PX / hoverWidth.value).slice(0, 3);
+});
 
 function ratioAt(clientX: number): number {
   const box = surface.value?.getBoundingClientRect();
   if (!box || box.width === 0) return 0;
-  const gutter = window.matchMedia("(min-width: 768px)").matches ? 72 : 0;
-  return Math.min(1, Math.max(0, (clientX - box.left - gutter) / (box.width - gutter)));
+  hoverWidth.value = box.width;
+  return Math.min(1, Math.max(0, (clientX - box.left) / box.width));
 }
 
 function onDown(event: PointerEvent) {
@@ -74,15 +71,13 @@ function onKey(event: KeyboardEvent) {
   emit("seek", Math.max(0, Math.min(props.duration, target)));
 }
 
-const position = (ratio: number) => ({
-  left: `calc(var(--gutter) + (100% - var(--gutter)) * ${ratio})`,
-});
+const at = (ratio: number) => ({ left: `${ratio * 100}%` });
 </script>
 
 <template>
   <div
     ref="surface"
-    class="group relative cursor-pointer touch-none py-1 outline-none select-none [--gutter:0px] focus-visible:ring-2 focus-visible:ring-ring/50 md:[--gutter:72px]"
+    class="group/scrub relative cursor-pointer touch-none rounded-sm outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/50"
     role="slider"
     tabindex="0"
     aria-label="Playback position"
@@ -90,62 +85,73 @@ const position = (ratio: number) => ({
     :aria-valuemax="Math.round(props.duration / 1000)"
     :aria-valuenow="Math.round(props.time / 1000)"
     :aria-valuetext="`${formatOffset(props.time)} of ${formatOffset(props.duration)}`"
+    :data-dragging="dragging || undefined"
     @pointerdown="onDown"
     @pointermove="onMove"
     @pointerup="onUp"
     @pointerleave="hover = null"
     @keydown="onKey"
   >
-    <div class="relative mb-0.5 h-3.5">
-      <span
-        v-for="marker in visibleMarkers"
-        :key="marker.id"
-        class="text-muted-foreground absolute top-0 -translate-x-1/2"
-        :class="
-          marker.kind === 'rage'
-            ? 'text-destructive'
-            : marker.kind === 'trigger' || marker.kind === 'escalate'
-              ? 'text-primary'
-              : ''
-        "
-        :style="position(marker.at)"
-        :title="marker.label"
+    <div class="relative flex h-8 items-center">
+      <div
+        class="bg-foreground/15 relative h-1.5 w-full overflow-hidden rounded-full transition-[height] duration-150 group-hover/scrub:h-2 group-data-[dragging]/scrub:h-2"
       >
-        <component :is="MARKER_ICONS[marker.kind]" class="size-3.5" aria-hidden="true" />
-      </span>
+        <div
+          class="bg-foreground/15 absolute inset-y-0 left-0"
+          :style="{ width: `${props.loaded * 100}%` }"
+        />
+        <div
+          class="bg-primary absolute inset-y-0 left-0"
+          :style="{ width: `${progress * 100}%` }"
+        />
+      </div>
+      <span
+        v-for="mark in props.marks"
+        :key="mark.id"
+        class="ring-background pointer-events-none absolute top-1/2 h-3 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full ring-1"
+        :style="{ ...at(mark.at), background: TONE_COLOR[mark.tone] }"
+      />
+      <span
+        class="bg-primary ring-background pointer-events-none absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ring-2 transition-transform group-hover/scrub:scale-110 group-data-[dragging]/scrub:scale-125"
+        :style="at(progress)"
+      />
     </div>
 
-    <div class="relative">
+    <div v-if="props.lanes" class="relative hidden pb-1 md:block">
       <TimelineLanes :tracks="props.tracks" />
       <div
-        class="bg-foreground/[0.04] pointer-events-none absolute inset-y-0"
-        :style="{ left: 'var(--gutter)', width: `calc((100% - var(--gutter)) * ${progress})` }"
+        class="bg-foreground/[0.05] pointer-events-none absolute inset-y-0 left-0"
+        :style="{ width: `${progress * 100}%` }"
       />
       <div
-        v-if="props.loaded < 1"
-        class="bg-background/60 pointer-events-none absolute inset-y-0 right-0 backdrop-grayscale"
-        :style="{ width: `calc((100% - var(--gutter)) * ${1 - props.loaded})` }"
-      />
-    </div>
-
-    <div
-      class="bg-primary pointer-events-none absolute top-4.5 bottom-0 w-0.5 -translate-x-1/2 rounded-full"
-      :style="position(progress)"
-    >
-      <span
-        class="bg-primary ring-background absolute -top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-full ring-2"
+        class="bg-primary pointer-events-none absolute inset-y-0 w-px -translate-x-1/2"
+        :style="at(progress)"
       />
     </div>
 
     <div
       v-if="hover !== null"
-      class="pointer-events-none absolute top-4.5 bottom-0 w-px -translate-x-1/2 bg-foreground/30"
-      :style="position(hover)"
+      class="pointer-events-none absolute top-1 bottom-0 w-px -translate-x-1/2 bg-foreground/30"
+      :style="at(hover)"
     >
-      <span
-        class="bg-popover text-popover-foreground tabular absolute -top-6 left-1/2 -translate-x-1/2 rounded border px-1.5 py-0.5 font-mono text-[10px] shadow-sm"
-        >{{ formatOffset(hover * props.duration) }}</span
+      <div
+        class="bg-popover text-popover-foreground absolute bottom-full left-1/2 mb-1 flex max-w-72 -translate-x-1/2 flex-col items-center gap-0.5 rounded-md border px-2 py-1 shadow-md"
       >
+        <span class="tabular font-mono text-[11px]">{{
+          formatOffset(hover * props.duration)
+        }}</span>
+        <span
+          v-for="mark in hovered"
+          :key="mark.id"
+          class="flex max-w-full items-center gap-1.5 text-[11px]"
+        >
+          <span
+            class="size-1.5 shrink-0 rounded-full"
+            :style="{ background: TONE_COLOR[mark.tone] }"
+          />
+          <span class="truncate">{{ mark.label }}</span>
+        </span>
+      </div>
     </div>
   </div>
 </template>
