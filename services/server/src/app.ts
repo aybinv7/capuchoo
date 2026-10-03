@@ -92,7 +92,8 @@ export function createApp(deps: Deps): Hono<AppEnv> {
       c.header("strict-transport-security", "max-age=31536000; includeSubDomains");
     }
     const elapsed = Math.round(performance.now() - started);
-    if (c.res.status >= 500 || elapsed > 2000) {
+    const shed = c.res.status === 503 && c.res.headers.has("retry-after");
+    if ((c.res.status >= 500 && !shed) || elapsed > 2000) {
       c.get("logger").warn("slow or failed request", {
         method: c.req.method,
         path: c.req.path,

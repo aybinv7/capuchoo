@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 import { BackgroundTasks } from "../src/lib/background";
-import { LoadGuard } from "../src/lib/load-guard";
+import { LoadGuard, deviceInflightCap } from "../src/lib/load-guard";
 import { createTestContext, seedApp, type TestContext } from "./harness";
 
 const silent = { debug() {}, info() {}, warn() {}, error() {} };
@@ -22,6 +22,23 @@ describe("LoadGuard", () => {
     await held;
     await expect(guard.run(async () => "third")).resolves.toBe("third");
     expect(guard.inflight).toBe(0);
+  });
+
+  it("follows the pool unless set, and reports shedding once per interval, not per request", async () => {
+    expect(deviceInflightCap({ DATABASE_POOL_MAX: 30, DEVICE_MAX_INFLIGHT: undefined })).toBe(60);
+    expect(deviceInflightCap({ DATABASE_POOL_MAX: 5, DEVICE_MAX_INFLIGHT: undefined })).toBe(32);
+    expect(deviceInflightCap({ DATABASE_POOL_MAX: 30, DEVICE_MAX_INFLIGHT: 8 })).toBe(8);
+
+    const warnings: unknown[] = [];
+    const guard = new LoadGuard(0, Math.random, {
+      ...silent,
+      warn: (_message: string, detail: unknown) => warnings.push(detail),
+    } as never);
+    for (let index = 0; index < 50; index++) {
+      await expect(guard.run(async () => undefined)).rejects.toMatchObject({ status: 503 });
+    }
+    expect(guard.shed).toBe(50);
+    expect(warnings).toEqual([{ shed: 1, inflight: 0, cap: 0 }]);
   });
 
   it("frees the slot when the work throws", async () => {

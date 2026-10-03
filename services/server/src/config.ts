@@ -13,7 +13,7 @@ const schema = z
     DASHBOARD_URL: z.string().url().optional(),
     DATABASE_URL: z.string().min(1),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
-    DEVICE_MAX_INFLIGHT: z.coerce.number().int().positive().default(256),
+    DEVICE_MAX_INFLIGHT: z.coerce.number().int().positive().optional(),
     BACKGROUND_TASK_LIMIT: z.coerce.number().int().positive().default(1000),
     DATABASE_SSL: bool.optional(),
     MIGRATE_ON_BOOT: bool.default(true),

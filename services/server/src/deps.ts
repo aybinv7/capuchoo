@@ -2,7 +2,7 @@ import type { Config } from "./config";
 import { createDatabase, createPostgresDialect, type Db } from "./db/database";
 import type { Deps } from "./http/context";
 import { BackgroundTasks } from "./lib/background";
-import { LoadGuard } from "./lib/load-guard";
+import { LoadGuard, deviceInflightCap } from "./lib/load-guard";
 import { createLogger } from "./lib/logger";
 import { CiRuntime } from "./services/ci-runtime";
 import { EventHub } from "./services/event-hub";
@@ -41,7 +41,7 @@ export function createDeps(config: Config): Deps {
     hub: new EventHub(),
     cache: new RequestCache(),
     tasks: new BackgroundTasks(logger, config.BACKGROUND_TASK_LIMIT),
-    load: new LoadGuard(config.DEVICE_MAX_INFLIGHT),
+    load: new LoadGuard(deviceInflightCap(config), Math.random, logger),
     ci: new CiRuntime(config.SECRET_KEY),
     now: () => new Date(),
   };
