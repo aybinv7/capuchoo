@@ -86,6 +86,17 @@ streamed to storage while hashed. They accept `signature`, `build_id`, `flavour`
 native, `signing_cert_sha256`; the server refuses a native build whose certificate differs from the
 app's previous release unless `allow_cert_change=true` is sent by an admin.
 
+## Session recording
+
+Devices: `POST /api/recording/policy` (`{ appId, deviceId, platform, versionName, channel, known }`
+→ `{ policy, known_assets }` or `{ unchanged, version }`), `POST /api/recording/segments` (gzip
+NDJSON, metadata in `x-capuchoo-recording`), `POST /api/recording/assets` (raw file, metadata in
+`x-capuchoo-asset`). Dashboard: `GET /api/apps/:id/recordings`, `GET|DELETE /api/recordings/:id`,
+`GET /api/recordings/:id/segments/:seq` (served `content-encoding: gzip`),
+`GET /api/recording-assets/:id`, `GET|PUT /api/apps/:id/recording-rules`,
+`DELETE /api/recording-rules/:id`, `GET /api/devices/:id/recording-policy`. A stored segment emits a
+`recording` live event. The design is in [RECORDING.md](./RECORDING.md).
+
 ## Storage
 
 `STORAGE_DRIVER=fs` (default, `STORAGE_DIR`), `s3` (any S3-compatible: MinIO, R2) or `postgres`

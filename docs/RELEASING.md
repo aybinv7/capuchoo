@@ -3,11 +3,12 @@
 Three packages publish to npm. The apps and the backend do not - they are `private: true`, and
 `pnpm publish -r` skips them.
 
-| Package             | What it is                            |
-| ------------------- | ------------------------------------- |
-| `@capuchoo/core`    | The shared contract. Dependency-free. |
-| `@capuchoo/updater` | App-side runtime.                     |
-| `@capuchoo/cli`     | The deploy pipeline.                  |
+| Package              | What it is                            |
+| -------------------- | ------------------------------------- |
+| `@capuchoo/core`     | The shared contract. Dependency-free. |
+| `@capuchoo/updater`  | App-side runtime.                     |
+| `@capuchoo/recorder` | Session recording, app side.          |
+| `@capuchoo/cli`      | The deploy pipeline.                  |
 
 ## How a release happens
 
@@ -50,9 +51,10 @@ once:
 pnpm publish -r --access public --otp=<code-from-your-authenticator>
 ```
 
-Then, for each of the four packages on npmjs.com: **Settings > Trusted publisher**, GitHub Actions,
-repository `aybinv7/capuchoo`, workflow `release.yml`. After that every release runs from CI and the
-manual path is never needed again.
+Then, for each published package on npmjs.com (a new one such as `@capuchoo/recorder` needs this
+once, after its first manual publish): **Settings > Trusted publisher**, GitHub Actions, repository
+`aybinv7/capuchoo`, workflow `release.yml`. After that every release runs from CI and the manual
+path is never needed again.
 
 ## The gate
 

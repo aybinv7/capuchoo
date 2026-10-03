@@ -11,6 +11,7 @@ capuchoo/
 │   ├── core/           @capuchoo/core          contract shared by everything
 │   ├── updater/        @capuchoo/updater       app-side runtime
 │   ├── cli/            @capuchoo/cli          build and publish releases
+│   ├── recorder/       @capuchoo/recorder     session recording, see RECORDING.md
 ├── apps/
 │   ├── dashboard/      @capuchoo/dashboard     release console, static site
 │   └── landing/        @capuchoo/landing       public landing page, static site
@@ -114,7 +115,7 @@ dependency once made pnpm install a second `@voidzero-dev/vite-plus-core`, and `
 Do not add a `check` script - `vp check` covers the workspace in one pass, and a per-package one
 would run the linter N times over the same files.
 
-Publishing is described in [RELEASING.md](./RELEASING.md): four packages go to npm, the apps and the
+Publishing is described in [RELEASING.md](./RELEASING.md): five packages go to npm, the apps and the
 backend are `private: true`, and one workflow covers all of them.
 
 Ordering is automatic: `vp run -r build` walks the graph built from `package.json` dependencies.
