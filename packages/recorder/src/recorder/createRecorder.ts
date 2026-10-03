@@ -1,4 +1,5 @@
 import type {
+  RecorderHealth,
   RecordingMode,
   RecordingSessionMeta,
   RecordingStart,
@@ -26,7 +27,7 @@ import {
   transition,
   type Escalation,
 } from "./mode.js";
-import { createSessionId, normaliseEndpoint, sessionMeta } from "./session.js";
+import { RECORDER_VERSION, createSessionId, normaliseEndpoint, sessionMeta } from "./session.js";
 import { TrackSet } from "./trackSet.js";
 import type {
   Recorder,
@@ -69,6 +70,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
   let pipelineStatus: PipelineStatus | null = null;
   let lastError: string | null = null;
   let started = false;
+  let starting: Promise<void> | null = null;
   let escalationTimer: ReturnType<typeof setTimeout> | null = null;
   let sessionTimer: ReturnType<typeof setTimeout> | null = null;
   let assetTimer: ReturnType<typeof setTimeout> | null = null;
@@ -122,6 +124,20 @@ export function createRecorder(options: RecorderOptions): Recorder {
       policyVersion: policy()?.version ?? null,
       pipeline: pipelineStatus,
       lastError,
+    };
+  }
+
+  function health(): RecorderHealth {
+    return {
+      recorder: RECORDER_VERSION,
+      mode,
+      threaded: options.worker !== undefined,
+      storage: pipelineStatus?.backend ?? null,
+      databases: database.health(),
+      queued: pipelineStatus?.queued ?? 0,
+      uploadedSegments: pipelineStatus?.uploadedSegments ?? 0,
+      droppedSegments: pipelineStatus?.droppedSegments ?? 0,
+      lastError: lastError ?? pipelineStatus?.lastError ?? null,
     };
   }
 
@@ -326,70 +342,79 @@ export function createRecorder(options: RecorderOptions): Recorder {
     return createInlineClient();
   }
 
-  return {
-    async start() {
-      if (started) return;
-      try {
-        identity = await options.identity();
-      } catch (error) {
-        fail(`recorder identity unavailable: ${String(error)}`);
-        return;
-      }
-      if (!identity.apiUrl || !identity.appId || !identity.deviceId) {
-        fail("recorder identity is missing apiUrl, appId or deviceId; recording stays off");
-        return;
-      }
-      started = true;
-      endpoint = normaliseEndpoint(identity.apiUrl);
-      client = startClient();
-      cleanups.push(
-        client.onReport((report) => {
-          if (report.type === "status") {
-            pipelineStatus = report.status;
-            notify();
-          } else logger.warn(report.message);
-        }),
-      );
-      cleanups.push(
-        watchLifecycle({
-          onHidden: () => {
-            collector.flush();
-            client?.send({ type: "flush" });
-          },
-          onNetwork: (online, wifi) => client?.send({ type: "network", online, wifi }),
-        }),
-      );
-      if (options.shake !== false) {
-        cleanups.push(
-          watchShake(
-            () => {
-              trigger("shake");
-              options.onShake?.();
-            },
-            typeof options.shake === "object" ? options.shake : {},
-          ),
-        );
-      }
-
-      const known = identity;
-      policyClient = createPolicyClient({
-        endpoint,
-        request: () => ({
-          appId: known.appId,
-          deviceId: known.deviceId,
-          platform: known.platform,
-          versionName: known.versionName,
-          versionCode: known.versionCode,
-          channel: known.channel,
-        }),
-        onPolicy,
-        onError: (message) => {
-          lastError = message;
+  async function boot(): Promise<void> {
+    try {
+      identity = await options.identity();
+    } catch (error) {
+      fail(`recorder identity unavailable: ${String(error)}`);
+      return;
+    }
+    const missing = (["apiUrl", "appId", "deviceId"] as const).filter((key) => !identity?.[key]);
+    if (missing.length > 0) {
+      fail(`recorder identity is missing ${missing.join(", ")}; recording stays off`);
+      return;
+    }
+    started = true;
+    endpoint = normaliseEndpoint(identity.apiUrl);
+    client = startClient();
+    cleanups.push(
+      client.onReport((report) => {
+        if (report.type === "status") {
+          pipelineStatus = report.status;
           notify();
+        } else logger.warn(report.message);
+      }),
+    );
+    cleanups.push(
+      watchLifecycle({
+        onHidden: () => {
+          collector.flush();
+          client?.send({ type: "flush" });
         },
+        onNetwork: (online, wifi) => client?.send({ type: "network", online, wifi }),
+      }),
+    );
+    if (options.shake !== false) {
+      cleanups.push(
+        watchShake(
+          () => {
+            trigger("shake");
+            options.onShake?.();
+          },
+          typeof options.shake === "object" ? options.shake : {},
+        ),
+      );
+    }
+
+    const known = identity;
+    policyClient = createPolicyClient({
+      endpoint,
+      request: () => ({
+        appId: known.appId,
+        deviceId: known.deviceId,
+        platform: known.platform,
+        versionName: known.versionName,
+        versionCode: known.versionCode,
+        channel: known.channel,
+        health: health(),
+      }),
+      onPolicy,
+      onError: (message) => {
+        lastError = message;
+        notify();
+      },
+    });
+    if (policyClient.cached) onPolicy(policyClient.cached);
+    await policyClient.start();
+  }
+
+  return {
+    start() {
+      if (started) return Promise.resolve();
+      starting ??= boot().finally(() => {
+        starting = null;
       });
-      if (policyClient.cached) onPolicy(policyClient.cached);
-      await policyClient.start();
+      return starting;
     },
 
     async stop() {

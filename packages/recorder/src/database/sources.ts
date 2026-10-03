@@ -41,7 +41,12 @@ export interface ChangeBusLike {
  */
 export function changesetSource(
   capture: ChangeCaptureLike,
-  options: { name: string; execute?: ExecuteSql; fallback?: DatabaseSource },
+  options: {
+    name: string;
+    execute?: ExecuteSql;
+    fallback?: DatabaseSource;
+    ready?: () => Promise<unknown>;
+  },
 ): DatabaseSource {
   let unsubscribe: (() => void) | null = null;
   let active: DatabaseSource | null = null;
@@ -49,6 +54,7 @@ export function changesetSource(
 
   const self: DatabaseSource = {
     name: options.name,
+    ready: options.ready,
     async start(sink, tables) {
       unsubscribe = capture.subscribe(({ bytes, at }) => sink.changeset(bytes, at));
       const reply = await capture.start(tables);
@@ -56,7 +62,7 @@ export function changesetSource(
         active = self;
         watched = reply.tables;
         sink.schema(reply.tables);
-        return { supported: true };
+        return { supported: true, capture: "changesets" };
       }
       unsubscribe();
       unsubscribe = null;
@@ -90,6 +96,7 @@ export function sqlChangesSource(options: {
   execute: ExecuteSql;
   bus?: ChangeBusLike;
   onError?: (error: unknown) => void;
+  ready?: () => Promise<unknown>;
 }): DatabaseSource {
   let watched: DatabaseTable[] = [];
   let off: (() => void) | null = null;
@@ -103,6 +110,7 @@ export function sqlChangesSource(options: {
 
   return {
     name: options.name,
+    ready: options.ready,
     async start(next, tables): Promise<DatabaseStart> {
       sink = next;
       watched = (await describeTables(options.execute, tables)).filter((table) => table.tracked);
@@ -110,7 +118,7 @@ export function sqlChangesSource(options: {
       next.schema(watched);
       if (options.bus) off = options.bus.on(["*"], () => capture.requestDrain());
       else timer = setInterval(() => capture.requestDrain(), 2000);
-      return { supported: true };
+      return { supported: true, capture: "rows" };
     },
     async snapshot(next, maxRows, signal) {
       await snapshotTables({
@@ -138,13 +146,14 @@ export function sqlChangesSource(options: {
 /** Which table changed and how, without row values, from a reactive change bus. */
 export function changeBusSource(
   bus: ChangeBusLike,
-  options: { name: string; execute?: ExecuteSql },
+  options: { name: string; execute?: ExecuteSql; ready?: () => Promise<unknown> },
 ): DatabaseSource {
   let off: (() => void) | null = null;
   let watched: DatabaseTable[] = [];
 
   return {
     name: options.name,
+    ready: options.ready,
     async start(sink, tables): Promise<DatabaseStart> {
       off?.();
       if (options.execute) {
@@ -165,7 +174,7 @@ export function changeBusSource(
           event.timestamp ?? Date.now(),
         );
       });
-      return { supported: true };
+      return { supported: true, capture: "changes" };
     },
     async snapshot(sink, maxRows, signal) {
       if (!options.execute) return;

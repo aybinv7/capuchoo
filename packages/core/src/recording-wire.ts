@@ -97,7 +97,44 @@ export interface RecordingPolicyRequest {
   channel: string | null;
   /** The `version` the device already has; an unchanged policy comes back as `{ unchanged: true }`. */
   known: string | null;
+  /** How the recorder on the device is doing, for the dashboard's integration check. */
+  health: RecorderHealth | null;
 }
+
+export const DATABASE_CAPTURE_STATES = [
+  "off",
+  "waiting",
+  "changesets",
+  "rows",
+  "changes",
+  "unsupported",
+  "unavailable",
+  "failed",
+] as const;
+export type DatabaseCaptureState = (typeof DATABASE_CAPTURE_STATES)[number];
+
+export interface DatabaseHealth {
+  name: string;
+  state: DatabaseCaptureState;
+  detail: string | null;
+}
+
+/** A recorder's own account of itself: what it runs on, what it captures, and what went wrong. */
+export interface RecorderHealth {
+  recorder: string;
+  mode: RecordingMode;
+  /** The pipeline runs in a worker; without one, serialization and gzip share the app's thread. */
+  threaded: boolean;
+  /** Where segments wait for upload; null until the pipeline first reports. */
+  storage: "opfs" | "memory" | null;
+  databases: DatabaseHealth[];
+  queued: number;
+  uploadedSegments: number;
+  droppedSegments: number;
+  lastError: string | null;
+}
+
+const MAX_HEALTH_DATABASES = 8;
 
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -270,5 +307,33 @@ export function parseRecordingPolicyRequest(input: unknown): RecordingPolicyRequ
     versionCode: int(raw.versionCode),
     channel: str(raw.channel),
     known: str(raw.known, 40),
+    health: parseRecorderHealth(raw.health),
+  };
+}
+
+export function parseRecorderHealth(input: unknown): RecorderHealth | null {
+  if (!input || typeof input !== "object") return null;
+  const raw = input as Record<string, unknown>;
+  const recorder = str(raw.recorder, 40);
+  if (!recorder || !isRecordingMode(raw.mode)) return null;
+  const databases = Array.isArray(raw.databases)
+    ? raw.databases.slice(0, MAX_HEALTH_DATABASES).flatMap((entry): DatabaseHealth[] => {
+        if (!entry || typeof entry !== "object") return [];
+        const db = entry as Record<string, unknown>;
+        const name = str(db.name, 64);
+        const state = DATABASE_CAPTURE_STATES.find((known) => known === db.state);
+        return name && state ? [{ name, state, detail: str(db.detail) }] : [];
+      })
+    : [];
+  return {
+    recorder,
+    mode: raw.mode,
+    threaded: raw.threaded === true,
+    storage: raw.storage === "opfs" || raw.storage === "memory" ? raw.storage : null,
+    databases,
+    queued: int(raw.queued) ?? 0,
+    uploadedSegments: int(raw.uploadedSegments) ?? 0,
+    droppedSegments: int(raw.droppedSegments) ?? 0,
+    lastError: str(raw.lastError),
   };
 }

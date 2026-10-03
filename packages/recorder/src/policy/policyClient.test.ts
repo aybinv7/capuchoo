@@ -35,6 +35,7 @@ function client(onPolicy = vi.fn()) {
         versionName: "1.0.0",
         versionCode: 1,
         channel: "prod",
+        health: null,
       }),
       onPolicy,
       onError: () => undefined,

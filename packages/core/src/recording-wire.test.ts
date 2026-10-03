@@ -112,4 +112,45 @@ describe("parseRecordingPolicyRequest", () => {
     ).toMatchObject({ versionName: "builtin", known: null, channel: null });
     expect(parseRecordingPolicyRequest({ appId: "a", platform: "android" })).toBeNull();
   });
+
+  it("keeps a recorder's health, dropping what it cannot vouch for", () => {
+    const request = parseRecordingPolicyRequest({
+      appId: "a",
+      deviceId: "d",
+      platform: "android",
+      health: {
+        recorder: "0.1.0",
+        mode: "buffer",
+        threaded: true,
+        storage: "opfs",
+        databases: [
+          { name: "app", state: "changesets" },
+          { name: "cache", state: "exploded" },
+          { name: "", state: "rows" },
+          { name: "legacy", state: "unavailable", detail: "x".repeat(400) },
+        ],
+        queued: -3,
+        uploadedSegments: 12,
+        lastError: "  ",
+      },
+    });
+    expect(request?.health).toEqual({
+      recorder: "0.1.0",
+      mode: "buffer",
+      threaded: true,
+      storage: "opfs",
+      databases: [
+        { name: "app", state: "changesets", detail: null },
+        { name: "legacy", state: "unavailable", detail: "x".repeat(255) },
+      ],
+      queued: 0,
+      uploadedSegments: 12,
+      droppedSegments: 0,
+      lastError: null,
+    });
+    expect(
+      parseRecordingPolicyRequest({ appId: "a", deviceId: "d", platform: "web", health: {} })
+        ?.health,
+    ).toBeNull();
+  });
 });

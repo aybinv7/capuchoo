@@ -49,7 +49,12 @@ export interface DatabaseSink {
   snapshot(chunk: SnapshotChunk): void;
 }
 
-export type DatabaseStart = { supported: true } | { supported: false; reason: string };
+/** How a started source captures writes: whole changesets, rows with values, or only which table. */
+export type DatabaseCapture = "changesets" | "rows" | "changes";
+
+export type DatabaseStart =
+  | { supported: true; capture?: DatabaseCapture }
+  | { supported: false; reason: string };
 
 /** Runs one statement on the app's own connection and returns its rows as objects. */
 export type ExecuteSql = (
@@ -63,6 +68,11 @@ export type ExecuteSql = (
  */
 export interface DatabaseSource {
   readonly name: string;
+  /**
+   * Settles once the database is open. The source starts after it, so the recorder itself can start
+   * first and capture a boot that fails to open the database; a rejection is recorded as a marker.
+   */
+  ready?(): Promise<unknown>;
   start(sink: DatabaseSink, tables: string[] | "all"): Promise<DatabaseStart>;
   /** Reads the starting state of the watched tables, a chunk at a time. */
   snapshot?(sink: DatabaseSink, maxRows: number, signal: AbortSignal): Promise<void>;
