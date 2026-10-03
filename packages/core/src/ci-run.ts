@@ -46,7 +46,7 @@ export const GITLAB_PIPELINE_VARIABLES = {
 
 const CHANNEL = /^[a-z0-9][a-z0-9-]{0,62}$/;
 const VERSION = /^(auto|v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/;
-const REF = /^(?!.*\.\.)(?!\/)(?!.*\/$)(?!.*@\{)[A-Za-z0-9._\/-]{1,200}$/;
+const REF = /^(?!.*\.\.)(?!\/)(?!.*\/$)(?!.*@\{)[A-Za-z0-9._/-]{1,200}$/;
 
 export type CiRunRequestResult =
   | { ok: true; request: CiRunRequest }

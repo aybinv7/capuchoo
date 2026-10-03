@@ -32,9 +32,9 @@ export interface GithubWorkflowOptions {
   androidBuildTools?: string;
 }
 
-const BRANCH = /^(?!.*\.\.)(?!\/)(?!.*\/$)[A-Za-z0-9._\/-]{1,100}$/;
+const BRANCH = /^(?!.*\.\.)(?!\/)(?!.*\/$)[A-Za-z0-9._/-]{1,100}$/;
 const CLIENT = /^[a-z0-9][a-z0-9-]{0,56}$/;
-const APP_DIR = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._@\/-]{1,200}$/;
+const APP_DIR = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._@/-]{1,200}$/;
 const VERSIONISH = /^[0-9A-Za-z.+-]{1,40}$/;
 
 const q = (value: string): string => JSON.stringify(value);

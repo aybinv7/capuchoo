@@ -11,7 +11,7 @@ export type { NetworkOptions } from "./tracks/network.js";
 export type { ShakeOptions } from "./triggers/shake.js";
 export type { RecorderTelemetry, TelemetryAdapter, TelemetrySpan } from "./tracks/telemetry.js";
 export type { PipelineStatus } from "./pipeline/protocol.js";
-export { changeBusSource, changesetSource } from "./database/sources.js";
+export { changeBusSource, changesetSource, sqlChangesSource } from "./database/sources.js";
 export type { ChangeBusLike, ChangeCaptureLike } from "./database/sources.js";
 export type {
   DatabaseChange,
@@ -20,4 +20,7 @@ export type {
   DatabaseSource,
   DatabaseStart,
   DatabaseTable,
+  ExecuteSql,
+  RowChange,
+  SnapshotChunk,
 } from "./database/types.js";

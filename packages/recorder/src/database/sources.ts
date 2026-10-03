@@ -1,4 +1,14 @@
-import type { DatabaseChange, DatabaseSource, DatabaseStart, DatabaseTable } from "./types.js";
+import { describeTables } from "./introspect.js";
+import { snapshotTables } from "./snapshot.js";
+import { createTriggerCapture } from "./triggerCapture.js";
+import type {
+  DatabaseChange,
+  DatabaseSink,
+  DatabaseSource,
+  DatabaseStart,
+  DatabaseTable,
+  ExecuteSql,
+} from "./types.js";
 
 /** Structurally `ChangeCapture` from `@cavulsqa/mobile-db`. */
 export interface ChangeCaptureLike {
@@ -26,15 +36,16 @@ export interface ChangeBusLike {
 
 /**
  * Committed transactions as SQLite changesets, row values included, recorded inside the database
- * worker. When the engine cannot (wa-sqlite, a build without the session extension), `fallback` is
- * started instead.
+ * worker. With `execute`, sessions also start from a snapshot of the watched tables. When the engine
+ * has no session extension (wa-sqlite, native builds without it), `fallback` is started instead.
  */
 export function changesetSource(
   capture: ChangeCaptureLike,
-  options: { name: string; fallback?: DatabaseSource },
+  options: { name: string; execute?: ExecuteSql; fallback?: DatabaseSource },
 ): DatabaseSource {
   let unsubscribe: (() => void) | null = null;
   let active: DatabaseSource | null = null;
+  let watched: DatabaseTable[] = [];
 
   const self: DatabaseSource = {
     name: options.name,
@@ -43,6 +54,7 @@ export function changesetSource(
       const reply = await capture.start(tables);
       if (reply.supported) {
         active = self;
+        watched = reply.tables;
         sink.schema(reply.tables);
         return { supported: true };
       }
@@ -52,10 +64,16 @@ export function changesetSource(
       active = options.fallback;
       return options.fallback.start(sink, tables);
     },
+    async snapshot(sink, maxRows, signal) {
+      if (active && active !== self) return active.snapshot?.(sink, maxRows, signal);
+      if (!options.execute) return;
+      await snapshotTables({ execute: options.execute, sink, tables: watched, maxRows, signal });
+    },
     async stop() {
       if (active && active !== self) await active.stop();
       else if (active === self) await capture.stop();
       active = null;
+      watched = [];
       unsubscribe?.();
       unsubscribe = null;
     },
@@ -63,14 +81,76 @@ export function changesetSource(
   return self;
 }
 
-/** Which table changed and how, without row values, from a reactive change bus. */
-export function changeBusSource(bus: ChangeBusLike, options: { name: string }): DatabaseSource {
+/**
+ * Committed rows with their values on any SQLite engine, through temporary triggers on the app's
+ * own connection. A change bus says when to read them; without one they are read every two seconds.
+ */
+export function sqlChangesSource(options: {
+  name: string;
+  execute: ExecuteSql;
+  bus?: ChangeBusLike;
+  onError?: (error: unknown) => void;
+}): DatabaseSource {
+  let watched: DatabaseTable[] = [];
   let off: (() => void) | null = null;
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let sink: DatabaseSink | null = null;
+  const capture = createTriggerCapture(
+    options.execute,
+    (changes, at) => sink?.rows(changes, at),
+    (error) => options.onError?.(error),
+  );
+
+  return {
+    name: options.name,
+    async start(next, tables): Promise<DatabaseStart> {
+      sink = next;
+      watched = (await describeTables(options.execute, tables)).filter((table) => table.tracked);
+      await capture.install(watched);
+      next.schema(watched);
+      if (options.bus) off = options.bus.on(["*"], () => capture.requestDrain());
+      else timer = setInterval(() => capture.requestDrain(), 2000);
+      return { supported: true };
+    },
+    async snapshot(next, maxRows, signal) {
+      await snapshotTables({
+        execute: options.execute,
+        sink: next,
+        tables: watched,
+        maxRows,
+        signal,
+      });
+    },
+    async stop() {
+      off?.();
+      off = null;
+      if (timer !== null) clearInterval(timer);
+      timer = null;
+      capture.requestDrain();
+      await capture.settled();
+      await capture.uninstall();
+      sink = null;
+      watched = [];
+    },
+  };
+}
+
+/** Which table changed and how, without row values, from a reactive change bus. */
+export function changeBusSource(
+  bus: ChangeBusLike,
+  options: { name: string; execute?: ExecuteSql },
+): DatabaseSource {
+  let off: (() => void) | null = null;
+  let watched: DatabaseTable[] = [];
 
   return {
     name: options.name,
     async start(sink, tables): Promise<DatabaseStart> {
       off?.();
+      if (options.execute) {
+        watched = await describeTables(options.execute, tables);
+        sink.schema(watched);
+      }
       const allowed = tables === "all" ? null : new Set(tables);
       off = bus.on(["*"], (event) => {
         if (allowed && !allowed.has(event.table)) return;
@@ -86,6 +166,10 @@ export function changeBusSource(bus: ChangeBusLike, options: { name: string }): 
         );
       });
       return { supported: true };
+    },
+    async snapshot(sink, maxRows, signal) {
+      if (!options.execute) return;
+      await snapshotTables({ execute: options.execute, sink, tables: watched, maxRows, signal });
     },
     stop() {
       off?.();

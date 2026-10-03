@@ -33,8 +33,11 @@ export interface RecordingPolicy {
   tracks: Record<RecordingTrack, boolean>;
   triggers: RecordingTrigger[];
   network: { bodies: boolean; maxBodyBytes: number };
-  /** Tables whose committed writes are captured as changesets. */
-  database: { tables: string[] | "all" };
+  /**
+   * Tables whose committed writes are captured, and how many rows of each are read as the starting
+   * state when a session that uploads begins. `0` skips the starting state.
+   */
+  database: { tables: string[] | "all"; snapshotRows: number };
   /** Ring buffer kept on the device in `buffer` mode. */
   buffer: { maxMs: number; maxBytes: number };
   /** How long a session started by a trigger keeps uploading. */
@@ -45,6 +48,11 @@ export interface RecordingPolicy {
   wifiOnly: boolean;
   /** How often the device asks for its policy again. */
   pollMs: number;
+  /**
+   * While the app is in the foreground the device keeps one policy request open this long, and the
+   * server answers it the moment a rule changes. `0` falls back to polling every `pollMs`.
+   */
+  listenMs: number;
 }
 
 export interface ResolvedRecordingPolicy extends RecordingPolicy {
@@ -80,9 +88,11 @@ export const RECORDING_LIMITS = {
   flushMs: { min: 1000, max: 60_000 },
   liveFlushMs: { min: 250, max: 5000 },
   pollMs: { min: 15_000, max: 60 * MINUTE },
+  listenMs: { min: 10_000, max: 55_000 },
   maxBodyBytes: { min: 0, max: 1024 * 1024 },
   tables: 200,
   tableName: 128,
+  snapshotRows: { min: 0, max: 20_000 },
   liveMinutes: { min: 1, max: 120 },
 } as const;
 
@@ -100,7 +110,7 @@ export const DEFAULT_RECORDING_POLICY: Readonly<RecordingPolicy> = Object.freeze
   },
   triggers: ["error", "shake", "manual", "app"],
   network: { bodies: false, maxBodyBytes: 64 * 1024 },
-  database: { tables: "all" },
+  database: { tables: "all", snapshotRows: 2000 },
   buffer: { maxMs: 5 * MINUTE, maxBytes: 8 * 1024 * 1024 },
   postRollMs: 2 * MINUTE,
   maxSessionMs: 30 * MINUTE,
@@ -108,6 +118,7 @@ export const DEFAULT_RECORDING_POLICY: Readonly<RecordingPolicy> = Object.freeze
   liveFlushMs: 1000,
   wifiOnly: false,
   pollMs: 5 * MINUTE,
+  listenMs: 50_000,
 });
 
 const SCOPE_ORDER: Record<RecordingRuleScope, number> = { app: 0, channel: 1, device: 2 };
@@ -252,6 +263,7 @@ export function normaliseRecordingPatch(input: unknown): NormalisedRecordingPatc
   take("flushMs", clamp(raw.flushMs, limits.flushMs));
   take("liveFlushMs", clamp(raw.liveFlushMs, limits.liveFlushMs));
   take("pollMs", clamp(raw.pollMs, limits.pollMs));
+  take("listenMs", raw.listenMs === 0 ? 0 : clamp(raw.listenMs, limits.listenMs));
   take("wifiOnly", bool(raw.wifiOnly));
 
   if (raw.tracks !== undefined) {
@@ -280,16 +292,22 @@ export function normaliseRecordingPatch(input: unknown): NormalisedRecordingPatc
   }
 
   if (raw.database !== undefined) {
-    const tables = ((raw.database ?? {}) as Record<string, unknown>).tables;
-    if (tables === "all") patch.database = { tables: "all" };
+    const database = (raw.database ?? {}) as Record<string, unknown>;
+    const next: RecordingPolicyPatch["database"] = {};
+    const tables = database.tables;
+    if (tables === "all") next.tables = "all";
     else if (Array.isArray(tables)) {
       const valid = tables.filter(
         (table): table is string =>
           typeof table === "string" && table.length <= limits.tableName && TABLE.test(table),
       );
       if (valid.length !== tables.length) dropped.push("database.tables");
-      patch.database = { tables: [...new Set(valid)].slice(0, limits.tables) };
-    } else dropped.push("database.tables");
+      next.tables = [...new Set(valid)].slice(0, limits.tables);
+    } else if (tables !== undefined) dropped.push("database.tables");
+    const rows = clamp(database.snapshotRows, limits.snapshotRows);
+    if (rows !== undefined) next.snapshotRows = rows;
+    else if (database.snapshotRows !== undefined) dropped.push("database.snapshotRows");
+    patch.database = next;
   }
 
   return { patch, dropped };

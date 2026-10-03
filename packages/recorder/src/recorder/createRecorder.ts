@@ -88,6 +88,10 @@ export function createRecorder(options: RecorderOptions): Recorder {
   const policy = (): ResolvedRecordingPolicy | null => answer?.policy ?? null;
 
   const replay = createReplayTrack(options.replay);
+  const database = createDatabaseTrack(
+    options.databases ?? [],
+    () => policy()?.database.tables ?? "all",
+  );
   const telemetryTrack: Track = { name: "telemetry", start() {}, stop() {} };
   const tracks = new TrackSet(
     [
@@ -99,7 +103,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
         selfPrefix: `${endpoint}/api/recording`,
       })),
       createPerfTrack(),
-      createDatabaseTrack(options.databases ?? [], () => policy()?.database.tables ?? "all"),
+      database,
       telemetryTrack,
     ],
     context,
@@ -192,12 +196,19 @@ export function createRecorder(options: RecorderOptions): Recorder {
     if (meta) client?.send({ type: "begin", mode, session: meta });
   }
 
+  /** A session that uploads starts from the watched tables as they stand. */
+  function snapshotIfUploading(): void {
+    if ((mode !== "session" && mode !== "live") || !tracks.isRunning("database")) return;
+    database.snapshot(policy()?.database.snapshotRows ?? 0);
+  }
+
   function rotate(): void {
     if (!session || mode === "off") return;
     collector.flush();
     client?.send({ type: "end" });
     openSession("policy");
     replay.checkout();
+    snapshotIfUploading();
     armSessionLimit();
     notify();
   }
@@ -218,6 +229,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
           scheduleAssets();
         });
         scheduleAssets();
+        snapshotIfUploading();
         break;
       case "end":
         tracks.stopAll();
@@ -236,6 +248,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
           const meta = currentMeta();
           if (meta) client?.send({ type: "mode", mode, session: meta });
         }
+        snapshotIfUploading();
         break;
       case "rotate":
         collector.flush();

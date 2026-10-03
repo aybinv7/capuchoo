@@ -168,6 +168,26 @@ describe("recording policy", () => {
     expect(preview.policy.mode).toBe("live");
   });
 
+  it("answers a held request the moment a rule changes", async () => {
+    const { policy } = await (await askPolicy()).json();
+    const started = Date.now();
+    const held = askPolicy({ known: policy.version, wait: 20 });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await putRule({ scope: "app", policy: { mode: "buffer" } });
+
+    const answer = await (await held).json();
+    expect(answer.policy.mode).toBe("buffer");
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
+
+  it("answers a held request unchanged when its wait runs out", async () => {
+    const { policy } = await (await askPolicy()).json();
+    const started = Date.now();
+    const answer = await (await askPolicy({ known: policy.version, wait: 1 })).json();
+    expect(answer).toEqual({ unchanged: true, version: policy.version });
+    expect(Date.now() - started).toBeGreaterThanOrEqual(900);
+  });
+
   it("refuses a channel from another app and reports dropped fields", async () => {
     const foreign = await putRule({
       scope: "channel",

@@ -13,7 +13,7 @@ import { resolveDeviceChannel } from "./channel-resolution";
 
 export type DevicePolicyAnswer =
   | { status: "unknown_app" }
-  | { status: "unchanged"; version: string }
+  | { status: "unchanged"; version: string; appId: string; liveUntil: number | null }
   | { status: "policy"; policy: ResolvedRecordingPolicy; knownAssets: string[] };
 
 export function cachedRules(deps: Deps, appId: string) {
@@ -52,9 +52,41 @@ export async function policyForDevice(
     deviceId: request.deviceId,
     now: deps.now().getTime(),
   });
-  if (request.known === policy.version) return { status: "unchanged", version: policy.version };
+  if (request.known === policy.version) {
+    return { status: "unchanged", version: policy.version, appId, liveUntil: policy.liveUntil };
+  }
 
   const wantsAssets = policy.tracks.replay && (policy.mode !== "off" || policy.ceiling !== "off");
   const knownAssets = wantsAssets ? await cachedAssetPaths(deps, appId, request.versionName) : [];
   return { status: "policy", policy, knownAssets };
+}
+
+/**
+ * Holds a device's request open while its policy is unchanged, for up to `waitMs`: a rule change
+ * for the app, or a live deadline passing, answers it at once. This is how a device goes live in
+ * about a second instead of at its next poll.
+ */
+export async function listenForPolicy(
+  deps: Deps,
+  request: RecordingPolicyRequest,
+  waitMs: number,
+  signal: AbortSignal,
+): Promise<DevicePolicyAnswer> {
+  const deadline = Date.now() + waitMs;
+  let answer = await policyForDevice(deps, request);
+  while (answer.status === "unchanged" && !signal.aborted) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    const untilLiveEnds =
+      answer.liveUntil === null ? remaining : answer.liveUntil - deps.now().getTime() + 250;
+    await deps.hub.waitFor(
+      answer.appId,
+      "recording_rule",
+      Math.max(0, Math.min(remaining, untilLiveEnds)),
+      signal,
+    );
+    if (signal.aborted) break;
+    answer = await policyForDevice(deps, request);
+  }
+  return answer;
 }

@@ -244,6 +244,11 @@ export function recordingRoutes(): Hono<AppEnv> {
       now,
     });
     deps.cache.invalidate(`app:${access.app.id}`);
+    deps.hub.publish({
+      type: "recording_rule",
+      appId: access.app.id,
+      data: { id: rule.id, scope, channel_id: channelId, device_uuid: deviceUuid },
+    });
     await audit(
       c,
       access.app,
@@ -273,6 +278,11 @@ export function recordingRoutes(): Hono<AppEnv> {
     );
     await deleteRule(deps.db, rule.id);
     deps.cache.invalidate(`app:${access.app.id}`);
+    deps.hub.publish({
+      type: "recording_rule",
+      appId: access.app.id,
+      data: { id: rule.id, scope: rule.scope, removed: true },
+    });
     await audit(c, access.app, "recording_rule.delete", rule.id, { scope: rule.scope });
     return c.body(null, 204);
   });

@@ -13,7 +13,10 @@ import type { AppEnv } from "../http/context";
 import { badRequest, tooManyRequests } from "../lib/errors";
 import { RateLimiter } from "../lib/rate-limit";
 import { ingestAsset, ingestSegment } from "../services/recording-ingest";
-import { policyForDevice } from "../services/recording-policy";
+import { listenForPolicy } from "../services/recording-policy";
+
+/** Under the 60 s idle timeout most proxies, Render's included, apply to a quiet connection. */
+const MAX_LISTEN_SECONDS = 55;
 
 /** What a recording device calls. Unauthenticated like every device route; bounded by size and rate. */
 export function recordingDeviceRoutes(): Hono<AppEnv> {
@@ -30,11 +33,16 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
   });
 
   router.post("/recording/policy", async (c) => {
-    const request = parseRecordingPolicyRequest(await readJson(c, 8 * 1024));
+    const body = await readJson(c, 8 * 1024);
+    const request = parseRecordingPolicyRequest(body);
     if (!request) throw badRequest("appId, deviceId and platform are required");
     const wait = policyPerDevice.take(`${request.appId}:${request.deviceId}`);
     if (wait) throw tooManyRequests(wait);
-    const answer = await policyForDevice(c.get("deps"), request);
+    const listen =
+      typeof body.wait === "number" && Number.isFinite(body.wait)
+        ? Math.min(MAX_LISTEN_SECONDS, Math.max(0, body.wait)) * 1000
+        : 0;
+    const answer = await listenForPolicy(c.get("deps"), request, listen, c.req.raw.signal);
     if (answer.status === "unknown_app") return c.json({ error: "App not found" }, 404);
     if (answer.status === "unchanged") return c.json({ unchanged: true, version: answer.version });
     return c.json({ policy: answer.policy, known_assets: answer.knownAssets });

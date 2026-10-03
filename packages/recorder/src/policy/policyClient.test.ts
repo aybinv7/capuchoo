@@ -64,6 +64,26 @@ describe("policy client", () => {
     expect(onPolicy).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(30_000);
+    expect(calls).toBeGreaterThanOrEqual(2);
+    expect(onPolicy).toHaveBeenCalledTimes(1);
+    policy.stop();
+  });
+
+  it("listens in the foreground, and falls back to polling when the server does not hold", async () => {
+    let calls = 0;
+    const bodies: Array<Record<string, unknown>> = [];
+    window.fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      calls++;
+      bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+      return policyResponse();
+    }) as typeof fetch;
+
+    const { policy, onPolicy } = client();
+    await policy.start();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(bodies[0]!.wait).toBe(0);
+    expect(bodies[1]!.wait).toBe(50);
+    await vi.advanceTimersByTimeAsync(60_000);
     expect(calls).toBe(2);
     expect(onPolicy).toHaveBeenCalledTimes(1);
     policy.stop();
