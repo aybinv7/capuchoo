@@ -96,7 +96,7 @@ const position = (ratio: number) => ({
     @pointerleave="hover = null"
     @keydown="onKey"
   >
-    <div class="relative mb-1 h-4">
+    <div class="relative mb-0.5 h-3.5">
       <span
         v-for="marker in visibleMarkers"
         :key="marker.id"
@@ -129,7 +129,7 @@ const position = (ratio: number) => ({
     </div>
 
     <div
-      class="bg-primary pointer-events-none absolute top-5 bottom-0 w-0.5 -translate-x-1/2 rounded-full"
+      class="bg-primary pointer-events-none absolute top-4.5 bottom-0 w-0.5 -translate-x-1/2 rounded-full"
       :style="position(progress)"
     >
       <span
@@ -139,7 +139,7 @@ const position = (ratio: number) => ({
 
     <div
       v-if="hover !== null"
-      class="pointer-events-none absolute top-5 bottom-0 w-px -translate-x-1/2 bg-foreground/30"
+      class="pointer-events-none absolute top-4.5 bottom-0 w-px -translate-x-1/2 bg-foreground/30"
       :style="position(hover)"
     >
       <span

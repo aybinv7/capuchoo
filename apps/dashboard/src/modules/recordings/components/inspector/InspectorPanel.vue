@@ -8,6 +8,7 @@ import {
   Radio,
   Search,
   SquareTerminal,
+  Table2,
   X,
 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -36,8 +37,8 @@ import PerfSummary from "./PerfSummary.vue";
 import TelemetryRow from "./TelemetryRow.vue";
 import ConsoleDetail from "./ConsoleDetail.vue";
 import TextDetail from "./TextDetail.vue";
-
-type Tab = "activity" | "console" | "network" | "database" | "telemetry" | "perf";
+import DataView from "../data/DataView.vue";
+import type { InspectorTab } from "./tabs";
 
 const props = defineProps<{
   lanes: Lanes;
@@ -47,12 +48,13 @@ const props = defineProps<{
   /** The app version the session ran, whose source maps read its stacks. */
   version: string;
 }>();
-const emit = defineEmits<{ seek: [time: number]; openTable: [db: string, table: string] }>();
+const emit = defineEmits<{ seek: [time: number] }>();
 const follow = defineModel<boolean>("follow", { required: true });
+const tab = defineModel<InspectorTab>("tab", { required: true });
+const dataFocus = ref<{ db: string; table: string } | null>(null);
 
-const tab = ref<Tab>("activity");
 const needle = ref("");
-const selected = ref<{ tab: Tab; id: string } | null>(null);
+const selected = ref<{ tab: InspectorTab; id: string } | null>(null);
 
 watch(tab, () => {
   needle.value = "";
@@ -81,6 +83,14 @@ const lists = computed(() => ({
   ),
 }));
 
+const changedTables = computed(() => {
+  const names = new Set<string>();
+  for (const entry of props.lanes.database) {
+    for (const change of entry.changes) names.add(`${entry.db}.${change.table}`);
+  }
+  return names.size;
+});
+
 const TABS = computed(() => [
   { value: "activity" as const, label: "Activity", count: activity.value.length, alert: 0 },
   {
@@ -103,7 +113,13 @@ const TABS = computed(() => [
     alert: 0,
   },
   { value: "perf" as const, label: "Performance", count: lists.value.perf.length, alert: 0 },
+  { value: "data" as const, label: "Data", count: changedTables.value, alert: 0 },
 ]);
+
+function openTable(db: string, table: string) {
+  dataFocus.value = { db, table };
+  tab.value = "data";
+}
 
 const TAB_ICONS = {
   activity: ListTree,
@@ -112,9 +128,10 @@ const TAB_ICONS = {
   database: Database,
   telemetry: Radio,
   perf: Gauge,
+  data: Table2,
 } as const;
 
-function select(current: Tab, item: { id: string }) {
+function select(current: InspectorTab, item: { id: string }) {
   selected.value = { tab: current, id: item.id };
 }
 
@@ -183,7 +200,19 @@ function openFromActivity(item: ActivityItem) {
       </TabsList>
     </Tabs>
 
-    <div class="flex items-center gap-2 border-b px-2 py-1.5">
+    <KeepAlive>
+      <DataView
+        v-if="tab === 'data'"
+        v-model:focus="dataFocus"
+        class="min-h-0 flex-1"
+        :lanes="props.lanes"
+        :playhead="props.playhead"
+        :origin="props.origin"
+        @seek="emit('seek', $event)"
+      />
+    </KeepAlive>
+
+    <div v-if="tab !== 'data'" class="flex items-center gap-2 border-b px-2 py-1.5">
       <InputGroup class="h-7 flex-1">
         <InputGroupAddon><Search /></InputGroupAddon>
         <InputGroupInput
@@ -210,7 +239,7 @@ function openFromActivity(item: ActivityItem) {
 
     <PerfSummary v-if="tab === 'perf'" :entries="props.lanes.perf" />
 
-    <div :class="cn('min-h-0 flex-1', detail && 'max-h-[55%]')">
+    <div v-if="tab !== 'data'" :class="cn('min-h-0 flex-1', detail && 'max-h-[55%]')">
       <EventList
         v-if="tab === 'activity'"
         :items="lists.activity"
@@ -299,7 +328,7 @@ function openFromActivity(item: ActivityItem) {
       </EventList>
     </div>
 
-    <div v-if="detail" class="min-h-0 flex-1 overflow-y-auto border-t">
+    <div v-if="detail && tab !== 'data'" class="min-h-0 flex-1 overflow-y-auto border-t">
       <NetworkDetail v-if="detail.kind === 'network'" :entry="detail.entry" />
       <DatabaseDetail
         v-else-if="detail.kind === 'database'"
@@ -308,7 +337,7 @@ function openFromActivity(item: ActivityItem) {
         :schemas="props.lanes.schemas"
         :snapshots="props.lanes.snapshots"
         :playhead="props.playhead"
-        @open-table="(db, table) => emit('openTable', db, table)"
+        @open-table="openTable"
       />
       <ConsoleDetail
         v-else-if="detail.kind === 'console'"

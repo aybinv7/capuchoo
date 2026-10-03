@@ -6,7 +6,6 @@ import { computed, ref, useTemplateRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { isApiError } from "@/shared/api/errors";
 import { queryKeys } from "@/shared/api/query-keys";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
@@ -15,17 +14,19 @@ import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
 import { useBreadcrumbLabel } from "@/shared/layouts/composables/useBreadcrumbLabel";
 import { RouteName } from "@/shared/router/route-names";
-import DataView from "../components/data/DataView.vue";
 import InspectorPanel from "../components/inspector/InspectorPanel.vue";
 import ReplayStage from "../components/player/ReplayStage.vue";
 import ScrubberTimeline from "../components/player/ScrubberTimeline.vue";
-import SessionHeader, { type PlayerView } from "../components/player/SessionHeader.vue";
+import PlayerToolbar from "../components/player/PlayerToolbar.vue";
+import { isInspectorTab, type InspectorTab } from "../components/inspector/tabs";
 import TransportBar from "../components/player/TransportBar.vue";
 import { useAssetMap } from "../composables/useAssetMap";
+import { useCollapsedSidebar } from "../composables/useCollapsedSidebar";
 import { useRecording } from "../composables/useRecording";
 import { useRecordingEvents } from "../composables/useRecordingEvents";
 import { usePlayerShortcuts } from "../composables/usePlayerShortcuts";
 import { useReplayer, useReplayerDisposal } from "../composables/useReplayer";
+import { useStageLayout } from "../composables/useStageLayout";
 import { bugReport, linkAt } from "../lib/bug-report";
 import { adjacentIssue, issuesOf } from "../lib/issues";
 import { rageTaps, recentTaps, tapsOf } from "../lib/taps";
@@ -95,23 +96,18 @@ const issueIndex = computed(
   () => issues.value.filter((issue) => issue.t <= issueAnchor.value + 400).length,
 );
 
-const view = useStorage<PlayerView>("capuchoo.recording.view", "screen");
-/** A table needs width the phone screen does not, so each view keeps its own split. */
-const shares = useStorage<Record<PlayerView, number>>(
-  "capuchoo.recording.split",
-  { screen: 62, data: 72, both: 72 },
-  undefined,
-  { mergeDefaults: true },
-);
-const stageShare = computed(() => shares.value[view.value]);
-const stagePanel = useTemplateRef<{ resize: (size: number) => void }>("stagePanel");
+const panel = useStorage("capuchoo.recording.panel", true);
+const inspectorTab = useStorage<InspectorTab>("capuchoo.recording.tab", "activity");
+if (!isInspectorTab(inspectorTab.value)) inspectorTab.value = "activity";
 
-function rememberShare(size: number) {
-  shares.value = { ...shares.value, [view.value]: Math.round(size) };
-}
-
-watch(view, () => stagePanel.value?.resize(stageShare.value), { flush: "post" });
-const dataFocus = ref<{ db: string; table: string } | null>(null);
+useCollapsedSidebar();
+const workspace = useTemplateRef<HTMLElement>("workspace");
+const { stageStyle } = useStageLayout({
+  workspace,
+  viewport: player.viewport,
+  fallback: computed(() => session.value?.device?.screen ?? null),
+  panel,
+});
 const loadedRatio = computed(() =>
   events.total.value === 0 ? 1 : events.loaded.value / events.total.value,
 );
@@ -165,17 +161,17 @@ function goToIssue(direction: 1 | -1) {
   toast(target.label.split(/\r?\n/)[0] ?? "Issue", { duration: 2500 });
 }
 
-function openTable(db: string, table: string) {
-  dataFocus.value = { db, table };
-  if (view.value === "screen") view.value = "both";
-}
-
 usePlayerShortcuts({
   toggle,
   seekBy: (ms) => seekOffset(player.time.value + ms),
   issue: goToIssue,
   view: (next) => {
-    view.value = next;
+    if (next === "screen") {
+      panel.value = !panel.value;
+      return;
+    }
+    panel.value = true;
+    if (next === "data") inspectorTab.value = "data";
   },
   follow: jumpLive,
 });
@@ -236,7 +232,7 @@ async function remove() {
 
 <template>
   <div
-    class="flex h-[calc(100svh-4rem)] min-h-[600px] flex-col gap-3 px-4 pt-4 pb-3 md:h-[calc(100svh-5rem)] md:px-6"
+    class="flex min-h-[calc(100svh-4rem)] flex-col gap-2 px-3 pt-2 pb-3 md:px-4 lg:h-[calc(100svh-5rem)] lg:min-h-[560px]"
   >
     <EmptyState
       v-if="missing"
@@ -255,14 +251,14 @@ async function remove() {
       :error="detail.error.value"
       :retry="detail.refetch"
     />
-    <div v-else-if="!session" class="flex flex-1 flex-col gap-3" aria-busy="true">
-      <Skeleton class="h-12 w-96 max-w-full" />
+    <div v-else-if="!session" class="flex flex-1 flex-col gap-2" aria-busy="true">
+      <Skeleton class="h-10 w-96 max-w-full" />
       <Skeleton class="min-h-0 flex-1" />
-      <Skeleton class="h-24" />
+      <Skeleton class="h-20" />
     </div>
     <template v-else>
-      <SessionHeader
-        v-model:view="view"
+      <PlayerToolbar
+        v-model:panel="panel"
         :session="session"
         :time="player.time.value"
         @remove="removeOpen = true"
@@ -270,69 +266,55 @@ async function remove() {
         @copy-report="copyReport"
       />
 
-      <ResizablePanelGroup
-        direction="horizontal"
-        class="min-h-0 flex-1 overflow-hidden rounded-xl border"
+      <div
+        ref="workspace"
+        class="bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border lg:flex-row"
       >
-        <ResizablePanel
-          ref="stagePanel"
-          :default-size="stageShare"
-          :min-size="35"
-          @resize="rememberShare"
+        <section
+          :class="[
+            'flex min-h-0 min-w-0 shrink-0 flex-col',
+            panel
+              ? 'h-[56svh] border-b lg:h-auto lg:border-r lg:border-b-0'
+              : 'h-[72svh] flex-1 lg:h-auto',
+          ]"
+          :style="stageStyle"
+          aria-label="Screen"
         >
-          <div
-            :class="[
-              'grid h-full min-h-0',
-              view === 'both' ? 'grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' : 'grid-cols-1',
-            ]"
-          >
-            <div v-show="view !== 'data'" class="min-h-0 min-w-0">
-              <ReplayStage
-                ref="stageView"
-                :state="player.state.value"
-                :viewport="player.viewport.value"
-                :scale="player.scale.value"
-                :has-screen="hasScreen"
-                :loaded="events.loaded.value"
-                :total="events.total.value"
-                :live="live && followLive"
-                :taps="ripples"
-                :playhead="playhead"
-              />
-            </div>
-            <div
-              v-show="view !== 'screen'"
-              :class="['min-h-0 min-w-0', view === 'both' && 'border-l']"
-            >
-              <KeepAlive>
-                <DataView
-                  v-if="view !== 'screen'"
-                  v-model:focus="dataFocus"
-                  :lanes="events.lanes.value"
-                  :playhead="playhead"
-                  :origin="bounds.start"
-                  @seek="seekWall"
-                />
-              </KeepAlive>
-            </div>
-          </div>
-        </ResizablePanel>
-        <ResizableHandle with-handle />
-        <ResizablePanel :default-size="100 - stageShare" :min-size="20">
+          <ReplayStage
+            ref="stageView"
+            :state="player.state.value"
+            :viewport="player.viewport.value"
+            :scale="player.scale.value"
+            :has-screen="hasScreen"
+            :loaded="events.loaded.value"
+            :total="events.total.value"
+            :live="live && followLive"
+            :taps="ripples"
+            :playhead="playhead"
+          />
+        </section>
+        <section
+          v-show="panel"
+          class="flex min-h-[60svh] min-w-0 flex-1 flex-col lg:min-h-0"
+          aria-label="Inspector"
+        >
           <InspectorPanel
             v-model:follow="followList"
+            v-model:tab="inspectorTab"
             :lanes="events.lanes.value"
             :playhead="playhead"
             :origin="bounds.start"
             :rage="rage"
             :version="session.version_name"
             @seek="seekWall"
-            @open-table="openTable"
           />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        </section>
+      </div>
 
-      <section class="bg-card space-y-2 rounded-xl border px-3 pt-2 pb-3" aria-label="Playback">
+      <section
+        class="bg-card rounded-xl border px-3 pt-1.5 pb-2 max-lg:sticky max-lg:bottom-2 max-lg:z-20 max-lg:shadow-lg"
+        aria-label="Playback"
+      >
         <TransportBar
           :playing="player.playing.value"
           :time="player.time.value"

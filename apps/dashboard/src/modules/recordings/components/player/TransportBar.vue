@@ -51,19 +51,21 @@ const SHORTCUTS: Array<[string[], string]> = [
   [["Space"], "Play or pause"],
   [["←", "→"], "Back or forward 5 s (with Shift, 30 s)"],
   [["N", "P"], "Next or previous issue"],
-  [["S", "D", "B"], "Screen, data, or both"],
+  [["S"], "Hide or show the inspector"],
+  [["D"], "Open the data tables"],
+  [["B"], "Bring the inspector back"],
   [["F"], "Follow a live session"],
 ];
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
     <div class="flex items-center gap-1">
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            size="icon"
-            class="rounded-full"
+            size="icon-sm"
+            class="size-8 rounded-full"
             :aria-label="props.playing ? 'Pause' : 'Play'"
             @click="emit('toggle')"
           >
@@ -123,7 +125,7 @@ const SHORTCUTS: Array<[string[], string]> = [
       </Button>
     </div>
 
-    <div class="ml-auto flex flex-wrap items-center gap-3">
+    <div class="ml-auto flex flex-wrap items-center gap-2">
       <Button
         v-if="props.live"
         :variant="props.following ? 'default' : 'outline'"
@@ -149,7 +151,11 @@ const SHORTCUTS: Array<[string[], string]> = [
         :model-value="String(props.speed)"
         @update:model-value="emit('speed', Number($event))"
       >
-        <SelectTrigger size="sm" class="w-20 font-mono text-xs" aria-label="Playback speed">
+        <SelectTrigger
+          size="sm"
+          class="h-7 w-[4.5rem] font-mono text-xs"
+          aria-label="Playback speed"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

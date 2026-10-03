@@ -6,7 +6,26 @@ import type { Lanes } from "../types/recordings.types";
 type ReplayEvent = Lanes["replay"][number];
 
 const FULL_SNAPSHOT = 2;
+const INCREMENTAL = 3;
 const META = 4;
+const SOURCE_VIEWPORT_RESIZE = 4;
+
+interface SizeAt {
+  t: number;
+  width: number;
+  height: number;
+}
+
+/** The viewport an event announces: a meta event, or a viewport resize. */
+function sizeOf(event: ReplayEvent): SizeAt | null {
+  const data = event.data as { source?: number; width?: number; height?: number } | null;
+  const announces =
+    event.type === META || (event.type === INCREMENTAL && data?.source === SOURCE_VIEWPORT_RESIZE);
+  if (!announces || typeof data?.width !== "number" || typeof data.height !== "number") {
+    return null;
+  }
+  return { t: event.timestamp, width: data.width, height: data.height };
+}
 
 export type ReplayerState = "waiting" | "loading" | "ready" | "failed";
 
@@ -52,6 +71,51 @@ export function useReplayer(input: {
   let following = false;
   /** The offset rrweb was last paused at, so holding a frame does not re-seek every tick. */
   let heldAt: number | null = null;
+  /**
+   * Every size the app's viewport had, in time order. rrweb does not re-apply a viewport resize when
+   * it jumps to a moment, so a phone that started sideways stayed sideways; the player sets the size
+   * for the playhead itself.
+   */
+  const sizes: SizeAt[] = [];
+
+  function noteSizes(events: readonly ReplayEvent[]) {
+    for (const event of events) {
+      const size = sizeOf(event);
+      if (!size) continue;
+      let index = sizes.length;
+      while (index > 0 && sizes[index - 1]!.t > size.t) index--;
+      sizes.splice(index, 0, size);
+    }
+  }
+
+  function sizeAt(wall: number): SizeAt | null {
+    let found: SizeAt | null = sizes[0] ?? null;
+    for (const size of sizes) {
+      if (size.t > wall) break;
+      found = size;
+    }
+    return found;
+  }
+
+  /** Gives the replay the viewport the app had at the playhead, whatever rrweb last announced. */
+  function applySize() {
+    const size = sizeAt(origin + time.value);
+    if (!size) return;
+    const iframe = replayer.value?.iframe;
+    const width = String(size.width);
+    const height = String(size.height);
+    if (
+      iframe &&
+      (iframe.getAttribute("width") !== width || iframe.getAttribute("height") !== height)
+    ) {
+      iframe.setAttribute("width", width);
+      iframe.setAttribute("height", height);
+    }
+    const current = viewport.value;
+    if (current && current.width === size.width && current.height === size.height) return;
+    viewport.value = { width: size.width, height: size.height };
+    fit();
+  }
 
   function fit() {
     const stage = input.stage.value;
@@ -80,6 +144,7 @@ export function useReplayer(input: {
     if (heldAt === offset) return;
     heldAt = offset;
     replayer.value?.pause(offset);
+    applySize();
   }
 
   /** Puts the screen where the playhead is: playing inside its span, held at an edge outside it. */
@@ -118,6 +183,7 @@ export function useReplayer(input: {
       return;
     }
     if (!following) engage();
+    applySize();
     frame = requestAnimationFrame(tick);
   }
 
@@ -148,11 +214,17 @@ export function useReplayer(input: {
         anchor(time.value);
       });
       player.on("resize", (payload) => {
+        if (sizes.length > 0) {
+          queueMicrotask(applySize);
+          return;
+        }
         const { width, height } = payload as { width: number; height: number };
         viewport.value = { width, height };
         fit();
       });
       replayer.value = player;
+      noteSizes(events);
+      noteSizes(pending);
       for (const event of pending) player.addEvent(event as never);
       pending = [];
       const meta = events.find((event) => event.type === META)?.data as
@@ -189,7 +261,9 @@ export function useReplayer(input: {
     push(events: ReplayEvent[]) {
       const player = replayer.value;
       if (player) {
+        noteSizes(events);
         for (const event of events) player.addEvent(event as never);
+        if (!playing.value) applySize();
         return;
       }
       pending.push(...events);
@@ -250,6 +324,7 @@ export function useReplayer(input: {
       frame = 0;
       following = false;
       heldAt = null;
+      sizes.length = 0;
       replayer.value?.destroy();
       replayer.value = null;
       pending = [];

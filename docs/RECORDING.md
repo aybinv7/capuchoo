@@ -166,15 +166,20 @@ within the recording retention are purged.
 
 ## The player
 
-The screen, an inspector (activity, console, network, database, telemetry, performance) and a
-timeline with a lane per track and markers for errors, failed requests, rage taps and reports.
+The screen and an inspector side by side, a timeline underneath. The app's sidebar folds while a
+replay is open. The screen's column is as wide as the recorded viewport needs at the full height
+available - a portrait phone gets a tall narrow column, a tablet a wide one - and the inspector
+takes the rest; below 1024 px they stack, with playback pinned to the bottom. The replay follows
+every viewport the app reported, so a phone that started sideways turns upright when it did.
 
-- **Data view:** each table as a grid at the playhead - inserted rows green, updated rows amber with
-  the changed cells marked and their previous value on hover, deleted rows red - with a change log
-  that seeks. It opens on the table the session wrote to most.
-- **Taps** ripple on the replay; three within 800 ms and 40 px are a rage tap.
-- **Keys:** Space plays, ←/→ step 5 s (Shift 30 s), N/P jump between issues, S/D/B pick screen, data
-  or both, F follows a live session.
+- **Inspector tabs:** Activity (the story: navigation, taps, errors, requests, and each burst of
+  database writes as one line), Console, Network, Database, Telemetry, Performance, and **Data** -
+  each table at the playhead, inserted rows green, updated rows amber with the changed cells marked
+  and their previous value on hover, deleted rows red, with a change log that seeks.
+- **Toolbar:** one row - the device, how the session started, version and channel, a details card,
+  the user's note, sharing.
+- **Keys:** Space plays, ←/→ step 5 s (Shift 30 s), N/P jump between issues, S hides or shows the
+  inspector, D opens the data tables, B brings the inspector back, F follows a live session.
 - **Share:** a link that opens the replay at the current moment (`?t=`), or a Markdown bug report
   with the device, build, note and every issue linked to its moment.
 

@@ -6,8 +6,8 @@ const props = defineProps<{ tracks: readonly TimelineTrack[] }>();
 </script>
 
 <template>
-  <div class="flex flex-col gap-[3px]">
-    <div v-for="track in props.tracks" :key="track.key" class="flex h-2.5 items-center gap-2">
+  <div class="flex flex-col gap-0.5">
+    <div v-for="track in props.tracks" :key="track.key" class="flex h-2 items-center gap-2">
       <span
         class="text-muted-foreground hidden w-16 shrink-0 text-right text-[10px] leading-none md:block"
         >{{ track.label }}</span

@@ -74,21 +74,7 @@ export function buildActivity(
       detail: entry.error ?? `${entry.status ?? "—"} · ${entry.duration} ms`,
     });
   }
-  for (const entry of lanes.database) {
-    const tables = [...new Set(entry.changes.map((change) => change.table))];
-    const title =
-      entry.kind === "change"
-        ? `${entry.type ?? "write"} ${entry.table ?? ""}`.trim()
-        : `${entry.changes.length} ${entry.changes.length === 1 ? "row" : "rows"} in ${tables.join(", ") || "?"}`;
-    items.push({
-      id: entry.id,
-      t: entry.t,
-      lane: "database",
-      tone: entry.error ? "danger" : "success",
-      title,
-      detail: entry.error ?? entry.db,
-    });
-  }
+  items.push(...databaseActivity(lanes.database));
   for (const entry of lanes.telemetry) {
     if (entry.kind === "span-start") continue;
     items.push({
@@ -102,6 +88,65 @@ export function buildActivity(
   }
 
   return items.sort((a, b) => a.t - b.t);
+}
+
+/** Writes this close together read as one burst: a seed, a sync, one screen saving its form. */
+const BURST_GAP_MS = 1000;
+
+/**
+ * One line per burst of writes rather than per transaction: a sync that writes a hundred rows is one
+ * thing that happened. The line opens the burst's first write.
+ */
+export function databaseActivity(entries: Lanes["database"]): ActivityItem[] {
+  const items: ActivityItem[] = [];
+  let burst: Lanes["database"] = [];
+
+  const close = () => {
+    const first = burst[0];
+    if (!first) return;
+    const tables = new Set<string>();
+    const ops = { insert: 0, update: 0, delete: 0 };
+    let rows = 0;
+    for (const entry of burst) {
+      if (entry.kind === "change") {
+        if (entry.table) tables.add(entry.table);
+        rows += entry.rows ?? 1;
+        continue;
+      }
+      for (const change of entry.changes) {
+        tables.add(change.table);
+        ops[change.op] += 1;
+        rows += 1;
+      }
+    }
+    const names = [...tables];
+    const shown = names.slice(0, 3).join(", ") + (names.length > 3 ? ` +${names.length - 3}` : "");
+    const summary = [
+      ops.insert ? `+${ops.insert}` : null,
+      ops.update ? `~${ops.update}` : null,
+      ops.delete ? `−${ops.delete}` : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const failed = burst.find((entry) => entry.error);
+    items.push({
+      id: first.id,
+      t: first.t,
+      lane: "database",
+      tone: failed ? "danger" : "success",
+      title: `${rows} ${rows === 1 ? "row" : "rows"} written · ${shown || first.db}`,
+      detail: failed?.error ?? (summary || first.db),
+    });
+    burst = [];
+  };
+
+  for (const entry of entries) {
+    const last = burst[burst.length - 1];
+    if (last && (entry.db !== last.db || entry.t - last.t > BURST_GAP_MS)) close();
+    burst.push(entry);
+  }
+  close();
+  return items;
 }
 
 /** `m:ss` from the start of the timeline, `h:mm:ss` past an hour. */
