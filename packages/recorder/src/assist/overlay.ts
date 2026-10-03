@@ -24,7 +24,7 @@ button { flex: 1; min-height: 44px; border-radius: 12px; border: 0; font-size: 1
 .banner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: pulse 1.4s ease-in-out infinite; }
 .banner button { flex: none; min-height: 30px; padding: 0 14px; border-radius: 999px; background: #fff; color: var(--banner); font-size: 13px; }
-.pointer { position: absolute; left: 0; top: 0; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%;
+.pointer { pointer-events: none; position: absolute; left: 0; top: 0; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%;
   border: 3px solid var(--accent); background: rgb(255 255 255 / 0.25); box-shadow: 0 0 0 4px rgb(0 0 0 / 0.15);
   transition: transform 90ms linear, opacity 160ms; opacity: 0; }
 .pointer.on { opacity: 1; }

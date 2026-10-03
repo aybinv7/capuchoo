@@ -142,6 +142,27 @@ describe("assist", () => {
     expect(answer.assist.ticket).toMatch(/^[\w-]{43}$/);
   });
 
+  it("answers a request whose policy lookup was still running when the agent asked", async () => {
+    const { policy } = await (await askPolicy()).json();
+    const realGet = ctx.deps.cache.get.bind(ctx.deps.cache);
+    let slowed = false;
+    ctx.deps.cache.get = (async (...args: Parameters<typeof realGet>) => {
+      if (!slowed) {
+        slowed = true;
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+      return realGet(...args);
+    }) as typeof ctx.deps.cache.get;
+    const started = Date.now();
+    const held = askPolicy({ known: policy.version, wait: 10, assist_seen: "an-earlier-session" });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const session = (await (await startAssist()).json()).session;
+    const answer = await (await held).json();
+    ctx.deps.cache.get = realGet;
+    expect(answer.assist?.session).toBe(session.id);
+    expect(Date.now() - started).toBeLessThan(3000);
+  });
+
   it("keeps holding a device's request once it has the invite, instead of repeating it", async () => {
     const { policy } = await (await askPolicy()).json();
     const session = (await (await startAssist()).json()).session;
