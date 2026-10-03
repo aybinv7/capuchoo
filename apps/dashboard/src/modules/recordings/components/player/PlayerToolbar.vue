@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Ellipsis,
   FileText,
+  FlaskConical,
   History,
   Link,
   MessageSquareQuote,
@@ -17,6 +18,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,7 +31,7 @@ import PlayerLiveControl from "./PlayerLiveControl.vue";
 import SessionFacts from "./SessionFacts.vue";
 
 const props = defineProps<{ appId: string; session: RecordingSession; time: number }>();
-const emit = defineEmits<{ remove: []; copyLink: []; copyReport: [] }>();
+const emit = defineEmits<{ remove: []; copyLink: []; copyReport: []; exportTest: [] }>();
 </script>
 
 <template>
@@ -99,6 +101,12 @@ const emit = defineEmits<{ remove: []; copyLink: []; copyReport: [] }>();
           <DropdownMenuItem @select="emit('copyReport')">
             <FileText />
             Copy bug report (Markdown)
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem @select="emit('exportTest')">
+            <FlaskConical />
+            Export as a test
+            <DropdownMenuShortcut>E</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

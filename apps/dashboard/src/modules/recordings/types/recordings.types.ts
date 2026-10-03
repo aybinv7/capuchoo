@@ -1,4 +1,5 @@
 import type {
+  RecordedStep,
   RECORDING_LIMITS,
   RecorderHealth,
   RecordingDeviceFacts,
@@ -154,6 +155,12 @@ export interface PerfLaneEntry extends LaneEntry {
   name: string | null;
 }
 
+/** One thing the user did, with every way a test could find its element again. */
+export interface StepLaneEntry extends LaneEntry {
+  step: RecordedStep;
+  label: string;
+}
+
 export interface MarkerLaneEntry extends LaneEntry {
   kind: string;
   label: string;
@@ -168,6 +175,7 @@ export interface Lanes {
   telemetry: TelemetryLaneEntry[];
   perf: PerfLaneEntry[];
   markers: MarkerLaneEntry[];
+  steps: StepLaneEntry[];
   /** Table name to columns, per database, from the schema each source announced. */
   schemas: Record<string, Record<string, DatabaseColumn[]>>;
   /** Starting state per database and table, assembled from snapshot chunks. */

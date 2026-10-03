@@ -167,7 +167,7 @@ const detail = computed(() => {
 });
 
 function openFromActivity(item: ActivityItem) {
-  const lane = item.lane === "marker" ? null : item.lane;
+  const lane = item.lane === "marker" || item.lane === "step" ? null : item.lane;
   if (!lane) return;
   tab.value = lane;
   selected.value = { tab: lane, id: item.id };

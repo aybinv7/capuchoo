@@ -14,6 +14,7 @@ import ErrorNotice from "@/shared/components/ErrorNotice.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
 import { useBreadcrumbLabel } from "@/shared/layouts/composables/useBreadcrumbLabel";
 import { RouteName } from "@/shared/router/route-names";
+import ExportTestDialog from "../components/export/ExportTestDialog.vue";
 import InspectorPanel from "../components/inspector/InspectorPanel.vue";
 import ReplayStage from "../components/player/ReplayStage.vue";
 import InspectorToggle from "../components/player/InspectorToggle.vue";
@@ -116,6 +117,7 @@ const loadedRatio = computed(() =>
 );
 
 const followList = ref(true);
+const exportOpen = ref(false);
 const followLive = ref(false);
 const live = computed(() => session.value?.live ?? false);
 
@@ -177,6 +179,9 @@ usePlayerShortcuts({
     if (next === "data") inspectorTab.value = "data";
   },
   follow: jumpLive,
+  exportTest: () => {
+    exportOpen.value = true;
+  },
 });
 
 const { copy } = useClipboard({ legacy: true });
@@ -267,6 +272,7 @@ async function remove() {
         @remove="removeOpen = true"
         @copy-link="copyLink"
         @copy-report="copyReport"
+        @export-test="exportOpen = true"
       />
 
       <div
@@ -345,6 +351,15 @@ async function remove() {
         />
       </section>
 
+      <ExportTestDialog
+        v-model:open="exportOpen"
+        :app-id="appId"
+        :session="session"
+        :lanes="events.lanes.value"
+        :bounds="bounds"
+        :viewport="player.shape.value ?? player.viewport.value"
+        :time="player.time.value"
+      />
       <ConfirmDialog
         v-model:open="removeOpen"
         title="Delete this recording?"

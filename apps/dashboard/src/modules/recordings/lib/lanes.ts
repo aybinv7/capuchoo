@@ -1,4 +1,5 @@
-import type { RecordedEvent } from "@capuchoo/core";
+import { parseRecordedStep, type RecordedEvent } from "@capuchoo/core";
+import { stepLabel } from "./steps";
 import { decodeChangeset, fromBase64, type ChangeValue, type DecodedChange } from "./changeset";
 import type {
   ConsoleLaneEntry,
@@ -8,6 +9,7 @@ import type {
   MarkerLaneEntry,
   NetworkLaneEntry,
   PerfLaneEntry,
+  StepLaneEntry,
   TelemetryLaneEntry,
 } from "../types/recordings.types";
 
@@ -34,6 +36,7 @@ export function emptyLanes(): Lanes {
     telemetry: [],
     perf: [],
     markers: [],
+    steps: [],
     schemas: {},
     snapshots: {},
   };
@@ -250,6 +253,18 @@ export function appendToLanes(
         return;
       case "marker": {
         const kind = text(data.kind) ?? "marker";
+        if (kind === "step") {
+          const step = parseRecordedStep(data);
+          if (step) {
+            sortedInsert<StepLaneEntry>(lanes.steps, {
+              id,
+              t: event.t,
+              step,
+              label: stepLabel(step),
+            });
+          }
+          return;
+        }
         sortedInsert<MarkerLaneEntry>(lanes.markers, {
           id,
           t: event.t,

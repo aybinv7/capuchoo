@@ -4,7 +4,7 @@ import type { LaneTone } from "./tones";
 export interface ActivityItem {
   id: string;
   t: number;
-  lane: "console" | "network" | "database" | "telemetry" | "marker";
+  lane: "console" | "network" | "database" | "telemetry" | "marker" | "step";
   tone: LaneTone;
   title: string;
   detail: string | null;
@@ -51,6 +51,16 @@ export function buildActivity(
       tone: marker.kind === "trigger" || marker.kind === "escalate" ? "primary" : "muted",
       title: marker.label,
       detail: typeof marker.data.note === "string" ? marker.data.note : null,
+    });
+  }
+  for (const entry of lanes.steps) {
+    items.push({
+      id: entry.id,
+      t: entry.t,
+      lane: "step",
+      tone: "info",
+      title: entry.label,
+      detail: null,
     });
   }
   for (const entry of lanes.console) {

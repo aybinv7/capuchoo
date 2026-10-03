@@ -6,6 +6,7 @@ import {
   type LucideIcon,
   MapPin,
   SquareTerminal,
+  Pointer,
 } from "@lucide/vue";
 import type { ActivityItem } from "../../lib/activity";
 
@@ -15,6 +16,7 @@ export const LANE_ICONS: Record<ActivityItem["lane"], LucideIcon> = {
   database: Database,
   telemetry: Activity,
   marker: Flag,
+  step: Pointer,
 };
 
 export const MARKER_ICON = MapPin;

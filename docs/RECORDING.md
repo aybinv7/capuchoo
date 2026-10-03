@@ -131,9 +131,10 @@ the database opens. A router that keeps its own stack (Framework7) marks navigat
 `recorder.telemetry.adapter` plugs into `@sig/telemetry` as one of its adapters.
 
 Elements marked `data-capuchoo-mask` have their text masked, `data-capuchoo-block` are recorded as
-empty boxes, `data-capuchoo-ignore` inputs are not recorded. Network `traceparent` propagation is
-opt-in per URL (`network.propagateTrace`), because a server that does not allow the header fails its
-CORS preflight.
+empty boxes, `data-capuchoo-ignore` inputs are not recorded, nor are they steps. Give the controls
+tests will drive a `data-testid` (or `data-test`, `data-cy`, `data-qa`): an exported test finds them
+by it first. Network `traceparent` propagation is opt-in per URL (`network.propagateTrace`), because
+a server that does not allow the header fails its CORS preflight.
 
 ## Source maps
 
@@ -169,14 +170,14 @@ within the recording retention are purged.
 The screen and an inspector side by side, a timeline underneath. The app's sidebar folds while a
 replay is open. The screen's column is as wide as the recorded viewport needs at the full height
 available - a portrait phone gets a tall narrow column, a tablet a wide one - and the inspector
-takes the rest; below 1024 px they stack, with playback pinned to the bottom. The column follows
-the viewport the app held longest, so a phone that reports landscape for a moment while it unlocks
-does not reshape the page; the replay itself follows every viewport the app reported.
+takes the rest; below 1024 px they stack, with playback pinned to the bottom. The column follows the
+viewport the app held longest, so a phone that reports landscape for a moment while it unlocks does
+not reshape the page; the replay itself follows every viewport the app reported.
 
-- **Playback:** one row - play, ±10 s, the time, a LIVE badge on a live session - then the
-  scrubber, whose rail carries every issue and the markers that explain the recording (hover names
-  them), then the issue navigator, speed, skip idle and the activity lanes toggle. The lanes sit
-  under the rail, labelled, and are hidden below 768 px.
+- **Playback:** one row - play, ±10 s, the time, a LIVE badge on a live session - then the scrubber,
+  whose rail carries every issue and the markers that explain the recording (hover names them), then
+  the issue navigator, speed, skip idle and the activity lanes toggle. The lanes sit under the rail,
+  labelled, and are hidden below 768 px.
 
 - **Inspector tabs:** Activity (the story: navigation, taps, errors, requests, and each burst of
   database writes as one line), Console, Network, Database, Telemetry, Performance, and **Data** -
@@ -188,9 +189,37 @@ does not reshape the page; the replay itself follows every viewport the app repo
   while a live window is open the button waits, then becomes Watch live. The inspector's own tab
   strip hides it; a button on the screen brings it back.
 - **Keys:** Space plays, ←/→ step 5 s (Shift 30 s), N/P jump between issues, S hides or shows the
-  inspector, D opens the data tables, B brings the inspector back, F follows a live session.
+  inspector, D opens the data tables, B brings the inspector back, F follows a live session, E
+  exports the steps as a test.
 - **Share:** a link that opens the replay at the current moment (`?t=`), or a Markdown bug report
   with the device, build, note and every issue linked to its moment.
+
+## Steps and tests
+
+With the replay track the recorder also records **steps**: a tap on a control, the value a field was
+left with (on `change`, so once per field, not per key), a toggle, a choice, Enter. Each travels as
+a `marker` line with `kind: "step"`, so an older server or dashboard stores and ignores it. While
+the element is still on the page the recorder works out every way to find it again - test id, stable
+id (generated ones like `f7-…` or `ember123` are refused), role and accessible name, its own short
+text, and a unique CSS path - and whether each alone finds exactly that element. Only trusted events
+count: app code calling `.click()` and remote control are not the user. A masked field (password,
+`maskAllInputs`, inside `data-capuchoo-mask`) yields its step without its value; text inside a
+masked region is never read. `replay.steps: false` turns it off.
+
+Activity lists the steps in words, and **Share → Export as a test** (E) writes a stretch of them as:
+
+| Format          | Finds elements by                                      | Masked values            | Recorded responses      |
+| --------------- | ------------------------------------------------------ | ------------------------ | ----------------------- |
+| Cypress         | test id or stable id, else exact unique text, else CSS | `Cypress.env(NAME)`      | `cy.intercept` per call |
+| Playwright      | `getByTestId`, stable id, role + name, exact text, CSS | `process.env.NAME`       | `page.route` per method |
+| Chrome Recorder | every alternative, best first; the player tries each   | left empty, with warning | not in the format       |
+| Capubridge      | the best CSS selector, on the real phone               | typed empty, warning     | the phone calls the API |
+
+A route a step led to within 5 s becomes a check. Cypress and Playwright run the app's web build in
+a browser: Capacitor plugins, the native database and the phone are not there, so an export is a
+strong start, not a finished test. Capubridge replays on the installed app instead; it cannot open a
+URL, so its flow starts where the app opens. Sessions recorded before steps existed replay but do
+not export.
 
 ## Operations
 

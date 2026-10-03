@@ -1,5 +1,6 @@
 import { record } from "@rrweb/record";
 import type { Track, TrackContext } from "../recorder/types.js";
+import { watchSteps } from "./steps/watch-steps.js";
 
 export interface ReplayOptions {
   /** Masks every input's value. Passwords are masked regardless. Default `false`. */
@@ -15,6 +16,8 @@ export interface ReplayOptions {
   /** DOM changes per second above which recording pauses for `cooldownMs`. Default 8000. */
   mutationLimit?: number;
   cooldownMs?: number;
+  /** Records taps and typed values as steps a test can be generated from. Default `true`. */
+  steps?: boolean;
 }
 
 const EVENT_INCREMENTAL = 3;
@@ -68,6 +71,7 @@ export function createReplayTrack(options: ReplayOptions = {}): ReplayTrack {
   const limit = options.mutationLimit ?? 8000;
   const cooldownMs = options.cooldownMs ?? 5000;
   let stopRecording: (() => void) | undefined;
+  let stopSteps: (() => void) | undefined;
   let context: TrackContext | null = null;
   let windowStart = 0;
   let windowWeight = 0;
@@ -141,12 +145,21 @@ export function createReplayTrack(options: ReplayOptions = {}): ReplayTrack {
       if (stopRecording || resumeTimer) return;
       context = ctx;
       begin(ctx);
+      if (options.steps !== false) {
+        stopSteps = watchSteps((step) => ctx.push("marker", step), {
+          maskAllInputs: options.maskAllInputs ?? false,
+          maskTextSelector: options.maskTextSelector ?? "[data-capuchoo-mask]",
+          ignoreSelector: options.ignoreSelector ?? "[data-capuchoo-ignore]",
+        });
+      }
     },
     stop() {
       if (resumeTimer !== null) clearTimeout(resumeTimer);
       resumeTimer = null;
       stopRecording?.();
       stopRecording = undefined;
+      stopSteps?.();
+      stopSteps = undefined;
       context = null;
     },
     checkout() {

@@ -6,6 +6,7 @@ export interface PlayerShortcuts {
   issue: (direction: 1 | -1) => void;
   view: (view: "screen" | "data" | "both") => void;
   follow: () => void;
+  exportTest: () => void;
 }
 
 /** The player's keys, ignored while the user is typing or driving another control. */
@@ -15,7 +16,9 @@ export function usePlayerShortcuts(actions: PlayerShortcuts): void {
     const target = event.target;
     if (
       target instanceof Element &&
-      target.closest("input, textarea, select, [contenteditable], [role=slider], [role=menu]")
+      target.closest(
+        "input, textarea, select, [contenteditable], [role=slider], [role=menu], [role=dialog]",
+      )
     ) {
       return;
     }
@@ -30,6 +33,7 @@ export function usePlayerShortcuts(actions: PlayerShortcuts): void {
       KeyD: () => actions.view("data"),
       KeyB: () => actions.view("both"),
       KeyF: actions.follow,
+      KeyE: actions.exportTest,
     };
     const handler = handlers[event.code];
     if (!handler) return;

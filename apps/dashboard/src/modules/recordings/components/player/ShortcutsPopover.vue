@@ -12,6 +12,7 @@ const SHORTCUTS: Array<[string[], string]> = [
   [["D"], "Open the data tables"],
   [["B"], "Bring the inspector back"],
   [["F"], "Follow a live session"],
+  [["E"], "Export the steps as a test"],
 ];
 </script>
 

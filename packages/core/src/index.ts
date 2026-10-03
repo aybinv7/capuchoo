@@ -272,6 +272,13 @@ export {
   type RecordingStart,
 } from "./recording-wire.js";
 export {
+  STEP_ACTIONS,
+  parseRecordedStep,
+  type RecordedStep,
+  type StepAction,
+  type StepTarget,
+} from "./recording-steps.js";
+export {
   RECORDING_ISSUE_LIMITS,
   issueOf,
   normaliseIssueMessage,

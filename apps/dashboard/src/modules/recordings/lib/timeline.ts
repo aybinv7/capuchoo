@@ -150,6 +150,7 @@ export function sessionBounds(lanes: Lanes, startedAt: number, endedAt: number):
     lanes.database,
     lanes.telemetry,
     lanes.markers,
+    lanes.steps,
   ]) {
     const head = lane[0];
     const tail = lane[lane.length - 1];
