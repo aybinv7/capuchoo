@@ -26,6 +26,10 @@ export const conflict = (message: string, reason = "conflict", details?: Record<
 export const tooLarge = (message: string) => new HttpError(413, message, "too_large");
 export const tooManyRequests = (retryAfterSeconds: number) =>
   new HttpError(429, "Too many requests", "rate_limited", { retry_after: retryAfterSeconds });
+export const serviceBusy = (retryAfterSeconds: number) =>
+  new HttpError(503, "The server is busy; try again shortly", "busy", {
+    retry_after: retryAfterSeconds,
+  });
 
 function pgCode(error: unknown): unknown {
   return typeof error === "object" && error !== null

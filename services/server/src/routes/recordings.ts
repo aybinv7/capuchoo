@@ -23,6 +23,7 @@ import { isUuid } from "../repositories/apps";
 import { writeAudit } from "../repositories/audit";
 import { findChannel, listChannels } from "../repositories/channels";
 import { findDeviceById } from "../repositories/devices";
+import { listRecorderHealth } from "../repositories/recorder-health";
 import { findAsset, listAssets } from "../repositories/recording-assets";
 import {
   deleteRule,
@@ -42,6 +43,9 @@ import { resolveDeviceChannel } from "../services/channel-resolution";
 import { cachedRules } from "../services/recording-policy";
 
 const RULE_BODY_BYTES = 16 * 1024;
+const HEALTH_LIST_LIMIT = 50;
+/** A device writes its health at least every five minutes while it runs. */
+const ONLINE_WINDOW_MS = 6 * 60_000;
 
 function parseCursor(raw: string | undefined): { startedAt: Date; id: string } | undefined {
   if (!raw) return undefined;
@@ -188,6 +192,32 @@ export function recordingRoutes(): Hono<AppEnv> {
       rules: rules.map(serializeRecordingRule),
       defaults: DEFAULT_RECORDING_POLICY,
       limits: RECORDING_LIMITS,
+    });
+  });
+
+  router.get("/apps/:id/recorder-health", async (c) => {
+    const deps = c.get("deps");
+    const access = await requireApp(
+      deps.db,
+      principal(c),
+      c.req.param("id"),
+      "viewer",
+      "Reading recorder health",
+    );
+    const rows = await listRecorderHealth(deps.db, access.app.id, HEALTH_LIST_LIMIT);
+    const now = deps.now().getTime();
+    return c.json({
+      devices: rows.map((row) => ({
+        device_id: row.device_id,
+        device_uuid: row.device_uuid,
+        custom_id: row.custom_id,
+        platform: row.platform,
+        version_name: row.version_name,
+        channel: row.channel,
+        health: row.health,
+        seen_at: row.seen_at.toISOString(),
+        online: now - row.seen_at.getTime() < ONLINE_WINDOW_MS,
+      })),
     });
   });
 

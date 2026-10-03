@@ -10,7 +10,8 @@ export function meteredBody(
   c: AppContext,
   maxBytes: number,
   magic: Buffer | null,
-  magicError = badRequest("The body is not in the expected format", "bad_format"),
+  magicError: () => Error = () =>
+    badRequest("The body is not in the expected format", "bad_format"),
 ): MeasuredStream {
   const declared = Number(c.req.header("content-length") ?? 0);
   if (declared > maxBytes) throw tooLarge(`The body exceeds ${Math.round(maxBytes / 1024)} KiB`);

@@ -8,7 +8,8 @@ export type HubEventType =
   | "device"
   | "artefact"
   | "recording"
-  | "recording_rule";
+  | "recording_rule"
+  | "recorder_health";
 
 export interface HubEvent {
   type: HubEventType;

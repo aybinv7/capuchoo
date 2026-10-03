@@ -8,6 +8,7 @@ import type { EventHub } from "../services/event-hub";
 import type { StorageDriver } from "../storage/driver";
 import type { RequestCache } from "../services/request-cache";
 import type { BackgroundTasks } from "../lib/background";
+import type { LoadGuard } from "../lib/load-guard";
 import type { CiRuntime } from "../services/ci-runtime";
 
 /** Everything a route needs, built once at boot and injected so tests can swap parts. */
@@ -19,6 +20,7 @@ export interface Deps {
   hub: EventHub;
   cache: RequestCache;
   tasks: BackgroundTasks;
+  load: LoadGuard;
   ci: CiRuntime;
   now: () => Date;
 }

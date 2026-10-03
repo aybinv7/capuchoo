@@ -103,9 +103,9 @@ export function createApp(deps: Deps): Hono<AppEnv> {
 
   app.onError((error, c) => {
     const http = toHttpError(error);
-    if (http.status >= 500)
+    if (http.status >= 500 && http.reason !== "busy")
       c.get("logger")?.error("request failed", { error, path: c.req.path, method: c.req.method });
-    if (http.status === 429 && http.details?.retry_after)
+    if ((http.status === 429 || http.status === 503) && http.details?.retry_after)
       c.header("retry-after", String(http.details.retry_after));
     return c.json(
       { error: http.message, reason: http.reason ?? "error", ...http.details },

@@ -212,6 +212,52 @@ describe("recording policy", () => {
     expect(removed.status).toBe(204);
     expect((await (await askPolicy()).json()).policy.mode).toBe("off");
   });
+
+  it("keeps the health each device reports, writing only what changed", async () => {
+    const published: HubEvent[] = [];
+    ctx.deps.hub.subscribe(appId, (event) => {
+      if (event.type === "recorder_health") published.push(event);
+    });
+    const health = {
+      recorder: "0.1.0",
+      mode: "buffer",
+      threaded: true,
+      storage: "opfs",
+      databases: [{ name: "app", state: "changesets" }],
+    };
+    const settled = async (count: number) => {
+      for (let attempt = 0; attempt < 50 && published.length < count; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    };
+
+    await askPolicy({ health });
+    await settled(1);
+    await askPolicy({ health });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(published).toHaveLength(1);
+
+    await askPolicy({
+      health: { ...health, databases: [{ name: "app", state: "unavailable", detail: "timeout" }] },
+    });
+    await settled(2);
+    expect(published).toHaveLength(2);
+
+    const listed = await (
+      await ctx.request(`/api/apps/${appId}/recorder-health`, { token: owner.token })
+    ).json();
+    expect(listed.devices).toHaveLength(1);
+    expect(listed.devices[0]).toMatchObject({
+      device_id: "tablet-1",
+      version_name: "3.0.1",
+      online: true,
+      health: {
+        threaded: true,
+        storage: "opfs",
+        databases: [{ name: "app", state: "unavailable", detail: "timeout" }],
+      },
+    });
+  });
 });
 
 describe("recording segments", () => {

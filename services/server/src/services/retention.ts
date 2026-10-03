@@ -2,6 +2,7 @@ import type { Deps } from "../http/context";
 import { expireStaleBuilds, expireStalePipelines } from "../repositories/builds";
 import { purgeDeviceEvents } from "../repositories/device-events";
 import { purgeExpiredSessions } from "../repositories/sessions";
+import { deleteRecorderHealthBefore } from "../repositories/recorder-health";
 import { purgeOrphanAssets } from "../repositories/recording-assets";
 import { purgeSessions as purgeRecordingSessions } from "../repositories/recording-sessions";
 
@@ -18,7 +19,8 @@ async function purgeRecordings(deps: Deps, cutoff: Date): Promise<number> {
       .delete(key)
       .catch((error: unknown) => deps.logger.warn("recording blob delete failed", { key, error }));
   }
-  return sessionKeys.length + assetKeys.length;
+  const health = await deleteRecorderHealthBefore(deps.db, cutoff);
+  return sessionKeys.length + assetKeys.length + health;
 }
 
 /** One pass of housekeeping: expired sessions, old telemetry, builds a crashed CLI never finished. */

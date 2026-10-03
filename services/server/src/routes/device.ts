@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import type { AppContext, AppEnv } from "../http/context";
 import { baseUrl, readJson } from "../http/body";
 import { badRequest, tooManyRequests } from "../lib/errors";
@@ -19,6 +19,8 @@ import { checkForUpdate } from "../services/update-check";
 
 const DEVICE_BODY_BYTES = 64 * 1024;
 
+const guarded: MiddlewareHandler<AppEnv> = (c, next) => c.get("deps").load.run(next);
+
 /** The endpoints installed apps call. Unauthenticated by design; bounded by size and rate. */
 export function deviceRoutes(): Hono<AppEnv> {
   const router = new Hono<AppEnv>();
@@ -31,7 +33,7 @@ export function deviceRoutes(): Hono<AppEnv> {
     return next();
   });
 
-  router.post("/update", async (c) => {
+  router.post("/update", guarded, async (c) => {
     const request = parseDeviceRequest(await readJson(c, DEVICE_BODY_BYTES));
     if (!request) throw badRequest("app_id and device_id are required");
     const wait = perDevice.take(`${request.appId}:${request.deviceId}`);
@@ -40,7 +42,7 @@ export function deviceRoutes(): Hono<AppEnv> {
     return c.json(result.response);
   });
 
-  router.post("/stats", async (c) => {
+  router.post("/stats", guarded, async (c) => {
     const body = await readJson<unknown>(c, DEVICE_BODY_BYTES * 4);
     const result = await recordEvents(c.get("deps"), body, { native: false });
     return c.json({ status: "success", ...result });

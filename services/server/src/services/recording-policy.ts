@@ -13,8 +13,20 @@ import { resolveDeviceChannel } from "./channel-resolution";
 
 export type DevicePolicyAnswer =
   | { status: "unknown_app" }
-  | { status: "unchanged"; version: string; appId: string; liveUntil: number | null }
-  | { status: "policy"; policy: ResolvedRecordingPolicy; knownAssets: string[] };
+  | {
+      status: "unchanged";
+      version: string;
+      appId: string;
+      deviceUuid: string | null;
+      liveUntil: number | null;
+    }
+  | {
+      status: "policy";
+      policy: ResolvedRecordingPolicy;
+      knownAssets: string[];
+      appId: string;
+      deviceUuid: string | null;
+    };
 
 export function cachedRules(deps: Deps, appId: string) {
   return deps.cache.get(`app:${appId}`, "recording-rules", () => listRules(deps.db, appId));
@@ -53,12 +65,18 @@ export async function policyForDevice(
     now: deps.now().getTime(),
   });
   if (request.known === policy.version) {
-    return { status: "unchanged", version: policy.version, appId, liveUntil: policy.liveUntil };
+    return {
+      status: "unchanged",
+      version: policy.version,
+      appId,
+      deviceUuid: device?.id ?? null,
+      liveUntil: policy.liveUntil,
+    };
   }
 
   const wantsAssets = policy.tracks.replay && (policy.mode !== "off" || policy.ceiling !== "off");
   const knownAssets = wantsAssets ? await cachedAssetPaths(deps, appId, request.versionName) : [];
-  return { status: "policy", policy, knownAssets };
+  return { status: "policy", policy, knownAssets, appId, deviceUuid: device?.id ?? null };
 }
 
 /**
@@ -71,9 +89,11 @@ export async function listenForPolicy(
   request: RecordingPolicyRequest,
   waitMs: number,
   signal: AbortSignal,
+  onFirstAnswer?: (answer: DevicePolicyAnswer) => void,
 ): Promise<DevicePolicyAnswer> {
   const deadline = Date.now() + waitMs;
   let answer = await policyForDevice(deps, request);
+  onFirstAnswer?.(answer);
   while (answer.status === "unchanged" && !signal.aborted) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) break;

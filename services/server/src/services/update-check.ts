@@ -171,65 +171,68 @@ export async function checkForUpdate(
 
   if (app) {
     const now = deps.now();
-    deps.tasks.run("device telemetry", () =>
-      upsertDevice(
-        deps.db,
-        {
-          appId: app.id,
-          deviceId: request.deviceId,
-          platform: request.platform,
-          customId: request.customId,
-          isProd: request.isProd,
-          isEmulator: request.isEmulator,
-          versionName: request.versionName === "builtin" ? undefined : request.versionName,
-          versionBuiltin: request.versionBuiltin ?? request.versionBuild,
-          versionCode: request.versionCode || undefined,
-          versionOs: request.versionOs,
-          pluginVersion: request.pluginVersion,
-          reportedChannel: requestedChannel(request),
-          channelId: channel?.id ?? null,
-          deviceName: request.deviceName,
-          manufacturer: request.manufacturer,
-          model: request.model,
-          memUsedBytes: request.memUsedBytes,
-          latitude: request.latitude,
-          longitude: request.longitude,
-          locationAccuracy: request.locationAccuracy,
-          attributes: request.attributes,
-        },
-        now,
-      ).then((row) =>
-        insertDeviceEvents(deps.db, [
+    deps.tasks.run(
+      "device telemetry",
+      () =>
+        upsertDevice(
+          deps.db,
           {
             appId: app.id,
-            deviceUuid: row.id,
+            deviceId: request.deviceId,
+            platform: request.platform,
+            customId: request.customId,
+            isProd: request.isProd,
+            isEmulator: request.isEmulator,
+            versionName: request.versionName === "builtin" ? undefined : request.versionName,
+            versionBuiltin: request.versionBuiltin ?? request.versionBuild,
+            versionCode: request.versionCode || undefined,
+            versionOs: request.versionOs,
+            pluginVersion: request.pluginVersion,
+            reportedChannel: requestedChannel(request),
             channelId: channel?.id ?? null,
-            kind: "check",
-            action: "check",
-            status: "check",
-            versionFrom: request.versionName,
-            versionTo:
-              decision.kind === "ota"
-                ? decision.release.version_name
-                : decision.kind === "native"
-                  ? decision.release.version_name
-                  : null,
-            details: { outcome: decision.kind, source },
+            deviceName: request.deviceName,
+            manufacturer: request.manufacturer,
+            model: request.model,
+            memUsedBytes: request.memUsedBytes,
+            latitude: request.latitude,
+            longitude: request.longitude,
+            locationAccuracy: request.locationAccuracy,
+            attributes: request.attributes,
           },
-        ]).then(() => {
-          publishDevice(deps, app.id, {
-            device_uuid: row.id,
-            device_id: row.device_id,
-            channel_id: row.channel_id,
-            event: "check",
-            status: decision.kind,
-            version: row.version_name,
-            version_code: row.version_code,
-            model: row.model,
-            at: now.toISOString(),
-          });
-        }),
-      ),
+          now,
+        ).then((row) =>
+          insertDeviceEvents(deps.db, [
+            {
+              appId: app.id,
+              deviceUuid: row.id,
+              channelId: channel?.id ?? null,
+              kind: "check",
+              action: "check",
+              status: "check",
+              versionFrom: request.versionName,
+              versionTo:
+                decision.kind === "ota"
+                  ? decision.release.version_name
+                  : decision.kind === "native"
+                    ? decision.release.version_name
+                    : null,
+              details: { outcome: decision.kind, source },
+            },
+          ]).then(() => {
+            publishDevice(deps, app.id, {
+              device_uuid: row.id,
+              device_id: row.device_id,
+              channel_id: row.channel_id,
+              event: "check",
+              status: decision.kind,
+              version: row.version_name,
+              version_code: row.version_code,
+              model: row.model,
+              at: now.toISOString(),
+            });
+          }),
+        ),
+      { droppable: true },
     );
   }
 

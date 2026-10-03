@@ -13,6 +13,8 @@ const schema = z
     DASHBOARD_URL: z.string().url().optional(),
     DATABASE_URL: z.string().min(1),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+    DEVICE_MAX_INFLIGHT: z.coerce.number().int().positive().default(256),
+    BACKGROUND_TASK_LIMIT: z.coerce.number().int().positive().default(1000),
     DATABASE_SSL: bool.optional(),
     MIGRATE_ON_BOOT: bool.default(true),
     SECRET_KEY: z.string().min(32, "SECRET_KEY must be at least 32 characters"),

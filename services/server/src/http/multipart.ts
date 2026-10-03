@@ -17,7 +17,8 @@ export class Meter extends Transform {
   constructor(
     private readonly maxBytes: number,
     private readonly magic: Buffer | null,
-    private readonly magicError = badRequest("The uploaded file is not a zip archive", "not_zip"),
+    private readonly magicError: () => Error = () =>
+      badRequest("The uploaded file is not a zip archive", "not_zip"),
   ) {
     super();
   }
@@ -29,7 +30,7 @@ export class Meter extends Transform {
         chunk.length < this.magic.length ||
         !chunk.subarray(0, this.magic.length).equals(this.magic)
       ) {
-        done(this.magicError);
+        done(this.magicError());
         return;
       }
     }

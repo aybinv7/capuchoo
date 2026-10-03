@@ -449,6 +449,17 @@ export interface RecordingRulesTable {
   updated_at: UpdatedAt;
 }
 
+export interface RecorderHealthTable {
+  app_id: string;
+  device_id: string;
+  device_uuid: string | null;
+  platform: string;
+  version_name: string;
+  channel: string | null;
+  health: Json;
+  seen_at: Timestamp;
+}
+
 export interface RecordingAssetsTable {
   id: Generated<string>;
   app_id: string;
@@ -492,6 +503,7 @@ export interface Database {
   recording_segments: RecordingSegmentsTable;
   recording_rules: RecordingRulesTable;
   recording_assets: RecordingAssetsTable;
+  recorder_health: RecorderHealthTable;
 }
 
 export type User = Selectable<UsersTable>;

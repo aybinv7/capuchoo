@@ -4,6 +4,7 @@ import { loadConfig } from "../src/config";
 import type { Db } from "../src/db/database";
 import type { Deps } from "../src/http/context";
 import { BackgroundTasks } from "../src/lib/background";
+import { LoadGuard } from "../src/lib/load-guard";
 import { hashPassword, randomToken, sha256Hex } from "../src/lib/crypto";
 import { silentLogger } from "../src/lib/logger";
 import { createApiKey } from "../src/repositories/api-keys";
@@ -57,6 +58,7 @@ export async function createTestContext(
     hub: new EventHub(),
     cache: new RequestCache(0),
     tasks: new BackgroundTasks(silentLogger),
+    load: new LoadGuard(config.DEVICE_MAX_INFLIGHT),
     ci: new CiRuntime(config.SECRET_KEY, fetcher ?? refuseNetwork),
     now: () => new Date(clock),
   };

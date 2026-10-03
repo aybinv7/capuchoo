@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import {
   RECORDING_ASSET_HEADER,
   RECORDING_HEADER,
@@ -13,10 +13,13 @@ import type { AppEnv } from "../http/context";
 import { badRequest, tooManyRequests } from "../lib/errors";
 import { RateLimiter } from "../lib/rate-limit";
 import { ingestAsset, ingestSegment } from "../services/recording-ingest";
+import { HealthGate, noteRecorderHealth } from "../services/recorder-health";
 import { listenForPolicy } from "../services/recording-policy";
 
 /** Under the 60 s idle timeout most proxies, Render's included, apply to a quiet connection. */
 const MAX_LISTEN_SECONDS = 55;
+
+const guarded: MiddlewareHandler<AppEnv> = (c, next) => c.get("deps").load.run(next);
 
 /** What a recording device calls. Unauthenticated like every device route; bounded by size and rate. */
 export function recordingDeviceRoutes(): Hono<AppEnv> {
@@ -25,6 +28,7 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
   const policyPerDevice = new RateLimiter(10, 0.1);
   const segmentsPerDevice = new RateLimiter(120, 2);
   const assetsPerDevice = new RateLimiter(60, 0.5);
+  const health = new HealthGate();
 
   router.use("*", async (c, next) => {
     const wait = perIp.take(c.get("clientIp"));
@@ -33,6 +37,7 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
   });
 
   router.post("/recording/policy", async (c) => {
+    c.get("deps").load.check();
     const body = await readJson(c, 8 * 1024);
     const request = parseRecordingPolicyRequest(body);
     if (!request) throw badRequest("appId, deviceId and platform are required");
@@ -42,21 +47,21 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
       typeof body.wait === "number" && Number.isFinite(body.wait)
         ? Math.min(MAX_LISTEN_SECONDS, Math.max(0, body.wait)) * 1000
         : 0;
-    const answer = await listenForPolicy(c.get("deps"), request, listen, c.req.raw.signal);
+    const deps = c.get("deps");
+    const answer = await listenForPolicy(deps, request, listen, c.req.raw.signal, (first) => {
+      if (first.status !== "unknown_app") noteRecorderHealth(deps, health, first, request);
+    });
     if (answer.status === "unknown_app") return c.json({ error: "App not found" }, 404);
     if (answer.status === "unchanged") return c.json({ unchanged: true, version: answer.version });
     return c.json({ policy: answer.policy, known_assets: answer.knownAssets });
   });
 
-  router.post("/recording/segments", async (c) => {
+  router.post("/recording/segments", guarded, async (c) => {
     const header = parseRecordingSegmentHeader(c.req.header(RECORDING_HEADER));
     if (!header) throw badRequest(`A valid ${RECORDING_HEADER} header is required`, "bad_header");
     const wait = segmentsPerDevice.take(`${header.session.appId}:${header.session.deviceId}`);
     if (wait) throw tooManyRequests(wait);
-    const body = meteredBody(
-      c,
-      RECORDING_WIRE_LIMITS.segmentBytes,
-      GZIP_MAGIC,
+    const body = meteredBody(c, RECORDING_WIRE_LIMITS.segmentBytes, GZIP_MAGIC, () =>
       badRequest("A segment must be gzip", "not_gzip"),
     );
     const outcome = await ingestSegment(c.get("deps"), header, body);
@@ -67,7 +72,7 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
     );
   });
 
-  router.post("/recording/assets", async (c) => {
+  router.post("/recording/assets", guarded, async (c) => {
     const header = parseRecordingAssetHeader(c.req.header(RECORDING_ASSET_HEADER));
     if (!header)
       throw badRequest(`A valid ${RECORDING_ASSET_HEADER} header is required`, "bad_header");
