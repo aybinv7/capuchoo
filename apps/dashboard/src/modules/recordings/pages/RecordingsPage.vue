@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clapperboard, SlidersHorizontal, X } from "@lucide/vue";
+import { Cable, Clapperboard, SlidersHorizontal, X } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,12 @@ function clearFilters() {
     >
       <template #actions>
         <GoLiveButton v-if="device" :app-id="appId" :device-id="device" />
+        <Button variant="ghost" size="sm" as-child>
+          <RouterLink :to="{ name: RouteName.recordingSetup }">
+            <Cable />
+            Connect an app
+          </RouterLink>
+        </Button>
         <Button variant="outline" size="sm" as-child>
           <RouterLink :to="{ name: RouteName.recordingRules }">
             <SlidersHorizontal />
@@ -91,10 +97,10 @@ function clearFilters() {
       v-else-if="nothingYet"
       :icon="Clapperboard"
       title="No recordings yet"
-      description="Recording is off until a rule turns it on. Set the app to buffer, and a shake, an error or a report from any device uploads what led up to it."
+      description="Connect the recorder, set the app to buffer, and a shake, an error or a report from any device uploads what led up to it."
     >
       <Button size="sm" as-child>
-        <RouterLink :to="{ name: RouteName.recordingRules }">Set up recording</RouterLink>
+        <RouterLink :to="{ name: RouteName.recordingSetup }">Connect an app</RouterLink>
       </Button>
     </EmptyState>
     <RecordingsTable

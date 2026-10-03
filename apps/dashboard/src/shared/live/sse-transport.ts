@@ -9,6 +9,7 @@ const EVENT_TYPES = [
   "device",
   "artefact",
   "recording",
+  "recorder_health",
 ];
 
 /** The app's events over one `EventSource`. Every connect starts fresh, so `ready` says events were lost. */

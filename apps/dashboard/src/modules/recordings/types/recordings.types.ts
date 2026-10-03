@@ -1,5 +1,6 @@
 import type {
   RECORDING_LIMITS,
+  RecorderHealth,
   RecordingDeviceFacts,
   RecordingPolicy,
   RecordingPolicyPatch,
@@ -174,3 +175,16 @@ export interface Lanes {
 }
 
 export type LaneName = "console" | "network" | "database" | "telemetry" | "perf" | "markers";
+
+/** The latest health a device's recorder reported with its policy request. */
+export interface RecorderCheckIn {
+  device_id: string;
+  device_uuid: string | null;
+  custom_id: string | null;
+  platform: string;
+  version_name: string;
+  channel: string | null;
+  health: RecorderHealth | null;
+  seen_at: string;
+  online: boolean;
+}

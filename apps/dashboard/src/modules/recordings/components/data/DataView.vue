@@ -14,7 +14,13 @@ import { cn } from "@/lib/utils";
 import { formatOffset } from "../../lib/activity";
 import { changeKey } from "../../lib/changeset";
 import { tableAt } from "../../lib/db-model";
-import { databasesOf, entriesOf, summarizeTables, tableShape } from "../../lib/db-tables";
+import {
+  busiestTable,
+  databasesOf,
+  entriesOf,
+  summarizeTables,
+  tableShape,
+} from "../../lib/db-tables";
 import { displayValue } from "../../lib/display";
 import type { Lanes } from "../../types/recordings.types";
 import TableGrid from "./TableGrid.vue";
@@ -30,6 +36,7 @@ const stepped = computed(() => Math.floor(props.playhead / STEP_MS) * STEP_MS);
 const databases = computed(() => databasesOf(props.lanes));
 const db = ref<string>("");
 const table = ref<string>("");
+const chosen = ref(false);
 const changedOnly = ref(false);
 const needle = ref("");
 
@@ -45,15 +52,24 @@ watch(focus, (next) => {
   if (!next) return;
   db.value = next.db;
   table.value = next.table;
+  chosen.value = true;
 });
+
+function choose(name: string) {
+  table.value = name;
+  chosen.value = true;
+}
 
 const tables = computed(() =>
   db.value ? summarizeTables(props.lanes, db.value, stepped.value) : [],
 );
+const busiest = computed(() => (db.value ? busiestTable(props.lanes, db.value) : null));
 watch(
-  tables,
-  (list) => {
-    if (!list.some((summary) => summary.name === table.value)) table.value = list[0]?.name ?? "";
+  [tables, busiest],
+  ([list, best]) => {
+    if (!chosen.value && best && table.value !== best) table.value = best;
+    else if (!list.some((summary) => summary.name === table.value))
+      table.value = list[0]?.name ?? "";
   },
   { immediate: true },
 );
@@ -108,8 +124,8 @@ const OP_MARK: Record<string, string> = { insert: "+", update: "~", delete: "−
 </script>
 
 <template>
-  <div class="bg-background flex h-full min-h-0">
-    <aside class="flex w-52 shrink-0 flex-col border-r">
+  <div class="bg-background @container flex h-full min-h-0">
+    <aside class="hidden w-52 shrink-0 flex-col border-r @2xl:flex">
       <div class="flex items-center gap-2 border-b px-3 py-2">
         <Database class="text-muted-foreground size-4" aria-hidden="true" />
         <Select v-if="databases.length > 1" v-model="db">
@@ -131,7 +147,7 @@ const OP_MARK: Record<string, string> = { insert: "+", update: "~", delete: "−
               summary.name === table ? 'bg-accent font-medium' : 'hover:bg-accent/60',
             )
           "
-          @click="table = summary.name"
+          @click="choose(summary.name)"
         >
           <TableProperties class="text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate font-mono">{{ summary.name }}</span>
@@ -157,7 +173,29 @@ const OP_MARK: Record<string, string> = { insert: "+", update: "~", delete: "−
 
     <section v-if="view" class="flex min-w-0 flex-1 flex-col">
       <header class="flex flex-wrap items-center gap-2 border-b px-3 py-2">
-        <h3 class="font-mono text-sm font-semibold">{{ view.name }}</h3>
+        <Select :model-value="table" @update:model-value="choose(String($event))">
+          <SelectTrigger
+            size="sm"
+            class="h-7 max-w-52 font-mono text-xs @2xl:hidden"
+            aria-label="Table"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="summary in tables"
+              :key="summary.name"
+              :value="summary.name"
+              class="font-mono text-xs"
+            >
+              {{ summary.name }}
+              <span class="text-muted-foreground ml-2 text-[10px]">{{
+                summary.inserted + summary.updated + summary.deleted || summary.rows || ""
+              }}</span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <h3 class="hidden font-mono text-sm font-semibold @2xl:block">{{ view.name }}</h3>
         <span class="text-muted-foreground tabular text-xs">{{ view.rows.length }} rows</span>
         <span class="flex items-center gap-2 text-[11px]" aria-label="Legend">
           <span class="flex items-center gap-1"

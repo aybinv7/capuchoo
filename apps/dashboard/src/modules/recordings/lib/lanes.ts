@@ -48,6 +48,8 @@ const MARKER_LABELS: Record<string, (data: Data) => string> = {
   "replay-paused": () => "Screen recording paused: the page changed too fast",
   "database-unsupported": (data) =>
     `${text(data.db) ?? "Database"}: ${text(data.reason) ?? "not recorded"}`,
+  "database-unavailable": (data) =>
+    `${text(data.db) ?? "Database"} never opened: ${text(data.reason) ?? "unknown reason"}`,
 };
 
 function sortedInsert<T extends { t: number }>(lane: T[], entry: T): void {

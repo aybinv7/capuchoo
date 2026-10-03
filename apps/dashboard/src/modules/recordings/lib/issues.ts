@@ -32,6 +32,8 @@ export function issuesOf(lanes: Lanes, rage: readonly Tap[]): Issue[] {
       (marker.data.trigger === "shake" || marker.data.trigger === "manual")
     ) {
       issues.push({ t: marker.t, kind: "report", label: marker.label });
+    } else if (marker.kind === "database-unavailable") {
+      issues.push({ t: marker.t, kind: "error", label: marker.label });
     }
   }
   return issues.sort((a, b) => a.t - b.t);

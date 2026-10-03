@@ -243,6 +243,8 @@ export function reduceStreamEvent(appId: string, message: StreamMessage): CacheO
       return deviceOps(appId, message.data);
     case "recording":
       return recordingOps(appId, message.data);
+    case "recorder_health":
+      return [invalidate(queryKeys.recorderHealth(appId), true)];
     default:
       return [];
   }

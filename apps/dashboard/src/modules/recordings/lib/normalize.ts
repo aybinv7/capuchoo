@@ -1,5 +1,6 @@
-import type { RecordingDeviceFacts } from "@capuchoo/core";
+import { parseRecorderHealth, type RecordingDeviceFacts } from "@capuchoo/core";
 import type {
+  RecorderCheckIn,
   RecordingAsset,
   RecordingDetail,
   RecordingRule,
@@ -95,5 +96,20 @@ export function normalizeRule(raw: unknown): RecordingRule | null {
     policy: isRecord(raw.policy) ? raw.policy : {},
     live_until: opt(raw.live_until),
     updated_at: str(raw.updated_at),
+  };
+}
+
+export function normalizeCheckIn(raw: unknown): RecorderCheckIn | null {
+  if (!isRecord(raw) || typeof raw.device_id !== "string") return null;
+  return {
+    device_id: raw.device_id,
+    device_uuid: opt(raw.device_uuid),
+    custom_id: opt(raw.custom_id),
+    platform: str(raw.platform, "android"),
+    version_name: str(raw.version_name, "builtin"),
+    channel: opt(raw.channel),
+    health: parseRecorderHealth(raw.health),
+    seen_at: str(raw.seen_at),
+    online: raw.online === true,
   };
 }

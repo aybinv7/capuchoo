@@ -5,8 +5,14 @@ import type {
 } from "@capuchoo/core";
 import { ApiError } from "@/shared/api/errors";
 import { http, requestText } from "@/shared/api/http";
-import { normalizeDetail, normalizeRule, normalizeSession } from "../lib/normalize";
+import {
+  normalizeCheckIn,
+  normalizeDetail,
+  normalizeRule,
+  normalizeSession,
+} from "../lib/normalize";
 import type {
+  RecorderCheckIn,
   RecordingDetail,
   RecordingFilters,
   RecordingPage,
@@ -159,4 +165,19 @@ export async function fetchDeviceLabel(deviceId: string, signal?: AbortSignal): 
   return (
     hardware.join(" ") || (typeof device?.device_id === "string" ? device.device_id : deviceId)
   );
+}
+
+/** Devices whose recorder asked for its policy lately, newest first, with the health they reported. */
+export async function fetchRecorderHealth(
+  appId: string,
+  signal?: AbortSignal,
+): Promise<RecorderCheckIn[]> {
+  const body = await http.get<{ devices?: unknown[] }>(
+    `/apps/${encodeURIComponent(appId)}/recorder-health`,
+    undefined,
+    signal,
+  );
+  return (body?.devices ?? [])
+    .map(normalizeCheckIn)
+    .filter((entry): entry is RecorderCheckIn => entry !== null);
 }

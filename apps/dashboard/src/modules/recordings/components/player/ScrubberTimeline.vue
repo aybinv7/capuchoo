@@ -29,6 +29,7 @@ const MARKER_ICONS: Record<string, typeof Flag> = {
   route: MapPin,
   "replay-paused": PauseCircle,
   "database-unsupported": TriangleAlert,
+  "database-unavailable": TriangleAlert,
   rage: Zap,
 };
 const visibleMarkers = computed(() =>

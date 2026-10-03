@@ -93,6 +93,21 @@ const issueIndex = computed(
 );
 
 const view = useStorage<PlayerView>("capuchoo.recording.view", "screen");
+/** A table needs width the phone screen does not, so each view keeps its own split. */
+const shares = useStorage<Record<PlayerView, number>>(
+  "capuchoo.recording.split",
+  { screen: 62, data: 72, both: 72 },
+  undefined,
+  { mergeDefaults: true },
+);
+const stageShare = computed(() => shares.value[view.value]);
+const stagePanel = useTemplateRef<{ resize: (size: number) => void }>("stagePanel");
+
+function rememberShare(size: number) {
+  shares.value = { ...shares.value, [view.value]: Math.round(size) };
+}
+
+watch(view, () => stagePanel.value?.resize(stageShare.value), { flush: "post" });
 const dataFocus = ref<{ db: string; table: string } | null>(null);
 const loadedRatio = computed(() =>
   events.total.value === 0 ? 1 : events.loaded.value / events.total.value,
@@ -252,10 +267,14 @@ async function remove() {
 
       <ResizablePanelGroup
         direction="horizontal"
-        auto-save-id="recording-player"
         class="min-h-0 flex-1 overflow-hidden rounded-xl border"
       >
-        <ResizablePanel :default-size="62" :min-size="35">
+        <ResizablePanel
+          ref="stagePanel"
+          :default-size="stageShare"
+          :min-size="35"
+          @resize="rememberShare"
+        >
           <div
             :class="[
               'grid h-full min-h-0',
@@ -291,7 +310,7 @@ async function remove() {
           </div>
         </ResizablePanel>
         <ResizableHandle with-handle />
-        <ResizablePanel :default-size="38" :min-size="24">
+        <ResizablePanel :default-size="100 - stageShare" :min-size="20">
           <InspectorPanel
             v-model:follow="followList"
             :lanes="events.lanes.value"

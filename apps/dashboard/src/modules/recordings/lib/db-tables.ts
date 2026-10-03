@@ -56,6 +56,25 @@ export function summarizeTables(lanes: Lanes, db: string, time: number): TableSu
   );
 }
 
+/** The table the session wrote to most, which is where someone opening the data view wants to land. */
+export function busiestTable(lanes: Lanes, db: string): string | null {
+  const counts = new Map<string, number>();
+  for (const entry of entriesOf(lanes, db)) {
+    for (const change of entry.changes) {
+      counts.set(change.table, (counts.get(change.table) ?? 0) + 1);
+    }
+  }
+  let best: string | null = null;
+  let most = 0;
+  for (const [name, count] of counts) {
+    if (count > most) {
+      best = name;
+      most = count;
+    }
+  }
+  return best;
+}
+
 /** Columns and key of a table, from the schema the device announced, else what the data shows. */
 export function tableShape(
   lanes: Lanes,
