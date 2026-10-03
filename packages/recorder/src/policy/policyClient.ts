@@ -1,4 +1,9 @@
-import type { RecordingPolicyRequest, ResolvedRecordingPolicy } from "@capuchoo/core";
+import {
+  parseAssistInvite,
+  type AssistInvite,
+  type RecordingPolicyRequest,
+  type ResolvedRecordingPolicy,
+} from "@capuchoo/core";
 
 export interface PolicyAnswer {
   policy: ResolvedRecordingPolicy;
@@ -38,6 +43,8 @@ export function createPolicyClient(input: {
   request: () => Omit<RecordingPolicyRequest, "known">;
   onPolicy: (answer: PolicyAnswer) => void;
   onError: (message: string) => void;
+  /** An agent asks to assist; the answer to a held request carries the invite. */
+  onAssist?: (invite: AssistInvite) => void;
 }) {
   const key = input.request().appId;
   let current: PolicyAnswer | null = read(key);
@@ -47,6 +54,8 @@ export function createPolicyClient(input: {
   let inflight: Promise<void> | null = null;
   let stopped = false;
   let listening: AbortController | null = null;
+  /** The invite already handed on, so the server keeps holding the request instead of repeating it. */
+  let seenInvite: string | null = null;
 
   function schedule(delay: number): void {
     if (stopped) return;
@@ -73,6 +82,7 @@ export function createPolicyClient(input: {
           ...input.request(),
           known: current?.policy.version ?? null,
           wait: waitMs / 1000,
+          assist_seen: seenInvite,
         }),
         credentials: "omit",
         signal: controller.signal,
@@ -83,11 +93,18 @@ export function createPolicyClient(input: {
         return;
       }
       if (!response.ok) throw new Error(`policy request failed with ${response.status}`);
-      const body = (await response.json()) as
+      const body = (await response.json()) as (
         | { unchanged: true; version: string }
-        | { policy: ResolvedRecordingPolicy; known_assets: string[] };
+        | { policy: ResolvedRecordingPolicy; known_assets: string[] }
+      ) & { assist?: unknown };
       fetchedAt = Date.now();
       failures = 0;
+      const invite = parseAssistInvite(body.assist);
+      const freshInvite = invite !== null && invite.session !== seenInvite;
+      if (invite && freshInvite) {
+        seenInvite = invite.session;
+        input.onAssist?.(invite);
+      }
       const changed = !("unchanged" in body) && body.policy.version !== current?.policy.version;
       if (changed) {
         current = { policy: body.policy, knownAssets: body.known_assets ?? [] };
@@ -95,7 +112,7 @@ export function createPolicyClient(input: {
         input.onPolicy(current);
       }
       const next = listenWindow();
-      const heldOpen = waitMs === 0 || changed || Date.now() - sentAt >= MIN_HELD_MS;
+      const heldOpen = waitMs === 0 || changed || freshInvite || Date.now() - sentAt >= MIN_HELD_MS;
       if (next > 0 && heldOpen) schedule(0);
       else schedule(current?.policy.pollMs ?? 5 * 60_000);
     } catch (error) {

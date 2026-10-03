@@ -90,6 +90,8 @@ export async function listenForPolicy(
   waitMs: number,
   signal: AbortSignal,
   onFirstAnswer?: (answer: DevicePolicyAnswer) => void,
+  /** The assist invite the device already has, which must not cut its wait short again. */
+  seenInvite: string | null = null,
 ): Promise<DevicePolicyAnswer> {
   const deadline = Date.now() + waitMs;
   let answer = await policyForDevice(deps, request);
@@ -99,7 +101,8 @@ export async function listenForPolicy(
     if (remaining <= 0) break;
     const untilLiveEnds =
       answer.liveUntil === null ? remaining : answer.liveUntil - deps.now().getTime() + 250;
-    if (deps.assist.inviteFor(answer.appId, request.deviceId)) break;
+    const invite = deps.assist.inviteFor(answer.appId, request.deviceId);
+    if (invite && invite.session !== seenInvite) break;
     await deps.hub.waitFor(
       answer.appId,
       ["recording_rule", "assist"],

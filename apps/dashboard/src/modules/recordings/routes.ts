@@ -28,6 +28,12 @@ export const recordingsRoutes: ModuleRoutes = {
       meta: { title: "Connect an app", section: "Recordings", parent: RouteName.recordings },
     },
     {
+      path: "recordings/assist/:deviceId",
+      name: RouteName.recordingAssist,
+      component: () => import("./pages/AssistPage.vue"),
+      meta: { title: "Assist", section: "Recordings", parent: RouteName.recordings },
+    },
+    {
       path: "recordings/:recordingId",
       name: RouteName.recording,
       component: () => import("./pages/RecordingPlayerPage.vue"),

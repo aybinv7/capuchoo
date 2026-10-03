@@ -24,6 +24,8 @@ export interface AssistSession {
   deviceUuid: string;
   /** The id the device reports itself by, which its policy request carries. */
   deviceId: string;
+  /** The bundle the device runs, whose stylesheets and images the agent's view needs. */
+  versionName: string | null;
   agent: AssistAgent;
   status: "waiting" | "active" | "ended";
   control: AssistControl;
@@ -102,6 +104,7 @@ export class AssistRegistry {
     organizationId: string | null;
     deviceUuid: string;
     deviceId: string;
+    versionName: string | null;
     agent: AssistAgent;
   }): { session: AssistSession; agentTicket: string } {
     const deviceKey = `${input.appId}:${input.deviceId}`;

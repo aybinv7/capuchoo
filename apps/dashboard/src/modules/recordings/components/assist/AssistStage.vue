@@ -1,0 +1,107 @@
+<script setup lang="ts">
+import { computed, useTemplateRef } from "vue";
+import { toAppPoint, wheelDelta } from "../../lib/assist-coordinates";
+import type { AssistPhase } from "../../types/assist.types";
+
+const props = defineProps<{
+  phase: AssistPhase;
+  ready: boolean;
+  viewport: { width: number; height: number } | null;
+  scale: number;
+  /** Whether the user gave control: clicks become taps and the wheel scrolls. */
+  controlling: boolean;
+}>();
+const emit = defineEmits<{
+  pointer: [x: number, y: number];
+  pointerOff: [];
+  tap: [x: number, y: number];
+  scroll: [x: number, y: number, dx: number, dy: number];
+}>();
+
+const stage = useTemplateRef<HTMLElement>("stage");
+const root = useTemplateRef<HTMLElement>("root");
+const surface = useTemplateRef<HTMLElement>("surface");
+defineExpose({ stage, root });
+
+const frame = computed(() => {
+  if (!props.viewport) return undefined;
+  return {
+    width: `${Math.round(props.viewport.width * props.scale)}px`,
+    height: `${Math.round(props.viewport.height * props.scale)}px`,
+    "--replay-scale": String(props.scale),
+  };
+});
+
+function point(event: { clientX: number; clientY: number }) {
+  const box = surface.value?.getBoundingClientRect();
+  if (!box || !props.viewport) return null;
+  return toAppPoint(event.clientX, event.clientY, box, props.viewport, props.scale);
+}
+
+function onMove(event: PointerEvent) {
+  const at = point(event);
+  if (at) emit("pointer", at.x, at.y);
+}
+
+function onClick(event: MouseEvent) {
+  if (!props.controlling) return;
+  const at = point(event);
+  if (at) emit("tap", at.x, at.y);
+}
+
+function onWheel(event: WheelEvent) {
+  if (!props.controlling || !props.viewport) return;
+  const at = point(event);
+  if (!at) return;
+  event.preventDefault();
+  const { dx, dy } = wheelDelta(event, props.viewport, props.scale);
+  emit("scroll", at.x, at.y, dx, dy);
+}
+</script>
+
+<template>
+  <div
+    ref="stage"
+    class="bg-muted/40 dot-grid relative flex h-full min-h-80 w-full items-center justify-center overflow-hidden"
+  >
+    <div
+      v-show="props.ready"
+      class="ring-foreground/85 relative overflow-hidden rounded-[22px] bg-white shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-[6px] transition-shadow"
+      :class="
+        props.controlling
+          ? 'shadow-[0_0_0_3px_var(--destructive),0_24px_60px_-20px_rgb(0_0_0/0.45)]'
+          : ''
+      "
+      :style="frame"
+    >
+      <div ref="root" class="replay-root absolute inset-0" />
+      <div
+        ref="surface"
+        class="absolute inset-0"
+        :class="props.controlling ? 'cursor-pointer' : 'cursor-crosshair'"
+        role="application"
+        :aria-label="
+          props.controlling
+            ? 'The user\'s screen: click to tap, scroll to scroll'
+            : 'The user\'s screen: move to point'
+        "
+        @pointermove="onMove"
+        @pointerleave="emit('pointerOff')"
+        @click="onClick"
+        @wheel="onWheel"
+      />
+    </div>
+    <slot />
+  </div>
+</template>
+
+<style scoped>
+.replay-root :deep(.replayer-wrapper) {
+  transform: scale(var(--replay-scale, 1));
+  transform-origin: top left;
+}
+.replay-root :deep(iframe) {
+  border: 0;
+  pointer-events: none;
+}
+</style>

@@ -27,6 +27,7 @@ import { RouteName } from "@/shared/router/route-names";
 import { formatOffset } from "../../lib/activity";
 import { sessionDeviceLabel } from "../../lib/recording-columns";
 import type { RecordingSession } from "../../types/recordings.types";
+import AssistButton from "./AssistButton.vue";
 import PlayerLiveControl from "./PlayerLiveControl.vue";
 import SessionFacts from "./SessionFacts.vue";
 
@@ -85,6 +86,11 @@ const emit = defineEmits<{ remove: []; copyLink: []; copyReport: []; exportTest:
     </Popover>
 
     <div class="ml-auto flex shrink-0 items-center gap-2 pl-2">
+      <AssistButton
+        v-if="props.session.device_uuid"
+        :device-id="props.session.device_uuid"
+        :device-name="sessionDeviceLabel(props.session)"
+      />
       <PlayerLiveControl :app-id="props.appId" :session="props.session" />
       <DropdownMenu>
         <DropdownMenuTrigger as-child>

@@ -105,3 +105,50 @@ describe("policy client", () => {
     second.policy.stop();
   });
 });
+
+describe("policy client and assist", () => {
+  it("hands an invite on once, and tells the server it has it so the wait is not cut short again", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    const invite = { session: "s-1", ticket: "t", agent: "Amina", expiresAt: Date.now() + 60_000 };
+    window.fetch = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      const body =
+        bodies.length === 1
+          ? {
+              policy: {
+                ...DEFAULT_RECORDING_POLICY,
+                version: "v1",
+                liveUntil: null,
+                sampled: true,
+              },
+              known_assets: [],
+              assist: invite,
+            }
+          : { unchanged: true, version: "v1", assist: invite };
+      return Promise.resolve(new Response(JSON.stringify(body)));
+    }) as typeof fetch;
+    const onAssist = vi.fn();
+    const policy = createPolicyClient({
+      endpoint: "http://server.test",
+      request: () => ({
+        appId: "com.acme.app",
+        deviceId: "d1",
+        platform: "android",
+        versionName: "1.0.0",
+        versionCode: 1,
+        channel: "prod",
+        health: null,
+      }),
+      onPolicy: vi.fn(),
+      onError: () => undefined,
+      onAssist,
+    });
+    await policy.start();
+    await policy.refresh();
+    expect(onAssist).toHaveBeenCalledTimes(1);
+    expect(onAssist).toHaveBeenCalledWith(invite);
+    expect(bodies[0]?.assist_seen).toBeNull();
+    expect(bodies[1]?.assist_seen).toBe("s-1");
+    policy.stop();
+  });
+});

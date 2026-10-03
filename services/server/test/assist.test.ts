@@ -142,6 +142,15 @@ describe("assist", () => {
     expect(answer.assist.ticket).toMatch(/^[\w-]{43}$/);
   });
 
+  it("keeps holding a device's request once it has the invite, instead of repeating it", async () => {
+    const { policy } = await (await askPolicy()).json();
+    const session = (await (await startAssist()).json()).session;
+    const started = Date.now();
+    const held = askPolicy({ known: policy.version, wait: 1, assist_seen: session.id });
+    expect((await (await held).json()).assist).toMatchObject({ session: session.id });
+    expect(Date.now() - started).toBeGreaterThanOrEqual(900);
+  });
+
   it("lets nobody in without the right ticket, and each ticket in once", async () => {
     const started = await (await startAssist()).json();
     const stranger = connect();

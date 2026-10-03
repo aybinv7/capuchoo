@@ -9,6 +9,7 @@ import type { DatabaseSource } from "../database/types.js";
 import type { PipelineStatus } from "../pipeline/protocol.js";
 import type { NetworkOptions } from "../tracks/network.js";
 import type { ReplayOptions } from "../tracks/replay.js";
+import type { AssistOptions } from "../assist/types.js";
 import type { ShakeOptions } from "../triggers/shake.js";
 import type { RecorderTelemetry } from "../tracks/telemetry.js";
 
@@ -56,6 +57,11 @@ export interface RecorderOptions {
    */
   onShake?: () => void;
   logger?: RecorderLogger;
+  /**
+   * Lets a support agent watch this app live and, if the user agrees again, use it for them. Off
+   * unless given: the app opts in, and the user is asked every time.
+   */
+  assist?: AssistOptions;
 }
 
 export interface RecorderStatus {

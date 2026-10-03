@@ -48,9 +48,17 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
         ? Math.min(MAX_LISTEN_SECONDS, Math.max(0, body.wait)) * 1000
         : 0;
     const deps = c.get("deps");
-    const answer = await listenForPolicy(deps, request, listen, c.req.raw.signal, (first) => {
-      if (first.status !== "unknown_app") noteRecorderHealth(deps, health, first, request);
-    });
+    const seen = typeof body.assist_seen === "string" ? body.assist_seen : null;
+    const answer = await listenForPolicy(
+      deps,
+      request,
+      listen,
+      c.req.raw.signal,
+      (first) => {
+        if (first.status !== "unknown_app") noteRecorderHealth(deps, health, first, request);
+      },
+      seen,
+    );
     if (answer.status === "unknown_app") return c.json({ error: "App not found" }, 404);
     const invite = deps.assist.inviteFor(answer.appId, request.deviceId);
     const assist = invite ? { assist: invite } : {};

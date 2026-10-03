@@ -6,6 +6,7 @@ import type {
   RecordingTrigger,
   ResolvedRecordingPolicy,
 } from "@capuchoo/core";
+import { createAssist, type Assist } from "../assist/assistSession.js";
 import { createInlineClient, createWorkerClient } from "../pipeline/clients.js";
 import type { PipelineClient, PipelineStatus } from "../pipeline/protocol.js";
 import { createPolicyClient, type PolicyAnswer } from "../policy/policyClient.js";
@@ -89,12 +90,17 @@ export function createRecorder(options: RecorderOptions): Recorder {
   const listeners = new Set<(status: RecorderStatus) => void>();
 
   const collector = new EventCollector((events) => client?.send({ type: "events", events }));
+  /** Who else watches the screen as it is recorded: an assist agent, live. */
+  const screenListeners = new Set<(event: unknown) => void>();
   const context: TrackContext = {
     push(kind, data, time) {
+      if (kind === "replay") for (const listener of screenListeners) listener(data);
       if (mode !== "off") collector.push(kind, data, time);
     },
     logger,
   };
+  let assist: Assist | null = null;
+  let assistHoldsScreen = false;
 
   const policy = (): ResolvedRecordingPolicy | null => answer?.policy ?? null;
 
@@ -397,6 +403,36 @@ export function createRecorder(options: RecorderOptions): Recorder {
       );
     }
 
+    if (options.assist) {
+      const replayOptions = options.replay ?? {};
+      assist = createAssist(options.assist, {
+        endpoint,
+        screen: {
+          subscribe(listener) {
+            screenListeners.add(listener);
+            return () => screenListeners.delete(listener);
+          },
+          acquire() {
+            if (!tracks.isRunning("replay")) {
+              replay.start(context);
+              assistHoldsScreen = true;
+            }
+            return () => {
+              if (assistHoldsScreen && !tracks.isRunning("replay")) replay.stop();
+              assistHoldsScreen = false;
+            };
+          },
+          snapshot: () => replay.checkout(),
+        },
+        mark: (data) => context.push("marker", data),
+        guards: () => ({
+          maskTextSelector: replayOptions.maskTextSelector ?? "[data-capuchoo-mask]",
+          ignoreSelector: replayOptions.ignoreSelector ?? "[data-capuchoo-ignore]",
+        }),
+        logger,
+      });
+    }
+
     const known = identity;
     policyClient = createPolicyClient({
       endpoint,
@@ -414,6 +450,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
         lastError = message;
         notify();
       },
+      onAssist: (invite) => void assist?.invite(invite),
     });
     if (policyClient.cached) onPolicy(policyClient.cached);
     await policyClient.start();
@@ -431,6 +468,8 @@ export function createRecorder(options: RecorderOptions): Recorder {
     async stop() {
       if (!started) return;
       policyClient?.stop();
+      assist?.stop();
+      assist = null;
       escalation = null;
       apply("off", "policy");
       for (const timer of [escalationTimer, sessionTimer, assetTimer]) {
