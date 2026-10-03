@@ -47,6 +47,7 @@ const defaultLogger: RecorderLogger = {
 };
 
 const ASSET_DELAY_MS = 3000;
+const LIVE_HEARTBEAT_MS = 5000;
 
 interface OpenSession {
   id: string;
@@ -71,6 +72,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
   let escalationTimer: ReturnType<typeof setTimeout> | null = null;
   let sessionTimer: ReturnType<typeof setTimeout> | null = null;
   let assetTimer: ReturnType<typeof setTimeout> | null = null;
+  let heartbeat: ReturnType<typeof setInterval> | null = null;
   const cleanups: Array<() => void> = [];
   let stopNavigation: (() => void) | null = null;
   const listeners = new Set<(status: RecorderStatus) => void>();
@@ -165,6 +167,16 @@ export function createRecorder(options: RecorderOptions): Recorder {
     }, ASSET_DELAY_MS);
   }
 
+  /** A live viewer needs to tell an idle device from a gone one; a beat every few seconds does. */
+  function syncHeartbeat(): void {
+    if (mode === "live" && heartbeat === null) {
+      heartbeat = setInterval(() => context.push("meta", { kind: "heartbeat" }), LIVE_HEARTBEAT_MS);
+    } else if (mode !== "live" && heartbeat !== null) {
+      clearInterval(heartbeat);
+      heartbeat = null;
+    }
+  }
+
   function armSessionLimit(): void {
     if (sessionTimer !== null) clearTimeout(sessionTimer);
     sessionTimer = null;
@@ -241,6 +253,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
         break;
     }
     armSessionLimit();
+    syncHeartbeat();
   }
 
   function recompute(): void {

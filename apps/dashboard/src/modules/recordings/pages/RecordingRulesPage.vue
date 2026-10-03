@@ -70,12 +70,16 @@ const inheritedFrom = computed(() => (selected.value.scope === "app" ? "the defa
 const rule = computed(() => ruleFor(rules.value, selected.value));
 const saved = computed<RecordingPolicyPatch>(() => rule.value?.policy ?? {});
 const draft = ref<RecordingPolicyPatch>({});
+
+/** Query data arrives as reactive proxies, which structuredClone refuses; a patch is plain JSON. */
+const copyPatch = (patch: RecordingPolicyPatch): RecordingPolicyPatch =>
+  JSON.parse(JSON.stringify(patch)) as RecordingPolicyPatch;
 const dirty = computed(() => !samePatch(draft.value, saved.value));
 
 watch(
   [selected, saved],
   () => {
-    draft.value = structuredClone(saved.value);
+    draft.value = copyPatch(saved.value);
   },
   { immediate: true, deep: true },
 );
@@ -99,7 +103,7 @@ function commit() {
 }
 
 function discard() {
-  draft.value = structuredClone(saved.value);
+  draft.value = copyPatch(saved.value);
 }
 
 function dropRule() {
