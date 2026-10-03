@@ -6,6 +6,7 @@ export interface PolicyAnswer {
 }
 
 const RETRY_MIN_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 const STORAGE_PREFIX = "capuchoo.recorder.policy:";
 
 function read(key: string): PolicyAnswer | null {
@@ -50,12 +51,15 @@ export function createPolicyClient(input: {
   }
 
   async function fetchPolicy(): Promise<void> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
       const response = await fetch(`${input.endpoint}/api/recording/policy`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...input.request(), known: current?.policy.version ?? null }),
         credentials: "omit",
+        signal: controller.signal,
       });
       if (response.status === 404) {
         input.onError("the server does not know this app; recording stays off");
@@ -79,6 +83,8 @@ export function createPolicyClient(input: {
       input.onError(error instanceof Error ? error.message : String(error));
       const ceiling = current?.policy.pollMs ?? 5 * 60_000;
       schedule(Math.min(ceiling, RETRY_MIN_MS * 2 ** Math.min(failures - 1, 5)));
+    } finally {
+      clearTimeout(timeout);
     }
   }
 

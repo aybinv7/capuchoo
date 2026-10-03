@@ -36,11 +36,18 @@ export async function ensureSession(db: Db, target: SessionTarget): Promise<Reco
     .returningAll()
     .executeTakeFirst();
   if (inserted) return inserted;
-  return db
+  const existing = await db
     .selectFrom("recording_sessions")
     .selectAll()
     .where("app_id", "=", target.appId)
     .where("session_key", "=", meta.sessionId)
+    .executeTakeFirstOrThrow();
+  if (existing.note !== null || !meta.note || existing.device_id !== meta.deviceId) return existing;
+  return db
+    .updateTable("recording_sessions")
+    .set({ note: meta.note })
+    .where("id", "=", existing.id)
+    .returningAll()
     .executeTakeFirstOrThrow();
 }
 

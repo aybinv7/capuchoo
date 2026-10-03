@@ -234,6 +234,16 @@ describe("recording segments", () => {
     expect(Buffer.from(await served.arrayBuffer())).toEqual(gzipSync(lines(1)));
   });
 
+  it("takes a note that arrives after the session's first segments", async () => {
+    await postSegment(0, { session: { note: null } });
+    await postSegment(1, { session: { note: "الطلب لا يمر" } });
+    await postSegment(2, { session: { note: "a later, different note" } });
+    const { sessions } = await (
+      await ctx.request(`/api/apps/${appId}/recordings`, { token: owner.token })
+    ).json();
+    expect(sessions[0].note).toBe("الطلب لا يمر");
+  });
+
   it("filters by errors and pages with a cursor", async () => {
     await postSegment(0);
     await postSegment(0, {
