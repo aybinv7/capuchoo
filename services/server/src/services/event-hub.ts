@@ -6,7 +6,8 @@ export type HubEventType =
   | "build_job"
   | "channel"
   | "device"
-  | "artefact";
+  | "artefact"
+  | "recording";
 
 export interface HubEvent {
   type: HubEventType;

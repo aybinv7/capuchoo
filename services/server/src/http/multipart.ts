@@ -9,7 +9,7 @@ export interface MeasuredStream {
   digest: () => { sha256: string; bytes: number };
 }
 
-class Meter extends Transform {
+export class Meter extends Transform {
   readonly hash = createHash("sha256");
   bytes = 0;
   private first = true;
@@ -17,6 +17,7 @@ class Meter extends Transform {
   constructor(
     private readonly maxBytes: number,
     private readonly magic: Buffer | null,
+    private readonly magicError = badRequest("The uploaded file is not a zip archive", "not_zip"),
   ) {
     super();
   }
@@ -28,7 +29,7 @@ class Meter extends Transform {
         chunk.length < this.magic.length ||
         !chunk.subarray(0, this.magic.length).equals(this.magic)
       ) {
-        done(badRequest("The uploaded file is not a zip archive", "not_zip"));
+        done(this.magicError);
         return;
       }
     }

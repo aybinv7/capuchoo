@@ -396,6 +396,71 @@ export interface BlobChunksTable {
   data: Buffer;
 }
 
+export interface RecordingSessionsTable {
+  id: Generated<string>;
+  app_id: string;
+  session_key: string;
+  device_uuid: string | null;
+  device_id: string;
+  platform: string;
+  version_name: string;
+  version_code: number | null;
+  channel: string | null;
+  start: string;
+  mode: string;
+  note: string | null;
+  device: Json | null;
+  recorder: string | null;
+  started_at: Timestamp;
+  ended_at: Timestamp;
+  segment_count: Generated<number>;
+  event_count: Generated<BigCount>;
+  size_bytes: Generated<BigCount>;
+  error_count: Generated<number>;
+  finished: Generated<boolean>;
+  last_segment_at: Timestamp;
+  created_at: CreatedAt;
+}
+
+export interface RecordingSegmentsTable {
+  session_id: string;
+  seq: number;
+  storage_key: string;
+  size_bytes: number;
+  raw_bytes: number;
+  events: number;
+  errors: number;
+  full_snapshot: boolean;
+  started_at: Timestamp;
+  ended_at: Timestamp;
+  created_at: CreatedAt;
+}
+
+export interface RecordingRulesTable {
+  id: Generated<string>;
+  app_id: string;
+  scope: "app" | "channel" | "device";
+  channel_id: string | null;
+  device_uuid: string | null;
+  policy: Json;
+  live_until: Timestamp | null;
+  updated_by: string | null;
+  created_at: CreatedAt;
+  updated_at: UpdatedAt;
+}
+
+export interface RecordingAssetsTable {
+  id: Generated<string>;
+  app_id: string;
+  version_name: string;
+  path: string;
+  sha256: string;
+  content_type: string;
+  storage_key: string;
+  size_bytes: number;
+  created_at: CreatedAt;
+}
+
 export interface Database {
   users: UsersTable;
   sessions: SessionsTable;
@@ -423,6 +488,10 @@ export interface Database {
   github_installations: GithubInstallationsTable;
   blobs: BlobsTable;
   blob_chunks: BlobChunksTable;
+  recording_sessions: RecordingSessionsTable;
+  recording_segments: RecordingSegmentsTable;
+  recording_rules: RecordingRulesTable;
+  recording_assets: RecordingAssetsTable;
 }
 
 export type User = Selectable<UsersTable>;
@@ -441,3 +510,7 @@ export type Integration = Selectable<IntegrationsTable>;
 export type GithubAppRow = Selectable<GithubAppTable>;
 export type GithubInstallation = Selectable<GithubInstallationsTable>;
 export type ApiKey = Selectable<ApiKeysTable>;
+export type RecordingSession = Selectable<RecordingSessionsTable>;
+export type RecordingSegment = Selectable<RecordingSegmentsTable>;
+export type RecordingRule = Selectable<RecordingRulesTable>;
+export type RecordingAsset = Selectable<RecordingAssetsTable>;

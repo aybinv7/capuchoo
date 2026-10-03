@@ -41,6 +41,7 @@ const schema = z
       .positive()
       .default(400 * 1024 * 1024),
     DEVICE_EVENT_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
+    RECORDING_RETENTION_DAYS: z.coerce.number().int().positive().default(14),
     TRUST_PROXY: bool.default(false),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     GITHUB_API_URL: z.string().url().default("https://api.github.com"),

@@ -23,6 +23,10 @@ describe("migrations", () => {
         "build_events",
         "audit_log",
         "channel_events",
+        "recording_sessions",
+        "recording_segments",
+        "recording_rules",
+        "recording_assets",
       ]),
     );
     await db.destroy();

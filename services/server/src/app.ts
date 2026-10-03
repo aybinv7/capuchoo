@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { RECORDING_ASSET_HEADER, RECORDING_HEADER } from "@capuchoo/core";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { getConnInfo } from "@hono/node-server/conninfo";
@@ -24,6 +25,8 @@ import { deviceInsightRoutes } from "./routes/device-insights";
 import { livePollRoutes } from "./routes/live-poll";
 import { insightRoutes } from "./routes/insights";
 import { organizationRoutes } from "./routes/organizations";
+import { recordingDeviceRoutes } from "./routes/recording-device";
+import { recordingRoutes } from "./routes/recordings";
 import { systemRoutes } from "./routes/system";
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -118,8 +121,18 @@ export function createApp(deps: Deps): Hono<AppEnv> {
     maxAge: 86400,
   });
   for (const path of DEVICE_PATHS) app.use(path, devices);
+  app.use(
+    "/api/recording/*",
+    cors({
+      origin: "*",
+      allowMethods: ["POST", "OPTIONS"],
+      allowHeaders: ["Content-Type", RECORDING_HEADER, RECORDING_ASSET_HEADER],
+      maxAge: 86400,
+    }),
+  );
   app.use("/api/*", authenticate);
   app.route("/api", deviceRoutes());
+  app.route("/api", recordingDeviceRoutes());
   app.route("/api/auth", authRoutes());
   app.route("/api/api-keys", apiKeyRoutes());
   app.route("/api/organizations", organizationRoutes());
@@ -133,6 +146,7 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", ciRoutes());
   app.route("/api", githubRoutes());
   app.route("/api", demoRoutes());
+  app.route("/api", recordingRoutes());
   app.get("/api/health", (c) => c.json({ status: "ok" }));
   app.all("/api/*", (c) => c.json({ error: "Not found", reason: "not_found" }, 404));
 
