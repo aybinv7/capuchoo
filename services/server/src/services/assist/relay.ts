@@ -86,14 +86,17 @@ export function relaySocket(
     if (!session || !role) {
       const hello = parseAssistHello(parse(data));
       if (!hello || bytes > 1024) {
+        options.logger.info("assist socket refused", { reason: "no hello" });
         socket.close(CLOSE.unauthorized, "hello expected");
         return;
       }
       const joined = registry.join(hello.session, hello.role, hello.ticket, socket);
       if (!joined) {
+        options.logger.info("assist socket refused", { reason: "ticket", role: hello.role });
         socket.close(CLOSE.unauthorized, "unknown session or ticket");
         return;
       }
+      options.logger.info("assist joined", { session: joined.id, role: hello.role });
       clearTimeout(helloTimer);
       session = joined;
       role = hello.role;

@@ -45,10 +45,12 @@ export function attachAssistSockets(server: Server, deps: Deps): () => void {
   const onUpgrade = (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const path = new URL(request.url ?? "/", "http://socket").pathname;
     if (path !== ASSIST_SOCKET_PATH) {
+      deps.logger.warn("upgrade refused", { path });
       socket.destroy();
       return;
     }
     sockets.handleUpgrade(request, socket, head, (ws) => {
+      deps.logger.info("assist socket opened", { open: sockets.clients.size });
       alive.add(ws);
       ws.on("pong", () => alive.add(ws));
       relaySocket(adapt(ws), deps.assist, {
