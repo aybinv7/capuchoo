@@ -272,6 +272,24 @@ export {
   type RecordingStart,
 } from "./recording-wire.js";
 export {
+  ASSIST_KEYS,
+  ASSIST_LIMITS,
+  CONTROL_MESSAGES,
+  parseAgentMessage,
+  parseAssistHello,
+  parseAssistInvite,
+  parseDeviceMessage,
+  type AgentMessage,
+  type AssistControl,
+  type AssistEndReason,
+  type AssistHello,
+  type AssistInvite,
+  type AssistKey,
+  type AssistRole,
+  type DeviceMessage,
+  type ServerMessage,
+} from "./assist-protocol.js";
+export {
   STEP_ACTIONS,
   parseRecordedStep,
   type RecordedStep,

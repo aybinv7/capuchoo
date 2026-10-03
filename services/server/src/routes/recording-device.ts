@@ -52,8 +52,21 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
       if (first.status !== "unknown_app") noteRecorderHealth(deps, health, first, request);
     });
     if (answer.status === "unknown_app") return c.json({ error: "App not found" }, 404);
-    if (answer.status === "unchanged") return c.json({ unchanged: true, version: answer.version });
-    return c.json({ policy: answer.policy, known_assets: answer.knownAssets });
+    const invite = deps.assist.inviteFor(answer.appId, request.deviceId);
+    const assist = invite ? { assist: invite } : {};
+    if (answer.status === "unchanged") {
+      return c.json({ unchanged: true, version: answer.version, ...assist });
+    }
+    return c.json({ policy: answer.policy, known_assets: answer.knownAssets, ...assist });
+  });
+
+  router.post("/recording/assist/decline", async (c) => {
+    const body = await readJson(c, 2 * 1024);
+    if (typeof body.session !== "string" || typeof body.ticket !== "string") {
+      throw badRequest("session and ticket are required");
+    }
+    const declined = c.get("deps").assist.decline(body.session, body.ticket);
+    return c.json({ declined }, declined ? 200 : 404);
   });
 
   router.post("/recording/segments", guarded, async (c) => {

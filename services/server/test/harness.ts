@@ -11,6 +11,7 @@ import { createApiKey } from "../src/repositories/api-keys";
 import { createSession } from "../src/repositories/sessions";
 import { createUser } from "../src/repositories/users";
 import { CiRuntime } from "../src/services/ci-runtime";
+import { createAssistRegistry } from "../src/services/assist/create";
 import { EventHub } from "../src/services/event-hub";
 import { RequestCache } from "../src/services/request-cache";
 import { createPostgresStorage } from "../src/storage/postgres";
@@ -50,17 +51,21 @@ export async function createTestContext(
     ...overrides,
   });
   let clock = Date.now();
+  const hub = new EventHub();
+  const tasks = new BackgroundTasks(silentLogger);
+  const now = () => new Date(clock);
   const deps: Deps = {
     db,
     config,
     storage: createPostgresStorage(db),
     logger: silentLogger,
-    hub: new EventHub(),
+    hub,
     cache: new RequestCache(0),
-    tasks: new BackgroundTasks(silentLogger),
+    tasks,
     load: new LoadGuard(deviceInflightCap(config)),
     ci: new CiRuntime(config.SECRET_KEY, fetcher ?? refuseNetwork),
-    now: () => new Date(clock),
+    assist: createAssistRegistry({ db, hub, tasks, now }),
+    now,
   };
   const app = createApp(deps);
 

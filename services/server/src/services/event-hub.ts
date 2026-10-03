@@ -9,7 +9,8 @@ export type HubEventType =
   | "artefact"
   | "recording"
   | "recording_rule"
-  | "recorder_health";
+  | "recorder_health"
+  | "assist";
 
 export interface HubEvent {
   type: HubEventType;
@@ -22,7 +23,10 @@ type Listener = (event: HubEvent) => void;
 /** In-process fan-out of live events to SSE subscribers, per app, plus a short backlog for polling. */
 export class EventHub {
   private readonly listeners = new Map<string, Set<Listener>>();
-  private readonly waiters = new Map<string, Set<{ type: HubEventType; wake: () => void }>>();
+  private readonly waiters = new Map<
+    string,
+    Set<{ types: readonly HubEventType[]; wake: () => void }>
+  >();
   readonly backlog = new EventBacklog();
 
   /**
@@ -31,16 +35,17 @@ export class EventHub {
    */
   waitFor(
     appId: string,
-    type: HubEventType,
+    type: HubEventType | readonly HubEventType[],
     timeoutMs: number,
     signal?: AbortSignal,
   ): Promise<boolean> {
+    const types: readonly HubEventType[] = typeof type === "string" ? [type] : type;
     return new Promise((resolve) => {
       const set = this.waiters.get(appId) ?? new Set();
       this.waiters.set(appId, set);
       let timer: ReturnType<typeof setTimeout> | undefined;
       const waiter = {
-        type,
+        types,
         wake: () => finish(true),
       };
       const finish = (woken: boolean) => {
@@ -72,7 +77,7 @@ export class EventHub {
     this.backlog.record(event);
     const waiting = this.waiters.get(event.appId);
     if (waiting) {
-      for (const waiter of [...waiting]) if (waiter.type === event.type) waiter.wake();
+      for (const waiter of [...waiting]) if (waiter.types.includes(event.type)) waiter.wake();
     }
     const set = this.listeners.get(event.appId);
     if (!set) return;

@@ -3,6 +3,7 @@ import { createApp } from "./app";
 import { loadConfig } from "./config";
 import { migrateToLatest } from "./db/migrator";
 import { createDeps } from "./deps";
+import { attachAssistSockets } from "./services/assist/ws-server";
 import { bootstrapAdmin } from "./services/auth-service";
 import { scheduleRetention } from "./services/retention";
 
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
   http.requestTimeout = 20 * 60 * 1000;
   http.headersTimeout = 65_000;
   http.keepAliveTimeout = 61_000;
+  const stopAssist = attachAssistSockets(http, deps);
 
   let stopping = false;
   const shutdown = (signal: string) => {
@@ -40,6 +42,7 @@ async function main(): Promise<void> {
     stopping = true;
     deps.logger.info("shutting down", { signal });
     stopRetention();
+    stopAssist();
     const force = setTimeout(() => process.exit(1), 25_000);
     force.unref();
     server.close(async () => {

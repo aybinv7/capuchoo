@@ -4,6 +4,7 @@ import type { Deps } from "./http/context";
 import { BackgroundTasks } from "./lib/background";
 import { LoadGuard, deviceInflightCap } from "./lib/load-guard";
 import { createLogger } from "./lib/logger";
+import { createAssistRegistry } from "./services/assist/create";
 import { CiRuntime } from "./services/ci-runtime";
 import { EventHub } from "./services/event-hub";
 import { RequestCache } from "./services/request-cache";
@@ -33,16 +34,20 @@ export function createStorage(config: Config, db: Db): StorageDriver {
 export function createDeps(config: Config): Deps {
   const logger = createLogger(config.LOG_LEVEL);
   const db = createDatabase(createPostgresDialect(config));
+  const hub = new EventHub();
+  const tasks = new BackgroundTasks(logger, config.BACKGROUND_TASK_LIMIT);
+  const now = () => new Date();
   return {
     db,
     config,
     storage: createStorage(config, db),
     logger,
-    hub: new EventHub(),
+    hub,
     cache: new RequestCache(),
-    tasks: new BackgroundTasks(logger, config.BACKGROUND_TASK_LIMIT),
+    tasks,
     load: new LoadGuard(deviceInflightCap(config), Math.random, logger),
     ci: new CiRuntime(config.SECRET_KEY),
-    now: () => new Date(),
+    assist: createAssistRegistry({ db, hub, tasks, now }),
+    now,
   };
 }

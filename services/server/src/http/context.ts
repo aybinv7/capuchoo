@@ -10,6 +10,7 @@ import type { RequestCache } from "../services/request-cache";
 import type { BackgroundTasks } from "../lib/background";
 import type { LoadGuard } from "../lib/load-guard";
 import type { CiRuntime } from "../services/ci-runtime";
+import type { AssistRegistry } from "../services/assist/registry";
 
 /** Everything a route needs, built once at boot and injected so tests can swap parts. */
 export interface Deps {
@@ -22,6 +23,7 @@ export interface Deps {
   tasks: BackgroundTasks;
   load: LoadGuard;
   ci: CiRuntime;
+  assist: AssistRegistry;
   now: () => Date;
 }
 

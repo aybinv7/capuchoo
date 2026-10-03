@@ -81,8 +81,8 @@ export async function policyForDevice(
 
 /**
  * Holds a device's request open while its policy is unchanged, for up to `waitMs`: a rule change
- * for the app, or a live deadline passing, answers it at once. This is how a device goes live in
- * about a second instead of at its next poll.
+ * for the app, a live deadline passing, or an agent asking to assist this device answers it at
+ * once. This is how a device goes live, or is asked for help, in about a second.
  */
 export async function listenForPolicy(
   deps: Deps,
@@ -99,9 +99,10 @@ export async function listenForPolicy(
     if (remaining <= 0) break;
     const untilLiveEnds =
       answer.liveUntil === null ? remaining : answer.liveUntil - deps.now().getTime() + 250;
+    if (deps.assist.inviteFor(answer.appId, request.deviceId)) break;
     await deps.hub.waitFor(
       answer.appId,
-      "recording_rule",
+      ["recording_rule", "assist"],
       Math.max(0, Math.min(remaining, untilLiveEnds)),
       signal,
     );
