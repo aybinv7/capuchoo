@@ -317,6 +317,7 @@ async function remove() {
             :playhead="playhead"
             :origin="bounds.start"
             :rage="rage"
+            :version="session.version_name"
             @seek="seekWall"
             @open-table="openTable"
           />

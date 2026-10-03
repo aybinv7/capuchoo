@@ -57,6 +57,19 @@ describe("createBundleZip", () => {
     expect(names.every((name) => !name.includes("\\"))).toBe(true);
   });
 
+  it("keeps source maps out of the archive and hands them back for upload", () => {
+    write("dist/index.html", "<html></html>");
+    write("dist/assets/app.js", "x");
+    write("dist/assets/app.js.map", '{"version":3}');
+
+    const out = path.join(workDir, "bundle.zip");
+    const bundle = createBundleZip({ webDir: path.join(workDir, "dist"), outFile: out });
+
+    expect(entryNames(out)).toEqual(["assets/app.js", "index.html"]);
+    expect(bundle.fileCount).toBe(2);
+    expect(bundle.sourceMaps.map((entry) => entry.name)).toEqual(["assets/app.js.map"]);
+  });
+
   it("puts index.html at the archive root, not inside a wrapper folder", () => {
     // With more than one root entry the plugin uses the directory as-is. A
     // single wrapping folder would send it down its flatten path instead.

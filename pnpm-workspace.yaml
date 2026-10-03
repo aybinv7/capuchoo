@@ -93,6 +93,7 @@ catalog:
   # same event format, so both read rrweb from here.
   "@rrweb/record": 2.1.7
   "@rrweb/replay": 2.1.7
+  "@jridgewell/trace-mapping": ^0.3.31
   "@rrweb/types": 2.1.7
   fflate: ^0.8.3
   happy-dom: ^20.14.5

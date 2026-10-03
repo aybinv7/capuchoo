@@ -58,6 +58,9 @@ export const queryKeys = {
     ["apps", appId, "recordings", filters] as const,
   recordingRules: (appId: string) => ["apps", appId, "recording-rules"] as const,
   recorderHealth: (appId: string) => ["apps", appId, "recorder-health"] as const,
+  sourceMaps: (appId: string, version: string) => ["apps", appId, "source-maps", version] as const,
+  sourceMap: (appId: string, version: string, path: string) =>
+    ["apps", appId, "source-maps", version, path] as const,
   devicePolicy: (appId: string, deviceId: string) =>
     ["apps", appId, "recording-rules", "device", deviceId] as const,
   /** A session's detail; under the app so a new segment's live event refetches it. */

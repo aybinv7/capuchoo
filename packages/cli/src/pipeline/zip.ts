@@ -114,6 +114,8 @@ export interface BundleResult {
   zipPath: string;
   fileCount: number;
   byteSize: number;
+  /** `.map` files found in the web directory: kept out of the archive, uploaded on their own. */
+  sourceMaps: Array<{ name: string; source: string }>;
 }
 
 export interface BundleOptions {
@@ -143,7 +145,9 @@ export function createBundleZip(options: BundleOptions): BundleResult {
     );
   }
 
-  const entries = collect(webDir);
+  const collected = collect(webDir);
+  const sourceMaps = collected.filter((entry) => entry.name.endsWith(".map"));
+  const entries = collected.filter((entry) => !entry.name.endsWith(".map"));
   if (entries.length === 0) {
     throw new Error(`"${webDir}" is empty, so there is nothing to publish.`);
   }
@@ -227,6 +231,7 @@ export function createBundleZip(options: BundleOptions): BundleResult {
     zipPath: outFile,
     fileCount: entries.length,
     byteSize: archive.length,
+    sourceMaps,
   };
 }
 

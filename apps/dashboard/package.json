@@ -15,6 +15,7 @@
   "dependencies": {
     "@capuchoo/core": "workspace:^",
     "@internationalized/date": "catalog:",
+    "@jridgewell/trace-mapping": "catalog:",
     "@lucide/vue": "catalog:",
     "@noble/hashes": "catalog:",
     "@rrweb/replay": "catalog:",

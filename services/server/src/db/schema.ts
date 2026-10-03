@@ -460,6 +460,16 @@ export interface RecorderHealthTable {
   seen_at: Timestamp;
 }
 
+export interface SourceMapsTable {
+  id: Generated<string>;
+  app_id: string;
+  version_name: string;
+  path: string;
+  storage_key: string;
+  size_bytes: BigCount;
+  created_at: CreatedAt;
+}
+
 export interface RecordingAssetsTable {
   id: Generated<string>;
   app_id: string;
@@ -504,6 +514,7 @@ export interface Database {
   recording_rules: RecordingRulesTable;
   recording_assets: RecordingAssetsTable;
   recorder_health: RecorderHealthTable;
+  source_maps: SourceMapsTable;
 }
 
 export type User = Selectable<UsersTable>;

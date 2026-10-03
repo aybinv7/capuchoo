@@ -93,6 +93,8 @@ export interface DeployArtifact {
   signed?: boolean;
   /** OTA only. */
   fileCount?: number;
+  /** OTA only: source maps the build produced, uploaded after the bundle and never shipped. */
+  sourceMaps?: Array<{ path: string; file: string }>;
 }
 
 export interface DeployOutcome {
@@ -389,14 +391,18 @@ export async function runDeploy(
     const webDir = path.resolve(request.appDir, request.project.webDir);
     const outFile = path.join(request.appDir, bundleFileName(request.project.appId, state.version));
     const bundle = createBundleZip({ webDir, outFile });
+    const maps = bundle.sourceMaps.length
+      ? `, ${bundle.sourceMaps.length} source maps kept out of it`
+      : "";
     reporter.note(
-      `${bundle.fileCount} files, ${formatBytes(bundle.byteSize)} -> ${path.basename(bundle.zipPath)}`,
+      `${bundle.fileCount} files, ${formatBytes(bundle.byteSize)} -> ${path.basename(bundle.zipPath)}${maps}`,
     );
     artifact = {
       kind: "ota",
       filePath: bundle.zipPath,
       byteSize: bundle.byteSize,
       fileCount: bundle.fileCount,
+      sourceMaps: bundle.sourceMaps.map((entry) => ({ path: entry.name, file: entry.source })),
     };
   } else {
     reporter.begin("compile");

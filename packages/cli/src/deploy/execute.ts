@@ -43,6 +43,7 @@ import {
   resolveReleaseVersion,
   type VersionRequest,
 } from "./release-version.js";
+import { uploadSourceMaps } from "./source-maps.js";
 import { restoreVersionFiles, snapshotVersionFiles } from "./version-guard.js";
 import { runnable } from "../cli/invocation.js";
 
@@ -613,6 +614,22 @@ export async function executeDeploy(options: DeployCommandOptions): Promise<void
       publishedId = published.artefactId;
       reporter.note(`${formatBytes(artifact.byteSize)} accepted`);
       if (published.warning) outcome.warnings.push(published.warning);
+
+      if (kind === "ota" && artifact.sourceMaps?.length) {
+        const maps = await uploadSourceMaps({
+          cloud,
+          cloudAppId: project.cloudAppId,
+          versionName: outcome.version,
+          maps: artifact.sourceMaps,
+        });
+        if (maps.uploaded) reporter.note(`${maps.uploaded} source maps stored for stack traces`);
+        if (maps.failed.length) {
+          outcome.warnings.push(
+            `${maps.failed.length} source maps were not stored, so their stacks stay minified: ` +
+              maps.failed.map((entry) => `${entry.path} (${entry.reason})`).join(", "),
+          );
+        }
+      }
 
       // The OTA archive is a build artefact; the APK is not - it may be needed
       // for a store submission, so it stays.

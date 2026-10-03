@@ -181,3 +181,31 @@ export async function fetchRecorderHealth(
     .map(normalizeCheckIn)
     .filter((entry): entry is RecorderCheckIn => entry !== null);
 }
+
+/** The source map paths uploaded for an app version. */
+export async function fetchSourceMapPaths(
+  appId: string,
+  version: string,
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const body = await http.get<{ maps?: Array<{ path?: unknown }> }>(
+    `/apps/${encodeURIComponent(appId)}/source-maps`,
+    { version },
+    signal,
+  );
+  return (body?.maps ?? [])
+    .map((map) => map.path)
+    .filter((path): path is string => typeof path === "string");
+}
+
+export const fetchSourceMap = (
+  appId: string,
+  version: string,
+  path: string,
+  signal?: AbortSignal,
+) =>
+  http.get<unknown>(
+    `/apps/${encodeURIComponent(appId)}/source-maps/file`,
+    { version, path },
+    signal,
+  );

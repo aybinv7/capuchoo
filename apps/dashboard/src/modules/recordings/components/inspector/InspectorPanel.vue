@@ -24,6 +24,7 @@ import NetworkDetail from "./NetworkDetail.vue";
 import NetworkRow from "./NetworkRow.vue";
 import PerfSummary from "./PerfSummary.vue";
 import TelemetryRow from "./TelemetryRow.vue";
+import ConsoleDetail from "./ConsoleDetail.vue";
 import TextDetail from "./TextDetail.vue";
 
 type Tab = "activity" | "console" | "network" | "database" | "telemetry" | "perf";
@@ -33,6 +34,8 @@ const props = defineProps<{
   playhead: number;
   origin: number;
   rage: ReadonlyArray<{ t: number }>;
+  /** The app version the session ran, whose source maps read its stacks. */
+  version: string;
 }>();
 const emit = defineEmits<{ seek: [time: number]; openTable: [db: string, table: string] }>();
 const follow = defineModel<boolean>("follow", { required: true });
@@ -284,11 +287,10 @@ function openFromActivity(item: ActivityItem) {
         :playhead="props.playhead"
         @open-table="(db, table) => emit('openTable', db, table)"
       />
-      <TextDetail
+      <ConsoleDetail
         v-else-if="detail.kind === 'console'"
-        :title="detail.entry.text"
-        :body="detail.entry.stack ?? ''"
-        :extra="detail.entry.source === 'console' ? null : `From an ${detail.entry.source} error`"
+        :entry="detail.entry"
+        :version="props.version"
       />
       <TextDetail
         v-else-if="detail.kind === 'telemetry'"

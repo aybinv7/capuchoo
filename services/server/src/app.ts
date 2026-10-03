@@ -27,6 +27,7 @@ import { insightRoutes } from "./routes/insights";
 import { organizationRoutes } from "./routes/organizations";
 import { recordingDeviceRoutes } from "./routes/recording-device";
 import { recordingRoutes } from "./routes/recordings";
+import { sourceMapRoutes } from "./routes/source-maps";
 import { systemRoutes } from "./routes/system";
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -147,6 +148,7 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", githubRoutes());
   app.route("/api", demoRoutes());
   app.route("/api", recordingRoutes());
+  app.route("/api", sourceMapRoutes());
   app.get("/api/health", (c) => c.json({ status: "ok" }));
   app.all("/api/*", (c) => c.json({ error: "Not found", reason: "not_found" }, 404));
 

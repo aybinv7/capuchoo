@@ -279,6 +279,16 @@ export class CloudClient {
     );
   }
 
+  /** Stores one source map of a release, so recorded stacks can be read in the app's own sources. */
+  uploadSourceMap(cloudAppId: string, versionName: string, mapPath: string, map: unknown) {
+    const query = new URLSearchParams({ version: versionName, path: mapPath });
+    return put<unknown>(
+      `/api/apps/${encodeURIComponent(cloudAppId)}/source-maps?${query.toString()}`,
+      map,
+      this.options,
+    );
+  }
+
   /** Every uploaded bundle and native build of an app, with the channels each may be pointed at. */
   async artefacts(cloudAppId: string): Promise<AppArtefacts> {
     const response = await get<Partial<AppArtefacts> | null>(

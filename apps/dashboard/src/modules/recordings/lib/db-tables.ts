@@ -56,12 +56,20 @@ export function summarizeTables(lanes: Lanes, db: string, time: number): TableSu
   );
 }
 
-/** The table the session wrote to most, which is where someone opening the data view wants to land. */
+/**
+ * Where someone opening the data view wants to land: the table the session wrote to most, else the
+ * largest one in its starting state.
+ */
 export function busiestTable(lanes: Lanes, db: string): string | null {
   const counts = new Map<string, number>();
   for (const entry of entriesOf(lanes, db)) {
     for (const change of entry.changes) {
       counts.set(change.table, (counts.get(change.table) ?? 0) + 1);
+    }
+  }
+  if (counts.size === 0) {
+    for (const [name, snapshot] of Object.entries(lanes.snapshots[db] ?? {})) {
+      counts.set(name, snapshot.rows.length);
     }
   }
   let best: string | null = null;

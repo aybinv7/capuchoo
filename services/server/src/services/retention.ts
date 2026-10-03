@@ -5,6 +5,7 @@ import { purgeExpiredSessions } from "../repositories/sessions";
 import { deleteRecorderHealthBefore } from "../repositories/recorder-health";
 import { purgeOrphanAssets } from "../repositories/recording-assets";
 import { purgeSessions as purgeRecordingSessions } from "../repositories/recording-sessions";
+import { purgeSourceMaps } from "../repositories/source-maps";
 
 const STALE_BUILD_MS = 2 * 60 * 60 * 1000;
 const STALE_PIPELINE_MS = 24 * 60 * 60 * 1000;
@@ -14,13 +15,14 @@ const RECORDING_PURGE_BATCH = 200;
 async function purgeRecordings(deps: Deps, cutoff: Date): Promise<number> {
   const sessionKeys = await purgeRecordingSessions(deps.db, cutoff, RECORDING_PURGE_BATCH);
   const assetKeys = await purgeOrphanAssets(deps.db, cutoff, RECORDING_PURGE_BATCH);
-  for (const key of [...sessionKeys, ...assetKeys]) {
+  const mapKeys = await purgeSourceMaps(deps.db, cutoff, RECORDING_PURGE_BATCH);
+  for (const key of [...sessionKeys, ...assetKeys, ...mapKeys]) {
     await deps.storage
       .delete(key)
       .catch((error: unknown) => deps.logger.warn("recording blob delete failed", { key, error }));
   }
   const health = await deleteRecorderHealthBefore(deps.db, cutoff);
-  return sessionKeys.length + assetKeys.length + health;
+  return sessionKeys.length + assetKeys.length + mapKeys.length + health;
 }
 
 /** One pass of housekeeping: expired sessions, old telemetry, builds a crashed CLI never finished. */
