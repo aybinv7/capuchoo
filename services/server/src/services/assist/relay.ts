@@ -73,8 +73,17 @@ export function relaySocket(
   let allowance: Allowance | null = null;
   let lagging = false;
 
+  /**
+   * Says why in a message before closing: a proxy - Render's among them - may drop the close frame,
+   * and the other side would otherwise only learn of it when the connection times out.
+   */
+  const refuse = (code: number, error: string, message: string) => {
+    tell(socket, { t: "error", code: error, message });
+    socket.close(code, message);
+  };
+
   const helloTimer = setTimeout(() => {
-    if (!session) socket.close(CLOSE.noHello, "hello expected");
+    if (!session) refuse(CLOSE.noHello, "no_hello", "hello expected");
   }, ASSIST_LIMITS.helloMs);
 
   socket.onClose(() => {
@@ -87,13 +96,13 @@ export function relaySocket(
       const hello = parseAssistHello(parse(data));
       if (!hello || bytes > 1024) {
         options.logger.info("assist socket refused", { reason: "no hello" });
-        socket.close(CLOSE.unauthorized, "hello expected");
+        refuse(CLOSE.unauthorized, "unauthorized", "hello expected");
         return;
       }
       const joined = registry.join(hello.session, hello.role, hello.ticket, socket);
       if (!joined) {
         options.logger.info("assist socket refused", { reason: "ticket", role: hello.role });
-        socket.close(CLOSE.unauthorized, "unknown session or ticket");
+        refuse(CLOSE.unauthorized, "unauthorized", "unknown session or ticket");
         return;
       }
       options.logger.info("assist joined", { session: joined.id, role: hello.role });
@@ -112,7 +121,7 @@ export function relaySocket(
     const limit =
       role === "agent" ? ASSIST_LIMITS.agentMessageBytes : ASSIST_LIMITS.deviceMessageBytes;
     if (bytes > limit) {
-      socket.close(CLOSE.tooBig, "message too large");
+      refuse(CLOSE.tooBig, "too_big", "message too large");
       return;
     }
     if (!allowance?.take()) {

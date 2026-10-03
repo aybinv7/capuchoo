@@ -18,6 +18,8 @@ import type { RecordingAsset } from "../types/recordings.types";
 /** The agent's pointer is sent at most this often; the device draws it moving smoothly between. */
 const POINTER_MS = 50;
 const MAX_NOTICES = 30;
+/** Errors the server sends just before closing; its close frame may never arrive through a proxy. */
+const FATAL_ERRORS = new Set(["unauthorized", "no_hello", "too_big"]);
 
 const END_MESSAGES: Record<AssistEndReason | "failed", string> = {
   agent: "You ended the session.",
@@ -104,6 +106,9 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
       case "error":
         if (message.code === "no_control") note("warning", "The user has not given control.");
         else if (message.code === "rate") note("warning", "Slow down: too many commands.");
+        else if (FATAL_ERRORS.has(String(message.code))) {
+          finish("failed", "The server refused this session; ask again.");
+        }
         return;
       case "end":
         finish((message.reason as AssistEndReason) ?? "error");

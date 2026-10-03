@@ -218,7 +218,14 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
       finish(current, server.reason ?? "agent", false);
       return;
     }
-    if (server.t === "peer" || server.t === "error") return;
+    if (server.t === "error") {
+      const code = (raw as { code?: string }).code;
+      if (code === "unauthorized" || code === "no_hello" || code === "too_big") {
+        finish(current, "error", false);
+      }
+      return;
+    }
+    if (server.t === "peer") return;
     const message = parseAgentMessage(raw);
     if (message) onAgent(current, message);
   }

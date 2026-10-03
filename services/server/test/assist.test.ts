@@ -156,6 +156,7 @@ describe("assist", () => {
     const stranger = connect();
     stranger.receive({ t: "hello", session: started.session.id, role: "agent", ticket: "guess" });
     expect(stranger.closed?.code).toBe(CLOSE.unauthorized);
+    expect(stranger.last()).toMatchObject({ t: "error", code: "unauthorized" });
 
     const asDevice = connect();
     asDevice.receive({
