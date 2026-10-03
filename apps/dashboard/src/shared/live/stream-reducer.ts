@@ -209,6 +209,19 @@ function deviceOps(appId: string, data: unknown): CacheOp[] {
   return ops;
 }
 
+/** A new segment refetches its session at once - a live viewer is waiting - and the lists throttled. */
+function recordingOps(appId: string, data: unknown): CacheOp[] {
+  const ops = [invalidate(queryKeys.recordingsAll(appId), true)];
+  const sessionId =
+    typeof data === "object" && data !== null
+      ? (data as Record<string, unknown>).session_id
+      : undefined;
+  if (typeof sessionId === "string" && sessionId) {
+    ops.push(invalidate(queryKeys.recording(appId, sessionId)));
+  }
+  return ops;
+}
+
 /**
  * Turns one `GET /api/apps/:id/stream` message into cache operations. Events that carry a whole
  * entity update it in place; events that only name a change invalidate, throttled when they arrive
@@ -228,6 +241,8 @@ export function reduceStreamEvent(appId: string, message: StreamMessage): CacheO
       return [invalidate(queryKeys.catalog(appId))];
     case "device":
       return deviceOps(appId, message.data);
+    case "recording":
+      return recordingOps(appId, message.data);
     default:
       return [];
   }

@@ -1,7 +1,15 @@
 import { API_BASE } from "../api/http";
 import type { LiveTransport, TransportHandlers } from "./transport";
 
-const EVENT_TYPES = ["build", "build_event", "build_job", "channel", "device", "artefact"];
+const EVENT_TYPES = [
+  "build",
+  "build_event",
+  "build_job",
+  "channel",
+  "device",
+  "artefact",
+  "recording",
+];
 
 /** The app's events over one `EventSource`. Every connect starts fresh, so `ready` says events were lost. */
 export function openSseTransport(appId: string, on: TransportHandlers): LiveTransport {

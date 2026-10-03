@@ -17,6 +17,7 @@
     "@internationalized/date": "catalog:",
     "@lucide/vue": "catalog:",
     "@noble/hashes": "catalog:",
+    "@rrweb/replay": "catalog:",
     "@tanstack/vue-query": "^5.90.6",
     "@tanstack/vue-table": "catalog:",
     "@vue-flow/background": "^1.3.2",

@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ArrowRightLeft, Bug, MonitorSmartphone } from "@lucide/vue";
+import { ArrowRightLeft, Bug, Clapperboard, MonitorSmartphone } from "@lucide/vue";
 import { computed } from "vue";
+import { RouterLink } from "vue-router";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import GateButton from "@/shared/components/GateButton.vue";
 import PlatformIcon from "@/shared/components/PlatformIcon.vue";
 import { useAppPermissions } from "@/shared/composables/useAppPermissions";
+import { RouteName } from "@/shared/router/route-names";
 import { platformTile } from "../lib/device-hero";
 import type { DeviceDetail } from "../types/devices.types";
 import DeviceAttributeBar from "./DeviceAttributeBar.vue";
@@ -55,6 +58,12 @@ const assignGate = computed(() => permissions.assignDevice(null));
         <DeviceMetaLine :device="props.device" :title="props.title" />
       </div>
       <div class="flex shrink-0 items-center gap-2">
+        <Button variant="outline" size="sm" as-child>
+          <RouterLink :to="{ name: RouteName.recordings, query: { device: props.device.id } }">
+            <Clapperboard />
+            Recordings
+          </RouterLink>
+        </Button>
         <GateButton variant="outline" size="sm" :gate="assignGate" @click="emit('assign')">
           <ArrowRightLeft />
           Assign channel

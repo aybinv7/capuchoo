@@ -75,6 +75,27 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return payload as T;
 }
 
+/** A body as text, for payloads that are not JSON; the browser inflates a gzip'd response. */
+export async function requestText(path: string, signal?: AbortSignal): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path), { credentials: "same-origin", signal });
+  } catch (cause) {
+    if (signal?.aborted) throw cause;
+    throw networkError();
+  }
+  if (!response.ok) {
+    const error = toApiError(
+      response.status,
+      await readPayload(response),
+      response.headers.get("retry-after"),
+    );
+    if (error.status === 401) unauthorizedListener?.(error);
+    throw error;
+  }
+  return response.text();
+}
+
 export const http = {
   get: <T>(path: string, query?: Query, signal?: AbortSignal) =>
     request<T>(path, { query, signal }),

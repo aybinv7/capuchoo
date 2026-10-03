@@ -6,6 +6,7 @@ import { buildsRoutes } from "@/modules/builds/routes";
 import { canvasRoutes } from "@/modules/canvas/routes";
 import { channelsRoutes } from "@/modules/channels/routes";
 import { devicesRoutes } from "@/modules/devices/routes";
+import { recordingsRoutes } from "@/modules/recordings/routes";
 import { releasesRoutes } from "@/modules/releases/routes";
 import { settingsRoutes } from "@/modules/settings/routes";
 import { statisticsRoutes } from "@/modules/statistics/routes";
@@ -20,6 +21,7 @@ const MODULES: ModuleRoutes[] = [
   releasesRoutes,
   buildsRoutes,
   devicesRoutes,
+  recordingsRoutes,
   statisticsRoutes,
   auditRoutes,
   settingsRoutes,

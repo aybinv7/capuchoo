@@ -53,6 +53,19 @@ export const queryKeys = {
   eventHistory: (scope: readonly unknown[], anchor: string) =>
     ["event-history", ...scope, anchor] as const,
   audit: (appId: string) => ["apps", appId, "audit"] as const,
+  recordingsAll: (appId: string) => ["apps", appId, "recordings"] as const,
+  recordings: (appId: string, filters: Record<string, unknown>) =>
+    ["apps", appId, "recordings", filters] as const,
+  recordingRules: (appId: string) => ["apps", appId, "recording-rules"] as const,
+  devicePolicy: (appId: string, deviceId: string) =>
+    ["apps", appId, "recording-rules", "device", deviceId] as const,
+  /** A session's detail; under the app so a new segment's live event refetches it. */
+  recording: (appId: string, recordingId: string) =>
+    ["apps", appId, "recording", recordingId] as const,
+  /** One segment's bytes never change, so it lives outside `["apps", ...]` and is never refetched. */
+  recordingSegment: (recordingId: string, seq: number) =>
+    ["recording-segment", recordingId, seq] as const,
+  recordingAssets: (recordingId: string) => ["recording-assets", recordingId] as const,
   appSettings: (appId: string, section: string) => ["apps", appId, "settings", section] as const,
   appCi: (appId: string) => ["apps", appId, "ci"] as const,
   ciRefs: (appId: string) => ["apps", appId, "ci", "refs"] as const,
