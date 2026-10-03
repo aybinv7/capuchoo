@@ -460,6 +460,30 @@ export interface RecorderHealthTable {
   seen_at: Timestamp;
 }
 
+export interface RecordingIssuesTable {
+  id: Generated<string>;
+  app_id: string;
+  fingerprint: string;
+  message: string;
+  frame: string | null;
+  status: Generated<"open" | "resolved" | "regressed">;
+  occurrences: BigCount;
+  first_version: string;
+  last_version: string;
+  first_seen: Timestamp;
+  last_seen: Timestamp;
+  resolved_at: Timestamp | null;
+}
+
+export interface RecordingIssueSessionsTable {
+  issue_id: string;
+  session_id: string;
+  device_id: string;
+  version_name: string;
+  first_at: Timestamp;
+  occurrences: Generated<number>;
+}
+
 export interface SourceMapsTable {
   id: Generated<string>;
   app_id: string;
@@ -515,6 +539,8 @@ export interface Database {
   recording_assets: RecordingAssetsTable;
   recorder_health: RecorderHealthTable;
   source_maps: SourceMapsTable;
+  recording_issues: RecordingIssuesTable;
+  recording_issue_sessions: RecordingIssueSessionsTable;
 }
 
 export type User = Selectable<UsersTable>;

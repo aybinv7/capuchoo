@@ -1,4 +1,9 @@
-import type { RecordedEvent } from "@capuchoo/core";
+import {
+  RECORDING_ISSUE_LIMITS,
+  issueOf,
+  type RecordedEvent,
+  type RecordingIssue,
+} from "@capuchoo/core";
 import {
   isErrorEvent,
   isReplayCheckout,
@@ -15,7 +20,16 @@ export interface ClosedSegment {
   events: number;
   bytes: number;
   errors: number;
+  issues: RecordingIssue[];
   fullSnapshot: boolean;
+}
+
+/** What an error event says about itself, for grouping; null for anything that is not an error. */
+function errorOf(event: RecordedEvent): { text: string; stack: string | null } | null {
+  const data = event.d as { text?: unknown; message?: unknown; stack?: unknown } | null;
+  const text = typeof data?.text === "string" ? data.text : data?.message;
+  if (typeof text !== "string") return null;
+  return { text, stack: typeof data?.stack === "string" ? data.stack : null };
 }
 
 /** Accumulates NDJSON lines until the segment is closed; serialization happens here, off the main thread. */
@@ -23,6 +37,7 @@ export class SegmentBuilder {
   #lines: string[] = [];
   #bytes = 0;
   #errors = 0;
+  #issues = new Map<string, RecordingIssue>();
   #fullSnapshot = false;
   #startedAt = 0;
   #endedAt = 0;
@@ -56,8 +71,22 @@ export class SegmentBuilder {
     this.#bytes += line.length + 1;
     this.#startedAt = Math.min(this.#startedAt, event.t);
     this.#endedAt = Math.max(this.#endedAt, event.t);
-    if (isErrorEvent(event)) this.#errors++;
+    if (isErrorEvent(event)) {
+      this.#errors++;
+      this.#noteIssue(event);
+    }
     if (isReplayFullSnapshot(event)) this.#fullSnapshot = true;
+  }
+
+  #noteIssue(event: RecordedEvent): void {
+    const error = errorOf(event);
+    if (!error) return;
+    const issue = issueOf(error.text, error.stack);
+    const known = this.#issues.get(issue.fingerprint);
+    if (known) known.count++;
+    else if (this.#issues.size < RECORDING_ISSUE_LIMITS.perSegment) {
+      this.#issues.set(issue.fingerprint, { ...issue, count: 1, at: event.t });
+    }
   }
 
   get full(): boolean {
@@ -73,11 +102,13 @@ export class SegmentBuilder {
       events: this.#lines.length,
       bytes: this.#bytes,
       errors: this.#errors,
+      issues: [...this.#issues.values()],
       fullSnapshot: this.#fullSnapshot,
     };
     this.#lines = [];
     this.#bytes = 0;
     this.#errors = 0;
+    this.#issues = new Map();
     this.#fullSnapshot = false;
     this.#startedAt = 0;
     this.#endedAt = 0;

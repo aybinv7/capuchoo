@@ -3,6 +3,7 @@
  * request with the metadata in a header, so the server stores the body untouched and a dashboard
  * fetch gets it decompressed by the browser.
  */
+import { parseRecordingIssues, type RecordingIssue } from "./recording-issues.js";
 import {
   RECORDING_TRIGGERS,
   isRecordingMode,
@@ -70,6 +71,8 @@ export interface RecordingSegmentMeta {
   /** Whether a replay full snapshot is in this segment, so playback can start here. */
   fullSnapshot: boolean;
   errors: number;
+  /** The distinct errors in the segment, fingerprinted for grouping across sessions. */
+  issues?: RecordingIssue[];
   final: boolean;
 }
 
@@ -250,6 +253,7 @@ function segmentMeta(input: unknown, sessionId: string): RecordingSegmentMeta | 
     return null;
   }
   if (endedAt < startedAt || events === null || bytes === null) return null;
+  const issues = parseRecordingIssues(raw.issues);
   return {
     sessionId,
     seq,
@@ -259,6 +263,7 @@ function segmentMeta(input: unknown, sessionId: string): RecordingSegmentMeta | 
     bytes,
     fullSnapshot: raw.fullSnapshot === true,
     errors,
+    ...(issues.length > 0 ? { issues } : {}),
     final: raw.final === true,
   };
 }

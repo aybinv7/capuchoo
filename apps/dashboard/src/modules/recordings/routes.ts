@@ -16,6 +16,12 @@ export const recordingsRoutes: ModuleRoutes = {
       meta: { title: "What devices record", section: "Recordings", parent: RouteName.recordings },
     },
     {
+      path: "recordings/errors",
+      name: RouteName.recordingIssues,
+      component: () => import("./pages/RecordingIssuesPage.vue"),
+      meta: { title: "Errors", section: "Recordings", parent: RouteName.recordings },
+    },
+    {
       path: "recordings/connect",
       name: RouteName.recordingSetup,
       component: () => import("./pages/RecordingSetupPage.vue"),

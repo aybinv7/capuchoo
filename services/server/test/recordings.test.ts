@@ -443,3 +443,66 @@ describe("recording assets", () => {
     expect(rows).toHaveLength(0);
   });
 });
+
+describe("recording issues", () => {
+  const SECOND = "0190a8d2-7c1e-7b3a-9f00-0000000000bb";
+  const issue = (count: number, at: number) => ({
+    fingerprint: "k3x9a",
+    message: "TypeError: Cannot read properties of undefined (reading 'lines')",
+    frame: "at Module.Ky (https://localhost/assets/index-7Zxsr9SK.js:1:40517)",
+    count,
+    at,
+  });
+
+  async function issues(status = "unresolved") {
+    return (
+      await (
+        await ctx.request(`/api/apps/${appId}/recording-issues?status=${status}`, {
+          token: owner.token,
+        })
+      ).json()
+    ).issues;
+  }
+
+  it("group errors across sessions and devices, once per segment, and reopen when they come back", async () => {
+    await postSegment(0, { segment: { errors: 2, issues: [issue(2, STARTED + 1500)] } });
+    await postSegment(0, { segment: { errors: 2, issues: [issue(2, STARTED + 1500)] } });
+    await postSegment(0, {
+      session: { sessionId: SECOND, deviceId: "phone-2", versionName: "3.0.2" },
+      segment: { sessionId: SECOND, errors: 1, issues: [issue(1, STARTED + 9000)] },
+    });
+
+    const [grouped] = await issues();
+    expect(grouped).toMatchObject({
+      occurrences: 3,
+      sessions: 2,
+      devices: 2,
+      first_version: "3.0.1",
+      last_version: "3.0.2",
+      status: "open",
+    });
+
+    const detail = await (
+      await ctx.request(`/api/recording-issues/${grouped.id}`, { token: owner.token })
+    ).json();
+    expect(detail.sessions.map((session: { offset_ms: number }) => session.offset_ms)).toEqual([
+      9000, 1500,
+    ]);
+
+    const resolved = await ctx.request(`/api/recording-issues/${grouped.id}`, {
+      method: "PATCH",
+      token: owner.token,
+      json: { status: "resolved" },
+    });
+    expect(resolved.status).toBe(200);
+    expect(await issues()).toEqual([]);
+    expect((await issues("resolved"))[0].id).toBe(grouped.id);
+
+    await postSegment(1, { segment: { errors: 1, issues: [issue(1, STARTED + 6000)] } });
+    expect((await issues())[0]).toMatchObject({
+      id: grouped.id,
+      status: "regressed",
+      occurrences: 4,
+    });
+  });
+});

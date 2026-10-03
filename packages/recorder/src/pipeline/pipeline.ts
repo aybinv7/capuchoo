@@ -142,6 +142,7 @@ export function createPipeline(deps: PipelineDeps) {
       bytes: closed?.bytes ?? 0,
       fullSnapshot: closed?.fullSnapshot ?? false,
       errors: closed?.errors ?? 0,
+      ...(closed?.issues.length ? { issues: closed.issues } : {}),
       final,
       stored: 0,
     };

@@ -188,3 +188,35 @@ export interface RecorderCheckIn {
   seen_at: string;
   online: boolean;
 }
+
+export type IssueStatus = "open" | "resolved" | "regressed";
+export type IssueFilter = "unresolved" | "resolved" | "all";
+
+/** One error grouped across sessions. */
+export interface RecordingIssueRow {
+  id: string;
+  message: string;
+  frame: string | null;
+  status: IssueStatus;
+  occurrences: number;
+  sessions: number;
+  devices: number;
+  first_version: string;
+  last_version: string;
+  first_seen: string;
+  last_seen: string;
+}
+
+/** A session an error happened in, with how far into it. */
+export interface IssueSession {
+  id: string;
+  device_id: string;
+  device: RecordingDeviceFacts | null;
+  platform: string;
+  version_name: string;
+  start: string;
+  note: string | null;
+  started_at: string;
+  offset_ms: number;
+  occurrences: number;
+}

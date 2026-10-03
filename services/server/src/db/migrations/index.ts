@@ -6,6 +6,7 @@ import * as deviceDetail from "./0004_device_detail";
 import * as recordings from "./0005_recordings";
 import * as recorderHealth from "./0006_recorder_health";
 import * as sourceMaps from "./0007_source_maps";
+import * as recordingIssues from "./0008_recording_issues";
 
 /** Every migration, in order. Names are permanent once applied anywhere. */
 export const migrations: Record<string, Migration> = {
@@ -16,4 +17,5 @@ export const migrations: Record<string, Migration> = {
   "0005_recordings": recordings,
   "0006_recorder_health": recorderHealth,
   "0007_source_maps": sourceMaps,
+  "0008_recording_issues": recordingIssues,
 };

@@ -58,6 +58,10 @@ export const queryKeys = {
     ["apps", appId, "recordings", filters] as const,
   recordingRules: (appId: string) => ["apps", appId, "recording-rules"] as const,
   recorderHealth: (appId: string) => ["apps", appId, "recorder-health"] as const,
+  recordingIssues: (appId: string, filter: string) =>
+    ["apps", appId, "recordings", "issues", filter] as const,
+  recordingIssueSessions: (appId: string, issueId: string) =>
+    ["apps", appId, "recordings", "issue", issueId] as const,
   sourceMaps: (appId: string, version: string) => ["apps", appId, "source-maps", version] as const,
   sourceMap: (appId: string, version: string, path: string) =>
     ["apps", appId, "source-maps", version, path] as const,

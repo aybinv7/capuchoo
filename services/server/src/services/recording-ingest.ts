@@ -49,6 +49,11 @@ export async function ingestSegment(
     storageKey: key,
     sizeBytes,
     now: deps.now(),
+    origin: {
+      appId,
+      deviceId: header.session.deviceId,
+      versionName: header.session.versionName,
+    },
   });
 
   if (stored) {

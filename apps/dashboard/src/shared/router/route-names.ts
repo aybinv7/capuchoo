@@ -22,6 +22,7 @@ export const RouteName = {
   recording: "app-recording",
   recordingRules: "app-recording-rules",
   recordingSetup: "app-recording-setup",
+  recordingIssues: "app-recording-issues",
   statistics: "app-statistics",
   builds: "app-builds",
   build: "app-build",

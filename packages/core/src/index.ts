@@ -271,3 +271,11 @@ export {
   type RecordingSessionMeta,
   type RecordingStart,
 } from "./recording-wire.js";
+export {
+  RECORDING_ISSUE_LIMITS,
+  issueOf,
+  normaliseIssueMessage,
+  parseRecordingIssues,
+  topFrame,
+  type RecordingIssue,
+} from "./recording-issues.js";

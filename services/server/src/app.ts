@@ -27,6 +27,7 @@ import { insightRoutes } from "./routes/insights";
 import { organizationRoutes } from "./routes/organizations";
 import { recordingDeviceRoutes } from "./routes/recording-device";
 import { recordingRoutes } from "./routes/recordings";
+import { recordingIssueRoutes } from "./routes/recording-issues";
 import { sourceMapRoutes } from "./routes/source-maps";
 import { systemRoutes } from "./routes/system";
 
@@ -150,6 +151,7 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", demoRoutes());
   app.route("/api", recordingRoutes());
   app.route("/api", sourceMapRoutes());
+  app.route("/api", recordingIssueRoutes());
   app.get("/api/health", (c) => c.json({ status: "ok" }));
   app.all("/api/*", (c) => c.json({ error: "Not found", reason: "not_found" }, 404));
 

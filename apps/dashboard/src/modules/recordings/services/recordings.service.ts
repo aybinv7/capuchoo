@@ -12,6 +12,9 @@ import {
   normalizeSession,
 } from "../lib/normalize";
 import type {
+  IssueFilter,
+  IssueSession,
+  RecordingIssueRow,
   RecorderCheckIn,
   RecordingDetail,
   RecordingFilters,
@@ -209,3 +212,31 @@ export const fetchSourceMap = (
     { version, path },
     signal,
   );
+
+export async function fetchIssues(
+  appId: string,
+  filter: IssueFilter,
+  signal?: AbortSignal,
+): Promise<RecordingIssueRow[]> {
+  const body = await http.get<{ issues?: RecordingIssueRow[] }>(
+    `/apps/${encodeURIComponent(appId)}/recording-issues`,
+    { status: filter },
+    signal,
+  );
+  return body?.issues ?? [];
+}
+
+export async function fetchIssueSessions(
+  issueId: string,
+  signal?: AbortSignal,
+): Promise<IssueSession[]> {
+  const body = await http.get<{ sessions?: IssueSession[] }>(
+    `/recording-issues/${encodeURIComponent(issueId)}`,
+    undefined,
+    signal,
+  );
+  return body?.sessions ?? [];
+}
+
+export const setIssueStatus = (issueId: string, status: "open" | "resolved") =>
+  http.patch<unknown>(`/recording-issues/${encodeURIComponent(issueId)}`, { status });

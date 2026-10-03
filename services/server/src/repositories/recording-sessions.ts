@@ -1,6 +1,7 @@
 import { sql } from "kysely";
 import type { RecordingSegmentMeta, RecordingSessionMeta } from "@capuchoo/core";
 import type { Db } from "../db/database";
+import { recordIssueOccurrences } from "./recording-issues";
 import type { RecordingSegment, RecordingSession } from "../db/schema";
 
 export interface SessionTarget {
@@ -57,6 +58,8 @@ export interface StoredSegment {
   storageKey: string;
   sizeBytes: number;
   now: Date;
+  /** Who recorded it, for counting the segment's errors into their issues. */
+  origin: { appId: string; deviceId: string; versionName: string };
 }
 
 /** Records a stored segment once; a retried upload of the same `seq` changes nothing. */
@@ -94,6 +97,14 @@ export async function recordSegment(db: Db, segment: StoredSegment): Promise<boo
       })
       .where("id", "=", segment.sessionId)
       .execute();
+
+    if (segment.meta.issues?.length) {
+      await recordIssueOccurrences(trx, {
+        ...segment.origin,
+        sessionId: segment.sessionId,
+        issues: segment.meta.issues,
+      });
+    }
     return true;
   });
 }

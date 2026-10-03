@@ -3,6 +3,7 @@
  * server stores patches per app, channel and device; `resolveRecordingPolicy` folds them over the
  * defaults. App code may raise the mode at runtime, never above `ceiling`.
  */
+import { fnv1a } from "./hash.js";
 
 export const RECORDING_MODES = ["off", "buffer", "session", "live"] as const;
 export type RecordingMode = (typeof RECORDING_MODES)[number];
@@ -139,15 +140,6 @@ export function escalateMode(
 ): RecordingMode {
   const target = Math.min(modeRank(requested), modeRank(ceiling));
   return target > modeRank(current) ? (RECORDING_MODES[target] ?? current) : current;
-}
-
-function fnv1a(text: string): number {
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < text.length; index++) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return hash;
 }
 
 /** A stable bucket in [0, 1) per device, so sampling picks the same devices every time. */

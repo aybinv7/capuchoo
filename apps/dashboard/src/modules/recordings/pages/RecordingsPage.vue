@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Cable, Clapperboard, SlidersHorizontal, X } from "@lucide/vue";
+import { Bug, Cable, Clapperboard, SlidersHorizontal, X } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { useQueryParam } from "@/shared/composables/useQueryParam";
 import { RouteName } from "@/shared/router/route-names";
 import RecordingsTable from "../components/RecordingsTable.vue";
 import GoLiveButton from "../components/rules/GoLiveButton.vue";
+import { useRecordingIssues } from "../composables/useRecordingIssues";
 import { useRecordings } from "../composables/useRecordings";
 import { START_KINDS, startStyle } from "../lib/start";
 import type { RecordingFilters, RecordingSession } from "../types/recordings.types";
@@ -40,6 +41,8 @@ const filters = computed<RecordingFilters>(() => ({
 }));
 
 const { query, sessions } = useRecordings(appId, filters);
+const { issues: unresolved } = useRecordingIssues(appId, "unresolved");
+const openIssues = computed(() => unresolved.value.length);
 const visible = computed(() => {
   const needle = search.value.trim().toLowerCase();
   if (!needle) return sessions.value;
@@ -73,6 +76,17 @@ function clearFilters() {
     >
       <template #actions>
         <GoLiveButton v-if="device" :app-id="appId" :device-id="device" />
+        <Button variant="outline" size="sm" as-child>
+          <RouterLink :to="{ name: RouteName.recordingIssues }">
+            <Bug />
+            Errors
+            <span
+              v-if="openIssues > 0"
+              class="bg-destructive tabular ml-0.5 rounded-full px-1.5 text-[10px] leading-4 font-semibold text-white"
+              >{{ openIssues }}</span
+            >
+          </RouterLink>
+        </Button>
         <Button variant="ghost" size="sm" as-child>
           <RouterLink :to="{ name: RouteName.recordingSetup }">
             <Cable />
