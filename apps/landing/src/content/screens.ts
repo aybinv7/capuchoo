@@ -1,4 +1,7 @@
 export type ScreenId =
+  | "overview"
+  | "replay"
+  | "errors"
   | "canvas"
   | "channels"
   | "channel-detail"
@@ -20,6 +23,14 @@ export interface TourStop {
 
 /** Screenshots of the real dashboard on the demo organization, in tour order. */
 export const TOUR: readonly TourStop[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    path: "app/overview",
+    title: "How the app ships, and how it behaves",
+    description:
+      "Install success beside the errors devices hit, then what needs you first: an error that came back, a release that breaks more than the last, a channel failing installs.",
+  },
   {
     id: "canvas",
     label: "Canvas",
@@ -51,6 +62,22 @@ export const TOUR: readonly TourStop[] = [
     title: "Everything uploaded, and who serves it",
     description:
       "Search, filter by flavour or signature, see which channels serve each release, export what you need.",
+  },
+  {
+    id: "replay",
+    label: "Session replay",
+    path: "session-replay/lenovo-tb-x606f",
+    title: "The minutes before it broke",
+    description:
+      "The device's screen beside its taps, console, network and database writes, on one timeline. Jump from error to error, follow it live, or hand the session to Assist.",
+  },
+  {
+    id: "errors",
+    label: "Errors",
+    path: "session-replay/errors",
+    title: "Errors grouped, with the devices they reach",
+    description:
+      "Every uncaught error grouped across sessions and versions, how often it happened and on how many devices, with the replay one click away. A fixed error that returns is marked regressed.",
   },
   {
     id: "devices",

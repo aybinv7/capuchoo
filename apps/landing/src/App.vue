@@ -11,6 +11,7 @@ import HeroSection from "@/components/sections/HeroSection.vue";
 import HowItWorksSection from "@/components/sections/HowItWorksSection.vue";
 import IntegrationsSection from "@/components/sections/IntegrationsSection.vue";
 import MotionSection from "@/components/sections/MotionSection.vue";
+import ReplaySection from "@/components/sections/ReplaySection.vue";
 import SelfHostSection from "@/components/sections/SelfHostSection.vue";
 import StoreWaitSection from "@/components/sections/StoreWaitSection.vue";
 import TourSection from "@/components/sections/TourSection.vue";
@@ -28,6 +29,7 @@ import TourSection from "@/components/sections/TourSection.vue";
     <StoreWaitSection />
     <HowItWorksSection />
     <ChannelsSection />
+    <ReplaySection />
     <TourSection />
     <FeaturesSection />
     <MotionSection />

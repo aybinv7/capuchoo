@@ -12,6 +12,7 @@ const RESOURCES = [
 const PACKAGES = [
   { label: "@capuchoo/cli", href: SITE.npmCli },
   { label: "@capuchoo/updater", href: SITE.npmUpdater },
+  { label: "@capuchoo/recorder", href: SITE.npmRecorder },
 ];
 
 const year = new Date().getFullYear();

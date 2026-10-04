@@ -18,9 +18,7 @@ import { SITE } from "@/config/site";
     <div class="relative mx-auto flex max-w-5xl flex-col items-center text-center">
       <a
         v-reveal
-        :href="SITE.repository"
-        target="_blank"
-        rel="noopener noreferrer"
+        href="#replay"
         class="border-primary/20 bg-card/80 hover:border-primary/40 mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 shadow-sm backdrop-blur-sm transition-colors"
       >
         <span class="relative flex size-2">
@@ -30,7 +28,7 @@ import { SITE } from "@/config/site";
           <span class="bg-primary relative inline-flex size-2 rounded-full" />
         </span>
         <span class="text-primary text-xs font-semibold tracking-wide uppercase"
-          >Open source · Self-hosted</span
+          >New · Session replay, live view and Assist</span
         >
       </a>
 
@@ -47,7 +45,8 @@ import { SITE } from "@/config/site";
         class="text-muted-foreground mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-pretty"
       >
         Web bundles and native APKs, signed by your CLI, delivered through channels you control, and
-        verified on every device before they run. One build for every customer, on your own server.
+        verified on every device before they run. When something still breaks, replay the session
+        that broke it. One build for every customer, on your own server.
       </p>
 
       <div v-reveal="300" class="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
