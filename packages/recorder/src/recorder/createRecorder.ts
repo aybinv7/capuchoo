@@ -129,6 +129,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
       };
     },
     snapshot: () => replay.checkout(),
+    nodeOf: (id) => replay.node(id),
   };
 
   const policy = (): ResolvedRecordingPolicy | null => answer?.policy ?? null;

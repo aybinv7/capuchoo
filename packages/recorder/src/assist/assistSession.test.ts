@@ -40,6 +40,7 @@ const original = Element.prototype.attachShadow;
 let socket: FakeSocket;
 let host: AssistHost;
 let screen: { listener: ((event: unknown) => void) | null; snapshots: number; released: number };
+let nodes: Map<number, Node>;
 let posts: Array<{ url: string; body: unknown }>;
 let marks: Array<Record<string, unknown>>;
 let assist: ReturnType<typeof createAssist>;
@@ -65,6 +66,13 @@ async function joined() {
   socket.receive({ t: "ready", peer: true, control: "none" });
 }
 
+async function granted() {
+  socket.receive({ t: "control" });
+  await wait();
+  button("Allow")!.click();
+  await wait();
+}
+
 beforeEach(() => {
   Element.prototype.attachShadow = function attachOpen(init: ShadowRootInit) {
     return original.call(this, { ...init, mode: "open" });
@@ -72,6 +80,7 @@ beforeEach(() => {
   document.body.innerHTML = "";
   socket = new FakeSocket();
   screen = { listener: null, snapshots: 0, released: 0 };
+  nodes = new Map();
   posts = [];
   marks = [];
   host = {
@@ -89,6 +98,7 @@ beforeEach(() => {
       snapshot: () => {
         screen.snapshots++;
       },
+      nodeOf: (id) => nodes.get(id) ?? null,
     },
     mark: (data) => marks.push(data),
     guards: () => ({
@@ -178,6 +188,68 @@ describe("assist on the device", () => {
     socket.receive({ t: "tap", x: 10, y: 10 });
     expect(clicks).toHaveBeenCalledTimes(1);
     expect(clicks.mock.calls[0]![0].isTrusted).not.toBe(true);
+  });
+
+  it("lands an anchored tap on the element the agent saw, wherever it sits here", async () => {
+    document.body.innerHTML = `<button id="save">Save</button><button id="other">Other</button>`;
+    const save = document.getElementById("save")!;
+    const other = document.getElementById("other")!;
+    const saved = vi.fn();
+    const wrong = vi.fn();
+    save.addEventListener("click", saved);
+    other.addEventListener("click", wrong);
+    vi.spyOn(save, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 100, y: 200, width: 50, height: 20 }),
+    );
+    vi.spyOn(document, "elementFromPoint").mockImplementation((x, y) =>
+      x === 125 && y === 210 ? save : other,
+    );
+    nodes.set(7, save);
+    await joined();
+    await granted();
+
+    socket.receive({ t: "tap", x: 125, y: 180, anchor: { id: 7, fx: 0.5, fy: 0.5 } });
+    expect(saved).toHaveBeenCalledTimes(1);
+    expect(wrong).not.toHaveBeenCalled();
+
+    nodes.clear();
+    socket.receive({ t: "tap", x: 125, y: 180, anchor: { id: 7, fx: 0.5, fy: 0.5 } });
+    expect(wrong).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops the user's own touch while the agent drives, and says so on both ends", async () => {
+    await joined();
+    await granted();
+    const shield = overlay()!.querySelector(".shield")!;
+
+    shield.dispatchEvent(
+      new MouseEvent("pointerdown", { clientX: 30, clientY: 40, bubbles: true }),
+    );
+    shield.dispatchEvent(new MouseEvent("click", { clientX: 30, clientY: 40, bubbles: true }));
+
+    expect(socket.of("blocked")).toEqual([{ t: "blocked", x: 30, y: 40 }]);
+    expect(overlay()!.querySelector(".blocked")).not.toBeNull();
+    expect(overlay()!.querySelector(".banner")!.classList.contains("nudge")).toBe(true);
+    expect(overlay()!.textContent).toContain("Tap Stop to take it back");
+  });
+
+  it("taps through the banner to the app beneath it", async () => {
+    document.body.innerHTML = `<button id="search">Search</button>`;
+    const search = document.getElementById("search")!;
+    const searched = vi.fn();
+    search.addEventListener("click", searched);
+    await joined();
+    await granted();
+    const layer = overlay()!.querySelector(".layer")!;
+    vi.spyOn(document, "elementFromPoint").mockImplementation(() =>
+      layer.classList.contains("through")
+        ? search
+        : (document.querySelector("capuchoo-assist") as Element),
+    );
+
+    socket.receive({ t: "tap", x: 200, y: 20 });
+    expect(searched).toHaveBeenCalledTimes(1);
+    expect(layer.classList.contains("through")).toBe(false);
   });
 
   it("types into the focused field but never into a password", async () => {

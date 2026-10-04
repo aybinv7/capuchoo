@@ -38,12 +38,27 @@ function sealed(field: HTMLInputElement | HTMLTextAreaElement, guards: InputGuar
 }
 
 /**
+ * What a point lands on: the element there, unless the agent named another one. Then the element
+ * at the point is used only when it lies inside the named one, being the more precise of the two.
+ */
+function landing(x: number, y: number, meant: Element | null | undefined): Element | null {
+  const hit = document.elementFromPoint(x, y);
+  if (!meant) return hit;
+  return hit && meant.contains(hit) ? hit : meant;
+}
+
+/**
  * A tap as a finger makes it: pointer, touch and mouse events at the point, then a click.
  * Framework7 reacts to the click; other code listens to any of the rest. Every event is
  * untrusted, so the recorder never takes the agent's taps for the user's steps.
  */
-export function tap(x: number, y: number, guards: InputGuards): InputResult {
-  const target = document.elementFromPoint(x, y);
+export function tap(
+  x: number,
+  y: number,
+  guards: InputGuards,
+  meant?: Element | null,
+): InputResult {
+  const target = landing(x, y, meant);
   if (!target) return refuse("Nothing is there.");
   const blocked = guarded(target, guards);
   if (blocked) return refuse(blocked);
@@ -106,8 +121,9 @@ export function scroll(
   dx: number,
   dy: number,
   guards: InputGuards,
+  meant?: Element | null,
 ): InputResult {
-  const target = document.elementFromPoint(x, y);
+  const target = landing(x, y, meant);
   if (target) {
     const blocked = guarded(target, guards);
     if (blocked) return refuse(blocked);

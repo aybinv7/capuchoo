@@ -1,6 +1,7 @@
 import {
   parseSafeArea,
   type AgentMessage,
+  type AssistAnchor,
   type SafeArea,
   type AssistControl,
   type AssistEndReason,
@@ -54,10 +55,44 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
   /** The phone's safe-area insets, which the replay needs before it can match the phone's layout. */
   const safeArea = shallowRef<SafeArea | null>(null);
   const viewportKnown = ref(false);
+  /** The user's last touch the phone stopped because the agent holds control. */
+  const blocked = shallowRef<{ x: number; y: number; at: number } | null>(null);
   let viewportTimer: ReturnType<typeof setTimeout> | null = null;
   let socket: WebSocket | null = null;
   let noticeId = 0;
   let lastPointer = 0;
+  let pointerTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingPointer: AgentMessage | null = null;
+  let lastBlockedNote = 0;
+
+  /**
+   * Sends the pointer at most every `POINTER_MS`. A move inside that window is held and sent when
+   * it ends, so the phone always ends on the point the agent stopped at.
+   */
+  function sendPointer(message: AgentMessage) {
+    const now = performance.now();
+    const wait = POINTER_MS - (now - lastPointer);
+    if (wait <= 0) {
+      lastPointer = now;
+      send(message);
+      return;
+    }
+    pendingPointer = message;
+    pointerTimer ??= setTimeout(() => {
+      pointerTimer = null;
+      const held = pendingPointer;
+      pendingPointer = null;
+      if (!held) return;
+      lastPointer = performance.now();
+      send(held);
+    }, wait);
+  }
+
+  function dropPointer() {
+    if (pointerTimer) clearTimeout(pointerTimer);
+    pointerTimer = null;
+    pendingPointer = null;
+  }
 
   function note(tone: AssistNotice["tone"], text: string) {
     notices.value = [{ id: ++noticeId, at: Date.now(), tone, text }, ...notices.value].slice(
@@ -70,6 +105,7 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
     if (phase.value === "ended") return;
     phase.value = "ended";
     control.value = "none";
+    dropPointer();
     if (viewportTimer) clearTimeout(viewportTimer);
     outcome.value = { reason, message };
     const open = socket;
@@ -119,6 +155,19 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
       case "refused":
         note("warning", `${String(message.action)} refused: ${String(message.reason)}`);
         return;
+      case "blocked": {
+        if (typeof message.x !== "number" || typeof message.y !== "number") return;
+        const at = Date.now();
+        blocked.value = { x: message.x, y: message.y, at };
+        if (at - lastBlockedNote > 5000) {
+          lastBlockedNote = at;
+          note(
+            "info",
+            "The user tried to touch the screen; it stays yours until you give it back.",
+          );
+        }
+        return;
+      }
       case "error":
         if (message.code === "no_control") note("warning", "The user has not given control.");
         else if (message.code === "rate") note("warning", "Slow down: too many commands.");
@@ -177,21 +226,26 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
     assets,
     safeArea,
     viewportKnown,
+    blocked,
     control,
     outcome,
     notices,
     end,
     requestControl: () => send({ t: "control" }),
     releaseControl: () => send({ t: "release" }),
-    pointer(x: number, y: number) {
-      const now = performance.now();
-      if (now - lastPointer < POINTER_MS) return;
-      lastPointer = now;
-      send({ t: "pointer", x, y });
+    pointer(x: number, y: number, anchor?: AssistAnchor | null) {
+      sendPointer(anchor ? { t: "pointer", x, y, anchor } : { t: "pointer", x, y });
     },
-    pointerOff: () => send({ t: "pointer-off" }),
-    tap: (x: number, y: number) => send({ t: "tap", x, y }),
-    scroll: (x: number, y: number, dx: number, dy: number) => send({ t: "scroll", x, y, dx, dy }),
+    pointerOff() {
+      dropPointer();
+      send({ t: "pointer-off" });
+    },
+    tap(x: number, y: number, anchor?: AssistAnchor | null) {
+      dropPointer();
+      send(anchor ? { t: "tap", x, y, anchor } : { t: "tap", x, y });
+    },
+    scroll: (x: number, y: number, dx: number, dy: number, anchor?: AssistAnchor | null) =>
+      send(anchor ? { t: "scroll", x, y, dx, dy, anchor } : { t: "scroll", x, y, dx, dy }),
     type: (text: string) => send({ t: "type", text }),
     key: (key: AssistKey) => send({ t: "key", key }),
   };

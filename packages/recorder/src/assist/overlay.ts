@@ -33,6 +33,12 @@ button { flex: 1; min-height: 44px; border-radius: 12px; border: 0; font-size: 1
 .ripple { pointer-events: none; position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
   border: 2px solid var(--accent); background: rgb(196 100 63 / 0.25); animation: ripple 450ms ease-out forwards; }
 .shield { position: absolute; inset: 0; pointer-events: auto; background: transparent; touch-action: none; }
+.blocked { pointer-events: none; position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+  display: grid; place-items: center; border: 2px solid var(--banner); background: rgb(192 57 43 / 0.18); color: var(--banner);
+  animation: blocked 620ms cubic-bezier(.2,.8,.2,1) forwards; }
+.blocked svg { width: 22px; height: 22px; }
+.banner.nudge { animation: nudge 380ms ease-in-out; }
+.layer.through * { pointer-events: none !important; }
 .hint { position: absolute; top: calc(max(8px, env(safe-area-inset-top)) + 52px); left: 50%; transform: translateX(-50%);
   padding: 8px 14px; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 13px; line-height: 1.4;
   box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.45); max-width: calc(100% - 32px); text-align: center; animation: drop 160ms ease-out; }
@@ -45,11 +51,31 @@ button { flex: 1; min-height: 44px; border-radius: 12px; border: 0; font-size: 1
 @keyframes rise { from { transform: translateY(24px); opacity: 0; } }
 @keyframes drop { from { transform: translate(-50%, -16px); opacity: 0; } }
 @keyframes pulse { 50% { opacity: 0.35; } }
+@keyframes blocked { 0% { transform: scale(0.4); opacity: 0; } 20% { transform: scale(1); opacity: 1; }
+  35% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 65% { transform: translateX(-3px); opacity: 1; }
+  100% { transform: scale(1.15); opacity: 0; } }
+@keyframes nudge { 0%, 100% { transform: translateX(-50%); } 20%, 60% { transform: translateX(calc(-50% - 7px)); }
+  40%, 80% { transform: translateX(calc(-50% + 7px)); } }
 @keyframes ripple { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 `;
 
 const fill = (text: string, agent: string) => text.replaceAll("{agent}", agent);
+
+const LOCK =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+/** One touch fires pointer, touch and click events; they get one answer between them. */
+const BLOCKED_GAP_MS = 350;
+
+function pointOf(event: Event): { x: number; y: number } | null {
+  if (typeof TouchEvent !== "undefined" && event instanceof TouchEvent) {
+    const touch = event.touches[0] ?? event.changedTouches[0];
+    return touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+  if (event instanceof MouseEvent) return { x: event.clientX, y: event.clientY };
+  return null;
+}
 
 /**
  * What the user sees of assist: a sheet asking for consent, a banner while it runs with a Stop
@@ -66,6 +92,7 @@ export class AssistOverlay {
   private shield: HTMLElement | null = null;
   private hint: HTMLElement | null = null;
   private hintTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastBlocked = 0;
 
   constructor(
     private readonly texts: AssistTexts,
@@ -204,10 +231,11 @@ export class AssistOverlay {
 
   /**
    * While the agent controls the app, the user's own touches stop at a transparent shield - two
-   * hands on one screen fight each other - and a touch says how to take control back. Stop, in the
-   * banner above the shield, always works.
+   * hands on one screen fight each other. A stopped touch answers where it landed with a shaking
+   * lock, nudges the banner whose Stop takes control back, and says so; `onBlocked` hears it too.
+   * Stop, in the banner above the shield, always works.
    */
-  shieldUser(on: boolean, hint: string): void {
+  shieldUser(on: boolean, hint: string, onBlocked?: (x: number, y: number) => void): void {
     if (!on) {
       this.shield?.remove();
       this.shield = null;
@@ -219,13 +247,46 @@ export class AssistOverlay {
     const show = (event: Event) => {
       event.preventDefault();
       event.stopPropagation();
+      const now = Date.now();
+      if (now - this.lastBlocked < BLOCKED_GAP_MS) return;
+      this.lastBlocked = now;
+      const at = pointOf(event);
+      if (at) {
+        this.blockedAt(at.x, at.y);
+        onBlocked?.(Math.round(at.x), Math.round(at.y));
+      }
+      this.nudgeBanner();
       this.showHint(hint);
+      try {
+        navigator.vibrate?.(30);
+      } catch {
+        return;
+      }
     };
     shield.addEventListener("pointerdown", show);
     shield.addEventListener("touchstart", show, { passive: false });
     shield.addEventListener("click", show);
     this.layer.prepend(shield);
     this.shield = shield;
+  }
+
+  private blockedAt(x: number, y: number): void {
+    const mark = document.createElement("i");
+    mark.className = "blocked";
+    mark.innerHTML = LOCK;
+    mark.style.left = `${x}px`;
+    mark.style.top = `${y}px`;
+    mark.addEventListener("animationend", () => mark.remove(), { once: true });
+    this.layer.append(mark);
+    setTimeout(() => mark.remove(), 1000);
+  }
+
+  private nudgeBanner(): void {
+    const banner = this.banner;
+    if (!banner) return;
+    banner.classList.remove("nudge");
+    void banner.offsetWidth;
+    banner.classList.add("nudge");
   }
 
   private showHint(text: string): void {
@@ -244,17 +305,16 @@ export class AssistOverlay {
   }
 
   /**
-   * Runs the agent's input with the shield out of the way, so it reaches the app beneath; nothing
-   * else can run in between, the dispatch being synchronous.
+   * Runs the agent's input with the whole overlay out of the way - shield, banner and hint - so a
+   * tap the agent aims at the app under the banner reaches it; the agent cannot see the banner and
+   * cannot press its Stop. Nothing else runs in between, the dispatch being synchronous.
    */
   passThrough<T>(run: () => T): T {
-    const shield = this.shield;
-    if (!shield) return run();
-    shield.style.pointerEvents = "none";
+    this.layer.classList.add("through");
     try {
       return run();
     } finally {
-      shield.style.pointerEvents = "";
+      this.layer.classList.remove("through");
     }
   }
 

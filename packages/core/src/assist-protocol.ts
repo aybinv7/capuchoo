@@ -49,13 +49,24 @@ export interface AssistHello {
   ticket: string;
 }
 
+/**
+ * A point named by the element under it: the recording's id for that node, and where in its box
+ * the point sits, from 0 to 1 on each axis. The dashboard lays the app out with its own fonts, so
+ * the same coordinates can fall on a different element there; the element's id cannot.
+ */
+export interface AssistAnchor {
+  id: number;
+  fx: number;
+  fy: number;
+}
+
 export type AgentMessage =
-  | { t: "pointer"; x: number; y: number }
+  | { t: "pointer"; x: number; y: number; anchor?: AssistAnchor }
   | { t: "pointer-off" }
   | { t: "control" }
   | { t: "release" }
-  | { t: "tap"; x: number; y: number }
-  | { t: "scroll"; x: number; y: number; dx: number; dy: number }
+  | { t: "tap"; x: number; y: number; anchor?: AssistAnchor }
+  | { t: "scroll"; x: number; y: number; dx: number; dy: number; anchor?: AssistAnchor }
   | { t: "type"; text: string }
   | { t: "key"; key: AssistKey }
   | { t: "end" };
@@ -66,6 +77,8 @@ export type DeviceMessage =
   | { t: "viewport"; safeArea: SafeArea }
   | { t: "control"; state: AssistControl }
   | { t: "refused"; action: string; reason: string }
+  /** The user touched the app while the agent held control, and the touch was stopped. */
+  | { t: "blocked"; x: number; y: number }
   | { t: "end"; reason: AssistEndReason };
 
 /** What the server itself tells either side. */
@@ -95,6 +108,21 @@ const finite = (value: unknown): value is number =>
 const coordinate = (value: unknown): value is number =>
   finite(value) && value >= -10_000 && value <= 100_000;
 
+const unit = (value: unknown): number | null =>
+  finite(value) ? Math.max(0, Math.min(1, value)) : null;
+
+export function parseAssistAnchor(raw: unknown): AssistAnchor | null {
+  if (!isRecord(raw) || !Number.isInteger(raw.id) || (raw.id as number) < 1) return null;
+  const fx = unit(raw.fx);
+  const fy = unit(raw.fy);
+  return fx === null || fy === null ? null : { id: raw.id as number, fx, fy };
+}
+
+const withAnchor = <T extends object>(message: T, raw: Record<string, unknown>) => {
+  const anchor = parseAssistAnchor(raw.anchor);
+  return anchor ? { ...message, anchor } : message;
+};
+
 export function parseAssistHello(raw: unknown): AssistHello | null {
   if (!isRecord(raw) || raw.t !== "hello") return null;
   if (typeof raw.session !== "string" || typeof raw.ticket !== "string") return null;
@@ -108,16 +136,21 @@ export function parseAgentMessage(raw: unknown): AgentMessage | null {
   switch (raw.t) {
     case "pointer":
     case "tap":
-      return coordinate(raw.x) && coordinate(raw.y) ? { t: raw.t, x: raw.x, y: raw.y } : null;
+      return coordinate(raw.x) && coordinate(raw.y)
+        ? withAnchor({ t: raw.t, x: raw.x, y: raw.y }, raw)
+        : null;
     case "scroll":
       return coordinate(raw.x) && coordinate(raw.y) && finite(raw.dx) && finite(raw.dy)
-        ? {
-            t: "scroll",
-            x: raw.x,
-            y: raw.y,
-            dx: Math.max(-5000, Math.min(5000, raw.dx)),
-            dy: Math.max(-5000, Math.min(5000, raw.dy)),
-          }
+        ? withAnchor(
+            {
+              t: "scroll" as const,
+              x: raw.x,
+              y: raw.y,
+              dx: Math.max(-5000, Math.min(5000, raw.dx)),
+              dy: Math.max(-5000, Math.min(5000, raw.dy)),
+            },
+            raw,
+          )
         : null;
     case "type":
       return typeof raw.text === "string" && raw.text.length <= ASSIST_LIMITS.typedText
@@ -166,6 +199,8 @@ export function parseDeviceMessage(raw: unknown): DeviceMessage | null {
       return typeof raw.action === "string" && typeof raw.reason === "string"
         ? { t: "refused", action: raw.action.slice(0, 40), reason: raw.reason.slice(0, 200) }
         : null;
+    case "blocked":
+      return coordinate(raw.x) && coordinate(raw.y) ? { t: "blocked", x: raw.x, y: raw.y } : null;
     case "end":
       return END_REASONS.has(raw.reason as AssistEndReason)
         ? { t: "end", reason: raw.reason as AssistEndReason }

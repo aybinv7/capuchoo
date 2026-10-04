@@ -60,6 +60,8 @@ function mutationWeight(event: { type: number; data?: unknown }): number {
 export interface ReplayTrack extends Track {
   /** Takes a full snapshot now, so the next session starts with one. */
   checkout(): void;
+  /** The live node the recording calls `id`, while the screen is being recorded. */
+  node(id: number): Node | null;
 }
 
 /**
@@ -164,6 +166,9 @@ export function createReplayTrack(options: ReplayOptions = {}): ReplayTrack {
     },
     checkout() {
       if (stopRecording) record.takeFullSnapshot(true);
+    },
+    node(id) {
+      return stopRecording ? (record.mirror.getNode(id) as Node | null) : null;
     },
   };
 }

@@ -1,6 +1,7 @@
 import { useResizeObserver } from "@vueuse/core";
 import { onScopeDispose, ref, shallowRef, type Ref } from "vue";
 import type { Replayer as ReplayerType } from "@rrweb/replay";
+import { REPLAY_STYLE_RULES } from "../lib/replay-style";
 import { dominantSize, insertSize, sizeAt, sizeOf, type SizeAt } from "../lib/viewport-sizes";
 import type { Lanes } from "../types/recordings.types";
 
@@ -188,7 +189,7 @@ export function useReplayer(input: {
         mouseTail: { duration: 600, lineWidth: 3, strokeStyle: "rgba(201, 100, 66, 0.55)" },
         UNSAFE_replayCanvas: false,
         triggerFocus: false,
-        insertStyleRules: ["html, body { scrollbar-width: none; }"],
+        insertStyleRules: REPLAY_STYLE_RULES,
       });
       player.on("finish", () => {
         if (!following) return;

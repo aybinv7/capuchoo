@@ -16,4 +16,6 @@ export interface ScreenSource {
   acquire(): () => void;
   /** Emits a full snapshot now. */
   snapshot(): void;
+  /** The live node a screen event calls `id`, so a viewer can point at an element, not a pixel. */
+  nodeOf?(id: number): Node | null;
 }

@@ -8,6 +8,7 @@ import {
 import { createScreenStream, type ScreenStream } from "../live/screenStream.js";
 import type { ScreenSource } from "../live/types.js";
 import type { RecorderLogger } from "../recorder/types.js";
+import { resolvePoint } from "./anchor.js";
 import { AssistOverlay } from "./overlay.js";
 import { key, scroll, tap, typeText, type InputGuards, type InputResult } from "./remoteInput.js";
 import { DEFAULT_TEXTS, type AssistOptions, type AssistSocketLike } from "./types.js";
@@ -79,6 +80,7 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     current.overlay.shieldUser(
       control === "granted",
       texts.shielded.replaceAll("{agent}", current.invite.agent),
+      (x, y) => send(current, { t: "blocked", x, y }),
     );
     current.overlay.showBanner(
       control === "granted" ? "controlling" : "viewing",
@@ -101,20 +103,26 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     setControl(current, granted ? "granted" : "denied");
   }
 
+  const nodeOf = (id: number) => host.screen.nodeOf?.(id) ?? null;
+
   function act(current: Active, message: AgentMessage): void {
     const guards = { ...host.guards(), overlay: current.overlay.host };
     let result: InputResult;
     switch (message.t) {
-      case "tap":
-        current.overlay.pointer(message.x, message.y, current.invite.agent);
-        current.overlay.ripple(message.x, message.y);
-        result = current.overlay.passThrough(() => tap(message.x, message.y, guards));
+      case "tap": {
+        const at = resolvePoint(message, nodeOf);
+        current.overlay.pointer(at.x, at.y, current.invite.agent);
+        current.overlay.ripple(at.x, at.y);
+        result = current.overlay.passThrough(() => tap(at.x, at.y, guards, at.target));
         break;
-      case "scroll":
+      }
+      case "scroll": {
+        const at = resolvePoint(message, nodeOf);
         result = current.overlay.passThrough(() =>
-          scroll(message.x, message.y, message.dx, message.dy, guards),
+          scroll(at.x, at.y, message.dx, message.dy, guards, at.target),
         );
         break;
+      }
       case "type":
         result = current.overlay.passThrough(() => typeText(message.text, guards));
         break;
@@ -129,9 +137,11 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
 
   function onAgent(current: Active, message: AgentMessage): void {
     switch (message.t) {
-      case "pointer":
-        current.overlay.pointer(message.x, message.y, current.invite.agent);
+      case "pointer": {
+        const at = resolvePoint(message, nodeOf);
+        current.overlay.pointer(at.x, at.y, current.invite.agent);
         return;
+      }
       case "pointer-off":
         current.overlay.hidePointer();
         return;

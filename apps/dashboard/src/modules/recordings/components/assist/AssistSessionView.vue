@@ -45,6 +45,11 @@ watch(canDraw, (ready) => {
 });
 
 const controlling = computed(() => session.control.value === "granted");
+
+const onPointer = (x: number, y: number) => session.pointer(x, y, live.anchorAt(x, y));
+const onTap = (x: number, y: number) => session.tap(x, y, live.anchorAt(x, y));
+const onScroll = (x: number, y: number, dx: number, dy: number) =>
+  session.scroll(x, y, dx, dy, live.anchorAt(x, y));
 </script>
 
 <template>
@@ -71,10 +76,11 @@ const controlling = computed(() => session.control.value === "granted");
           :scale="live.scale.value"
           :controlling="controlling"
           :touch="live.touch.value"
-          @pointer="session.pointer"
+          :blocked="session.blocked.value"
+          @pointer="onPointer"
           @pointer-off="session.pointerOff"
-          @tap="session.tap"
-          @scroll="session.scroll"
+          @tap="onTap"
+          @scroll="onScroll"
         >
           <AssistStatusCard
             :phase="session.phase.value"

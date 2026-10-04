@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MousePointer2, Pointer } from "@lucide/vue";
+import { Lock, MousePointer2, Pointer } from "@lucide/vue";
 import { useIntervalFn } from "@vueuse/core";
 import { computed, ref, useTemplateRef } from "vue";
 import { toAppPoint, wheelDelta } from "../../lib/assist-coordinates";
@@ -14,6 +14,8 @@ const props = defineProps<{
   controlling: boolean;
   /** Where the phone's user last touched, in the app's pixels. */
   touch: { x: number; y: number; at: number } | null;
+  /** Where the phone last stopped the user's touch while the agent held control. */
+  blocked: { x: number; y: number; at: number } | null;
 }>();
 const emit = defineEmits<{
   pointer: [x: number, y: number];
@@ -60,6 +62,16 @@ const finger = computed(() => {
     return null;
   }
   return { left: `${touch.x * props.scale}px`, top: `${touch.y * props.scale}px` };
+});
+
+/** The user's stopped touch, shown as briefly as the phone shows its own answer to it. */
+const stopped = computed(() => {
+  const blocked = props.blocked;
+  if (!blocked || now.value - blocked.at > TOUCH_SHOWN_MS) return null;
+  return {
+    key: blocked.at,
+    style: { left: `${blocked.x * props.scale}px`, top: `${blocked.y * props.scale}px` },
+  };
 });
 
 function point(event: { clientX: number; clientY: number }) {
@@ -127,6 +139,21 @@ function onWheel(event: WheelEvent) {
           class="bg-info mt-5 -ml-1 rounded-full px-1.5 py-px text-[10px] leading-4 font-semibold text-white shadow"
           >User</span
         >
+      </div>
+
+      <div
+        v-if="stopped"
+        :key="stopped.key"
+        class="pointer-events-none absolute z-10 -mt-5 -ml-5 grid size-10 place-items-center"
+        :style="stopped.style"
+        aria-hidden="true"
+      >
+        <span class="bg-destructive/30 absolute inset-0 animate-ping rounded-full" />
+        <span
+          class="border-destructive bg-background/90 text-destructive relative grid size-8 place-items-center rounded-full border-2 shadow"
+        >
+          <Lock class="size-4" />
+        </span>
       </div>
 
       <div

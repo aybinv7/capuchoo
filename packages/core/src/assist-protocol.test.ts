@@ -45,6 +45,35 @@ describe("assist protocol", () => {
     expect(parseAgentMessage({ t: "pointer", x: Number.NaN, y: 0 })).toBeNull();
   });
 
+  it("keeps a valid anchor on a point and drops a bad one", () => {
+    expect(
+      parseAgentMessage({ t: "tap", x: 10, y: 20, anchor: { id: 42, fx: 0.25, fy: 1.4 } }),
+    ).toEqual({ t: "tap", x: 10, y: 20, anchor: { id: 42, fx: 0.25, fy: 1 } });
+    expect(
+      parseAgentMessage({ t: "pointer", x: 1, y: 2, anchor: { id: 0, fx: 0.5, fy: 0.5 } }),
+    ).toEqual({ t: "pointer", x: 1, y: 2 });
+    expect(
+      parseAgentMessage({
+        t: "scroll",
+        x: 1,
+        y: 2,
+        dx: 0,
+        dy: 40,
+        anchor: { id: 1.5, fx: 0, fy: 0 },
+      }),
+    ).toEqual({ t: "scroll", x: 1, y: 2, dx: 0, dy: 40 });
+    expect(
+      parseAgentMessage({
+        t: "scroll",
+        x: 1,
+        y: 2,
+        dx: 0,
+        dy: 40,
+        anchor: { id: 7, fx: 0, fy: "a" },
+      }),
+    ).toEqual({ t: "scroll", x: 1, y: 2, dx: 0, dy: 40 });
+  });
+
   it("reads what a device reports", () => {
     expect(parseDeviceMessage({ t: "events", events: [{ type: 2 }] })).toEqual({
       t: "events",
@@ -56,6 +85,8 @@ describe("assist protocol", () => {
     });
     expect(parseDeviceMessage({ t: "control", state: "owned" })).toBeNull();
     expect(parseDeviceMessage({ t: "end", reason: "user" })).toEqual({ t: "end", reason: "user" });
+    expect(parseDeviceMessage({ t: "blocked", x: 3, y: 4 })).toEqual({ t: "blocked", x: 3, y: 4 });
+    expect(parseDeviceMessage({ t: "blocked", x: "3", y: 4 })).toBeNull();
   });
 
   it("reads an invite from a policy answer", () => {

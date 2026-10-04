@@ -1,8 +1,10 @@
-import type { SafeArea } from "@capuchoo/core";
+import type { AssistAnchor, SafeArea } from "@capuchoo/core";
 import { useResizeObserver } from "@vueuse/core";
 import { onScopeDispose, ref, shallowRef, type Ref } from "vue";
 import type { Replayer as ReplayerType } from "@rrweb/replay";
 import { rewriteReplayEvent, type AssetMap } from "../lib/asset-rewrite";
+import { anchorAt } from "../lib/assist-coordinates";
+import { REPLAY_STYLE_RULES } from "../lib/replay-style";
 import { keepReplayEvent } from "../lib/replay-filter";
 import { sizeOf } from "../lib/viewport-sizes";
 import type { Lanes } from "../types/recordings.types";
@@ -79,7 +81,7 @@ export function useLiveReplayer(input: {
       mouseTail: false,
       UNSAFE_replayCanvas: false,
       triggerFocus: false,
-      insertStyleRules: ["html, body { scrollbar-width: none; }"],
+      insertStyleRules: REPLAY_STYLE_RULES,
     });
     player.startLive((first[0]?.timestamp ?? Date.now()) - LIVE_BUFFER_MS);
     for (const event of [...first, ...pending]) player.addEvent(event as never);
@@ -103,6 +105,15 @@ export function useLiveReplayer(input: {
     scale,
     ready,
     touch,
+
+    /** The element under a point of the app's screen, so the phone can find the same one. */
+    anchorAt(x: number, y: number): AssistAnchor | null {
+      const player = replayer.value;
+      const doc = player?.iframe.contentDocument;
+      if (!player || !doc) return null;
+      const mirror = player.getMirror();
+      return anchorAt(doc, (element) => mirror.getId(element as never), x, y);
+    },
 
     /** Screen events from the assist socket, in the order the device sent them. */
     push(events: unknown[]) {

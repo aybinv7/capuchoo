@@ -175,6 +175,7 @@ export function relaySocket(
         return;
       case "refused":
       case "viewport":
+      case "blocked":
         post(agent, message);
         return;
       case "end":

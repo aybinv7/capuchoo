@@ -86,6 +86,19 @@ describe("assist sockets", () => {
     device.send(JSON.stringify({ t: "events", events: [{ type: 4, data: { width: 393 } }] }));
     expect(await screen).toEqual({ t: "events", events: [{ type: 4, data: { width: 393 } }] });
 
+    const blocked = next(agent);
+    device.send(JSON.stringify({ t: "blocked", x: 40, y: 80 }));
+    expect(await blocked).toEqual({ t: "blocked", x: 40, y: 80 });
+
+    const pointed = next(device);
+    agent.send(JSON.stringify({ t: "pointer", x: 5, y: 6, anchor: { id: 12, fx: 0.5, fy: 0.25 } }));
+    expect(await pointed).toEqual({
+      t: "pointer",
+      x: 5,
+      y: 6,
+      anchor: { id: 12, fx: 0.5, fy: 0.25 },
+    });
+
     const deviceClosed = closed(device);
     agent.send(JSON.stringify({ t: "end" }));
     expect(await deviceClosed).toBe(4002);
