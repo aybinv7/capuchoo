@@ -43,6 +43,25 @@ export function describeArgs(args: readonly unknown[]): string {
   }
 }
 
+const MAX_STACK = 4000;
+const FRAME_LINE = /(?:\bat |@).*:\d+:\d+\)?\s*$/;
+
+/** The stack an error or error-like value carries, such as one rebuilt from another realm. */
 export function stackOf(value: unknown): string | null {
-  return value instanceof Error && typeof value.stack === "string" ? clip(value.stack, 4000) : null;
+  if (!value || typeof value !== "object") return null;
+  const stack = (value as { stack?: unknown }).stack;
+  return typeof stack === "string" && stack ? clip(stack, MAX_STACK) : null;
+}
+
+/**
+ * The frames that led to a call, from a stack captured inside it: the engine's header line and the
+ * capturing function's own `skip` frames are dropped, so the first frame is the caller's.
+ */
+export function callerFrames(stack: string | undefined, skip: number): string | null {
+  if (!stack) return null;
+  const lines = stack.split("\n");
+  const first = lines.findIndex((line) => FRAME_LINE.test(line));
+  if (first < 0) return null;
+  const frames = lines.slice(first + skip).filter((line) => line.trim());
+  return frames.length ? clip(frames.join("\n"), MAX_STACK) : null;
 }

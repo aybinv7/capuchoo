@@ -64,4 +64,31 @@ describe("console track", () => {
     expect(pushed[0]!.text).toBe("Uncaught TypeError: x is undefined");
     track.stop();
   });
+
+  it("records where a stackless error was logged, starting at the app's own frame", () => {
+    const original = console.error;
+    console.error = () => undefined;
+    const pushed: ConsoleEntry[] = [];
+    const track = createConsoleTrack(() => undefined);
+    void track.start({
+      push: (_kind, data) => pushed.push(data as ConsoleEntry),
+      logger: { warn() {}, error() {} },
+    });
+
+    function syncOrders() {
+      console.error({ message: "Unable to resolve host", code: "UnknownHostException" });
+    }
+    syncOrders();
+    console.error({ message: "rebuilt", stack: "Error: rebuilt\n    at load (app.js:3:9)" });
+    console.warn("no site for warnings");
+
+    expect(pushed[0]!.stack).toBeNull();
+    expect(pushed[0]!.site?.split("\n")[0]).toContain("syncOrders");
+    expect(pushed[1]!.stack).toContain("at load (app.js:3:9)");
+    expect(pushed[1]!.site).toBeUndefined();
+    expect(pushed[2]!.site).toBeUndefined();
+
+    track.stop();
+    console.error = original;
+  });
 });

@@ -1,5 +1,5 @@
 import type { Track } from "../recorder/types.js";
-import { describeArgs, stackOf } from "./describe.js";
+import { callerFrames, describeArgs, stackOf } from "./describe.js";
 
 const LEVELS = ["log", "info", "warn", "error", "debug"] as const;
 type Level = (typeof LEVELS)[number];
@@ -8,6 +8,11 @@ export interface ConsoleEntry {
   level: Level;
   text: string;
   stack: string | null;
+  /**
+   * Where an error was logged, for a `console.error` whose arguments carry no stack (a native
+   * plugin's rejection, a string): the app frames that called it.
+   */
+  site?: string | null;
   source: "console" | "uncaught" | "rejection";
 }
 
@@ -34,10 +39,14 @@ export function createConsoleTrack(onError: (entry: ConsoleEntry) => void): Trac
         console[level] = (...args: unknown[]) => {
           original.apply(console, args);
           try {
+            const stack = level === "error" ? (args.map(stackOf).find(Boolean) ?? null) : null;
+            const site =
+              level === "error" && !stack ? callerFrames(new Error("site").stack, 1) : null;
             emit({
               level,
               text: describeArgs(args),
-              stack: level === "error" ? (args.map(stackOf).find(Boolean) ?? null) : null,
+              stack,
+              ...(site ? { site } : {}),
               source: "console",
             });
           } catch {

@@ -1,6 +1,6 @@
 {
   "name": "@capuchoo/recorder",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Session recording for Capacitor apps: replay, console, network, performance, telemetry and SQLite changesets, streamed to Capuchoo from a worker",
   "keywords": [
     "capacitor",
