@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { RecorderHealth } from "@capuchoo/core";
+import { compareVersions, type RecorderHealth } from "@capuchoo/core";
 import { DAY, MINUTE } from "./dice";
 import { ago, after, type DemoContext } from "./context";
 import type { DeviceKind } from "./fleet";
@@ -284,12 +284,12 @@ export async function seedRecordings(
         const firstAt = after(startedAt, dice.between(5, Math.max(6, lengthMs / 1000 - 5)) * 1000);
         const occurrences = dice.between(1, 3);
         issue.occurrences += occurrences;
-        if (firstAt < issue.firstSeen) {
-          issue.firstSeen = firstAt;
+        if (firstAt < issue.firstSeen) issue.firstSeen = firstAt;
+        if (firstAt > issue.lastSeen) issue.lastSeen = firstAt;
+        if (!issue.firstVersion || compareVersions(version, issue.firstVersion) < 0) {
           issue.firstVersion = version;
         }
-        if (firstAt > issue.lastSeen) {
-          issue.lastSeen = firstAt;
+        if (!issue.lastVersion || compareVersions(version, issue.lastVersion) > 0) {
           issue.lastVersion = version;
         }
         links.push({
