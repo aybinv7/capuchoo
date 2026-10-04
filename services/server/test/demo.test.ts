@@ -1,3 +1,4 @@
+import { gunzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { createTestContext, type TestContext } from "./harness";
 
@@ -137,6 +138,20 @@ describe("demo organization", () => {
       await ctx.request(`/api/apps/${fieldSales.id}/recordings?limit=5`, { token: admin.token })
     ).json();
     expect(listed.sessions).toHaveLength(5);
+    const played = await (
+      await ctx.request(`/api/recordings/${listed.sessions[0].id}`, { token: admin.token })
+    ).json();
+    expect(played.segments.length).toBeGreaterThan(0);
+    const first = await ctx.request(`/api/recordings/${listed.sessions[0].id}/segments/0`, {
+      token: admin.token,
+    });
+    const lines = gunzipSync(Buffer.from(await first.arrayBuffer()))
+      .toString("utf8")
+      .trim()
+      .split(String.fromCharCode(10))
+      .map((line) => JSON.parse(line));
+    expect(lines.some((line) => line.k === "replay" && line.d.type === 2)).toBe(true);
+    expect(JSON.stringify(lines)).not.toContain("localhost");
   }, 120_000);
 });
 

@@ -38,7 +38,11 @@ export function demoRoutes(): Hono<AppEnv> {
         "demo_disabled",
       );
     }
-    const summary = await seedDemo(deps.db, { ownerId: who.userId, now: deps.now() });
+    const summary = await seedDemo(deps.db, {
+      ownerId: who.userId,
+      now: deps.now(),
+      storage: deps.storage,
+    });
     await writeAudit(deps.db, {
       organizationId: summary.organization_id,
       actorUserId: who.userId,

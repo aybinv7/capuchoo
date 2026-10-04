@@ -4,6 +4,7 @@ import { DAY, MINUTE } from "./dice";
 import { ago, after, type DemoContext } from "./context";
 import type { DeviceKind } from "./fleet";
 import type { SeededApp } from "./releases";
+import { contentDuration, type ContentKind } from "./session-content";
 
 /** Recording keeps 14 days; the demo stays inside them. */
 const DAYS = 13;
@@ -167,6 +168,16 @@ const healthOf = (
   lastError: trouble ? "QuotaExceededError: OPFS quota reached; oldest segments shed" : null,
 });
 
+/** A session whose screen, console and network are written once the seed has committed. */
+export interface ContentPlan {
+  sessionId: string;
+  appId: string;
+  sessionKey: string;
+  kind: ContentKind;
+  startedAt: Date;
+  error?: { message: string; frame: string };
+}
+
 /**
  * Two weeks of session recording on an app's fleet: sessions a rule asked for, buffers an error or
  * a shake sent up with the user's note, the errors grouped into issues - one regressed by the
@@ -176,7 +187,7 @@ export async function seedRecordings(
   context: DemoContext,
   seeded: SeededApp,
   kind: DeviceKind,
-): Promise<{ sessions: number; issues: number }> {
+): Promise<{ sessions: number; issues: number; plans: ContentPlan[] }> {
   const { trx, dice } = context;
   const story = STORIES[kind];
   const devices = (await trx
@@ -194,7 +205,7 @@ export async function seedRecordings(
     .where("app_id", "=", seeded.id)
     .where("is_prod", "=", true)
     .execute()) as DemoDevice[];
-  if (devices.length === 0) return { sessions: 0, issues: 0 };
+  if (devices.length === 0) return { sessions: 0, issues: 0, plans: [] };
 
   const issues: IssueTally[] = story.issues.map((spec) => ({
     id: randomUUID(),
@@ -207,6 +218,7 @@ export async function seedRecordings(
   }));
   const sessions = [];
   const links = [];
+  const plans: ContentPlan[] = [];
 
   for (let day = DAYS - 1; day >= 0; day -= 1) {
     const count = dice.between(...story.sessionsPerDay);
@@ -215,18 +227,18 @@ export async function seedRecordings(
       const start = weighted<Start>(context, STARTS);
       const startedAt = ago(context, day * DAY + dice.between(5, 22 * 60) * MINUTE);
       if (startedAt.getTime() > context.now.getTime() - 3 * MINUTE) continue;
-      const minutes =
-        start === "error" || start === "shake" ? dice.between(4, 7) : dice.between(1, 19);
-      const endedAt = after(startedAt, minutes * MINUTE + dice.between(0, 59) * 1000);
       const errors =
         start === "error" ? dice.between(1, 4) : start === "policy" && dice.chance(0.12) ? 1 : 0;
-      const size = minutes * dice.between(14, 70) * 1024;
+      const content: ContentKind = errors > 0 ? "crash" : "clean";
+      const lengthMs = contentDuration(content);
+      const endedAt = after(startedAt, lengthMs);
       const version = device.version_name ?? "1.0.0";
       const id = randomUUID();
+      const sessionKey = randomUUID();
       sessions.push({
         id,
         app_id: seeded.id,
-        session_key: randomUUID(),
+        session_key: sessionKey,
         device_uuid: device.id,
         device_id: device.device_id,
         platform: "android",
@@ -245,9 +257,7 @@ export async function seedRecordings(
         started_at: startedAt,
         ended_at: endedAt,
         last_segment_at: endedAt,
-        segment_count: Math.max(1, Math.ceil(size / (512 * 1024))),
-        event_count: Math.round(size / 140),
-        size_bytes: size,
+        segment_count: 1,
         error_count: errors,
         finished: true,
       });
@@ -261,8 +271,17 @@ export async function seedRecordings(
           ),
         );
       }
+      const first = [...hit][0];
+      plans.push({
+        sessionId: id,
+        appId: seeded.id,
+        sessionKey,
+        kind: content,
+        startedAt,
+        ...(first ? { error: { message: first.spec.message, frame: first.spec.frame } } : {}),
+      });
       for (const issue of hit) {
-        const firstAt = after(startedAt, dice.between(20, minutes * 50) * 1000);
+        const firstAt = after(startedAt, dice.between(5, Math.max(6, lengthMs / 1000 - 5)) * 1000);
         const occurrences = dice.between(1, 3);
         issue.occurrences += occurrences;
         if (firstAt < issue.firstSeen) {
@@ -372,5 +391,5 @@ export async function seedRecordings(
     ])
     .execute();
 
-  return { sessions: sessions.length, issues: seen.length };
+  return { sessions: sessions.length, issues: seen.length, plans };
 }
