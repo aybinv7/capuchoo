@@ -1,6 +1,9 @@
 import type { RecorderHealth } from "@capuchoo/core";
 import type { Db } from "../db/database";
 
+/** A device writes its health at least every two minutes while it runs. */
+export const RECORDER_ONLINE_MS = 3 * 60_000;
+
 export interface RecorderHealthWrite {
   appId: string;
   deviceId: string;

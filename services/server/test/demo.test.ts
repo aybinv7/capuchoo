@@ -123,6 +123,20 @@ describe("demo organization", () => {
       .where("attributes", "is not", null)
       .executeTakeFirstOrThrow();
     expect(Number(attributed.count)).toBeGreaterThan(0);
+
+    const recording = await (
+      await ctx.request(`/api/apps/${fieldSales.id}/recording-stats?days=14`, {
+        token: admin.token,
+      })
+    ).json();
+    expect(recording.totals.sessions).toBeGreaterThan(50);
+    expect(recording.totals.reports).toBeGreaterThan(0);
+    expect(recording.issues.regressed).toBeGreaterThan(0);
+    expect(recording.recorders.total).toBeGreaterThan(0);
+    const listed = await (
+      await ctx.request(`/api/apps/${fieldSales.id}/recordings?limit=5`, { token: admin.token })
+    ).json();
+    expect(listed.sessions).toHaveLength(5);
   }, 120_000);
 });
 

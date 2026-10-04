@@ -6,7 +6,7 @@ import type {
 } from "../db/schema";
 
 /** A session is live while segments keep arriving and the device has not sent its last one. */
-const LIVE_WINDOW_MS = 20_000;
+export const LIVE_WINDOW_MS = 20_000;
 
 export function serializeRecordingSession(session: RecordingSession, now: Date) {
   return {

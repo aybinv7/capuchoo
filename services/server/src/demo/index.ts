@@ -5,6 +5,7 @@ import type { DemoContext } from "./context";
 import { FIELD_SALES, FIELD_SALES_FLEET, fieldSalesRuns } from "./field-sales";
 import { seedFleet, type DeviceKind, type FleetGroup } from "./fleet";
 import { DEMO_NAME, createDemoOrganization, resetDemo } from "./organization";
+import { seedRecordings } from "./recordings";
 import { seedCatalog, type AppCatalog } from "./releases";
 import { seedRun, type RunSpec } from "./runs";
 
@@ -13,7 +14,14 @@ export { DEMO_NAME, DEMO_SLUG } from "./organization";
 export interface DemoSummary {
   organization_id: string;
   organization: string;
-  apps: Array<{ id: string; name: string; devices: number; events: number; runs: number }>;
+  apps: Array<{
+    id: string;
+    name: string;
+    devices: number;
+    events: number;
+    runs: number;
+    sessions: number;
+  }>;
 }
 
 interface DemoApp {
@@ -31,7 +39,7 @@ const APPS: DemoApp[] = [
 /**
  * Replaces the fictional Northwind Distribution organization with a fresh one, owned by the
  * caller: two apps, client channels at different paces, a rollback, a pause, CI runs on GitHub
- * and GitLab with their jobs and logs, and four weeks of device activity. One transaction, so a
+ * and GitLab with their jobs and logs, four weeks of device activity, and two weeks of session recordings with their errors. One transaction, so a
  * failure leaves the previous demo as it was.
  */
 export function seedDemo(db: Db, input: { ownerId: string; now?: Date }): Promise<DemoSummary> {
@@ -47,12 +55,14 @@ export function seedDemo(db: Db, input: { ownerId: string; now?: Date }): Promis
       const fleet = await seedFleet(context, seeded, app.fleet, app.devices);
       const runs = app.runs();
       for (const run of runs) await seedRun(context, seeded, run);
+      const recordings = await seedRecordings(context, seeded, app.devices);
       apps.push({
         id: seeded.id,
         name: app.catalog.name,
         devices: fleet.devices,
         events: fleet.events,
         runs: runs.length,
+        sessions: recordings.sessions,
       });
     }
     return { organization_id: organizationId, organization: DEMO_NAME, apps };

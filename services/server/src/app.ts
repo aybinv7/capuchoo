@@ -30,6 +30,7 @@ import { liveWatchRoutes } from "./routes/live-watch";
 import { recordingDeviceRoutes } from "./routes/recording-device";
 import { recordingRoutes } from "./routes/recordings";
 import { recordingIssueRoutes } from "./routes/recording-issues";
+import { recordingStatsRoutes } from "./routes/recording-stats";
 import { sourceMapRoutes } from "./routes/source-maps";
 import { systemRoutes } from "./routes/system";
 
@@ -154,6 +155,7 @@ export function createApp(deps: Deps): Hono<AppEnv> {
   app.route("/api", recordingRoutes());
   app.route("/api", sourceMapRoutes());
   app.route("/api", recordingIssueRoutes());
+  app.route("/api", recordingStatsRoutes());
   app.route("/api", assistRoutes());
   app.route("/api", liveWatchRoutes());
   app.get("/api/health", (c) => c.json({ status: "ok" }));

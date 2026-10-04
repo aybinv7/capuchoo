@@ -23,7 +23,7 @@ import { isUuid } from "../repositories/apps";
 import { writeAudit } from "../repositories/audit";
 import { findChannel, listChannels } from "../repositories/channels";
 import { findDeviceById } from "../repositories/devices";
-import { listRecorderHealth } from "../repositories/recorder-health";
+import { RECORDER_ONLINE_MS, listRecorderHealth } from "../repositories/recorder-health";
 import { findAsset, listAssets } from "../repositories/recording-assets";
 import {
   deleteRule,
@@ -44,8 +44,6 @@ import { cachedRules, resolvedPolicyOf } from "../services/recording-policy";
 
 const RULE_BODY_BYTES = 16 * 1024;
 const HEALTH_LIST_LIMIT = 50;
-/** A device writes its health at least every two minutes while it runs. */
-const ONLINE_WINDOW_MS = 3 * 60_000;
 
 function parseCursor(raw: string | undefined): { startedAt: Date; id: string } | undefined {
   if (!raw) return undefined;
@@ -218,7 +216,7 @@ export function recordingRoutes(): Hono<AppEnv> {
         channel: row.channel,
         health: row.health,
         seen_at: row.seen_at.toISOString(),
-        online: now - row.seen_at.getTime() < ONLINE_WINDOW_MS,
+        online: now - row.seen_at.getTime() < RECORDER_ONLINE_MS,
       })),
     });
   });
