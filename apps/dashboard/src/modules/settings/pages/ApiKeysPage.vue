@@ -47,13 +47,14 @@ function confirmRevoke() {
   if (!key) return;
   revoke.mutate(key.id, { onSuccess: () => (revokeOpen.value = false) });
 }
+import AgentConnectCard from "../components/AgentConnectCard.vue";
 </script>
 
 <template>
   <PageContainer>
     <PageHeader
       title="API keys"
-      description="Keys you minted for the CLI and CI. Each acts as you, limited by its app and role cap."
+      description="Keys you minted for the CLI, CI and AI agents. Each acts as you, limited by its app and role cap."
     >
       <template #actions>
         <Button @click="creating = true">
@@ -120,5 +121,6 @@ function confirmRevoke() {
       :pending="revoke.isPending.value"
       @confirm="confirmRevoke"
     />
+    <AgentConnectCard />
   </PageContainer>
 </template>
