@@ -1,7 +1,6 @@
 {
   "name": "capucho",
   "version": "0.0.0",
-  "private": true,
   "description": "Capucho - OTA and native update delivery for Capacitor applications",
   "license": "MIT",
   "author": "aybinv7",
