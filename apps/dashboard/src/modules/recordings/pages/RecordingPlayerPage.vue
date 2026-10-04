@@ -23,6 +23,7 @@ import PlayerToolbar from "../components/player/PlayerToolbar.vue";
 import { isInspectorTab, type InspectorTab } from "../components/inspector/tabs";
 import { useAssetMap } from "../composables/useAssetMap";
 import { useCollapsedSidebar } from "../composables/useCollapsedSidebar";
+import { useLiveScreenFeed } from "../composables/useLiveScreenFeed";
 import { useRecording } from "../composables/useRecording";
 import { useRecordingEvents } from "../composables/useRecordingEvents";
 import { usePlayerShortcuts } from "../composables/usePlayerShortcuts";
@@ -36,7 +37,8 @@ import { buildTimeline, sessionBounds, timelineMarkers } from "../lib/timeline";
 import { trackMarks } from "../lib/track-marks";
 import { deleteRecording } from "../services/recordings.service";
 
-const LIVE_LAG_MS = 2500;
+/** How far behind the newest data a followed live session plays, by where its screen comes from. */
+const LIVE_LAG_MS = { segments: 2500, socket: 400 } as const;
 
 const route = useRoute();
 const router = useRouter();
@@ -68,18 +70,35 @@ const events = useRecordingEvents({
   assets: assetMap.map,
   assetsReady: assetMap.ready,
   safeArea,
-  onReplay: (replay) => player.push(replay),
+  onReplay: (replay) => {
+    const kept = liveFeed.fromSegment(replay);
+    if (kept.length > 0) player.push(kept);
+  },
 });
+const live = computed(() => session.value?.live ?? false);
+const liveFeed = useLiveScreenFeed({
+  deviceUuid: computed(() => session.value?.device_uuid ?? null),
+  live,
+  assets: assetMap.map,
+  assetsReady: assetMap.ready,
+  safeArea,
+  push: (replay) => player.push(replay),
+});
+const liveLag = computed(() =>
+  liveFeed.state.value === "streaming" ? LIVE_LAG_MS.socket : LIVE_LAG_MS.segments,
+);
 
 const hasScreen = computed(() => segments.value?.some((segment) => segment.full_snapshot) ?? false);
 const bounds = computed(() => {
   const current = session.value;
   if (!current) return { start: 0, end: 1000 };
-  return sessionBounds(
+  const recorded = sessionBounds(
     events.lanes.value,
     Date.parse(current.started_at),
     Date.parse(current.ended_at),
   );
+  const edge = liveFeed.edge.value;
+  return edge !== null && edge > recorded.end ? { ...recorded, end: edge } : recorded;
 });
 const duration = computed(() => bounds.value.end - bounds.value.start);
 watch(bounds, (value) => player.setTimeline(value.start, value.end - value.start), {
@@ -121,7 +140,6 @@ const loadedRatio = computed(() =>
 const followList = ref(true);
 const exportOpen = ref(false);
 const followLive = ref(false);
-const live = computed(() => session.value?.live ?? false);
 
 watch(recordingId, () => {
   player.destroy();
@@ -135,7 +153,7 @@ watch(live, (value, previous) => {
 
 watch(duration, (length) => {
   if (!followLive.value) return;
-  if (player.time.value < length - LIVE_LAG_MS * 2) player.seek(length - LIVE_LAG_MS);
+  if (player.time.value < length - liveLag.value * 2) player.seek(length - liveLag.value);
   if (!player.playing.value) player.play();
 });
 
@@ -157,7 +175,7 @@ function seekOffset(ms: number) {
 function jumpLive() {
   if (!live.value) return;
   followLive.value = true;
-  player.seek(duration.value - LIVE_LAG_MS);
+  player.seek(duration.value - liveLag.value);
   player.play();
 }
 

@@ -5,6 +5,7 @@ import { BackgroundTasks } from "./lib/background";
 import { LoadGuard, deviceInflightCap } from "./lib/load-guard";
 import { createLogger } from "./lib/logger";
 import { createAssistRegistry } from "./services/assist/create";
+import { WatchRegistry } from "./services/live/watch-registry";
 import { CiRuntime } from "./services/ci-runtime";
 import { EventHub } from "./services/event-hub";
 import { RequestCache } from "./services/request-cache";
@@ -48,6 +49,10 @@ export function createDeps(config: Config): Deps {
     load: new LoadGuard(deviceInflightCap(config), Math.random, logger),
     ci: new CiRuntime(config.SECRET_KEY),
     assist: createAssistRegistry({ db, hub, tasks, now }),
+    watch: new WatchRegistry({
+      invite: (appId, deviceId) =>
+        hub.publish({ type: "live_watch", appId, data: { device_id: deviceId } }),
+    }),
     now,
   };
 }

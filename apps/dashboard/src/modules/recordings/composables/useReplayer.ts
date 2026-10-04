@@ -237,9 +237,18 @@ export function useReplayer(input: {
 
     /** Sets the timeline the clock runs over: wall-clock start and length in milliseconds. */
     setTimeline(start: number, length: number) {
+      const shift = origin === 0 ? 0 : origin - start;
       origin = start;
       duration = length;
       if (sizes.length > 0) reshape();
+      if (shift === 0) return;
+      time.value = Math.max(0, Math.min(duration, time.value + shift));
+      anchor(time.value);
+      following = false;
+      heldAt = null;
+      if (!replayer.value) return;
+      if (playing.value) engage();
+      else hold(replayOffset(time.value));
     },
 
     /** Feeds replay events as segments arrive; the player is built once a full snapshot exists. */

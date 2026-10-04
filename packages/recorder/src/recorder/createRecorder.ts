@@ -7,6 +7,8 @@ import type {
   ResolvedRecordingPolicy,
 } from "@capuchoo/core";
 import { createAssist, type Assist } from "../assist/assistSession.js";
+import { createLiveWatch, type LiveWatch } from "../live/liveWatch.js";
+import type { ScreenSource } from "../live/types.js";
 import { createInlineClient, createWorkerClient } from "../pipeline/clients.js";
 import type { PipelineClient, PipelineStatus } from "../pipeline/protocol.js";
 import { createPolicyClient, type PolicyAnswer } from "../policy/policyClient.js";
@@ -100,7 +102,34 @@ export function createRecorder(options: RecorderOptions): Recorder {
     logger,
   };
   let assist: Assist | null = null;
-  let assistHoldsScreen = false;
+  let liveWatch: LiveWatch | null = null;
+  /** Live streams that need the screen recorded even when the rules do not record it. */
+  let screenHolders = 0;
+  let screenStartedForStreams = false;
+  const screenSource: ScreenSource = {
+    subscribe(listener) {
+      screenListeners.add(listener);
+      return () => screenListeners.delete(listener);
+    },
+    acquire() {
+      screenHolders++;
+      if (!tracks.isRunning("replay") && !screenStartedForStreams) {
+        replay.start(context);
+        screenStartedForStreams = true;
+      }
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        screenHolders--;
+        if (screenHolders === 0 && screenStartedForStreams) {
+          screenStartedForStreams = false;
+          if (!tracks.isRunning("replay")) replay.stop();
+        }
+      };
+    },
+    snapshot: () => replay.checkout(),
+  };
 
   const policy = (): ResolvedRecordingPolicy | null => answer?.policy ?? null;
 
@@ -300,6 +329,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
     }
     armSessionLimit();
     syncHeartbeat();
+    if (mode !== "live") liveWatch?.leave();
   }
 
   function recompute(): void {
@@ -407,23 +437,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
       const replayOptions = options.replay ?? {};
       assist = createAssist(options.assist, {
         endpoint,
-        screen: {
-          subscribe(listener) {
-            screenListeners.add(listener);
-            return () => screenListeners.delete(listener);
-          },
-          acquire() {
-            if (!tracks.isRunning("replay")) {
-              replay.start(context);
-              assistHoldsScreen = true;
-            }
-            return () => {
-              if (assistHoldsScreen && !tracks.isRunning("replay")) replay.stop();
-              assistHoldsScreen = false;
-            };
-          },
-          snapshot: () => replay.checkout(),
-        },
+        screen: screenSource,
         mark: (data) => context.push("marker", data),
         guards: () => ({
           maskTextSelector: replayOptions.maskTextSelector ?? "[data-capuchoo-mask]",
@@ -432,6 +446,14 @@ export function createRecorder(options: RecorderOptions): Recorder {
         logger,
       });
     }
+
+    liveWatch = createLiveWatch({
+      endpoint,
+      screen: screenSource,
+      isLive: () => mode === "live",
+      onEnded: () => policyClient?.forgetWatch(),
+      logger,
+    });
 
     const known = identity;
     policyClient = createPolicyClient({
@@ -451,6 +473,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
         notify();
       },
       onAssist: (invite) => void assist?.invite(invite),
+      onWatch: (invite) => liveWatch?.join(invite),
     });
     if (policyClient.cached) onPolicy(policyClient.cached);
     await policyClient.start();
@@ -470,6 +493,8 @@ export function createRecorder(options: RecorderOptions): Recorder {
       policyClient?.stop();
       assist?.stop();
       assist = null;
+      liveWatch?.stop();
+      liveWatch = null;
       escalation = null;
       apply("off", "policy");
       for (const timer of [escalationTimer, sessionTimer, assetTimer]) {

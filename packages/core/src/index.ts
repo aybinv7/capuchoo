@@ -274,6 +274,16 @@ export {
   type RecordingStart,
 } from "./recording-wire.js";
 export {
+  LIVE_WATCH_LIMITS,
+  parseWatchHello,
+  parseWatchInvite,
+  type WatchHello,
+  type WatchInvite,
+  type WatchRole,
+  type WatchToDevice,
+  type WatchToViewer,
+} from "./live-protocol.js";
+export {
   ASSIST_KEYS,
   ASSIST_LIMITS,
   CONTROL_MESSAGES,

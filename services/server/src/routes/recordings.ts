@@ -40,7 +40,7 @@ import {
   listSessions,
 } from "../repositories/recording-sessions";
 import { resolveDeviceChannel } from "../services/channel-resolution";
-import { cachedRules } from "../services/recording-policy";
+import { cachedRules, resolvedPolicyOf } from "../services/recording-policy";
 
 const RULE_BODY_BYTES = 16 * 1024;
 const HEALTH_LIST_LIMIT = 50;
@@ -324,27 +324,15 @@ export function recordingRoutes(): Hono<AppEnv> {
     const id = c.req.param("id");
     const device = isUuid(id) ? await findDeviceById(deps.db, id) : undefined;
     if (!device) throw notFound("Device");
-    const access = await requireApp(
+    await requireApp(
       deps.db,
       principal(c),
       device.app_id,
       "viewer",
       "Reading a device's recording policy",
     );
-    const [channels, rules] = await Promise.all([
-      listChannels(deps.db, access.app.id),
-      cachedRules(deps, access.app.id),
-    ]);
-    const { channel } = resolveDeviceChannel({
-      channels,
-      device,
-      reported: device.reported_channel ?? undefined,
-    });
-    const policy = resolveRecordingPolicy(layersFor(rules, channel?.id ?? null, device.id), {
-      deviceId: device.device_id,
-      now: deps.now().getTime(),
-    });
-    return c.json({ policy, channel_id: channel?.id ?? null });
+    const { policy, channelId } = await resolvedPolicyOf(deps, device);
+    return c.json({ policy, channel_id: channelId });
   });
 
   return router;

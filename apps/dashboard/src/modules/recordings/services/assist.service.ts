@@ -7,3 +7,9 @@ export const startAssist = (deviceUuid: string) =>
 
 export const endAssist = (sessionId: string) =>
   http.delete(`/assist/${encodeURIComponent(sessionId)}`);
+
+/** A ticket to watch a live device over a socket; refused with 409 when it is not live. */
+export const startWatch = (deviceUuid: string) =>
+  http.post<{ room: string; ticket: string; socket_url: string }>(
+    `/devices/${encodeURIComponent(deviceUuid)}/watch`,
+  );

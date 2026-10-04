@@ -49,6 +49,7 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
         : 0;
     const deps = c.get("deps");
     const seen = typeof body.assist_seen === "string" ? body.assist_seen : null;
+    const seenWatch = typeof body.watch_seen === "string" ? body.watch_seen : null;
     const answer = await listenForPolicy(
       deps,
       request,
@@ -58,14 +59,16 @@ export function recordingDeviceRoutes(): Hono<AppEnv> {
         if (first.status !== "unknown_app") noteRecorderHealth(deps, health, first, request);
       },
       seen,
+      seenWatch,
     );
     if (answer.status === "unknown_app") return c.json({ error: "App not found" }, 404);
     const invite = deps.assist.inviteFor(answer.appId, request.deviceId);
-    const assist = invite ? { assist: invite } : {};
+    const watch = deps.watch.inviteFor(answer.appId, request.deviceId);
+    const extra = { ...(invite ? { assist: invite } : {}), ...(watch ? { watch } : {}) };
     if (answer.status === "unchanged") {
-      return c.json({ unchanged: true, version: answer.version, ...assist });
+      return c.json({ unchanged: true, version: answer.version, ...extra });
     }
-    return c.json({ policy: answer.policy, known_assets: answer.knownAssets, ...assist });
+    return c.json({ policy: answer.policy, known_assets: answer.knownAssets, ...extra });
   });
 
   router.post("/recording/assist/decline", async (c) => {

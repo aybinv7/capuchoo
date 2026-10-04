@@ -12,6 +12,7 @@ import { createSession } from "../src/repositories/sessions";
 import { createUser } from "../src/repositories/users";
 import { CiRuntime } from "../src/services/ci-runtime";
 import { createAssistRegistry } from "../src/services/assist/create";
+import { WatchRegistry } from "../src/services/live/watch-registry";
 import { EventHub } from "../src/services/event-hub";
 import { RequestCache } from "../src/services/request-cache";
 import { createPostgresStorage } from "../src/storage/postgres";
@@ -65,6 +66,10 @@ export async function createTestContext(
     load: new LoadGuard(deviceInflightCap(config)),
     ci: new CiRuntime(config.SECRET_KEY, fetcher ?? refuseNetwork),
     assist: createAssistRegistry({ db, hub, tasks, now }),
+    watch: new WatchRegistry({
+      invite: (appId, deviceId) =>
+        hub.publish({ type: "live_watch", appId, data: { device_id: deviceId } }),
+    }),
     now,
   };
   const app = createApp(deps);

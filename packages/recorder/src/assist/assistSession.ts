@@ -5,34 +5,20 @@ import {
   type AssistEndReason,
   type AssistInvite,
 } from "@capuchoo/core";
-import { measureSafeArea } from "../recorder/safeArea.js";
+import { createScreenStream, type ScreenStream } from "../live/screenStream.js";
+import type { ScreenSource } from "../live/types.js";
 import type { RecorderLogger } from "../recorder/types.js";
 import { AssistOverlay } from "./overlay.js";
 import { key, scroll, tap, typeText, type InputGuards, type InputResult } from "./remoteInput.js";
 import { DEFAULT_TEXTS, type AssistOptions, type AssistSocketLike } from "./types.js";
 
-/** Screen events are sent in batches this far apart: smooth for the agent, few messages. */
-const FLUSH_MS = 50;
-/** Past this queued on the socket, the agent is too far behind to follow event by event. */
-const BEHIND_BYTES = 4 * 1024 * 1024;
-/** Below this, it has caught up and gets a fresh full snapshot to continue from. */
-const CAUGHT_UP_BYTES = 256 * 1024;
-/** A message past this is split; the server refuses anything over 4 MiB. */
-const MAX_MESSAGE_CHARS = 3_500_000;
 const CONTROL_ASK_MS = 60_000;
 const OPEN = 1;
 
 export interface AssistHost {
   /** The server's origin. */
   endpoint: string;
-  screen: {
-    /** Every replay event as the recorder emits it. */
-    subscribe(listener: (event: unknown) => void): () => void;
-    /** Makes sure the screen is being recorded; the returned function lets it go. */
-    acquire(): () => void;
-    /** Emits a full snapshot now, for an agent joining or catching up. */
-    snapshot(): void;
-  };
+  screen: ScreenSource;
   /** Notes what assist did in the session's recording. */
   mark(data: Record<string, unknown>): void;
   guards(): Omit<InputGuards, "overlay">;
@@ -46,21 +32,7 @@ interface Active {
   overlay: AssistOverlay;
   socket: AssistSocketLike | null;
   control: AssistControl;
-  streaming: boolean;
-  queue: unknown[];
-  flushTimer: ReturnType<typeof setTimeout> | null;
-  behind: boolean;
-  catchUp: ReturnType<typeof setInterval> | null;
-  stopScreen: (() => void) | null;
-  releaseScreen: (() => void) | null;
-  stopViewport: (() => void) | null;
-}
-
-function chunks(events: unknown[]): string[] {
-  const text = JSON.stringify({ t: "events", events });
-  if (text.length <= MAX_MESSAGE_CHARS || events.length < 2) return [text];
-  const half = Math.ceil(events.length / 2);
-  return [...chunks(events.slice(0, half)), ...chunks(events.slice(half))];
+  stream: ScreenStream | null;
 }
 
 /**
@@ -91,64 +63,14 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     }
   };
 
-  function flush(current: Active): void {
-    current.flushTimer = null;
-    const socket = current.socket;
-    if (!socket || socket.readyState !== OPEN || current.queue.length === 0) return;
-    if (socket.bufferedAmount > BEHIND_BYTES) {
-      current.queue = [];
-      if (current.behind) return;
-      current.behind = true;
-      current.catchUp = setInterval(() => {
-        if (socket.bufferedAmount > CAUGHT_UP_BYTES) return;
-        if (current.catchUp) clearInterval(current.catchUp);
-        current.catchUp = null;
-        current.behind = false;
-        host.screen.snapshot();
-      }, 500);
-      return;
-    }
-    const batch = current.queue;
-    current.queue = [];
-    for (const text of chunks(batch)) socket.send(text);
-  }
-
-  function enqueue(current: Active, event: unknown): void {
-    if (current.behind) return;
-    current.queue.push(event);
-    current.flushTimer ??= setTimeout(() => flush(current), FLUSH_MS);
-  }
-
   function startStreaming(current: Active): void {
-    if (current.streaming) return;
-    current.streaming = true;
-    current.releaseScreen = host.screen.acquire();
-    current.stopScreen = host.screen.subscribe((event) => enqueue(current, event));
-    current.stopViewport = watchViewport(current);
-    host.screen.snapshot();
+    if (current.stream || !current.socket) return;
+    current.stream = createScreenStream(current.socket, host.screen);
+    current.stream.start();
     current.overlay.showBanner("viewing", current.invite.agent, () =>
       finish(current, "user", true),
     );
     host.mark({ kind: "assist", event: "start", agent: current.invite.agent });
-  }
-
-  /**
-   * Tells the agent how far the system bars reach into the app, before the first frame and after
-   * every rotation: their replay resolves `env(safe-area-inset-*)` to 0 and would otherwise draw
-   * the app higher than it is, so a point there would land higher here.
-   */
-  function watchViewport(current: Active): () => void {
-    let last = "";
-    const report = () => {
-      const safeArea = measureSafeArea();
-      const key = JSON.stringify(safeArea);
-      if (!safeArea || key === last) return;
-      last = key;
-      send(current, { t: "viewport", safeArea });
-    };
-    report();
-    window.addEventListener("resize", report);
-    return () => window.removeEventListener("resize", report);
   }
 
   function setControl(current: Active, control: AssistControl): void {
@@ -263,13 +185,9 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     if (active !== current) return;
     active = null;
     if (tell) send(current, { t: "end", reason });
-    if (current.flushTimer) clearTimeout(current.flushTimer);
-    if (current.catchUp) clearInterval(current.catchUp);
-    current.stopScreen?.();
-    current.stopViewport?.();
-    current.releaseScreen?.();
+    current.stream?.stop();
     current.overlay.destroy();
-    if (current.streaming) host.mark({ kind: "assist", event: "end", reason });
+    if (current.stream) host.mark({ kind: "assist", event: "end", reason });
     try {
       current.socket?.close(1000, reason);
     } catch {
@@ -296,14 +214,7 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
         overlay: new AssistOverlay(texts, dir),
         socket: null,
         control: "none",
-        streaming: false,
-        queue: [],
-        flushTimer: null,
-        behind: false,
-        catchUp: null,
-        stopScreen: null,
-        releaseScreen: null,
-        stopViewport: null,
+        stream: null,
       };
       active = current;
       const accepted = await current.overlay.ask("view", invite.agent, remaining);

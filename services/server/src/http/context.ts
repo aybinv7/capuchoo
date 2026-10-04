@@ -11,6 +11,7 @@ import type { BackgroundTasks } from "../lib/background";
 import type { LoadGuard } from "../lib/load-guard";
 import type { CiRuntime } from "../services/ci-runtime";
 import type { AssistRegistry } from "../services/assist/registry";
+import type { WatchRegistry } from "../services/live/watch-registry";
 
 /** Everything a route needs, built once at boot and injected so tests can swap parts. */
 export interface Deps {
@@ -24,6 +25,7 @@ export interface Deps {
   load: LoadGuard;
   ci: CiRuntime;
   assist: AssistRegistry;
+  watch: WatchRegistry;
   now: () => Date;
 }
 

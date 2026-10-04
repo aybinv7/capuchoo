@@ -23,6 +23,17 @@ server decides what each device records; the device does the work off the thread
 - **session** uploads every `flushMs`.
 - **live** uploads every `liveFlushMs` and beats every 5 s so a viewer can tell idle from gone.
 
+Opening a live session in the player also opens a socket (`POST /api/devices/:id/watch`, then
+`/api/live/ws`). The server invites the device through its held policy request, and the device
+streams its screen to every viewer in 50 ms batches, starting from a full snapshot. A viewer joining
+later asks for a new snapshot. This only happens for a device whose rules already have it live, and
+it stops when the app leaves the foreground.
+
+The segments still upload and still carry the console, network and database. From the socket's first
+snapshot on, the player drops the segments' screen events, and if the socket drops it drops only the
+stretch the socket already showed. Following live trails the socket by 400 ms, against 2.5 s on
+segments alone, which pay for the 1 s flush, the upload, the poll and the download.
+
 An error while the app is in the background (locked, or another app in front) stays in the buffer
 but does not raise a session: there is no screen and nobody looking. In debug builds Capacitor logs
 every failed native call with `console.error` - an offline update check among them - which would

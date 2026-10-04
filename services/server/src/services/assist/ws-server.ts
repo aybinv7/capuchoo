@@ -4,6 +4,8 @@ import { WebSocketServer, type RawData, type WebSocket } from "ws";
 import { ASSIST_LIMITS } from "@capuchoo/core";
 import type { Deps } from "../../http/context";
 import { ASSIST_SOCKET_PATH } from "../../routes/assist";
+import { LIVE_SOCKET_PATH } from "../../routes/live-watch";
+import { relayWatchSocket } from "../live/watch-relay";
 import { relaySocket } from "./relay";
 import type { AssistSocket } from "./socket";
 
@@ -44,19 +46,21 @@ export function attachAssistSockets(server: Server, deps: Deps): () => void {
 
   const onUpgrade = (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const path = new URL(request.url ?? "/", "http://socket").pathname;
-    if (path !== ASSIST_SOCKET_PATH) {
+    if (path !== ASSIST_SOCKET_PATH && path !== LIVE_SOCKET_PATH) {
       deps.logger.warn("upgrade refused", { path });
       socket.destroy();
       return;
     }
     sockets.handleUpgrade(request, socket, head, (ws) => {
-      deps.logger.info("assist socket opened", { open: sockets.clients.size });
       alive.add(ws);
       ws.on("pong", () => alive.add(ws));
-      relaySocket(adapt(ws), deps.assist, {
-        now: () => deps.now().getTime(),
-        logger: deps.logger,
-      });
+      const options = { now: () => deps.now().getTime(), logger: deps.logger };
+      if (path === LIVE_SOCKET_PATH) {
+        relayWatchSocket(adapt(ws), deps.watch, options);
+        return;
+      }
+      deps.logger.info("assist socket opened", { open: sockets.clients.size });
+      relaySocket(adapt(ws), deps.assist, options);
     });
   };
   server.on("upgrade", onUpgrade);
@@ -77,6 +81,7 @@ export function attachAssistSockets(server: Server, deps: Deps): () => void {
     clearInterval(heartbeat);
     server.off("upgrade", onUpgrade);
     deps.assist.closeAll();
+    deps.watch.closeAll();
     sockets.close();
   };
 }

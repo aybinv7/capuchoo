@@ -36,12 +36,4 @@ export const DEFAULT_TEXTS: AssistTexts = {
   stop: "Stop",
 };
 
-/** The little of a WebSocket the session uses, so tests can stand in for the network. */
-export interface AssistSocketLike {
-  readonly readyState: number;
-  readonly bufferedAmount: number;
-  send(data: string): void;
-  close(code?: number, reason?: string): void;
-  addEventListener(type: "open" | "close" | "error", listener: () => void): void;
-  addEventListener(type: "message", listener: (event: { data: unknown }) => void): void;
-}
+export type { LiveSocket as AssistSocketLike } from "../live/types.js";

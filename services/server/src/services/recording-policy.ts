@@ -6,6 +6,7 @@ import {
 import type { Deps } from "../http/context";
 import { findAppByBundleId } from "../repositories/apps";
 import { listChannels } from "../repositories/channels";
+import type { Device } from "../db/schema";
 import { findDevice } from "../repositories/devices";
 import { listAssets } from "../repositories/recording-assets";
 import { layersFor, listRules } from "../repositories/recording-rules";
@@ -79,6 +80,24 @@ export async function policyForDevice(
   return { status: "policy", policy, knownAssets, appId, deviceUuid: device?.id ?? null };
 }
 
+/** The policy a known device resolves to now, from its app, channel and own rules. */
+export async function resolvedPolicyOf(deps: Deps, device: Device) {
+  const [channels, rules] = await Promise.all([
+    deps.cache.get(`app:${device.app_id}`, "channels", () => listChannels(deps.db, device.app_id)),
+    cachedRules(deps, device.app_id),
+  ]);
+  const { channel } = resolveDeviceChannel({
+    channels,
+    device,
+    reported: device.reported_channel ?? undefined,
+  });
+  const policy = resolveRecordingPolicy(layersFor(rules, channel?.id ?? null, device.id), {
+    deviceId: device.device_id,
+    now: deps.now().getTime(),
+  });
+  return { policy, channelId: channel?.id ?? null };
+}
+
 /**
  * Holds a device's request open while its policy is unchanged, for up to `waitMs`: a rule change
  * for the app, a live deadline passing, or an agent asking to assist this device answers it at
@@ -92,6 +111,8 @@ export async function listenForPolicy(
   onFirstAnswer?: (answer: DevicePolicyAnswer) => void,
   /** The assist invite the device already has, which must not cut its wait short again. */
   seenInvite: string | null = null,
+  /** The live room the device is already streaming to, or has been told of. */
+  seenWatch: string | null = null,
 ): Promise<DevicePolicyAnswer> {
   const deadline = Date.now() + waitMs;
   let answer = await policyForDevice(deps, request);
@@ -103,9 +124,11 @@ export async function listenForPolicy(
       answer.liveUntil === null ? remaining : answer.liveUntil - deps.now().getTime() + 250;
     const invite = deps.assist.inviteFor(answer.appId, request.deviceId);
     if (invite && invite.session !== seenInvite) break;
+    const watch = deps.watch.inviteFor(answer.appId, request.deviceId);
+    if (watch && watch.room !== seenWatch) break;
     await deps.hub.waitFor(
       answer.appId,
-      ["recording_rule", "assist"],
+      ["recording_rule", "assist", "live_watch"],
       Math.max(0, Math.min(remaining, untilLiveEnds)),
       signal,
     );

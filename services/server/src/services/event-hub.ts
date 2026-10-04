@@ -10,7 +10,8 @@ export type HubEventType =
   | "recording"
   | "recording_rule"
   | "recorder_health"
-  | "assist";
+  | "assist"
+  | "live_watch";
 
 export interface HubEvent {
   type: HubEventType;

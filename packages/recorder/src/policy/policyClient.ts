@@ -1,6 +1,8 @@
 import {
   parseAssistInvite,
+  parseWatchInvite,
   type AssistInvite,
+  type WatchInvite,
   type RecordingPolicyRequest,
   type ResolvedRecordingPolicy,
 } from "@capuchoo/core";
@@ -45,6 +47,8 @@ export function createPolicyClient(input: {
   onError: (message: string) => void;
   /** An agent asks to assist; the answer to a held request carries the invite. */
   onAssist?: (invite: AssistInvite) => void;
+  /** Someone watches this live device; the answer carries the room to stream to. */
+  onWatch?: (invite: WatchInvite) => void;
 }) {
   const key = input.request().appId;
   let current: PolicyAnswer | null = read(key);
@@ -56,6 +60,8 @@ export function createPolicyClient(input: {
   let listening: AbortController | null = null;
   /** The invite already handed on, so the server keeps holding the request instead of repeating it. */
   let seenInvite: string | null = null;
+  /** The live room the device streams to, so the server holds the request instead of repeating it. */
+  let seenWatch: string | null = null;
 
   function schedule(delay: number): void {
     if (stopped) return;
@@ -83,6 +89,7 @@ export function createPolicyClient(input: {
           known: current?.policy.version ?? null,
           wait: waitMs / 1000,
           assist_seen: seenInvite,
+          watch_seen: seenWatch,
         }),
         credentials: "omit",
         signal: controller.signal,
@@ -96,7 +103,7 @@ export function createPolicyClient(input: {
       const body = (await response.json()) as (
         | { unchanged: true; version: string }
         | { policy: ResolvedRecordingPolicy; known_assets: string[] }
-      ) & { assist?: unknown };
+      ) & { assist?: unknown; watch?: unknown };
       fetchedAt = Date.now();
       failures = 0;
       const invite = parseAssistInvite(body.assist);
@@ -105,6 +112,12 @@ export function createPolicyClient(input: {
         seenInvite = invite.session;
         input.onAssist?.(invite);
       }
+      const watch = parseWatchInvite(body.watch);
+      const freshWatch = watch !== null && watch.room !== seenWatch;
+      if (watch && freshWatch) {
+        seenWatch = watch.room;
+        input.onWatch?.(watch);
+      }
       const changed = !("unchanged" in body) && body.policy.version !== current?.policy.version;
       if (changed) {
         current = { policy: body.policy, knownAssets: body.known_assets ?? [] };
@@ -112,7 +125,8 @@ export function createPolicyClient(input: {
         input.onPolicy(current);
       }
       const next = listenWindow();
-      const heldOpen = waitMs === 0 || changed || freshInvite || Date.now() - sentAt >= MIN_HELD_MS;
+      const heldOpen =
+        waitMs === 0 || changed || freshInvite || freshWatch || Date.now() - sentAt >= MIN_HELD_MS;
       if (next > 0 && heldOpen) schedule(0);
       else schedule(current?.policy.pollMs ?? 5 * 60_000);
     } catch (error) {
@@ -155,6 +169,13 @@ export function createPolicyClient(input: {
       return refresh();
     },
     refresh,
+    /** The live stream ended: hear the room again, and ask now in case it is still watched. */
+    forgetWatch(): void {
+      seenWatch = null;
+      const pending = inflight;
+      listening?.abort(BACKGROUNDED);
+      void (pending ?? Promise.resolve()).then(() => refresh());
+    },
     stop(): void {
       stopped = true;
       listening?.abort(BACKGROUNDED);
