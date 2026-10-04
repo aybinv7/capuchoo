@@ -20,6 +20,8 @@ export function useLiveScreenFeed(input: {
   assetsReady: Ref<boolean>;
   safeArea: Ref<SafeArea | null>;
   push: (events: ReplayEvent[]) => void;
+  /** The same events for the live renderer, which draws them as they arrive. */
+  pushLive?: (events: ReplayEvent[]) => void;
 }) {
   const documents = new Set<number>();
   /** When the socket's screen begins, wall clock; segments yield the screen from here. */
@@ -60,6 +62,7 @@ export function useLiveScreenFeed(input: {
     }
     const last = events[events.length - 1]!.timestamp;
     if (edge.value === null || last > edge.value) edge.value = last;
+    input.pushLive?.(structuredClone(events));
     input.push(events);
   }
 
@@ -72,6 +75,8 @@ export function useLiveScreenFeed(input: {
 
   return {
     state: watcher.state,
+    rate: watcher.rate,
+    insets,
     edge,
     /**
      * A segment's screen events, minus those the socket shows: everything from its start while it

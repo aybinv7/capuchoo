@@ -23,6 +23,7 @@ import PlayerToolbar from "../components/player/PlayerToolbar.vue";
 import { isInspectorTab, type InspectorTab } from "../components/inspector/tabs";
 import { useAssetMap } from "../composables/useAssetMap";
 import { useCollapsedSidebar } from "../composables/useCollapsedSidebar";
+import { useLiveReplayer, useLiveReplayerDisposal } from "../composables/useLiveReplayer";
 import { useLiveScreenFeed } from "../composables/useLiveScreenFeed";
 import { useRecording } from "../composables/useRecording";
 import { useRecordingEvents } from "../composables/useRecordingEvents";
@@ -83,7 +84,19 @@ const liveFeed = useLiveScreenFeed({
   assetsReady: assetMap.ready,
   safeArea,
   push: (replay) => player.push(replay),
+  pushLive: (replay) => liveScreen.push(replay),
 });
+/**
+ * Following a live device draws each event the moment it arrives, as Assist does; the player's own
+ * clock would reach the end of what has arrived, hold, and stall until more came.
+ */
+const liveScreen = useLiveReplayer({
+  root: computed(() => stageView.value?.liveRoot ?? null),
+  stage: computed(() => stageView.value?.stage ?? null),
+  assets: assetMap.map,
+  safeArea: liveFeed.insets,
+});
+useLiveReplayerDisposal(liveScreen);
 const liveLag = computed(() =>
   liveFeed.state.value === "streaming" ? LIVE_LAG_MS.socket : LIVE_LAG_MS.segments,
 );
@@ -108,7 +121,7 @@ watch(bounds, (value) => player.setTimeline(value.start, value.end - value.start
 const tracks = computed(() => buildTimeline(events.lanes.value, bounds.value));
 const taps = computed(() => tapsOf(events.lanes.value.replay));
 const rage = computed(() => rageTaps(taps.value));
-const playhead = computed(() => bounds.value.start + player.time.value);
+const playhead = computed(() => bounds.value.start + shownTime.value);
 const ripples = computed(() => recentTaps(taps.value, playhead.value));
 const issues = computed(() => issuesOf(events.lanes.value, rage.value));
 const marks = computed(() =>
@@ -140,6 +153,14 @@ const loadedRatio = computed(() =>
 const followList = ref(true);
 const exportOpen = ref(false);
 const followLive = ref(false);
+const showLive = computed(
+  () => followLive.value && liveFeed.state.value === "streaming" && liveScreen.ready.value,
+);
+watch(showLive, (on) => {
+  if (on) player.pause();
+});
+/** The playhead as shown: the live edge while drawing live, the player's own time otherwise. */
+const shownTime = computed(() => (showLive.value ? duration.value : player.time.value));
 
 watch(recordingId, () => {
   player.destroy();
@@ -152,12 +173,17 @@ watch(live, (value, previous) => {
 });
 
 watch(duration, (length) => {
-  if (!followLive.value) return;
+  if (!followLive.value || showLive.value) return;
   if (player.time.value < length - liveLag.value * 2) player.seek(length - liveLag.value);
   if (!player.playing.value) player.play();
 });
 
 function toggle() {
+  if (showLive.value) {
+    followLive.value = false;
+    player.seek(duration.value - liveLag.value);
+    return;
+  }
   if (player.playing.value) player.pause();
   else player.play();
 }
@@ -175,6 +201,7 @@ function seekOffset(ms: number) {
 function jumpLive() {
   if (!live.value) return;
   followLive.value = true;
+  if (liveFeed.state.value === "streaming" && liveScreen.ready.value) return;
   player.seek(duration.value - liveLag.value);
   player.play();
 }
@@ -188,7 +215,7 @@ function goToIssue(direction: 1 | -1) {
 
 usePlayerShortcuts({
   toggle,
-  seekBy: (ms) => seekOffset(player.time.value + ms),
+  seekBy: (ms) => seekOffset(shownTime.value + ms),
   issue: goToIssue,
   view: (next) => {
     if (next === "screen") {
@@ -208,7 +235,7 @@ const { copy } = useClipboard({ legacy: true });
 const pageUrl = () => `${window.location.origin}${route.path}`;
 
 async function copyLink() {
-  await copy(linkAt(pageUrl(), player.time.value));
+  await copy(linkAt(pageUrl(), shownTime.value));
   toast.success("Link copied - it opens the replay at this moment");
 }
 
@@ -288,7 +315,7 @@ async function remove() {
       <PlayerToolbar
         :app-id="appId"
         :session="session"
-        :time="player.time.value"
+        :time="shownTime"
         @remove="removeOpen = true"
         @copy-link="copyLink"
         @copy-report="copyReport"
@@ -313,8 +340,10 @@ async function remove() {
           <ReplayStage
             ref="stageView"
             :state="player.state.value"
-            :viewport="player.viewport.value"
-            :scale="player.scale.value"
+            :viewport="showLive ? liveScreen.viewport.value : player.viewport.value"
+            :scale="showLive ? liveScreen.scale.value : player.scale.value"
+            :show-live="showLive"
+            :live-rate="liveFeed.rate.value"
             :has-screen="hasScreen"
             :loaded="events.loaded.value"
             :total="events.total.value"
@@ -350,8 +379,8 @@ async function remove() {
         aria-label="Playback"
       >
         <PlaybackDock
-          :playing="player.playing.value"
-          :time="player.time.value"
+          :playing="showLive || player.playing.value"
+          :time="shownTime"
           :duration="duration"
           :speed="player.speed.value"
           :skip-inactive="player.skipInactive.value"
@@ -378,7 +407,7 @@ async function remove() {
         :lanes="events.lanes.value"
         :bounds="bounds"
         :viewport="player.shape.value ?? player.viewport.value"
-        :time="player.time.value"
+        :time="shownTime"
       />
       <ConfirmDialog
         v-model:open="removeOpen"

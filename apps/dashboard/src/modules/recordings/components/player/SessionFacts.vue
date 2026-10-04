@@ -38,6 +38,12 @@ const facts = computed(() => {
     ["Events", formatCount(session.event_count)],
     ["Size", formatBytes(session.size_bytes)],
     [
+      "Data rate",
+      session.duration_ms > 0
+        ? `${formatBytes(Math.round((session.size_bytes / session.duration_ms) * 60_000))}/min`
+        : null,
+    ],
+    [
       "System",
       session.device?.osVersion
         ? `${session.platform === "ios" ? "iOS" : "Android"} ${session.device.osVersion}`

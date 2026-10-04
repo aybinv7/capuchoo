@@ -18,11 +18,23 @@ const props = defineProps<{
   taps: readonly Tap[];
   /** Wall clock of the playhead, for each ripple's age. */
   playhead: number;
+  /** Shows the live root, where the device's screen is drawn as it arrives, instead of the player. */
+  showLive?: boolean;
+  /** What the live socket brings in, in bytes per second. */
+  liveRate?: number | null;
 }>();
 
 const stage = useTemplateRef<HTMLElement>("stage");
 const root = useTemplateRef<HTMLElement>("root");
-defineExpose({ stage, root });
+const liveRoot = useTemplateRef<HTMLElement>("liveRoot");
+defineExpose({ stage, root, liveRoot });
+
+const ready = computed(() => props.showLive || props.state === "ready");
+const rate = computed(() => {
+  const bytes = props.liveRate;
+  if (bytes === null || bytes === undefined) return null;
+  return bytes < 1024 ? `${Math.round(bytes)} B/s` : `${(bytes / 1024).toFixed(1)} KB/s`;
+});
 
 const frame = computed(() => {
   if (!props.viewport) return undefined;
@@ -35,12 +47,12 @@ const frame = computed(() => {
 /** A WebView behind the lock screen or another app reports no size: there was nothing to show. */
 const backgrounded = computed(
   () =>
-    props.state === "ready" &&
+    ready.value &&
     props.viewport !== null &&
     (props.viewport.width === 0 || props.viewport.height === 0),
 );
 const waiting = computed(
-  () => props.hasScreen && props.state !== "ready" && props.state !== "failed",
+  () => !props.showLive && props.hasScreen && props.state !== "ready" && props.state !== "failed",
 );
 </script>
 
@@ -50,13 +62,14 @@ const waiting = computed(
     class="bg-muted/40 dot-grid relative flex h-full min-h-72 w-full items-center justify-center overflow-hidden"
   >
     <div
-      v-show="props.state === 'ready' && !backgrounded"
+      v-show="ready && !backgrounded"
       class="ring-foreground/85 relative overflow-hidden rounded-[22px] bg-white shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)] ring-[6px]"
       :style="frame"
     >
-      <div ref="root" class="replay-root absolute inset-0" />
+      <div v-show="!props.showLive" ref="root" class="replay-root absolute inset-0" />
+      <div v-show="props.showLive" ref="liveRoot" class="replay-root absolute inset-0" />
       <span
-        v-for="tap in props.taps"
+        v-for="tap in props.showLive ? [] : props.taps"
         :key="tap.t"
         class="tap-ripple pointer-events-none absolute rounded-full"
         :style="{
@@ -74,6 +87,9 @@ const waiting = computed(
     >
       <span class="size-1.5 animate-pulse rounded-full bg-white" />
       Live
+      <span v-if="rate" class="tabular font-mono font-normal normal-case opacity-80"
+        >· {{ rate }}</span
+      >
     </span>
 
     <div v-if="waiting" class="text-muted-foreground flex flex-col items-center gap-3 text-sm">

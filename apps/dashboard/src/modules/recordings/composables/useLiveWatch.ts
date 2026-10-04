@@ -1,4 +1,5 @@
 import { parseSafeArea, type SafeArea } from "@capuchoo/core";
+import { useIntervalFn } from "@vueuse/core";
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from "vue";
 import { startWatch } from "../services/assist.service";
 
@@ -6,6 +7,8 @@ export type LiveWatchState = "off" | "connecting" | "waiting" | "streaming";
 
 /** Waits between attempts to reconnect, longest last. */
 const RETRY_MS = [1000, 2000, 5000, 10_000];
+/** The data rate is the average over this many seconds. */
+const RATE_WINDOW_S = 5;
 
 /**
  * The screen of a live device straight from its socket, a fraction of a second behind the phone,
@@ -19,6 +22,25 @@ export function useLiveWatch(input: {
 }) {
   const state = ref<LiveWatchState>("off");
   const safeArea = shallowRef<SafeArea | null>(null);
+  /**
+   * What the socket brought in per second, decompressed, averaged over a few seconds: an upper
+   * bound on what the phone sends, since the socket compresses on the wire.
+   */
+  const rate = ref<number | null>(null);
+  const perSecond: number[] = [];
+  let thisSecond = 0;
+  useIntervalFn(() => {
+    if (state.value !== "streaming") {
+      perSecond.length = 0;
+      thisSecond = 0;
+      rate.value = null;
+      return;
+    }
+    perSecond.push(thisSecond);
+    thisSecond = 0;
+    if (perSecond.length > RATE_WINDOW_S) perSecond.shift();
+    rate.value = perSecond.reduce((sum, bytes) => sum + bytes, 0) / perSecond.length;
+  }, 1000);
   let socket: WebSocket | null = null;
   let retry: ReturnType<typeof setTimeout> | null = null;
   let attempt = 0;
@@ -44,6 +66,7 @@ export function useLiveWatch(input: {
   }
 
   function onMessage(data: string) {
+    thisSecond += data.length;
     let message: {
       t?: unknown;
       events?: unknown;
@@ -116,5 +139,5 @@ export function useLiveWatch(input: {
   );
   onScopeDispose(close);
 
-  return { state, safeArea };
+  return { state, safeArea, rate };
 }
