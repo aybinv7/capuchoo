@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { errorRate, versionSpike } from "./quality";
+import { errorRate, versionSpike } from "./recording-quality.js";
 
 const row = (version: string, sessions: number, errors: number, devices = 3) => ({
   version,

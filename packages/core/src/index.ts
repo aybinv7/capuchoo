@@ -318,3 +318,10 @@ export {
   topFrame,
   type RecordingIssue,
 } from "./recording-issues.js";
+export { bundlePath, isLibrarySource, parseStack, type StackFrame } from "./stack-frames.js";
+export {
+  errorRate,
+  versionSpike,
+  type VersionSessions,
+  type VersionSpike,
+} from "./recording-quality.js";
