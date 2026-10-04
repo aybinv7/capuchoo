@@ -5428,7 +5428,7 @@
         "t": 1791087824262,
         "d": {
           "level": "error",
-          "text": "Uncaught Uncaught TypeError: Cannot read properties of undefined (reading 'lines')",
+          "text": "Uncaught TypeError: Cannot read properties of undefined (reading 'lines')",
           "stack": "TypeError: Cannot read properties of undefined (reading 'lines')\n    at computeTotals (https://app.northwind.example/assets/OrderSheet-4f2a9c.js:129:15)\n    at HTMLButtonElement.<anonymous> (https://app.northwind.example/assets/OrderSheet-4f2a9c.js:172:16)",
           "source": "uncaught"
         }
@@ -5506,7 +5506,7 @@
         "t": 1791087826283,
         "d": {
           "level": "error",
-          "text": "Uncaught Uncaught TypeError: Cannot read properties of undefined (reading 'lines')",
+          "text": "Uncaught TypeError: Cannot read properties of undefined (reading 'lines')",
           "stack": "TypeError: Cannot read properties of undefined (reading 'lines')\n    at computeTotals (https://app.northwind.example/assets/OrderSheet-4f2a9c.js:129:15)\n    at HTMLButtonElement.<anonymous> (https://app.northwind.example/assets/OrderSheet-4f2a9c.js:172:16)",
           "source": "uncaught"
         }

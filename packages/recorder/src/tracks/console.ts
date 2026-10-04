@@ -47,9 +47,10 @@ export function createConsoleTrack(onError: (entry: ConsoleEntry) => void): Trac
       }
 
       const onUncaught = (event: ErrorEvent) => {
+        const message = event.message || describeArgs([event.error]);
         emit({
           level: "error",
-          text: `Uncaught ${event.message || describeArgs([event.error])}`,
+          text: message.startsWith("Uncaught ") ? message : `Uncaught ${message}`,
           stack:
             stackOf(event.error) ??
             (event.filename ? `at ${event.filename}:${event.lineno}:${event.colno}` : null),

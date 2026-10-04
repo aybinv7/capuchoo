@@ -50,4 +50,18 @@ describe("console track", () => {
     expect(pushed[0]!.text).toBe("Uncaught x is undefined");
     track.stop();
   });
+
+  it("does not say Uncaught twice when the browser already did", () => {
+    const pushed: ConsoleEntry[] = [];
+    const track = createConsoleTrack(() => undefined);
+    track.start({
+      push: (_kind, data) => pushed.push(data as ConsoleEntry),
+      logger: { warn() {}, error() {} },
+    });
+    window.dispatchEvent(
+      new ErrorEvent("error", { message: "Uncaught TypeError: x is undefined" }),
+    );
+    expect(pushed[0]!.text).toBe("Uncaught TypeError: x is undefined");
+    track.stop();
+  });
 });
