@@ -19,6 +19,8 @@
   "dependencies": {
     "@capuchoo/core": "workspace:^",
     "@hono/node-server": "^2.1.3",
+    "@jridgewell/trace-mapping": "catalog:",
+    "@modelcontextprotocol/sdk": "catalog:",
     "aws4fetch": "^1.0.20",
     "busboy": "^1.6.0",
     "hono": "^4.13.11",

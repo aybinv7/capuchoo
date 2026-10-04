@@ -94,6 +94,9 @@ catalog:
   "@rrweb/record": 2.1.7
   "@rrweb/replay": 2.1.7
   "@jridgewell/trace-mapping": ^0.3.31
+
+  # The server's MCP endpoint speaks the protocol through the official SDK.
+  "@modelcontextprotocol/sdk": ^1.32.0
   "@rrweb/types": 2.1.7
   fflate: ^0.8.3
   happy-dom: ^20.14.5
