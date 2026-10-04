@@ -806,6 +806,12 @@ importers:
         specifier: 'catalog:'
         version: 0.2.9(@types/node@24.13.3)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@24.13.3)(jiti@2.7.0)(less@4.9.0(supports-color@8.1.1))(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.14.5)(jiti@2.7.0)(less@4.9.0(supports-color@8.1.1))(typescript@5.9.3)(yaml@2.9.0)
 
+  tools/recorder-bench:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+
 packages:
 
   '@antfu/install-pkg@1.1.0':

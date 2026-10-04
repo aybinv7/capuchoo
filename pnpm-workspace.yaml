@@ -2,6 +2,7 @@ packages:
   - packages/*
   - apps/*
   - services/*
+  - tools/*
 
 # Resolve a bare dependency range to the catalog entry when one exists, so a
 # package that forgets to write "catalog:" still lands on the pinned version.

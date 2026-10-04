@@ -1,0 +1,17 @@
+{
+  "name": "@capuchoo/recorder-bench",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Measures what the session recorder costs a real app on a real device, arm against arm.",
+  "type": "module",
+  "scripts": {
+    "bench": "node src/cli.ts",
+    "report": "node src/report/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
