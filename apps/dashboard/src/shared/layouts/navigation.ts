@@ -1,10 +1,12 @@
 import type { AppRole } from "@capuchoo/core";
 import {
   Activity,
+  Bug,
   ChartColumn,
   Clapperboard,
   Hammer,
   KeyRound,
+  LayoutDashboard,
   Presentation,
   LayoutGrid,
   Package,
@@ -12,6 +14,7 @@ import {
   RadioTower,
   ScrollText,
   Settings2,
+  SlidersHorizontal,
   Smartphone,
   UserRound,
   Users,
@@ -46,7 +49,25 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+/** A count drawn beside a nav item, red when it needs someone. */
+export interface NavBadge {
+  count: number;
+  urgent: boolean;
+  label: string;
+}
+
 export const APP_NAVIGATION: NavGroup[] = [
+  {
+    label: "App",
+    items: [
+      {
+        name: RouteName.overview,
+        label: "Overview",
+        icon: LayoutDashboard,
+        keywords: ["home", "summary", "health", "attention", "dashboard"],
+      },
+    ],
+  },
   {
     label: "Release",
     items: [
@@ -54,7 +75,7 @@ export const APP_NAVIGATION: NavGroup[] = [
         name: RouteName.canvas,
         label: "Canvas",
         icon: Workflow,
-        keywords: ["overview", "pipeline", "deliver"],
+        keywords: ["pipeline", "deliver", "graph"],
       },
       {
         name: RouteName.channels,
@@ -79,6 +100,44 @@ export const APP_NAVIGATION: NavGroup[] = [
     ],
   },
   {
+    label: "Session replay",
+    items: [
+      {
+        name: RouteName.recordings,
+        label: "Sessions",
+        icon: Clapperboard,
+        also: [RouteName.recording, RouteName.recordingAssist],
+        keywords: [
+          "replay",
+          "recordings",
+          "rrweb",
+          "shake",
+          "report",
+          "console",
+          "network",
+          "live",
+          "assist",
+        ],
+      },
+      {
+        name: RouteName.recordingIssues,
+        label: "Errors",
+        icon: Bug,
+        keywords: ["issues", "crashes", "exceptions", "regressions", "stack"],
+      },
+      {
+        name: RouteName.recordingRules,
+        label: "Recorder",
+        icon: SlidersHorizontal,
+        children: [
+          { name: RouteName.recordingRules, label: "What devices record" },
+          { name: RouteName.recordingSetup, label: "Connect and health" },
+        ],
+        keywords: ["rules", "policy", "buffer", "sampling", "setup", "health", "go live"],
+      },
+    ],
+  },
+  {
     label: "Fleet",
     items: [
       {
@@ -87,13 +146,6 @@ export const APP_NAVIGATION: NavGroup[] = [
         icon: Smartphone,
         also: [RouteName.device],
         keywords: ["installations", "map", "tablets", "attributes", "user"],
-      },
-      {
-        name: RouteName.recordings,
-        label: "Recordings",
-        icon: Clapperboard,
-        also: [RouteName.recording, RouteName.recordingRules],
-        keywords: ["replay", "session", "rrweb", "shake", "report", "console", "network", "live"],
       },
       {
         name: RouteName.activity,

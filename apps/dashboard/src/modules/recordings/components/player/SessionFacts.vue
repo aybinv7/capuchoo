@@ -7,8 +7,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { cn } from "@/lib/utils";
 import { formatBytes, formatCount, formatDateTime } from "@/shared/lib/format";
 import { formatOffset } from "../../lib/activity";
-import { startStyle } from "../../lib/start";
-import { TONE_TEXT } from "../../lib/tones";
+import { startStyle } from "@/shared/recording/start";
+import { TONE_TEXT } from "@/shared/lib/tone-styles";
 import type { RecordingSession } from "../../types/recordings.types";
 
 const props = defineProps<{ session: RecordingSession; class?: HTMLAttributes["class"] }>();

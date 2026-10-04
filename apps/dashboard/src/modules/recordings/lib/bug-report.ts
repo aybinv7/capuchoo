@@ -1,7 +1,7 @@
 import { formatOffset } from "./activity";
 import type { Issue } from "./issues";
 import { sessionDeviceLabel } from "./recording-columns";
-import { startStyle } from "./start";
+import { startStyle } from "@/shared/recording/start";
 import type { RecordingSession } from "../types/recordings.types";
 
 /** The recording's link at a moment: the player reads `t` and seeks there on load. */

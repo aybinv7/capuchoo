@@ -28,7 +28,7 @@ const props = defineProps<{ result: DemoSeed }>();
           {{ formatCount(app.runs) }} runs
         </span>
         <RouterLink
-          :to="{ name: RouteName.canvas, params: { appId: app.id } }"
+          :to="{ name: RouteName.overview, params: { appId: app.id } }"
           class="text-primary inline-flex items-center gap-1 text-xs font-medium hover:underline"
         >
           Open the canvas <ArrowUpRight class="size-3.5" />

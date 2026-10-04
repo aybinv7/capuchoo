@@ -86,7 +86,13 @@ export function formatRelative(value: string | null | undefined, now: number): s
 export function formatDuration(from: string | null, to: string | null, now: number): string {
   if (!from) return "—";
   const end = to ? new Date(to).getTime() : now;
-  const seconds = Math.max(0, Math.round((end - new Date(from).getTime()) / 1000));
+  return formatSpan(end - new Date(from).getTime());
+}
+
+/** A length of time: `42s`, `4m 16s`, `1h 3m`. */
+export function formatSpan(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined || !Number.isFinite(ms)) return "—";
+  const seconds = Math.max(0, Math.round(ms / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ${seconds % 60}s`;

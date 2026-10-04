@@ -49,7 +49,7 @@ function run() {
           ? {
               label: `Open ${first.name}`,
               onClick: () =>
-                void router.push({ name: RouteName.canvas, params: { appId: first.id } }),
+                void router.push({ name: RouteName.overview, params: { appId: first.id } }),
             }
           : undefined,
       });

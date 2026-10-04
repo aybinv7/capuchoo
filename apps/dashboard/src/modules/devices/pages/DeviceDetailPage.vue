@@ -18,6 +18,7 @@ import DeviceHardwareCard from "../components/DeviceHardwareCard.vue";
 import DeviceHero from "../components/DeviceHero.vue";
 import DeviceLocationCard from "../components/DeviceLocationCard.vue";
 import DeviceReleaseLane from "../components/DeviceReleaseLane.vue";
+import DeviceSessionsCard from "../components/DeviceSessionsCard.vue";
 import DeviceTimelineCard from "../components/DeviceTimelineCard.vue";
 import RemoveDeviceDialog from "../components/RemoveDeviceDialog.vue";
 import { useDeviceDetail } from "../composables/useDeviceDetail";
@@ -115,6 +116,7 @@ function removed() {
       <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <DeviceTimelineCard :app-id="appId" :device-id="deviceId" :bounds="period.bounds.value" />
         <div class="min-w-0 space-y-6">
+          <DeviceSessionsCard :app-id="appId" :device-id="deviceId" :device-name="title" />
           <DeviceLocationCard
             :latitude="device.latitude"
             :longitude="device.longitude"

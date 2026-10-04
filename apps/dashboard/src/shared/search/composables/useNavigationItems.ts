@@ -74,7 +74,7 @@ export function useNavigationItems() {
         hint: [names.get(entry.organization_id), entry.app_id].filter(Boolean).join(" · "),
         keywords: [entry.app_id, entry.role ?? ""],
         icon: AppWindow,
-        to: { name: RouteName.canvas, params: { appId: entry.id } },
+        to: { name: RouteName.overview, params: { appId: entry.id } },
       }));
   });
 

@@ -1,6 +1,6 @@
 import type { Issue } from "./issues";
 import type { TimelineBounds } from "./timeline";
-import type { LaneTone } from "./tones";
+import type { LaneTone } from "@/shared/lib/tone-styles";
 
 export interface TrackMark {
   id: string;

@@ -1,5 +1,5 @@
 import type { Lanes } from "../types/recordings.types";
-import type { LaneTone } from "./tones";
+import type { LaneTone } from "@/shared/lib/tone-styles";
 
 export interface TimelineTrack {
   key: string;

@@ -31,7 +31,7 @@ export function installGuards(router: Router, client: QueryClient): void {
         ?.meta.minRole;
       if (required && !hasAppRole(app.role, required)) {
         toast.warning(`That page requires the ${required} role on ${app.name}.`);
-        return { name: RouteName.canvas, params: { appId } };
+        return { name: RouteName.overview, params: { appId } };
       }
       return true;
     } catch (error) {

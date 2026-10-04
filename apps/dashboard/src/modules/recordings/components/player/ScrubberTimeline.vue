@@ -3,7 +3,7 @@ import { computed, ref, useTemplateRef } from "vue";
 import { formatOffset } from "../../lib/activity";
 import type { TimelineTrack } from "../../lib/timeline";
 import { marksNear, type TrackMark } from "../../lib/track-marks";
-import { TONE_COLOR } from "../../lib/tones";
+import { TONE_COLOR } from "@/shared/lib/tone-styles";
 import TimelineLanes from "./TimelineLanes.vue";
 
 const props = defineProps<{

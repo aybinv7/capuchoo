@@ -36,7 +36,7 @@ const parent = computed(() => nearest("parent") ?? null);
       <template v-if="app">
         <BreadcrumbItem class="hidden md:inline-flex">
           <BreadcrumbLink as-child>
-            <RouterLink :to="{ name: RouteName.canvas, params: { appId: app.id } }">{{
+            <RouterLink :to="{ name: RouteName.overview, params: { appId: app.id } }">{{
               app.name
             }}</RouterLink>
           </BreadcrumbLink>

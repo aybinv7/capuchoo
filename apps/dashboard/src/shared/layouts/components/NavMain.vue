@@ -2,6 +2,7 @@
 import type { AppRole } from "@capuchoo/core";
 import { ChevronRight } from "@lucide/vue";
 import { computed } from "vue";
+import { cn } from "@/lib/utils";
 import { RouterLink, useRoute } from "vue-router";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -9,19 +10,21 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { navItemVisible, type NavGroup, type NavItem } from "../navigation";
+import { navItemVisible, type NavBadge, type NavGroup, type NavItem } from "../navigation";
 
 const props = defineProps<{
   groups: NavGroup[];
   role?: AppRole | null;
   params?: Record<string, string>;
   instanceAdmin?: boolean;
+  badges?: Partial<Record<string, NavBadge>>;
 }>();
 
 const route = useRoute();
@@ -61,6 +64,20 @@ const isActive = (item: NavItem) =>
               <span>{{ item.label }}</span>
             </RouterLink>
           </SidebarMenuButton>
+          <SidebarMenuBadge
+            v-if="props.badges?.[item.name]"
+            :class="
+              cn(
+                'top-1.5',
+                props.badges[item.name]!.urgent
+                  ? 'bg-destructive/15 text-destructive'
+                  : 'text-muted-foreground',
+              )
+            "
+            :title="props.badges[item.name]!.label"
+          >
+            <span class="tabular">{{ props.badges[item.name]!.count }}</span>
+          </SidebarMenuBadge>
           <template v-if="item.children?.length">
             <CollapsibleTrigger as-child>
               <SidebarMenuAction class="data-[state=open]:rotate-90">

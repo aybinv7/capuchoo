@@ -61,7 +61,7 @@ const assignGate = computed(() => permissions.assignDevice(null));
         <Button variant="outline" size="sm" as-child>
           <RouterLink :to="{ name: RouteName.recordings, query: { device: props.device.id } }">
             <Clapperboard />
-            Recordings
+            Sessions
           </RouterLink>
         </Button>
         <GateButton variant="outline" size="sm" :gate="assignGate" @click="emit('assign')">

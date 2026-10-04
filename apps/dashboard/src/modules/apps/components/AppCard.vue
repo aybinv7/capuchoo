@@ -9,7 +9,7 @@ const props = defineProps<{ app: AppSummary }>();
 
 <template>
   <RouterLink
-    :to="{ name: RouteName.canvas, params: { appId: props.app.id } }"
+    :to="{ name: RouteName.overview, params: { appId: props.app.id } }"
     class="group bg-card hover:border-foreground/20 focus-visible:ring-ring/50 flex flex-col gap-4 rounded-lg border p-4 transition-colors outline-none focus-visible:ring-3"
   >
     <div class="flex items-start justify-between gap-3">

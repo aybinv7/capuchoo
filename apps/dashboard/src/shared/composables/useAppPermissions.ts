@@ -23,6 +23,8 @@ export function useAppPermissions() {
     manageChannels: computed(() => canManageChannels(role.value)),
     deleteRelease: computed(() => canDeleteRelease(role.value)),
     removeDevice: computed(() => canRemoveDevice(role.value)),
+    /** Watch a user's screen live and, once they allow it, use the app for them. */
+    assist: computed(() => hasAppRole(role.value, "tester")),
     administer: computed(() => canAdministerApp(role.value)),
     deliver: (environment: Environment) => canDeliver(role.value, environment, prodRole.value),
     editRelease: (flavour: Environment | null) =>

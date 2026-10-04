@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { RouteName } from "../router/route-names";
-import { WORKSPACE_NAVIGATION, navItemVisible } from "./navigation";
+import { recordingsRoutes } from "@/modules/recordings/routes";
+import { APP_NAVIGATION, WORKSPACE_NAVIGATION, navItemVisible } from "./navigation";
 
 const items = WORKSPACE_NAVIGATION.flatMap((group) => group.items);
 const demo = items.find((item) => item.name === RouteName.demo)!;
@@ -21,5 +22,26 @@ describe("navItemVisible", () => {
     expect(
       navItemVisible({ ...demo, instanceAdmin: false, minRole: "admin" }, "viewer", true),
     ).toBe(false);
+  });
+});
+
+describe("app navigation", () => {
+  const appItems = APP_NAVIGATION.flatMap((group) => group.items);
+  const highlighted = new Set<string>(
+    appItems.flatMap((item) => [
+      item.name,
+      ...(item.also ?? []),
+      ...(item.children ?? []).map((child) => child.name),
+    ]),
+  );
+
+  it("lights an item on every session replay page", () => {
+    for (const route of recordingsRoutes.app ?? []) {
+      expect(highlighted.has(String(route.name)), String(route.name)).toBe(true);
+    }
+  });
+
+  it("opens on the overview, ahead of the release pages", () => {
+    expect(appItems[0]!.name).toBe(RouteName.overview);
   });
 });

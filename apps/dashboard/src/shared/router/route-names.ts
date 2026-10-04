@@ -11,6 +11,7 @@ export const RouteName = {
   organization: "settings-organization",
   githubApp: "settings-github",
   demo: "settings-demo",
+  overview: "app-overview",
   canvas: "app-canvas",
   channels: "app-channels",
   channel: "app-channel",

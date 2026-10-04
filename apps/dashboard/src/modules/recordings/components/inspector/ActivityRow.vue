@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
 import type { ActivityItem } from "../../lib/activity";
-import { TONE_SOFT, TONE_TEXT } from "../../lib/tones";
+import { TONE_SOFT, TONE_TEXT } from "@/shared/lib/tone-styles";
 import { LANE_ICONS } from "./rows";
 
 const props = defineProps<{ item: ActivityItem }>();

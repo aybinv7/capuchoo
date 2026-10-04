@@ -11,7 +11,7 @@ import { RouteName } from "@/shared/router/route-names";
 import { formatOffset } from "../lib/activity";
 import { RECORDING_COLUMNS, sessionDeviceLabel } from "../lib/recording-columns";
 import type { RecordingSession } from "../types/recordings.types";
-import StartBadge from "./StartBadge.vue";
+import StartBadge from "@/shared/components/recording/StartBadge.vue";
 
 const search = defineModel<string>("search", { required: true });
 

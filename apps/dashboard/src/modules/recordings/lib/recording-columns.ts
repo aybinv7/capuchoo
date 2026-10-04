@@ -1,6 +1,6 @@
 import type { AnyColumnDef } from "@/shared/components/data-table";
 import { formatOffset } from "./activity";
-import { startStyle } from "./start";
+import { startStyle } from "@/shared/recording/start";
 import type { RecordingSession } from "../types/recordings.types";
 
 export function sessionDeviceLabel(session: RecordingSession): string {

@@ -14,7 +14,7 @@ import { RouteName } from "@/shared/router/route-names";
 import { formatOffset } from "../../lib/activity";
 import { fetchIssueSessions } from "../../services/recordings.service";
 import type { IssueSession, RecordingIssueRow } from "../../types/recordings.types";
-import StartBadge from "../StartBadge.vue";
+import StartBadge from "@/shared/components/recording/StartBadge.vue";
 import IssueFrame from "./IssueFrame.vue";
 
 const props = defineProps<{ issue: RecordingIssueRow; appId: string; pending: boolean }>();

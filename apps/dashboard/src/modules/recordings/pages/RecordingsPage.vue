@@ -22,7 +22,7 @@ import RecordingsTable from "../components/RecordingsTable.vue";
 import GoLiveButton from "../components/rules/GoLiveButton.vue";
 import { useRecordingIssues } from "../composables/useRecordingIssues";
 import { useRecordings } from "../composables/useRecordings";
-import { START_KINDS, startStyle } from "../lib/start";
+import { START_KINDS, startStyle } from "@/shared/recording/start";
 import type { RecordingFilters, RecordingSession } from "../types/recordings.types";
 
 const router = useRouter();
@@ -31,11 +31,12 @@ const { appId, app } = useCurrentApp();
 const device = useQueryParam<string>("device", "");
 const errorsOnly = useQueryParam<"" | "1">("errors", "", (value): value is "1" => value === "1");
 const start = useQueryParam<string>("start", "");
+const version = useQueryParam<string>("version", "");
 const search = ref("");
 
 const filters = computed<RecordingFilters>(() => ({
   deviceId: device.value || null,
-  version: null,
+  version: version.value || null,
   errors: errorsOnly.value === "1",
   start: start.value || null,
 }));
@@ -52,7 +53,9 @@ const visible = computed(() => {
       .some((value) => String(value).toLowerCase().includes(needle)),
   );
 });
-const filtered = computed(() => Boolean(device.value || errorsOnly.value || start.value));
+const filtered = computed(() =>
+  Boolean(device.value || errorsOnly.value || start.value || version.value),
+);
 const nothingYet = computed(
   () => !query.isPending.value && sessions.value.length === 0 && !filtered.value,
 );
@@ -65,13 +68,14 @@ function clearFilters() {
   device.value = "";
   errorsOnly.value = "";
   start.value = "";
+  version.value = "";
 }
 </script>
 
 <template>
   <PageContainer width="wide">
     <PageHeader
-      title="Recordings"
+      title="Sessions"
       description="What happened on a device: the screen, its console and network, and every database write, on one timeline. Devices record only what the rules ask for."
     >
       <template #actions>
@@ -154,6 +158,17 @@ function clearFilters() {
             </SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          v-if="version"
+          variant="secondary"
+          size="sm"
+          class="font-mono"
+          :aria-label="`Stop filtering on version ${version}`"
+          @click="version = ''"
+        >
+          {{ version }}
+          <X />
+        </Button>
         <Button v-if="filtered" variant="ghost" size="sm" @click="clearFilters">
           <X />
           {{ device ? "All devices" : "Clear" }}

@@ -6,6 +6,7 @@ import { buildsRoutes } from "@/modules/builds/routes";
 import { canvasRoutes } from "@/modules/canvas/routes";
 import { channelsRoutes } from "@/modules/channels/routes";
 import { devicesRoutes } from "@/modules/devices/routes";
+import { overviewRoutes } from "@/modules/overview/routes";
 import { recordingsRoutes } from "@/modules/recordings/routes";
 import { releasesRoutes } from "@/modules/releases/routes";
 import { settingsRoutes } from "@/modules/settings/routes";
@@ -16,6 +17,7 @@ import { RouteName } from "@/shared/router/route-names";
 const MODULES: ModuleRoutes[] = [
   authRoutes,
   appsRoutes,
+  overviewRoutes,
   canvasRoutes,
   channelsRoutes,
   releasesRoutes,
@@ -41,7 +43,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: "apps/:appId",
         component: () => import("@/shared/layouts/AppScope.vue"),
-        children: [{ path: "", redirect: { name: RouteName.canvas } }, ...collect("app")],
+        children: [{ path: "", redirect: { name: RouteName.overview } }, ...collect("app")],
       },
     ],
   },

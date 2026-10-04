@@ -45,7 +45,7 @@ const initials = (name: string) =>
 function openApp(appId: string) {
   const entityPage = route.name === RouteName.channel || route.name === RouteName.build;
   const name =
-    app.value && !entityPage && typeof route.name === "string" ? route.name : RouteName.canvas;
+    app.value && !entityPage && typeof route.name === "string" ? route.name : RouteName.overview;
   void router.push({ name, params: { appId } });
 }
 

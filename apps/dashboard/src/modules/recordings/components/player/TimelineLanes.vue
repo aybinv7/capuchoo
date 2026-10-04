@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TimelineTrack } from "../../lib/timeline";
-import { TONE_COLOR } from "../../lib/tones";
+import { TONE_COLOR } from "@/shared/lib/tone-styles";
 
 const props = defineProps<{ tracks: readonly TimelineTrack[] }>();
 </script>

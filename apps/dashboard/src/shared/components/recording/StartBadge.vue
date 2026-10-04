@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { cn } from "@/lib/utils";
-import { startStyle } from "../lib/start";
-import { TONE_SOFT, TONE_TEXT } from "../lib/tones";
+import { startStyle } from "@/shared/recording/start";
+import { TONE_SOFT, TONE_TEXT } from "@/shared/lib/tone-styles";
 
 const props = defineProps<{ start: string; class?: string }>();
 const style = computed(() => startStyle(props.start));

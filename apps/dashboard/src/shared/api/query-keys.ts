@@ -56,6 +56,11 @@ export const queryKeys = {
   recordingsAll: (appId: string) => ["apps", appId, "recordings"] as const,
   recordings: (appId: string, filters: Record<string, unknown>) =>
     ["apps", appId, "recordings", filters] as const,
+  /** Under `recordingsAll`, so a stored segment refreshes the counts too. */
+  recordingStats: (appId: string, days: number) =>
+    ["apps", appId, "recordings", "stats", days] as const,
+  latestSessions: (appId: string, deviceId: string | null, limit: number) =>
+    ["apps", appId, "recordings", "latest", deviceId, limit] as const,
   recordingRules: (appId: string) => ["apps", appId, "recording-rules"] as const,
   recorderHealth: (appId: string) => ["apps", appId, "recorder-health"] as const,
   recordingIssues: (appId: string, filter: string) =>
