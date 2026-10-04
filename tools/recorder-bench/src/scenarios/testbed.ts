@@ -10,6 +10,7 @@ const ORDER = "#demo-tab-data li a.item-link";
 const ORDER_BACK = "#view-demo .page-current .navbar a.back";
 const SEARCH_LINK = '#view-demo a[href="/demo/search/"]';
 const SEARCH_INPUT = "#view-demo .searchbar input";
+const SEARCH_ENABLE = "#view-demo .page-current a.searchbar-enable";
 const DIAGNOSTICS = 'a.tab-link[data-tab="#demo-tab-diagnostics"]';
 const DATA = 'a.tab-link[data-tab="#demo-tab-data"]';
 const RUN_BENCHMARK = "#demo-tab-diagnostics .button";
@@ -95,7 +96,17 @@ const typing: Scenario = {
     await openDemo(context);
     await ui.tap(SEARCH_LINK);
     await ui.sleep(900);
-    await ui.tap(SEARCH_INPUT);
+    const collapsed = await context.page.evaluate<boolean>(
+      `Boolean([...document.querySelectorAll(${JSON.stringify(SEARCH_ENABLE)})].some((link) => link.getBoundingClientRect().width > 0))`,
+    );
+    if (collapsed) {
+      await ui.tap(SEARCH_ENABLE);
+      await ui.sleep(500);
+    }
+    await ui.tapUntil(
+      SEARCH_INPUT,
+      `document.activeElement && document.activeElement.matches(${JSON.stringify(SEARCH_INPUT)})`,
+    );
     const words = ["SO-65", "SO-64", "SO-6", "SO-649", "SO-650"];
     await loopFor(context.seconds, async (round) => {
       const word = words[round % words.length]!;
