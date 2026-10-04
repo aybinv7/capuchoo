@@ -64,24 +64,24 @@ record. Production moves still need the app's production role.
 
 ## Tools
 
-| Tool                                  | What it answers                                                                                                 | Role                               |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `list_apps`                           | The apps the key reaches, with its role on each                                                                 | —                                  |
-| `app_overview`                        | Delivery and session health, each channel's release, and what needs attention first                             | viewer                             |
-| `channel_details`                     | What a channel serves, its rollout (version mix, devices behind) and history                                    | viewer                             |
-| `list_releases`                       | Web bundles and native builds, with the channels serving each                                                   | viewer                             |
-| `list_builds`, `build_details`        | CLI and CI runs; for a failed job, the end of the failing step's log                                            | viewer                             |
-| `find_devices`, `device_details`      | Devices by search and filters; one device with its updates and sessions                                         | viewer                             |
-| `list_sessions`                       | Recorded sessions by device, version, errors, what started them                                                 | viewer                             |
-| `session_timeline`                    | One session as a timeline: taps, typing, routes, requests, database writes, errors with stacks mapped to source | viewer                             |
-| `list_errors`, `error_details`        | Grouped errors; one with its sessions and source-mapped stack                                                   | viewer                             |
-| `app_stats`                           | Daily update and session numbers, error rate by version                                                         | viewer                             |
-| `audit_log`                           | Who changed what                                                                                                | admin                              |
-| `set_error_status`                    | Resolve or reopen an error                                                                                      | developer                          |
-| `set_recording_rule`                  | What the app, a channel or a device records                                                                     | developer                          |
-| `go_live`                             | Stream one device for a few minutes                                                                             | developer                          |
-| `deliver_release`, `rollback_channel` | Point a channel at a release                                                                                    | developer, prod role on production |
-| `pause_channel`, `resume_channel`     | Stop or restart a channel serving updates                                                                       | developer, prod role on production |
+| Tool                                  | What it answers                                                                                                                                               | Role                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `list_apps`                           | The apps the key reaches, with its role on each                                                                                                               | —                                  |
+| `app_overview`                        | Delivery and session health, each channel's release, and what needs attention first                                                                           | viewer                             |
+| `channel_details`                     | What a channel serves, its rollout (version mix, devices behind) and history                                                                                  | viewer                             |
+| `list_releases`                       | Web bundles and native builds, with the channels serving each                                                                                                 | viewer                             |
+| `list_builds`, `build_details`        | CLI and CI runs; for a failed job, the end of the failing step's log                                                                                          | viewer                             |
+| `find_devices`, `device_details`      | Devices by search and filters; one device with its updates and sessions                                                                                       | viewer                             |
+| `list_sessions`                       | Recorded sessions by device, version, errors, what started them                                                                                               | viewer                             |
+| `session_timeline`                    | One session as a timeline: taps, typing, routes, requests, database writes, errors with stacks mapped to source (`logged_at` for an error logged without one) | viewer                             |
+| `list_errors`, `error_details`        | Grouped errors; one with its sessions and source-mapped stack, or `logged_at`: the app code that logged it                                                    | viewer                             |
+| `app_stats`                           | Daily update and session numbers, error rate by version                                                                                                       | viewer                             |
+| `audit_log`                           | Who changed what                                                                                                                                              | admin                              |
+| `set_error_status`                    | Resolve or reopen an error                                                                                                                                    | developer                          |
+| `set_recording_rule`                  | What the app, a channel or a device records                                                                                                                   | developer                          |
+| `go_live`                             | Stream one device for a few minutes                                                                                                                           | developer                          |
+| `deliver_release`, `rollback_channel` | Point a channel at a release                                                                                                                                  | developer, prod role on production |
+| `pause_channel`, `resume_channel`     | Stop or restart a channel serving updates                                                                                                                     | developer, prod role on production |
 
 Three prompts start common jobs: `investigate_error`, `release_health` and `device_story`.
 

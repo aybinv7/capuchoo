@@ -189,6 +189,7 @@ export function appendToLanes(
           level: (level && LEVELS.has(level) ? level : "log") as ConsoleLaneEntry["level"],
           text: text(data.text) ?? "",
           stack: text(data.stack),
+          site: text(data.site),
           source: text(data.source) ?? "console",
         });
         return;

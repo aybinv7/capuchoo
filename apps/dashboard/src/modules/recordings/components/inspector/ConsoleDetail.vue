@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import CopyButton from "@/shared/components/CopyButton.vue";
 import { useCurrentApp } from "@/shared/composables/useCurrentApp";
 import type { ConsoleLaneEntry } from "../../types/recordings.types";
@@ -6,6 +7,14 @@ import StackTrace from "./StackTrace.vue";
 
 const props = defineProps<{ entry: ConsoleLaneEntry; version: string }>();
 const { appId } = useCurrentApp();
+
+const trace = computed(() =>
+  props.entry.stack
+    ? { label: "Stack", value: props.entry.stack }
+    : props.entry.site
+      ? { label: "Logged at", value: props.entry.site }
+      : null,
+);
 </script>
 
 <template>
@@ -15,15 +24,16 @@ const { appId } = useCurrentApp();
         {{ props.entry.text }}
       </p>
       <CopyButton
-        :value="[props.entry.text, props.entry.stack].filter(Boolean).join('\n')"
+        :value="[props.entry.text, trace?.value].filter(Boolean).join('\n')"
         label="Copy"
       />
     </div>
     <StackTrace
-      v-if="props.entry.stack"
+      v-if="trace"
       :app-id="appId"
       :version="props.version"
-      :stack="props.entry.stack"
+      :stack="trace.value"
+      :label="trace.label"
     />
     <p v-if="props.entry.source !== 'console'" class="text-muted-foreground">
       {{

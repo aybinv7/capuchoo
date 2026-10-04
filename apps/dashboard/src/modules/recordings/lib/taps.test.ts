@@ -50,6 +50,7 @@ describe("issues", () => {
     level: "error",
     text: "boom\nat x",
     stack: null,
+    site: null,
     source: "uncaught",
   });
   lanes.network.push({

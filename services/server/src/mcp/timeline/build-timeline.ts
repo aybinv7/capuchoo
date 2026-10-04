@@ -23,6 +23,8 @@ export interface TimelineError {
   message: string;
   source: string;
   stack: string | null;
+  /** Where the app logged an error that carried no stack. */
+  site: string | null;
 }
 
 export interface Timeline {
@@ -163,7 +165,8 @@ function itemOf(event: RecordedEvent, start: number): TimelineItem | TimelineErr
           at_ms: at,
           message: said,
           source: text(data.source) || "console",
-          stack: typeof data.stack === "string" ? data.stack : null,
+          stack: typeof data.stack === "string" && data.stack ? data.stack : null,
+          site: typeof data.site === "string" && data.site ? data.site : null,
         };
       }
       return { at_ms: at, kind: level === "warn" ? "warning" : "log", text: `${level} ${said}` };
@@ -189,7 +192,8 @@ function itemOf(event: RecordedEvent, start: number): TimelineItem | TimelineErr
           at_ms: at,
           message: clip(text(data.message) || text(data.name) || "telemetry error"),
           source: "telemetry",
-          stack: typeof data.stack === "string" ? data.stack : null,
+          stack: typeof data.stack === "string" && data.stack ? data.stack : null,
+          site: null,
         };
       }
       return null;

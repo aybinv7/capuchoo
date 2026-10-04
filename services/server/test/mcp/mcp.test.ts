@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { normaliseIssueMessage } from "@capuchoo/core";
 import { createTestContext, fakeZip, seedApp, uploadForm, type TestContext } from "../harness";
 
 let ctx: TestContext;
@@ -60,6 +61,65 @@ async function publish(fields: Record<string, string>) {
     ),
   });
   expect(response.status).toBeLessThan(300);
+}
+
+async function storeSession(lines: Array<Record<string, unknown>>, started: number) {
+  const body = gzipSync(Buffer.from(`${lines.map((line) => JSON.stringify(line)).join("\n")}\n`));
+  const session = await ctx.db
+    .insertInto("recording_sessions")
+    .values({
+      app_id: app.id,
+      session_key: randomUUID(),
+      device_id: "tablet-1",
+      platform: "android",
+      version_name: "1.0.0",
+      start: "error",
+      mode: "buffer",
+      started_at: new Date(started),
+      ended_at: new Date(started + 60_000),
+      last_segment_at: new Date(started + 60_000),
+      segment_count: 1,
+      error_count: 1,
+      finished: true,
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  const storageKey = `recordings/${app.id}/${session.id}/0-${randomUUID()}.ndjson.gz`;
+  await ctx.deps.storage.put(storageKey, Readable.from(body), "application/gzip");
+  await ctx.db
+    .insertInto("recording_segments")
+    .values({
+      session_id: session.id,
+      seq: 0,
+      storage_key: storageKey,
+      size_bytes: body.length,
+      raw_bytes: body.length,
+      events: lines.length,
+      errors: 1,
+      full_snapshot: true,
+      started_at: new Date(started),
+      ended_at: new Date(started + 60_000),
+    })
+    .execute();
+  return session;
+}
+
+async function uploadMap() {
+  const map = {
+    version: 3,
+    file: "index.js",
+    sources: ["../src/orders/totals.ts"],
+    sourcesContent: [
+      ["export function total(order) {", "  return order.lines.length;", "}", ""].join("\n"),
+    ],
+    names: ["total"],
+    mappings: "AACA",
+  };
+  const uploaded = await ctx.request(
+    `/api/apps/${app.id}/source-maps?version=1.0.0&path=assets/index.js.map`,
+    { method: "PUT", token: owner.token, body: JSON.stringify(map) },
+  );
+  expect(uploaded.status).toBeLessThan(300);
 }
 
 describe("the MCP endpoint", () => {
@@ -300,59 +360,8 @@ describe("reading a session", () => {
         },
       },
     ];
-    const body = gzipSync(Buffer.from(`${lines.map((line) => JSON.stringify(line)).join("\n")}\n`));
-    const session = await ctx.db
-      .insertInto("recording_sessions")
-      .values({
-        app_id: app.id,
-        session_key: randomUUID(),
-        device_id: "tablet-1",
-        platform: "android",
-        version_name: "1.0.0",
-        start: "error",
-        mode: "buffer",
-        started_at: new Date(started),
-        ended_at: new Date(started + 60_000),
-        last_segment_at: new Date(started + 60_000),
-        segment_count: 1,
-        error_count: 1,
-        finished: true,
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    const storageKey = `recordings/${app.id}/${session.id}/0-${randomUUID()}.ndjson.gz`;
-    await ctx.deps.storage.put(storageKey, Readable.from(body), "application/gzip");
-    await ctx.db
-      .insertInto("recording_segments")
-      .values({
-        session_id: session.id,
-        seq: 0,
-        storage_key: storageKey,
-        size_bytes: body.length,
-        raw_bytes: body.length,
-        events: lines.length,
-        errors: 1,
-        full_snapshot: true,
-        started_at: new Date(started),
-        ended_at: new Date(started + 60_000),
-      })
-      .execute();
-
-    const map = {
-      version: 3,
-      file: "index.js",
-      sources: ["../src/orders/totals.ts"],
-      sourcesContent: [
-        ["export function total(order) {", "  return order.lines.length;", "}", ""].join("\n"),
-      ],
-      names: ["total"],
-      mappings: "AACA",
-    };
-    const uploaded = await ctx.request(
-      `/api/apps/${app.id}/source-maps?version=1.0.0&path=assets/index.js.map`,
-      { method: "PUT", token: owner.token, body: JSON.stringify(map) },
-    );
-    expect(uploaded.status).toBeLessThan(300);
+    const session = await storeSession(lines, started);
+    await uploadMap();
 
     const timeline = await call("session_timeline", { session: session.id });
     expect(timeline.error).toBe(false);
@@ -387,6 +396,64 @@ describe("reading a session", () => {
       errors: 1,
       started_by: "error",
     });
+  });
+
+  it("shows where an error without a stack was logged, even when its message has numbers", async () => {
+    const started = Date.now() - 120_000;
+    const said = "Request failed: timeout, statusCode: 504";
+    const session = await storeSession(
+      [
+        {
+          k: "console",
+          t: started + 5000,
+          d: {
+            level: "error",
+            text: said,
+            stack: null,
+            site: "    at total (https://app.acme.test/assets/index.js:1:42)",
+            source: "console",
+          },
+        },
+      ],
+      started,
+    );
+    await uploadMap();
+    const now = ctx.deps.now();
+    const issue = await ctx.db
+      .insertInto("recording_issues")
+      .values({
+        app_id: app.id,
+        fingerprint: "g",
+        message: normaliseIssueMessage(said),
+        occurrences: 1,
+        first_version: "1.0.0",
+        last_version: "1.0.0",
+        first_seen: now,
+        last_seen: now,
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await ctx.db
+      .insertInto("recording_issue_sessions")
+      .values({
+        issue_id: issue.id,
+        session_id: session.id,
+        device_id: "tablet-1",
+        version_name: "1.0.0",
+        first_at: new Date(started + 5000),
+      })
+      .execute();
+
+    const detail = await call("error_details", { error: issue.id });
+    expect(detail.data.stack).toBeUndefined();
+    expect(detail.data.logged_at[0]).toMatchObject({
+      source: "src/orders/totals.ts",
+      line: 2,
+      mapped: true,
+    });
+
+    const timeline = await call("session_timeline", { session: session.id });
+    expect(timeline.data.errors[0].logged_at[0]).toMatchObject({ source: "src/orders/totals.ts" });
   });
 });
 

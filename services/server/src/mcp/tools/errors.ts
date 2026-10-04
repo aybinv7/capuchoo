@@ -7,6 +7,7 @@ import {
   listIssues,
   setIssueStatus,
 } from "../../repositories/recording-issues";
+import { normaliseIssueMessage } from "@capuchoo/core";
 import { appArg, limitArg, uuidArg } from "../args";
 import { appAccess, audit, guarded, iso, type ToolContext } from "../context";
 import { readSessionLines } from "../timeline/read-lines";
@@ -24,16 +25,26 @@ const deviceLabel = (device: unknown, fallback: string) => {
   );
 };
 
-/** The error's stack as one session recorded it, found by its message. */
-async function stackFrom(ctx: ToolContext, sessionId: string, message: string) {
+interface RecordedTrace {
+  /** The stack the error carried when thrown. */
+  stack: string | null;
+  /** Where the app logged an error that carried no stack. */
+  site: string | null;
+}
+
+/** The error as one session recorded it, found by the message it groups under. */
+async function traceFrom(
+  ctx: ToolContext,
+  sessionId: string,
+  message: string,
+): Promise<RecordedTrace | null> {
   const { lines } = await readSessionLines(ctx.deps, sessionId);
-  const needle = message.replace(/^Uncaught /, "");
   for (const line of lines) {
     const data = (line.d ?? {}) as {
-      level?: unknown;
       text?: unknown;
-      stack?: unknown;
       message?: unknown;
+      stack?: unknown;
+      site?: unknown;
     };
     const said =
       typeof data.text === "string"
@@ -41,9 +52,26 @@ async function stackFrom(ctx: ToolContext, sessionId: string, message: string) {
         : typeof data.message === "string"
           ? data.message
           : "";
-    if (typeof data.stack === "string" && said.includes(needle)) return data.stack;
+    if (!said || normaliseIssueMessage(said) !== message) continue;
+    const stack = typeof data.stack === "string" && data.stack ? data.stack : null;
+    const site = typeof data.site === "string" && data.site ? data.site : null;
+    if (stack || site) return { stack, site };
   }
   return null;
+}
+
+/** A recorded trace through the app's source maps, or its first raw lines when it cannot map. */
+async function traceOutput(
+  ctx: ToolContext,
+  input: { appId: string; version: string; trace: RecordedTrace | null; sourceMaps: boolean },
+) {
+  const raw = input.trace?.stack ?? input.trace?.site;
+  if (!raw) return {};
+  const key = input.trace?.stack ? "stack" : "logged_at";
+  const mapped = input.sourceMaps
+    ? await symbolicate(ctx.deps, { appId: input.appId, version: input.version, stack: raw })
+    : null;
+  return { [key]: mapped ?? raw.split("\n").slice(0, 8) };
 }
 
 export function registerErrorTools(server: McpServer, ctx: ToolContext) {
@@ -91,7 +119,7 @@ export function registerErrorTools(server: McpServer, ctx: ToolContext) {
     {
       title: "Error details",
       description:
-        "One grouped error: its message and status, the sessions it happened in (device, version, when, the user's note), and its stack from the most recent occurrence mapped back to source. Follow up with `session_timeline` on a session to see what led to it.",
+        "One grouped error: its message and status, the sessions it happened in (device, version, when, the user's note), and from its most recent occurrence the stack it was thrown with (`stack`), or for an error logged without one, the app code that logged it (`logged_at`), both mapped back to source. Follow up with `session_timeline` on a session to see what led to it.",
       inputSchema: {
         error: uuidArg("error"),
         sessions: z.number().int().min(1).max(50).default(10),
@@ -108,15 +136,14 @@ export function registerErrorTools(server: McpServer, ctx: ToolContext) {
         const access = await appAccess(ctx, issue.app_id, "viewer", "Reading an error");
         const sessions = await issueSessions(ctx.deps.db, issue.id, args.sessions);
         const latest = sessions[0];
-        const raw = latest ? await stackFrom(ctx, latest.id, issue.message) : null;
-        const stack =
-          raw && args.source_maps
-            ? await symbolicate(ctx.deps, {
-                appId: access.app.id,
-                version: latest!.version_name,
-                stack: raw,
-              })
-            : null;
+        const trace = latest
+          ? await traceOutput(ctx, {
+              appId: access.app.id,
+              version: latest.version_name,
+              trace: await traceFrom(ctx, latest.id, issue.message),
+              sourceMaps: args.source_maps,
+            })
+          : {};
         return {
           error: {
             id: issue.id,
@@ -130,7 +157,7 @@ export function registerErrorTools(server: McpServer, ctx: ToolContext) {
             last_seen: iso(issue.last_seen),
             resolved_at: iso(issue.resolved_at),
           },
-          stack: stack ?? (raw ? raw.split("\n").slice(0, 8) : null),
+          ...trace,
           sessions: sessions.map((session) => ({
             id: session.id,
             device: deviceLabel(session.device, session.device_id),

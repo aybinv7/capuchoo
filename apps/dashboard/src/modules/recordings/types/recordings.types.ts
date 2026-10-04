@@ -98,6 +98,8 @@ export interface ConsoleLaneEntry extends LaneEntry {
   level: "log" | "info" | "warn" | "error" | "debug";
   text: string;
   stack: string | null;
+  /** Where an error that carried no stack was logged. */
+  site: string | null;
   source: string;
 }
 

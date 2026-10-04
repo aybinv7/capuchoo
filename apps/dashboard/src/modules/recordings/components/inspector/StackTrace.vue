@@ -7,7 +7,10 @@ import { cn } from "@/lib/utils";
 import { useSymbolicatedStack } from "../../composables/useSymbolicatedStack";
 import type { ResolvedFrame } from "../../lib/stack";
 
-const props = defineProps<{ appId: string; version: string; stack: string }>();
+const props = withDefaults(
+  defineProps<{ appId: string; version: string; stack: string; label?: string }>(),
+  { label: "Stack" },
+);
 
 const { frames, state } = useSymbolicatedStack({
   appId: () => props.appId,
@@ -70,9 +73,9 @@ function where(frame: ResolvedFrame): string {
 </script>
 
 <template>
-  <section class="space-y-2" aria-label="Stack trace">
+  <section class="space-y-2" :aria-label="props.label">
     <header class="flex items-center gap-2">
-      <span class="text-muted-foreground text-[11px] font-medium">Stack</span>
+      <span class="text-muted-foreground text-[11px] font-medium">{{ props.label }}</span>
       <span
         v-if="state === 'loading'"
         class="text-muted-foreground flex items-center gap-1.5 text-[11px]"

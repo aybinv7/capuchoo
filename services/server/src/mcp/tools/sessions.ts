@@ -116,7 +116,7 @@ export function registerSessionTools(server: McpServer, ctx: ToolContext) {
     {
       title: "Session timeline",
       description:
-        "What happened in one recorded session, as a timeline a model can reason over: the user's taps and typing, routes, the app's warnings, requests (failed and slow ones flagged), database writes and errors, each at its offset from the start, with the errors' stacks mapped back to source through the uploaded source maps. With focus `errors` (the default) only the stretch around each error is kept. Query values are hidden and typed values in masked fields stay masked.",
+        "What happened in one recorded session, as a timeline a model can reason over: the user's taps and typing, routes, the app's warnings, requests (failed and slow ones flagged), database writes and errors, each at its offset from the start, with each error's stack (or, for an error logged without one, `logged_at`: the app code that logged it) mapped back to source through the uploaded source maps. With focus `errors` (the default) only the stretch around each error is kept. Query values are hidden and typed values in masked fields stay masked.",
       inputSchema: {
         session: uuidArg("session"),
         focus: z.enum(["errors", "all"]).default("errors"),
@@ -166,12 +166,14 @@ export function registerSessionTools(server: McpServer, ctx: ToolContext) {
         for (const error of timeline.errors) {
           const first = !seen.has(error.message);
           seen.add(error.message);
+          const trace = error.stack ?? error.site;
+          const key = error.stack ? "stack" : "logged_at";
           const mapped =
-            first && args.source_maps && error.stack && seen.size <= SYMBOLICATED_ERRORS
+            first && args.source_maps && trace && seen.size <= SYMBOLICATED_ERRORS
               ? await symbolicate(ctx.deps, {
                   appId: access.app.id,
                   version: session.version_name,
-                  stack: error.stack,
+                  stack: trace,
                 })
               : null;
           errors.push({
@@ -179,9 +181,9 @@ export function registerSessionTools(server: McpServer, ctx: ToolContext) {
             message: error.message,
             source: error.source,
             ...(mapped
-              ? { stack: mapped }
-              : first && error.stack
-                ? { stack_raw: error.stack.split("\n").slice(0, 6) }
+              ? { [key]: mapped }
+              : first && trace
+                ? { [`${key}_raw`]: trace.split("\n").slice(0, 6) }
                 : {}),
           });
         }
