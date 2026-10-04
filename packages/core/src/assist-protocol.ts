@@ -4,6 +4,8 @@
  * and refuses anything the user has not allowed. Coordinates are CSS pixels of the app's viewport.
  */
 
+import { parseSafeArea, type SafeArea } from "./recording-wire.js";
+
 export const ASSIST_LIMITS = {
   /** A request the device has not answered by then is dropped. */
   requestTtlMs: 90_000,
@@ -60,6 +62,8 @@ export type AgentMessage =
 
 export type DeviceMessage =
   | { t: "events"; events: unknown[] }
+  /** The device's safe-area insets, sent before the screen and whenever they change. */
+  | { t: "viewport"; safeArea: SafeArea }
   | { t: "control"; state: AssistControl }
   | { t: "refused"; action: string; reason: string }
   | { t: "end"; reason: AssistEndReason };
@@ -150,6 +154,10 @@ export function parseDeviceMessage(raw: unknown): DeviceMessage | null {
   switch (raw.t) {
     case "events":
       return Array.isArray(raw.events) ? { t: "events", events: raw.events } : null;
+    case "viewport": {
+      const safeArea = parseSafeArea(raw.safeArea);
+      return safeArea ? { t: "viewport", safeArea } : null;
+    }
     case "control":
       return CONTROL_STATES.has(raw.state as AssistControl)
         ? { t: "control", state: raw.state as AssistControl }

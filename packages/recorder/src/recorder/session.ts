@@ -4,6 +4,7 @@ import type {
   RecordingSessionMeta,
   RecordingStart,
 } from "@capuchoo/core";
+import { measureSafeArea } from "./safeArea.js";
 import type { RecorderIdentity } from "./types.js";
 
 export const RECORDER_VERSION = "0.1.0";
@@ -40,6 +41,7 @@ export function deviceFacts(identity: RecorderIdentity): RecordingDeviceFacts {
     osVersion: identity.device?.osVersion ?? null,
     webview: identity.device?.webview ?? webview,
     screen: identity.device?.screen ?? screen,
+    safeArea: measureSafeArea(),
   };
 }
 

@@ -5,6 +5,7 @@ import {
   type AssistEndReason,
   type AssistInvite,
 } from "@capuchoo/core";
+import { measureSafeArea } from "../recorder/safeArea.js";
 import type { RecorderLogger } from "../recorder/types.js";
 import { AssistOverlay } from "./overlay.js";
 import { key, scroll, tap, typeText, type InputGuards, type InputResult } from "./remoteInput.js";
@@ -52,6 +53,7 @@ interface Active {
   catchUp: ReturnType<typeof setInterval> | null;
   stopScreen: (() => void) | null;
   releaseScreen: (() => void) | null;
+  stopViewport: (() => void) | null;
 }
 
 function chunks(events: unknown[]): string[] {
@@ -122,6 +124,7 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     current.streaming = true;
     current.releaseScreen = host.screen.acquire();
     current.stopScreen = host.screen.subscribe((event) => enqueue(current, event));
+    current.stopViewport = watchViewport(current);
     host.screen.snapshot();
     current.overlay.showBanner("viewing", current.invite.agent, () =>
       finish(current, "user", true),
@@ -129,9 +132,32 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     host.mark({ kind: "assist", event: "start", agent: current.invite.agent });
   }
 
+  /**
+   * Tells the agent how far the system bars reach into the app, before the first frame and after
+   * every rotation: their replay resolves `env(safe-area-inset-*)` to 0 and would otherwise draw
+   * the app higher than it is, so a point there would land higher here.
+   */
+  function watchViewport(current: Active): () => void {
+    let last = "";
+    const report = () => {
+      const safeArea = measureSafeArea();
+      const key = JSON.stringify(safeArea);
+      if (!safeArea || key === last) return;
+      last = key;
+      send(current, { t: "viewport", safeArea });
+    };
+    report();
+    window.addEventListener("resize", report);
+    return () => window.removeEventListener("resize", report);
+  }
+
   function setControl(current: Active, control: AssistControl): void {
     current.control = control;
     send(current, { t: "control", state: control });
+    current.overlay.shieldUser(
+      control === "granted",
+      texts.shielded.replaceAll("{agent}", current.invite.agent),
+    );
     current.overlay.showBanner(
       control === "granted" ? "controlling" : "viewing",
       current.invite.agent,
@@ -158,17 +184,20 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     let result: InputResult;
     switch (message.t) {
       case "tap":
-        current.overlay.pointer(message.x, message.y, true);
-        result = tap(message.x, message.y, guards);
+        current.overlay.pointer(message.x, message.y, current.invite.agent);
+        current.overlay.ripple(message.x, message.y);
+        result = current.overlay.passThrough(() => tap(message.x, message.y, guards));
         break;
       case "scroll":
-        result = scroll(message.x, message.y, message.dx, message.dy, guards);
+        result = current.overlay.passThrough(() =>
+          scroll(message.x, message.y, message.dx, message.dy, guards),
+        );
         break;
       case "type":
-        result = typeText(message.text, guards);
+        result = current.overlay.passThrough(() => typeText(message.text, guards));
         break;
       case "key":
-        result = key(message.key, guards);
+        result = current.overlay.passThrough(() => key(message.key, guards));
         break;
       default:
         return;
@@ -179,7 +208,7 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
   function onAgent(current: Active, message: AgentMessage): void {
     switch (message.t) {
       case "pointer":
-        current.overlay.pointer(message.x, message.y);
+        current.overlay.pointer(message.x, message.y, current.invite.agent);
         return;
       case "pointer-off":
         current.overlay.hidePointer();
@@ -237,6 +266,7 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
     if (current.flushTimer) clearTimeout(current.flushTimer);
     if (current.catchUp) clearInterval(current.catchUp);
     current.stopScreen?.();
+    current.stopViewport?.();
     current.releaseScreen?.();
     current.overlay.destroy();
     if (current.streaming) host.mark({ kind: "assist", event: "end", reason });
@@ -273,6 +303,7 @@ export function createAssist(options: AssistOptions, host: AssistHost) {
         catchUp: null,
         stopScreen: null,
         releaseScreen: null,
+        stopViewport: null,
       };
       active = current;
       const accepted = await current.overlay.ask("view", invite.agent, remaining);

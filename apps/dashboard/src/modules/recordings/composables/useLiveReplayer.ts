@@ -1,3 +1,4 @@
+import type { SafeArea } from "@capuchoo/core";
 import { useResizeObserver } from "@vueuse/core";
 import { onScopeDispose, ref, shallowRef, type Ref } from "vue";
 import type { Replayer as ReplayerType } from "@rrweb/replay";
@@ -9,11 +10,15 @@ import type { Lanes } from "../types/recordings.types";
 type ReplayEvent = Lanes["replay"][number];
 
 const FULL_SNAPSHOT = 2;
+const INCREMENTAL = 3;
+const MOUSE_INTERACTION = 2;
+/** rrweb's MouseDown, Click and TouchStart: where a finger came down. */
+const PRESSES = new Set([1, 2, 7]);
 /**
- * The live view runs this far behind the device's clock. It absorbs the difference between the
- * phone's clock and this one, and the network's unevenness, at the cost of half a second.
+ * The live view runs this far behind the first event's time, to absorb the network's unevenness.
+ * Events that arrive later than their time are applied at once, so it is the floor, not the delay.
  */
-const LIVE_BUFFER_MS = 500;
+const LIVE_BUFFER_MS = 250;
 
 let loader: Promise<typeof import("@rrweb/replay")> | null = null;
 const loadReplay = () => {
@@ -32,10 +37,13 @@ export function useLiveReplayer(input: {
   root: Ref<HTMLElement | null>;
   stage: Ref<HTMLElement | null>;
   assets: Ref<AssetMap>;
+  safeArea: Ref<SafeArea | null>;
 }) {
   const viewport = ref<{ width: number; height: number } | null>(null);
   const scale = ref(1);
   const ready = ref(false);
+  /** Where the phone's user last touched, and when, for the agent to see their finger. */
+  const touch = shallowRef<{ x: number; y: number; at: number } | null>(null);
   const replayer = shallowRef<ReplayerType | null>(null);
   const documents = new Set<number>();
   let pending: ReplayEvent[] = [];
@@ -82,10 +90,19 @@ export function useLiveReplayer(input: {
     fit();
   }
 
+  function noteTouch(event: ReplayEvent) {
+    if (event.type !== INCREMENTAL) return;
+    const data = event.data as { source?: number; type?: number; x?: number; y?: number };
+    if (data.source !== MOUSE_INTERACTION || !PRESSES.has(data.type ?? -1)) return;
+    if (typeof data.x !== "number" || typeof data.y !== "number") return;
+    touch.value = { x: data.x, y: data.y, at: Date.now() };
+  }
+
   return {
     viewport,
     scale,
     ready,
+    touch,
 
     /** Screen events from the assist socket, in the order the device sent them. */
     push(events: unknown[]) {
@@ -94,8 +111,9 @@ export function useLiveReplayer(input: {
         const event = raw as ReplayEvent;
         if (typeof event?.type !== "number" || typeof event.timestamp !== "number") continue;
         if (!keepReplayEvent(event, documents)) continue;
-        rewriteReplayEvent(event, input.assets.value);
+        rewriteReplayEvent(event, input.assets.value, input.safeArea.value);
         note(event);
+        noteTouch(event);
         kept.push(event);
       }
       const player = replayer.value;

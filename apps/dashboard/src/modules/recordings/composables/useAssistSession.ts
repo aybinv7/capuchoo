@@ -1,5 +1,7 @@
 import {
+  parseSafeArea,
   type AgentMessage,
+  type SafeArea,
   type AssistControl,
   type AssistEndReason,
   type AssistKey,
@@ -18,6 +20,8 @@ import type { RecordingAsset } from "../types/recordings.types";
 /** The agent's pointer is sent at most this often; the device draws it moving smoothly between. */
 const POINTER_MS = 50;
 const MAX_NOTICES = 30;
+/** A recorder from before the viewport message never sends one; the screen starts without it. */
+const VIEWPORT_WAIT_MS = 1500;
 /** Errors the server sends just before closing; its close frame may never arrive through a proxy. */
 const FATAL_ERRORS = new Set(["unauthorized", "no_hello", "too_big"]);
 
@@ -47,6 +51,10 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
   const control = ref<AssistControl>("none");
   const outcome = shallowRef<AssistOutcome | null>(null);
   const notices = ref<AssistNotice[]>([]);
+  /** The phone's safe-area insets, which the replay needs before it can match the phone's layout. */
+  const safeArea = shallowRef<SafeArea | null>(null);
+  const viewportKnown = ref(false);
+  let viewportTimer: ReturnType<typeof setTimeout> | null = null;
   let socket: WebSocket | null = null;
   let noticeId = 0;
   let lastPointer = 0;
@@ -62,6 +70,7 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
     if (phase.value === "ended") return;
     phase.value = "ended";
     control.value = "none";
+    if (viewportTimer) clearTimeout(viewportTimer);
     outcome.value = { reason, message };
     const open = socket;
     socket = null;
@@ -90,8 +99,15 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
         if (message.present) {
           phase.value = "live";
           note("info", "The user accepted. You see their screen.");
+          viewportTimer ??= setTimeout(() => (viewportKnown.value = true), VIEWPORT_WAIT_MS);
         }
         return;
+      case "viewport": {
+        const insets = parseSafeArea(message.safeArea);
+        if (insets) safeArea.value = insets;
+        viewportKnown.value = true;
+        return;
+      }
       case "control": {
         const state = message.state as AssistControl;
         control.value = state;
@@ -159,6 +175,8 @@ export function useAssistSession(deviceUuid: string, onScreen: ScreenListener) {
     phase,
     info,
     assets,
+    safeArea,
+    viewportKnown,
     control,
     outcome,
     notices,

@@ -8,6 +8,8 @@ export interface AssistTexts {
   controlBody: string;
   viewing: string;
   controlling: string;
+  /** Shown when the user touches the app while the agent controls it. */
+  shielded: string;
   stop: string;
 }
 
@@ -30,6 +32,7 @@ export const DEFAULT_TEXTS: AssistTexts = {
     "They will be able to tap, scroll and type in this app. They cannot type in password fields.",
   viewing: "{agent} is viewing your screen",
   controlling: "{agent} is using the app",
+  shielded: "{agent} is using the app for you. Tap Stop to take it back.",
   stop: "Stop",
 };
 

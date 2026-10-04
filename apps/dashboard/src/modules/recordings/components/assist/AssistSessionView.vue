@@ -15,32 +15,34 @@ const emit = defineEmits<{ again: [] }>();
 useCollapsedSidebar();
 const stageView = useTemplateRef<InstanceType<typeof AssistStage>>("stageView");
 
-/** Screen events that arrive before the app's stylesheets are ready wait for them. */
+/**
+ * Screen events wait for the app's stylesheets and the phone's safe-area insets: drawn without them,
+ * the replay would sit higher than the phone, and every point and tap would land too high.
+ */
 let held: unknown[] = [];
 const session = useAssistSession(props.deviceId, (events) => {
-  if (assetMap.ready.value) live.push(events);
+  if (canDraw.value) live.push(events);
   else held.push(...events);
 });
-const assetMap = useAssetMap(computed(() => session.assets.value));
+const assetMap = useAssetMap(
+  computed(() => session.assets.value),
+  computed(() => session.safeArea.value),
+);
+const canDraw = computed(() => assetMap.ready.value && session.viewportKnown.value);
 const live = useLiveReplayer({
   root: computed(() => stageView.value?.root ?? null),
   stage: computed(() => stageView.value?.stage ?? null),
   assets: assetMap.map,
+  safeArea: computed(() => session.safeArea.value),
 });
 useLiveReplayerDisposal(live);
 
-watch(assetMap.ready, (ready) => {
+watch(canDraw, (ready) => {
   if (!ready || held.length === 0) return;
   const events = held;
   held = [];
   live.push(events);
 });
-watch(
-  () => session.assets.value,
-  (assets) => {
-    if (assets.length === 0) assetMap.ready.value = true;
-  },
-);
 
 const controlling = computed(() => session.control.value === "granted");
 </script>
@@ -68,6 +70,7 @@ const controlling = computed(() => session.control.value === "granted");
           :viewport="live.viewport.value"
           :scale="live.scale.value"
           :controlling="controlling"
+          :touch="live.touch.value"
           @pointer="session.pointer"
           @pointer-off="session.pointerOff"
           @tap="session.tap"

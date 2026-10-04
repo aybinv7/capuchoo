@@ -35,12 +35,42 @@ export interface RecordedEvent<T = unknown> {
 
 export type RecordingStart = RecordingTrigger | "policy";
 
+/** How far the system's bars and cutouts reach into the app, in CSS pixels. */
+export interface SafeArea {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 export interface RecordingDeviceFacts {
   model: string | null;
   manufacturer: string | null;
   osVersion: string | null;
   webview: string | null;
   screen: { width: number; height: number; dpr: number } | null;
+  /**
+   * `env(safe-area-inset-*)` as the WebView resolved it when the session opened. A replay outside
+   * the phone resolves it to 0, so the app would sit higher than it did under the status bar.
+   */
+  safeArea?: SafeArea | null;
+}
+
+/** Insets from untrusted input: four non-negative numbers below a screen's size, or null. */
+export function parseSafeArea(input: unknown): SafeArea | null {
+  if (!input || typeof input !== "object") return null;
+  const raw = input as Record<string, unknown>;
+  const side = (value: unknown) =>
+    typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 500
+      ? Math.round(value * 10) / 10
+      : null;
+  const top = side(raw.top);
+  const right = side(raw.right);
+  const bottom = side(raw.bottom);
+  const left = side(raw.left);
+  return top === null || right === null || bottom === null || left === null
+    ? null
+    : { top, right, bottom, left };
 }
 
 export interface RecordingSessionMeta {
@@ -206,6 +236,7 @@ function deviceFacts(input: unknown): RecordingDeviceFacts {
     osVersion: str(raw.osVersion),
     webview: str(raw.webview),
     screen: width !== null && height !== null && dpr !== null ? { width, height, dpr } : null,
+    safeArea: parseSafeArea(raw.safeArea),
   };
 }
 

@@ -60,12 +60,14 @@ const player = useReplayer({
 });
 useReplayerDisposal(player);
 
-const assetMap = useAssetMap(assets);
+const safeArea = computed(() => session.value?.device?.safeArea ?? null);
+const assetMap = useAssetMap(assets, safeArea);
 const events = useRecordingEvents({
   recordingId,
   segments,
   assets: assetMap.map,
   assetsReady: assetMap.ready,
+  safeArea,
   onReplay: (replay) => player.push(replay),
 });
 

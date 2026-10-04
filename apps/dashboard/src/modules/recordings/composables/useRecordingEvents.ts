@@ -1,3 +1,4 @@
+import type { SafeArea } from "@capuchoo/core";
 import { useQueryClient } from "@tanstack/vue-query";
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from "vue";
 import { queryKeys } from "@/shared/api/query-keys";
@@ -24,6 +25,8 @@ export function useRecordingEvents(input: {
   segments: Ref<readonly RecordingSegment[] | undefined>;
   assets: Ref<AssetMap>;
   assetsReady: Ref<boolean>;
+  /** The phone's safe-area insets, which the replay's inline styles get instead of 0. */
+  safeArea?: Ref<SafeArea | null>;
   onReplay?: (events: ReplayEvent[]) => void;
 }) {
   const client = useQueryClient();
@@ -109,7 +112,7 @@ export function useRecordingEvents(input: {
             if (event.k !== "replay") continue;
             const raw = event.d as ReplayEvent;
             if (!keepReplayEvent(raw, documents)) continue;
-            rewriteReplayEvent(raw, input.assets.value);
+            rewriteReplayEvent(raw, input.assets.value, input.safeArea?.value ?? null);
             replay.push(raw);
           }
           appendToLanes(lanes.value, events, `${segment.seq}`);

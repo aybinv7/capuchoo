@@ -24,11 +24,18 @@ button { flex: 1; min-height: 44px; border-radius: 12px; border: 0; font-size: 1
 .banner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: pulse 1.4s ease-in-out infinite; }
 .banner button { flex: none; min-height: 30px; padding: 0 14px; border-radius: 999px; background: #fff; color: var(--banner); font-size: 13px; }
-.pointer { pointer-events: none; position: absolute; left: 0; top: 0; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%;
-  border: 3px solid var(--accent); background: rgb(255 255 255 / 0.25); box-shadow: 0 0 0 4px rgb(0 0 0 / 0.15);
-  transition: transform 90ms linear, opacity 160ms; opacity: 0; }
-.pointer.on { opacity: 1; }
-.pointer.tap { animation: tap 380ms ease-out; }
+.cursor { pointer-events: none; position: absolute; left: 0; top: 0; display: flex; align-items: flex-start;
+  transition: transform 80ms linear, opacity 160ms; opacity: 0; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.35)); }
+.cursor.on { opacity: 1; }
+.cursor svg { width: 22px; height: 22px; margin: -2px 0 0 -3px; flex: none; }
+.cursor .name { margin: 16px 0 0 -4px; padding: 2px 7px; border-radius: 999px; background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 600; line-height: 16px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.ripple { pointer-events: none; position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+  border: 2px solid var(--accent); background: rgb(196 100 63 / 0.25); animation: ripple 450ms ease-out forwards; }
+.shield { position: absolute; inset: 0; pointer-events: auto; background: transparent; touch-action: none; }
+.hint { position: absolute; top: calc(max(8px, env(safe-area-inset-top)) + 52px); left: 50%; transform: translateX(-50%);
+  padding: 8px 14px; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 13px; line-height: 1.4;
+  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.45); max-width: calc(100% - 32px); text-align: center; animation: drop 160ms ease-out; }
 .layer { --surface: #ffffff; --text: #17171a; --muted: #55565c; --soft: #eeeef1; --accent: #c4643f; --banner: #1f6f5c; }
 .layer.control { --banner: #c0392b; }
 @media (prefers-color-scheme: dark) {
@@ -38,7 +45,7 @@ button { flex: 1; min-height: 44px; border-radius: 12px; border: 0; font-size: 1
 @keyframes rise { from { transform: translateY(24px); opacity: 0; } }
 @keyframes drop { from { transform: translate(-50%, -16px); opacity: 0; } }
 @keyframes pulse { 50% { opacity: 0.35; } }
-@keyframes tap { 40% { box-shadow: 0 0 0 14px rgb(196 100 63 / 0.25); } }
+@keyframes ripple { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 `;
 
@@ -55,7 +62,10 @@ export class AssistOverlay {
   private readonly layer: HTMLElement;
   private sheet: HTMLElement | null = null;
   private banner: HTMLElement | null = null;
-  private pointerDot: HTMLElement | null = null;
+  private cursor: HTMLElement | null = null;
+  private shield: HTMLElement | null = null;
+  private hint: HTMLElement | null = null;
+  private hintTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly texts: AssistTexts,
@@ -158,27 +168,98 @@ export class AssistOverlay {
     this.banner = banner;
   }
 
-  pointer(x: number, y: number, tapped = false): void {
-    if (!this.pointerDot) {
-      this.pointerDot = document.createElement("i");
-      this.pointerDot.className = "pointer";
-      this.layer.append(this.pointerDot);
+  /** The agent's cursor: an arrow with their name, its tip on the point. */
+  pointer(x: number, y: number, agent: string): void {
+    if (!this.cursor) {
+      const cursor = document.createElement("div");
+      cursor.className = "cursor";
+      cursor.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v17.5l4.6-4.4 3.3 7.2 3.2-1.4-3.3-7.1H18z" fill="var(--accent)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+      const name = document.createElement("span");
+      name.className = "name";
+      cursor.append(name);
+      this.layer.append(cursor);
+      this.cursor = cursor;
     }
-    const dot = this.pointerDot;
-    dot.style.transform = `translate(${x}px, ${y}px)`;
-    dot.classList.add("on");
-    if (tapped) {
-      dot.classList.remove("tap");
-      void dot.offsetWidth;
-      dot.classList.add("tap");
-    }
+    const name = this.cursor.querySelector(".name");
+    if (name && name.textContent !== agent) name.textContent = agent;
+    this.cursor.style.transform = `translate(${x}px, ${y}px)`;
+    this.cursor.classList.add("on");
   }
 
   hidePointer(): void {
-    this.pointerDot?.classList.remove("on");
+    this.cursor?.classList.remove("on");
+  }
+
+  /** A ripple where the agent tapped, so the user sees each tap land. */
+  ripple(x: number, y: number): void {
+    const ripple = document.createElement("i");
+    ripple.className = "ripple";
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+    this.layer.append(ripple);
+    setTimeout(() => ripple.remove(), 1000);
+  }
+
+  /**
+   * While the agent controls the app, the user's own touches stop at a transparent shield - two
+   * hands on one screen fight each other - and a touch says how to take control back. Stop, in the
+   * banner above the shield, always works.
+   */
+  shieldUser(on: boolean, hint: string): void {
+    if (!on) {
+      this.shield?.remove();
+      this.shield = null;
+      return;
+    }
+    if (this.shield) return;
+    const shield = document.createElement("div");
+    shield.className = "shield";
+    const show = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.showHint(hint);
+    };
+    shield.addEventListener("pointerdown", show);
+    shield.addEventListener("touchstart", show, { passive: false });
+    shield.addEventListener("click", show);
+    this.layer.prepend(shield);
+    this.shield = shield;
+  }
+
+  private showHint(text: string): void {
+    if (!this.hint) {
+      this.hint = document.createElement("div");
+      this.hint.className = "hint";
+      this.hint.setAttribute("role", "status");
+      this.layer.append(this.hint);
+    }
+    this.hint.textContent = text;
+    if (this.hintTimer) clearTimeout(this.hintTimer);
+    this.hintTimer = setTimeout(() => {
+      this.hint?.remove();
+      this.hint = null;
+    }, 2500);
+  }
+
+  /**
+   * Runs the agent's input with the shield out of the way, so it reaches the app beneath; nothing
+   * else can run in between, the dispatch being synchronous.
+   */
+  passThrough<T>(run: () => T): T {
+    const shield = this.shield;
+    if (!shield) return run();
+    shield.style.pointerEvents = "none";
+    try {
+      return run();
+    } finally {
+      shield.style.pointerEvents = "";
+    }
   }
 
   destroy(): void {
+    if (this.hintTimer) clearTimeout(this.hintTimer);
     this.host.remove();
   }
 
