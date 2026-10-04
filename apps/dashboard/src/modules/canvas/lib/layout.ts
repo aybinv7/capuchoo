@@ -4,13 +4,14 @@ import type { Build } from "@/shared/types/build";
 import type { Channel, ReleaseCatalog } from "@/shared/types/release";
 import type { ChannelStats } from "@/shared/types/stats";
 import type { CanvasEdge, CanvasNode } from "../types/canvas.types";
+import { WIRE, assignWires } from "./wires";
 
 export const LAYOUT = {
   channelWidth: 272,
   channelHeight: 196,
   buildWidth: 248,
   buildHeight: 132,
-  columnGap: 96,
+  columnGap: 128,
   rowGap: 28,
   laneTop: 0,
   contentTop: 56,
@@ -148,7 +149,7 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
       id: `promote:${from.id}:${to.id}`,
       source: `channel:${from.id}`,
       target: `channel:${to.id}`,
-      type: "straight",
+      type: "wire",
       class: "edge-promote",
       label: "promote",
     });
@@ -168,7 +169,7 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
         id: `follows:${channel.base_channel_id}:${channel.id}`,
         source: `channel:${channel.base_channel_id}`,
         target: `channel:${channel.id}`,
-        type: "straight",
+        type: "wire",
         class: "edge-follows",
       });
     }
@@ -198,12 +199,30 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
         id: `build:${build.id}:${channelId}`,
         source: `build:${build.id}`,
         target: `channel:${channelId}`,
-        type: "straight",
+        type: "wire",
         animated: running,
         class: edgeClass,
       });
     }
   });
+
+  const laneAt = new Map(visibleLanes.map((lane, index) => [columnX(lane.key), index]));
+  const placed = new Map(
+    nodes
+      .filter((node) => node.type !== "lane")
+      .map((node) => [node.id, { lane: laneAt.get(node.position.x) ?? 0, y: node.position.y }]),
+  );
+  const { wires, busCount } = assignWires(edges, (id) => placed.get(id));
+  for (const edge of edges) {
+    edge.zIndex = EDGE_LAYER;
+    edge.data = wires.get(edge.id);
+  }
+  const band = busCount * WIRE.busGap;
+  if (band > 0) {
+    for (const node of nodes) {
+      if (node.type !== "lane") node.position = { x: node.position.x, y: node.position.y + band };
+    }
+  }
 
   if (input.positions?.size) {
     for (const node of nodes) {
@@ -211,7 +230,6 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
       if (moved) node.position = { x: moved.x, y: moved.y };
     }
   }
-  for (const edge of edges) edge.zIndex = EDGE_LAYER;
   return { nodes, edges };
 }
 

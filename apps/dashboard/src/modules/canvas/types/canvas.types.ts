@@ -1,6 +1,7 @@
 import type { Build } from "@/shared/types/build";
 import type { Bundle, Channel, NativeBuild } from "@/shared/types/release";
 import type { ChannelStats } from "@/shared/types/stats";
+import type { WireData } from "../lib/wires";
 
 export interface ChannelNodeData {
   channel: Channel;
@@ -34,9 +35,10 @@ export interface CanvasEdge {
   id: string;
   source: string;
   target: string;
-  type: "straight";
+  type: "wire";
   animated?: boolean;
   zIndex?: number;
+  data?: WireData;
   label?: string;
   class?: string;
 }

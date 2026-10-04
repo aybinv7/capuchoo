@@ -137,8 +137,16 @@ describe("buildCanvasGraph", () => {
     expect(moved.nodes.find((node) => node.id === "channel:prod")?.draggable).toBe(true);
   });
 
-  it("draws every link as a straight line above the cards", () => {
+  it("wires every link, above the cards, and leaves room for the band above them", () => {
     expect(graph.edges.length).toBeGreaterThan(0);
-    expect(graph.edges.every((edge) => edge.type === "straight" && edge.zIndex === 1)).toBe(true);
+    expect(
+      graph.edges.every((edge) => edge.type === "wire" && edge.zIndex === 1 && edge.data),
+    ).toBe(true);
+    const spanning = graph.edges.filter((edge) => edge.data?.busY !== null).length;
+    const firstCard = Math.min(
+      ...graph.nodes.filter((node) => node.type !== "lane").map((node) => node.position.y),
+    );
+    expect(spanning).toBeGreaterThan(0);
+    expect(firstCard).toBe(LAYOUT.contentTop + spanning * 9);
   });
 });

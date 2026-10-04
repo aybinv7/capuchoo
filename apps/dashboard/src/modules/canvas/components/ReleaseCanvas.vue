@@ -11,6 +11,7 @@ import type { CanvasGraph, NodePosition } from "../lib/layout";
 import type { BuildNodeData, ChannelNodeData, LaneNodeData } from "../types/canvas.types";
 import ArtefactShelf from "./ArtefactShelf.vue";
 import CanvasLegend from "./CanvasLegend.vue";
+import WireEdge from "./edges/WireEdge.vue";
 import BuildNode from "./nodes/BuildNode.vue";
 import ChannelNode from "./nodes/ChannelNode.vue";
 import LaneNode from "./nodes/LaneNode.vue";
@@ -74,6 +75,9 @@ const minimapColor = (node: { type?: string }) =>
       </template>
       <template #node-lane="{ data }">
         <LaneNode :data="data as LaneNodeData" />
+      </template>
+      <template #edge-wire="wire">
+        <WireEdge v-bind="wire" />
       </template>
 
       <Background variant="dots" :gap="18" :size="1" pattern-color="var(--grid)" />

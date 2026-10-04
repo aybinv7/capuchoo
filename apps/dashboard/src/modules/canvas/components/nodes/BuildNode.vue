@@ -96,7 +96,7 @@ const artefact = computed(() => {
       type="source"
       :position="Position.Right"
       :connectable="false"
-      class="!bg-border !size-2 !border-0"
+      class="!size-2 !border-0 !opacity-0"
     />
   </div>
 </template>

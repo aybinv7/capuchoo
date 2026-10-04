@@ -65,7 +65,7 @@ const ENV_RAIL = { dev: "bg-env-dev", staging: "bg-env-staging", prod: "bg-env-p
         type="target"
         :position="Position.Left"
         :connectable="false"
-        class="!bg-border !size-2 !border-0"
+        class="!size-2 !border-0 !opacity-0"
       />
       <span
         :class="cn('absolute inset-y-0 left-0 w-1', ENV_RAIL[channel.environment])"
@@ -182,7 +182,7 @@ const ENV_RAIL = { dev: "bg-env-dev", staging: "bg-env-staging", prod: "bg-env-p
         type="source"
         :position="Position.Right"
         :connectable="false"
-        class="!bg-border !size-2 !border-0"
+        class="!size-2 !border-0 !opacity-0"
       />
     </div>
   </ChannelContextMenu>
