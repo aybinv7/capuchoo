@@ -16,12 +16,12 @@ import {
 
 export type Artefact = { kind: "ota"; row: Bundle } | { kind: "native"; row: NativeBuild };
 
-interface PointerState {
+export interface PointerState {
   bundle: Bundle | undefined;
   native: NativeBuild | undefined;
 }
 
-async function currentOf(deps: Deps, channel: Channel): Promise<PointerState> {
+export async function currentOf(deps: Deps, channel: Channel): Promise<PointerState> {
   const [bundle, native] = await Promise.all([
     channel.current_bundle_id
       ? findBundle(deps.db, channel.current_bundle_id)

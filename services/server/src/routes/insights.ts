@@ -4,17 +4,13 @@ import { requireApp, requireDeliverRole } from "../access/app-access";
 import { queryInt, readJson } from "../http/body";
 import { principal, type AppEnv } from "../http/context";
 import { notFound } from "../lib/errors";
-import { appCounts, findAppByBundleId } from "../repositories/apps";
+import { findAppByBundleId } from "../repositories/apps";
 import { listAudit } from "../repositories/audit";
 import { listBuilds } from "../repositories/builds";
+import { appStats } from "../services/app-stats";
 import { buildDetail } from "../services/build-detail";
-import { findChannel, listChannels } from "../repositories/channels";
-import {
-  channelHealth,
-  dailyActivity,
-  listDeviceEvents,
-  versionDistribution,
-} from "../repositories/device-events";
+import { findChannel } from "../repositories/channels";
+import { listDeviceEvents } from "../repositories/device-events";
 import {
   assignDeviceChannel,
   deleteDevice,
@@ -137,41 +133,7 @@ export function insightRoutes(): Hono<AppEnv> {
       "viewer",
       "Reading statistics",
     );
-    const days = queryInt(c, "days", 30, 1, 365);
-    const since = new Date(deps.now().getTime() - days * 86_400_000);
-    const [daily, versions, health, channels, deviceTotal] = await Promise.all([
-      dailyActivity(deps.db, access.app.id, since),
-      versionDistribution(deps.db, access.app.id, since),
-      channelHealth(deps.db, access.app.id, deps.now()),
-      listChannels(deps.db, access.app.id),
-      appCounts(deps.db, access.app.id).then((counts) => counts.devices),
-    ]);
-    const totals = daily.reduce(
-      (sum, day) => ({
-        checks: sum.checks + day.checks,
-        installs: sum.installs + day.installs,
-        failures: sum.failures + day.failures,
-      }),
-      { checks: 0, installs: 0, failures: 0 },
-    );
-    return c.json({
-      days,
-      totals: {
-        ...totals,
-        devices: deviceTotal,
-        active_24h: health.reduce((sum, row) => sum + row.active_24h, 0),
-        success_rate:
-          totals.installs + totals.failures
-            ? totals.installs / (totals.installs + totals.failures)
-            : null,
-      },
-      daily,
-      versions,
-      channels: health.map((row) => ({
-        ...row,
-        name: channels.find((channel) => channel.id === row.channel_id)?.name ?? null,
-      })),
-    });
+    return c.json(await appStats(deps, access.app.id, queryInt(c, "days", 30, 1, 365)));
   });
 
   router.get("/apps/:id/audit", async (c) => {

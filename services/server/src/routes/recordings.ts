@@ -1,13 +1,6 @@
 import { Readable } from "node:stream";
 import { Hono } from "hono";
-import {
-  DEFAULT_RECORDING_POLICY,
-  RECORDING_LIMITS,
-  RECORDING_RULE_SCOPES,
-  normaliseRecordingPatch,
-  resolveRecordingPolicy,
-  type RecordingRuleScope,
-} from "@capuchoo/core";
+import { DEFAULT_RECORDING_POLICY, RECORDING_LIMITS } from "@capuchoo/core";
 import { requireApp } from "../access/app-access";
 import { queryInt, readJson } from "../http/body";
 import { principal, type AppContext, type AppEnv } from "../http/context";
@@ -21,17 +14,10 @@ import { badRequest, notFound } from "../lib/errors";
 import type { App } from "../db/schema";
 import { isUuid } from "../repositories/apps";
 import { writeAudit } from "../repositories/audit";
-import { findChannel, listChannels } from "../repositories/channels";
 import { findDeviceById } from "../repositories/devices";
 import { RECORDER_ONLINE_MS, listRecorderHealth } from "../repositories/recorder-health";
 import { findAsset, listAssets } from "../repositories/recording-assets";
-import {
-  deleteRule,
-  findRule,
-  findRuleById,
-  layersFor,
-  saveRule,
-} from "../repositories/recording-rules";
+import { deleteRule, findRuleById } from "../repositories/recording-rules";
 import {
   deleteSession,
   findSegment,
@@ -39,8 +25,8 @@ import {
   listSegments,
   listSessions,
 } from "../repositories/recording-sessions";
-import { resolveDeviceChannel } from "../services/channel-resolution";
 import { cachedRules, resolvedPolicyOf } from "../services/recording-policy";
+import { changeRecordingRule } from "../services/recording-rule-change";
 
 const RULE_BODY_BYTES = 16 * 1024;
 const HEALTH_LIST_LIMIT = 50;
@@ -231,66 +217,18 @@ export function recordingRoutes(): Hono<AppEnv> {
       "Changing what devices record",
     );
     const body = await readJson(c, RULE_BODY_BYTES);
-    const scope = body.scope as RecordingRuleScope;
-    if (!RECORDING_RULE_SCOPES.includes(scope))
-      throw badRequest("scope must be app, channel or device");
-
-    let channelId: string | null = null;
-    let deviceUuid: string | null = null;
-    if (scope === "channel") {
-      const id = typeof body.channel_id === "string" ? body.channel_id : "";
-      const channel = isUuid(id) ? await findChannel(deps.db, id) : undefined;
-      if (!channel || channel.app_id !== access.app.id) throw notFound("Channel");
-      channelId = channel.id;
-    }
-    if (scope === "device") {
-      const id = typeof body.device_id === "string" ? body.device_id : "";
-      const device = isUuid(id) ? await findDeviceById(deps.db, id) : undefined;
-      if (!device || device.app_id !== access.app.id) throw notFound("Device");
-      deviceUuid = device.id;
-    }
-
-    const { patch, dropped } = normaliseRecordingPatch(body.policy ?? {});
-    const target = { appId: access.app.id, scope, channelId, deviceUuid };
-    const existing = await findRule(deps.db, target);
-    const now = deps.now();
-
-    let liveUntil = existing?.live_until ?? null;
-    if (body.live_minutes === null) liveUntil = null;
-    else if (body.live_minutes !== undefined) {
-      const minutes = Number(body.live_minutes);
-      const { min, max } = RECORDING_LIMITS.liveMinutes;
-      if (!Number.isFinite(minutes) || minutes < min || minutes > max) {
-        throw badRequest(`live_minutes must be between ${min} and ${max}`);
-      }
-      liveUntil = new Date(now.getTime() + Math.round(minutes) * 60_000);
-    }
-
-    const rule = await saveRule(deps.db, {
-      ...target,
-      policy: body.policy === undefined && existing ? existing.policy : patch,
-      liveUntil,
-      updatedBy: principal(c).userId,
-      now,
-    });
-    deps.cache.invalidate(`app:${access.app.id}`);
-    deps.hub.publish({
-      type: "recording_rule",
-      appId: access.app.id,
-      data: { id: rule.id, scope, channel_id: channelId, device_uuid: deviceUuid },
-    });
-    await audit(
-      c,
-      access.app,
-      existing ? "recording_rule.update" : "recording_rule.create",
-      rule.id,
-      {
-        scope,
-        channel_id: channelId,
-        device_uuid: deviceUuid,
-        live_until: liveUntil?.toISOString() ?? null,
+    const { rule, dropped } = await changeRecordingRule(deps, {
+      access,
+      principal: principal(c),
+      ip: c.get("clientIp"),
+      change: {
+        scope: body.scope,
+        channelId: body.channel_id,
+        deviceId: body.device_id,
+        policy: body.policy,
+        liveMinutes: body.live_minutes,
       },
-    );
+    });
     return c.json({ rule: serializeRecordingRule(rule), dropped });
   });
 
