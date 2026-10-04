@@ -2,10 +2,15 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { useAppStats } from "@/shared/queries/useAppStats";
 import { useBuilds } from "@/shared/queries/useBuilds";
 import { useCatalog } from "@/shared/queries/useCatalog";
-import { buildCanvasGraph } from "../lib/layout";
+import { buildCanvasGraph, type NodePosition } from "../lib/layout";
+
+interface GraphOptions {
+  heights?: MaybeRefOrGetter<ReadonlyMap<string, number>>;
+  positions?: MaybeRefOrGetter<ReadonlyMap<string, NodePosition>>;
+}
 
 /** Real data only: the catalog, per-channel health and the latest builds, laid out as a graph. */
-export function useCanvasGraph(appId: MaybeRefOrGetter<string>) {
+export function useCanvasGraph(appId: MaybeRefOrGetter<string>, options: GraphOptions = {}) {
   const catalogQuery = useCatalog(() => toValue(appId));
   const stats = useAppStats(() => toValue(appId), 7);
   const builds = useBuilds(() => toValue(appId));
@@ -15,6 +20,8 @@ export function useCanvasGraph(appId: MaybeRefOrGetter<string>) {
       catalog: catalogQuery.catalog.value,
       stats: stats.byChannel.value,
       builds: builds.data.value ?? [],
+      heights: toValue(options.heights),
+      positions: toValue(options.positions),
     }),
   );
 

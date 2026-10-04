@@ -34,8 +34,9 @@ export interface CanvasEdge {
   id: string;
   source: string;
   target: string;
-  type: "smoothstep" | "default";
+  type: "straight";
   animated?: boolean;
+  zIndex?: number;
   label?: string;
   class?: string;
 }

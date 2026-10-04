@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
-import { Panel, VueFlow, useVueFlow } from "@vue-flow/core";
+import { Panel, VueFlow, useVueFlow, type NodeChange, type NodeDragEvent } from "@vue-flow/core";
 import { MiniMap } from "@vue-flow/minimap";
 import { watch } from "vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
-import type { CanvasGraph } from "../lib/layout";
+import type { CanvasGraph, NodePosition } from "../lib/layout";
 import type { BuildNodeData, ChannelNodeData, LaneNodeData } from "../types/canvas.types";
 import ArtefactShelf from "./ArtefactShelf.vue";
 import CanvasLegend from "./CanvasLegend.vue";
@@ -16,6 +16,10 @@ import ChannelNode from "./nodes/ChannelNode.vue";
 import LaneNode from "./nodes/LaneNode.vue";
 
 const props = defineProps<{ graph: CanvasGraph; flowId: string }>();
+const emit = defineEmits<{
+  nodesChange: [changes: NodeChange[]];
+  moved: [id: string, position: NodePosition];
+}>();
 
 const { fitView } = useVueFlow(props.flowId);
 
@@ -23,6 +27,10 @@ watch(
   () => props.graph.nodes.length,
   () => requestAnimationFrame(() => void fitView({ padding: 0.15, maxZoom: 1 })),
 );
+
+function onDragStop({ nodes }: NodeDragEvent) {
+  for (const node of nodes) emit("moved", node.id, node.position);
+}
 
 const minimapColor = (node: { type?: string }) =>
   node.type === "build"
@@ -44,7 +52,8 @@ const minimapColor = (node: { type?: string }) =>
       :id="props.flowId"
       :nodes="props.graph.nodes"
       :edges="props.graph.edges"
-      :nodes-draggable="false"
+      :nodes-draggable="true"
+      :node-drag-threshold="4"
       :nodes-connectable="false"
       :elements-selectable="false"
       :zoom-on-double-click="false"
@@ -54,6 +63,8 @@ const minimapColor = (node: { type?: string }) =>
       :max-zoom="1.6"
       :fit-view-on-init="true"
       class="release-canvas min-h-0 flex-1"
+      @nodes-change="emit('nodesChange', $event)"
+      @node-drag-stop="onDragStop"
     >
       <template #node-channel="{ data }">
         <ChannelNode :data="data as ChannelNodeData" />
@@ -96,6 +107,14 @@ const minimapColor = (node: { type?: string }) =>
   background: transparent;
   box-shadow: none;
   cursor: default;
+}
+
+.release-canvas .vue-flow__node.draggable {
+  cursor: grab;
+}
+
+.release-canvas .vue-flow__node.dragging {
+  cursor: grabbing;
 }
 
 .release-canvas .vue-flow__edge-path {

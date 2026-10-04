@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { build, bundle, catalog, channel } from "@/shared/testing/fixtures";
 import type { ChannelStats } from "@/shared/types/stats";
 import type { ChannelNodeData } from "../types/canvas.types";
-import { buildCanvasGraph } from "./layout";
+import { LAYOUT, buildCanvasGraph } from "./layout";
 
 const dev = channel({ id: "dev", name: "dev", environment: "dev" });
 const staging = channel({ id: "staging", name: "staging", environment: "staging" });
@@ -103,5 +103,42 @@ describe("buildCanvasGraph", () => {
       .nodes.filter((node) => node.type === "lane")
       .map((node) => node.id);
     expect(lanes).toEqual(["lane:builds", "lane:prod"]);
+  });
+
+  it("stacks each column on the cards' measured heights, so a taller card never overlaps", () => {
+    const second = channel({ id: "dev-2", name: "dev-qa", environment: "dev" });
+    const tall = buildCanvasGraph({
+      catalog: catalog({ channels: [dev, second] }),
+      stats,
+      builds: [build({ id: "r1" }), build({ id: "r2" })],
+      heights: new Map([
+        ["channel:dev", 320],
+        ["build:r1", 210],
+      ]),
+    });
+    const y = (id: string) => tall.nodes.find((node) => node.id === id)?.position.y ?? Number.NaN;
+    expect(y("channel:dev-2") - y("channel:dev")).toBe(320 + LAYOUT.rowGap);
+    expect(y("build:r2") - y("build:r1")).toBe(210 + LAYOUT.rowGap);
+  });
+
+  it("keeps a card where the user moved it, but never a lane", () => {
+    const moved = buildCanvasGraph({
+      catalog: catalog({ channels: [dev, prod] }),
+      stats,
+      builds: [],
+      positions: new Map([
+        ["channel:prod", { x: 12, y: 900 }],
+        ["lane:prod", { x: 5, y: 5 }],
+      ]),
+    });
+    const at = (id: string) => moved.nodes.find((node) => node.id === id)?.position;
+    expect(at("channel:prod")).toEqual({ x: 12, y: 900 });
+    expect(at("lane:prod")).not.toEqual({ x: 5, y: 5 });
+    expect(moved.nodes.find((node) => node.id === "channel:prod")?.draggable).toBe(true);
+  });
+
+  it("draws every link as a straight line above the cards", () => {
+    expect(graph.edges.length).toBeGreaterThan(0);
+    expect(graph.edges.every((edge) => edge.type === "straight" && edge.zIndex === 1)).toBe(true);
   });
 });

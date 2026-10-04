@@ -16,12 +16,24 @@ export const LAYOUT = {
   contentTop: 56,
 } as const;
 
+/** Above the cards, so a line crossing a lane is never lost behind a card. */
+const EDGE_LAYER = 1;
+
 export interface CanvasInput {
   catalog: ReleaseCatalog;
   stats: ReadonlyMap<string, ChannelStats>;
   builds: readonly Build[];
   /** How many of the latest builds to show in the builds column. */
   buildLimit?: number;
+  /** Rendered heights by node id; a column stacks on them so no card overlaps the next. */
+  heights?: ReadonlyMap<string, number>;
+  /** Where the user dragged a node, by node id; it wins over the computed place. */
+  positions?: ReadonlyMap<string, NodePosition>;
+}
+
+export interface NodePosition {
+  x: number;
+  y: number;
 }
 
 export interface CanvasGraph {
@@ -46,7 +58,15 @@ function columnX(lane: LaneKey): number {
   return buildColumn + (index - 1) * (LAYOUT.channelWidth + LAYOUT.columnGap);
 }
 
-const rowY = (row: number, height: number) => LAYOUT.contentTop + row * (height + LAYOUT.rowGap);
+/** Places cards top to bottom in one column, each below the real height of the one above. */
+function columnStack(heights: ReadonlyMap<string, number> | undefined) {
+  let next: number = LAYOUT.contentTop;
+  return (id: string, fallback: number) => {
+    const y = next;
+    next += (heights?.get(id) ?? fallback) + LAYOUT.rowGap;
+    return y;
+  };
+}
 
 function channelNode(
   channel: Channel,
@@ -66,7 +86,7 @@ function channelNode(
       native: current.native,
       stats: stats.get(channel.id) ?? null,
     },
-    draggable: false,
+    draggable: true,
     connectable: false,
   };
 }
@@ -76,6 +96,7 @@ function channelNode(
  * (dev, staging, prod) as lanes, client channels in the last lane beside their base. Edges show
  * promotion between the first channel of each environment, each client's base, and the channel a
  * build targets. Same input, same picture: nothing is random and nothing depends on render order.
+ * Cards stack on their measured heights, and a card the user moved keeps where they put it.
  */
 export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
   const { catalog, stats } = input;
@@ -107,10 +128,11 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
   }
 
   for (const environment of ENVIRONMENT_ORDER) {
+    const place = columnStack(input.heights);
     releases
       .filter((channel) => channel.environment === environment)
-      .forEach((channel, row) => {
-        const y = rowY(row, LAYOUT.channelHeight);
+      .forEach((channel) => {
+        const y = place(`channel:${channel.id}`, LAYOUT.channelHeight);
         placedY.set(channel.id, y);
         nodes.push(channelNode(channel, catalog, stats, columnX(environment), y));
       });
@@ -126,7 +148,7 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
       id: `promote:${from.id}:${to.id}`,
       source: `channel:${from.id}`,
       target: `channel:${to.id}`,
-      type: "smoothstep",
+      type: "straight",
       class: "edge-promote",
       label: "promote",
     });
@@ -137,29 +159,31 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
     const baseB = placedY.get(b.base_channel_id ?? "") ?? Number.POSITIVE_INFINITY;
     return baseA - baseB || a.name.localeCompare(b.name);
   });
-  orderedClients.forEach((channel, row) => {
-    nodes.push(
-      channelNode(channel, catalog, stats, columnX("clients"), rowY(row, LAYOUT.channelHeight)),
-    );
+  const placeClient = columnStack(input.heights);
+  orderedClients.forEach((channel) => {
+    const y = placeClient(`channel:${channel.id}`, LAYOUT.channelHeight);
+    nodes.push(channelNode(channel, catalog, stats, columnX("clients"), y));
     if (channel.base_channel_id && placedY.has(channel.base_channel_id)) {
       edges.push({
         id: `follows:${channel.base_channel_id}:${channel.id}`,
         source: `channel:${channel.base_channel_id}`,
         target: `channel:${channel.id}`,
-        type: "smoothstep",
+        type: "straight",
         class: "edge-follows",
       });
     }
   });
 
   const channelIds = new Set(catalog.channels.map((channel) => channel.id));
-  input.builds.slice(0, input.buildLimit ?? 6).forEach((build, row) => {
+  const placeBuild = columnStack(input.heights);
+  input.builds.slice(0, input.buildLimit ?? 6).forEach((build) => {
+    const id = `build:${build.id}`;
     nodes.push({
-      id: `build:${build.id}`,
+      id,
       type: "build",
-      position: { x: columnX("builds"), y: rowY(row, LAYOUT.buildHeight) },
+      position: { x: columnX("builds"), y: placeBuild(id, LAYOUT.buildHeight) },
       data: { build },
-      draggable: false,
+      draggable: true,
       connectable: false,
     });
     const running = build.status === "running" || build.status === "queued";
@@ -174,13 +198,20 @@ export function buildCanvasGraph(input: CanvasInput): CanvasGraph {
         id: `build:${build.id}:${channelId}`,
         source: `build:${build.id}`,
         target: `channel:${channelId}`,
-        type: "default",
+        type: "straight",
         animated: running,
         class: edgeClass,
       });
     }
   });
 
+  if (input.positions?.size) {
+    for (const node of nodes) {
+      const moved = node.type === "lane" ? undefined : input.positions.get(node.id);
+      if (moved) node.position = { x: moved.x, y: moved.y };
+    }
+  }
+  for (const edge of edges) edge.zIndex = EDGE_LAYER;
   return { nodes, edges };
 }
 

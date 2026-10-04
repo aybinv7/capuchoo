@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RadioTower } from "@lucide/vue";
+import { LayoutGrid, RadioTower } from "@lucide/vue";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,17 @@ import ReleaseCanvas from "../components/ReleaseCanvas.vue";
 import { provideCanvasContext } from "../composables/useCanvasContext";
 import { provideCanvasDrag } from "../composables/useCanvasDrag";
 import { useCanvasGraph } from "../composables/useCanvasGraph";
+import { useCanvasPositions } from "../composables/useCanvasPositions";
+import { useNodeHeights } from "../composables/useNodeHeights";
 import { useServedByBases } from "../composables/useServedByBases";
 
 const { appId, app } = useCurrentApp();
-const { graph, catalog, isPending, error, refetch } = useCanvasGraph(appId);
+const { heights, onNodesChange } = useNodeHeights();
+const layout = useCanvasPositions(appId);
+const { graph, catalog, isPending, error, refetch } = useCanvasGraph(appId, {
+  heights,
+  positions: layout.positions,
+});
 const servedByBase = useServedByBases(computed(() => catalog.value.channels));
 const dialogs = useDeliveryDialogs();
 const runDialog = useRunPipelineDialog();
@@ -61,8 +68,25 @@ const flowId = computed(() => `release-canvas-${appId.value}`);
         </Button>
       </EmptyState>
     </div>
-    <ReleaseCanvas v-else :key="flowId" :graph="graph" :flow-id="flowId">
+    <ReleaseCanvas
+      v-else
+      :key="flowId"
+      :graph="graph"
+      :flow-id="flowId"
+      @nodes-change="onNodesChange"
+      @moved="layout.move"
+    >
       <template #toolbar>
+        <Button
+          v-if="layout.moved.value"
+          variant="ghost"
+          size="sm"
+          title="Put every card back where the automatic layout places it"
+          @click="layout.reset()"
+        >
+          <LayoutGrid />
+          Reset layout
+        </Button>
         <RunPipelineButton variant="outline" @run="runDialog.show()" />
       </template>
     </ReleaseCanvas>
