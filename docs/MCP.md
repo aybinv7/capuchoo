@@ -14,6 +14,13 @@ each client.
 Every call carries an API key as `Authorization: Bearer cap_...` (or `x-api-key`). Dashboard
 sessions are refused: a browser cookie never reaches the endpoint.
 
+Claude (claude.ai and the desktop app): Settings, Connectors, **Add custom connector**. Paste the
+endpoint, choose **No sign-in** (not "Sign in now", which Claude preselects because the `401`
+carries a Bearer challenge, but there is no OAuth yet), and add the request header
+`Authorization: Bearer cap_...`.
+
+Claude Code:
+
 ```sh
 claude mcp add --transport http capuchoo https://<dashboard>/api/mcp --header "Authorization: Bearer cap_..."
 ```
@@ -31,7 +38,7 @@ Cursor (`~/.cursor/mcp.json`):
 }
 ```
 
-Claude Desktop goes through `mcp-remote` until OAuth lands:
+A client without custom headers goes through `mcp-remote` until OAuth lands:
 
 ```json
 {
@@ -114,8 +121,10 @@ Every write is in the audit log with its key and `via: "mcp"`.
 - Request bodies up to 256 KiB.
 - A session timeline decompresses at most 48 MiB, skips the screen events unparsed and returns at
   most 500 items; source maps are cached per app, version and file (12 at a time).
-- A browser may only call the endpoint from an allowed origin (`ALLOWED_ORIGINS`, `PUBLIC_URL`),
-  against DNS rebinding.
+- Any origin may call with a key: hosted agents call from their own origin, and since cookies are
+  never accepted a page cannot borrow a dashboard session. Every refused request is logged
+  (`mcp request refused`, with method, origin, user agent and whether a credential came, never the
+  credential), so a client that cannot connect can be diagnosed from the server logs.
 
 Measured locally against the demo organization, end to end through the SDK client: `tools/list` 13
 ms, `app_overview` 51 ms, `error_details` 27 ms, and `session_timeline` 14 ms, which returns about

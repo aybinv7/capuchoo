@@ -5,13 +5,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CopyButton from "@/shared/components/CopyButton.vue";
 import CopyField from "@/shared/components/CopyField.vue";
 
-type Client = "claude-code" | "cursor" | "claude-desktop";
+type Client = "claude-ai" | "claude-code" | "cursor" | "claude-desktop";
 
 const endpoint = `${window.location.origin}/api/mcp`;
 const KEY = "cap_your_key";
-const client = ref<Client>("claude-code");
+const client = ref<Client>("claude-ai");
 
 const snippets = computed<Record<Client, { where: string; code: string }>>(() => ({
+  "claude-ai": {
+    where:
+      "In Settings, Connectors, Add custom connector: paste the endpoint, choose No sign-in, and add this request header:",
+    code: `Authorization: Bearer ${KEY}`,
+  },
   "claude-code": {
     where: "In a terminal:",
     code: `claude mcp add --transport http capuchoo ${endpoint} --header "Authorization: Bearer ${KEY}"`,
@@ -63,6 +68,7 @@ const snippets = computed<Record<Client, { where: string; code: string }>>(() =>
 
     <Tabs v-model="client" class="gap-3">
       <TabsList>
+        <TabsTrigger value="claude-ai">Claude</TabsTrigger>
         <TabsTrigger value="claude-code">Claude Code</TabsTrigger>
         <TabsTrigger value="cursor">Cursor</TabsTrigger>
         <TabsTrigger value="claude-desktop">Claude Desktop</TabsTrigger>

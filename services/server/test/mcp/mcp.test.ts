@@ -71,10 +71,16 @@ describe("the MCP endpoint", () => {
     expect(session.status).toBe(401);
   });
 
-  it("refuses a browser on another origin, and anything but POST", async () => {
-    expect(
-      (await rpc("tools/list", {}, { headers: { origin: "https://evil.example" } })).status,
-    ).toBe(403);
+  it("lets a hosted agent call from its own origin with a key, and refuses anything but POST", async () => {
+    const hosted = await rpc("tools/list", {}, { headers: { origin: "https://claude.ai" } });
+    expect(hosted.status).toBe(200);
+    expect(hosted.body.result.tools.length).toBeGreaterThan(0);
+    const keyless = await rpc(
+      "tools/list",
+      {},
+      { key: null, headers: { origin: "https://claude.ai" } },
+    );
+    expect(keyless.status).toBe(401);
     expect((await rpc("tools/list", {}, { httpMethod: "GET" })).status).toBe(405);
   });
 
