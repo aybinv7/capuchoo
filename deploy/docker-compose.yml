@@ -1,43 +1,7 @@
 name: capuchoo
 
 services:
-  traefik:
-    image: traefik:v3.5
-    restart: unless-stopped
-    depends_on: [docker-proxy]
-    command:
-      - --providers.docker.endpoint=tcp://docker-proxy:2375
-      - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=capuchoo_edge
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.websecure.transport.respondingTimeouts.readTimeout=30m
-      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?set ACME_EMAIL in .env}
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-      - --log.level=${TRAEFIK_LOG_LEVEL:-WARN}
-      - --global.sendanonymoususage=false
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - letsencrypt:/letsencrypt
-    networks: [edge, docker]
-
-  docker-proxy:
-    image: tecnativa/docker-socket-proxy:0.3
-    restart: unless-stopped
-    environment:
-      CONTAINERS: 1
-      NETWORKS: 1
-      EVENTS: 1
-      POST: 0
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks: [docker]
-
+  
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -83,13 +47,15 @@ services:
       COOKIE_SECURE: "true"
     volumes:
       - artefacts:/data
-    networks: [internal, edge]
+    networks: [internal, web]
     labels:
       traefik.enable: "true"
+      traefik.docker.network: web
       traefik.http.routers.capuchoo-api.rule: Host(`${CAPUCHOO_HOST}`) && (PathPrefix(`/api`) || Path(`/health`) || Path(`/ready`))
       traefik.http.routers.capuchoo-api.priority: "100"
       traefik.http.routers.capuchoo-api.entrypoints: websecure
-      traefik.http.routers.capuchoo-api.tls.certresolver: letsencrypt
+      traefik.http.routers.capuchoo-api.tls: "true"
+      traefik.http.routers.capuchoo-api.tls.certresolver: le
       traefik.http.routers.capuchoo-api.service: capuchoo-api
       traefik.http.services.capuchoo-api.loadbalancer.server.port: "3000"
 
@@ -102,13 +68,15 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    networks: [edge]
+    networks: [web]
     labels:
       traefik.enable: "true"
+      traefik.docker.network: web
       traefik.http.routers.capuchoo-dashboard.rule: Host(`${CAPUCHOO_HOST}`)
       traefik.http.routers.capuchoo-dashboard.priority: "1"
       traefik.http.routers.capuchoo-dashboard.entrypoints: websecure
-      traefik.http.routers.capuchoo-dashboard.tls.certresolver: letsencrypt
+      traefik.http.routers.capuchoo-dashboard.tls: "true"
+      traefik.http.routers.capuchoo-dashboard.tls.certresolver: le
       traefik.http.routers.capuchoo-dashboard.service: capuchoo-dashboard
       traefik.http.services.capuchoo-dashboard.loadbalancer.server.port: "8080"
 
@@ -139,7 +107,6 @@ volumes:
 
 networks:
   internal:
-  edge:
-    name: capuchoo_edge
-  docker:
-    internal: true
+  web:
+    external: true
+
