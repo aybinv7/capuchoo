@@ -56,4 +56,13 @@ describe("ranking", () => {
       "b",
     ]);
   });
+
+  it("puts the most recent first among equal matches", () => {
+    const ranked = rankItems(
+      [item("1.7.0", { recency: 1 }), item("1.9.1", { recency: 3 }), item("1.8.2", { recency: 2 })],
+      "",
+      10,
+    );
+    expect(ranked.map((entry) => entry.item.label)).toEqual(["1.9.1", "1.8.2", "1.7.0"]);
+  });
 });

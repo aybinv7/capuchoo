@@ -64,6 +64,11 @@ export function rankItems(items: readonly SearchItem[], term: string, limit: num
     const score = scoreItem(item, term);
     if (score > 0) ranked.push({ item, score });
   }
-  ranked.sort((a, b) => b.score - a.score || a.item.label.localeCompare(b.item.label));
+  ranked.sort(
+    (a, b) =>
+      b.score - a.score ||
+      (b.item.recency ?? 0) - (a.item.recency ?? 0) ||
+      a.item.label.localeCompare(b.item.label),
+  );
   return ranked.slice(0, limit);
 }

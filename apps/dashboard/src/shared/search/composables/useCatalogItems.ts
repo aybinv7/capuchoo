@@ -51,6 +51,7 @@ export function useCatalogItems(appId: Ref<string>) {
         .join(" · "),
       keywords: [artefact.release_notes ?? "", artefact.uploaded_by ?? ""],
       icon: artefact.kind === "ota" ? Package : Smartphone,
+      recency: artefact.created_at ? Date.parse(artefact.created_at) : 0,
       to: {
         name: RouteName.releases,
         params: { appId: appId.value },
@@ -76,6 +77,7 @@ export function useCatalogItems(appId: Ref<string>) {
         .join(" · "),
       keywords: [build.ref ?? "", build.commit_sha ?? "", build.actor_email ?? ""],
       icon: Hammer,
+      recency: Date.parse(build.started_at ?? build.created_at),
       to: { name: RouteName.build, params: { appId: appId.value, buildId: build.id } },
     })),
   );
