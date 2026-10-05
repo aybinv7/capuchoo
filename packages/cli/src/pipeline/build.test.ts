@@ -1,8 +1,64 @@
-import { describe, expect, it } from "vite-plus/test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { syncCapacitor, tokenize, type StepContext } from "./build.js";
+import { describe, expect, it } from "vite-plus/test";
+import {
+  assetPathArgument,
+  countGeneratedAssets,
+  syncCapacitor,
+  tokenize,
+  type StepContext,
+} from "./build.js";
+
+describe("assetPathArgument", () => {
+  const appDir = path.resolve("app");
+
+  it("passes the asset directory relative to the app, with forward slashes", () => {
+    expect(assetPathArgument(appDir, path.join(appDir, "build", "dev", "assets"))).toBe(
+      "build/dev/assets",
+    );
+  });
+
+  it("never passes an absolute path, which @capacitor/assets appends to the project root", () => {
+    const argument = assetPathArgument(appDir, path.join(appDir, "build", "dev", "assets"));
+    expect(path.isAbsolute(argument)).toBe(false);
+    expect(path.join(appDir, argument)).toBe(path.join(appDir, "build", "dev", "assets"));
+  });
+
+  it("reaches an asset directory outside the app", () => {
+    expect(assetPathArgument(appDir, path.resolve("shared", "assets"))).toBe("../shared/assets");
+  });
+
+  it("uses . when the asset directory is the app itself", () => {
+    expect(assetPathArgument(appDir, appDir)).toBe(".");
+  });
+
+  it.runIf(process.platform === "win32")("rejects an asset directory on another drive", () => {
+    const otherDrive = appDir.toUpperCase().startsWith("Z:") ? "Y:assets" : "Z:assets";
+    expect(() => assetPathArgument(appDir, otherDrive)).toThrow(/different drive/);
+  });
+});
+
+describe("countGeneratedAssets", () => {
+  it("counts the CREATE lines, ignoring colour codes", () => {
+    const stdout = [
+      "Generating assets for \x1b[32mandroid\x1b[39m",
+      "\x1b[1m\x1b[32mCREATE\x1b[39m\x1b[22m \x1b[1mandroid\x1b[22m icon drawable-ldpi-icon.png (1.2 KB)",
+      "CREATE android adaptive-icon mipmap-mdpi/ic_launcher_foreground.png (3.4 KB)",
+      "",
+      "Totals:",
+    ].join("\n");
+
+    expect(countGeneratedAssets({ code: 0, stdout, stderr: "" })).toBe(2);
+  });
+
+  it("reports nothing generated when the tool logs an error and exits 0", () => {
+    const stderr =
+      "Asset directory not found at C:app. Use --asset-path to specify a specific directory containing assets";
+
+    expect(countGeneratedAssets({ code: 0, stdout: "", stderr })).toBe(0);
+  });
+});
 
 describe("tokenize", () => {
   it("splits on whitespace", () => {

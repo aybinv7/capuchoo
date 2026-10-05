@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { run, type RunOptions } from "../utils/exec.js";
+import { stripVTControlCharacters } from "node:util";
+import { run, type RunOptions, type RunResult } from "../utils/exec.js";
 import type { ResolvedFlavour } from "./flavour.js";
 import { readScript, resolveBin, type Toolchain } from "./toolchain.js";
 
@@ -31,7 +32,8 @@ export type StepOutcome = { ran: true; via: string } | { ran: false; reason: str
  *
  * Optional by design: icons rarely change and an app may not ship source
  * artwork at all, so a missing tool or asset directory is a skip, not a
- * failure.
+ * failure. Artwork that is present but generates nothing is a failure: the
+ * build would otherwise ship Capacitor's default icons under a green tick.
  */
 export async function generateAssets(
   context: StepContext,
@@ -61,13 +63,86 @@ export async function generateAssets(
     return { ran: false, reason: "@capacitor/assets is not installed" };
   }
 
-  await run(bin, ["generate", `--${platform}`, "--assetPath", flavour.assetPath], {
-    ...context.runOptions,
-    cwd: toolchain.appDir,
-    env: context.env,
-  });
+  const result = await run(
+    bin,
+    [
+      "generate",
+      `--${platform}`,
+      "--assetPath",
+      assetPathArgument(toolchain.appDir, flavour.assetPath),
+    ],
+    { ...context.runOptions, cwd: toolchain.appDir, env: context.env },
+  );
 
-  return { ran: true, via: "@capacitor/assets" };
+  const created = countGeneratedAssets(result);
+  if (created === 0) {
+    throw new Error(
+      `@capacitor/assets generated no launcher assets from ${flavour.config.assetPath}, so the ` +
+        `build would ship Capacitor's default icons.${describeAssetFailure(result)}`,
+    );
+  }
+
+  return { ran: true, via: `@capacitor/assets (${created} files)` };
+}
+
+/**
+ * The `--assetPath` value for `capacitor-assets generate`, relative to `appDir`.
+ *
+ * @capacitor/assets builds its asset directory with `path.join(projectRoot, assetPath)`, so an
+ * absolute path is appended to the project root instead of replacing it - `C:\app\C:\app\assets`
+ * on Windows, `/app/app/assets` elsewhere. It runs with `appDir` as its cwd, so a relative path
+ * resolves to the right place. Forward slashes keep the logged command identical on every OS.
+ *
+ * @throws when the asset directory is on another drive, which no relative path can reach.
+ */
+export function assetPathArgument(appDir: string, assetPath: string): string {
+  const relative = path.relative(appDir, assetPath);
+
+  if (path.isAbsolute(relative)) {
+    throw new Error(
+      `The asset directory ${assetPath} is on a different drive from the app at ${appDir}; ` +
+        "@capacitor/assets can only read assets on the app's drive.",
+    );
+  }
+
+  return relative === "" ? "." : relative.split(path.sep).join("/");
+}
+
+function outputLines(result: RunResult): string[] {
+  return stripVTControlCharacters(`${result.stdout}\n${result.stderr}`)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Counts the files @capacitor/assets reports writing, one `CREATE <platform> <kind> <file>` line
+ * each.
+ *
+ * Its exit code says nothing: a missing asset directory, no usable artwork, a missing platform
+ * folder and an exception during generation are all logged and then exit 0. A `CREATE` line is the
+ * only positive evidence that a launcher icon was replaced, so its absence is a failure whatever
+ * the tool printed instead.
+ */
+export function countGeneratedAssets(result: RunResult): number {
+  return outputLines(result).filter((line) => line.startsWith("CREATE ")).length;
+}
+
+const ASSET_FAILURE_MARKERS = [
+  "Asset directory not found",
+  "No assets found",
+  "platform not found",
+  "No platforms found",
+  "Unable to generate assets",
+];
+
+function describeAssetFailure(result: RunResult): string {
+  const lines = outputLines(result);
+  const reported = lines.filter((line) =>
+    ASSET_FAILURE_MARKERS.some((marker) => line.includes(marker)),
+  );
+  const shown = (reported.length > 0 ? reported : lines.slice(-4)).join("\n");
+  return shown ? `\n${shown}` : "";
 }
 
 /**
