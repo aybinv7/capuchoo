@@ -6,14 +6,20 @@ dashboard to manage it.
 
 ## What is in here
 
-| Path               | Package               | What it does                                                    |
-| ------------------ | --------------------- | --------------------------------------------------------------- |
-| `packages/core`    | `@capuchoo/core`      | The update contract, shared by every other package. No deps.    |
-| `packages/updater` | `@capuchoo/updater`   | App-side runtime: checks, downloads, applies, prompts.          |
-| `packages/cli`     | `@capuchoo/cli`       | Builds and publishes OTA and native releases.                   |
-| `apps/dashboard`   | `@capuchoo/dashboard` | Release console: canvas, channels, devices, builds, audit.      |
-| `apps/landing`     | `@capuchoo/landing`   | Public landing page, a static site with no backend.             |
-| `services/server`  | `@capuchoo/server`    | Update server on PostgreSQL. API only; the dashboard is static. |
+| Path                   | Package                    | What it does                                                    |
+| ---------------------- | -------------------------- | --------------------------------------------------------------- |
+| `packages/core`        | `@capuchoo/core`           | The update contract, shared by every other package. No deps.    |
+| `packages/updater`     | `@capuchoo/updater`        | App-side runtime: checks, downloads, applies, prompts.          |
+| `packages/cli`         | `@capuchoo/cli`            | Builds and publishes OTA and native releases.                   |
+| `apps/dashboard`       | `@capuchoo/dashboard`      | Release console: canvas, channels, devices, builds, audit.      |
+| `apps/landing`         | `@capuchoo/landing`        | Public landing page, a static site with no backend.             |
+| `services/server`      | `@capuchoo/server`         | Update server on PostgreSQL. API only; the dashboard is static. |
+| `packages/recorder`    | `@capuchoo/recorder`       | Session recording embedded in the app.                          |
+| `packages/android`     | `capuchoo-android`         | Updater library for native Android apps, on JitPack.            |
+| `apps/mobile`          | `@capuchoo/mobile`         | The Capuchoo app for phones.                                    |
+| `tools/recorder-bench` | `@capuchoo/recorder-bench` | Measures what the recorder costs on a device.                   |
+
+Deploying the server and dashboard to a VPS: [deploy/README.md](./deploy/README.md).
 
 ## Getting started
 

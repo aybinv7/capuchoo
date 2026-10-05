@@ -14,19 +14,52 @@ The update URL is compiled into every APK. Pick a hostname you will keep for yea
 
 ## Run it
 
+A VPS with Docker Engine and the compose plugin, ports 80 and 443 open, and the hostname's A/AAAA
+record pointing at it. On the VPS:
+
 ```bash
+git clone <repository-url> capuchoo && cd capuchoo
 cp deploy/.env.example deploy/.env
 docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build
 ```
 
-`SECRET_KEY` signs download links; generate it once with `openssl rand -base64 48` and keep it.
-`BOOTSTRAP_ADMIN_*` creates the first instance admin on an empty database and is ignored afterwards;
-remove it from `.env` once you have signed in. Sign-up is closed; invite everyone else from the
-dashboard.
+Fill `deploy/.env` first: `CAPUCHOO_HOST`, `ACME_EMAIL`, `POSTGRES_PASSWORD`
+(`openssl rand -base64 32`) and `SECRET_KEY` (`openssl rand -base64 48`, generated once and kept: it
+signs download links and encrypts the GitHub App's secrets). `PUBLIC_URL` is
+`https://$CAPUCHOO_HOST`. `BOOTSTRAP_ADMIN_*` creates the first instance admin on an empty database
+and is ignored afterwards; remove it from `.env` once you have signed in. Sign-up is closed; invite
+everyone else from the dashboard.
 
-The compose file expects an existing Traefik on the external `traefik` network with a `letsencrypt`
-resolver. Upload size is enforced by the server (`MAX_BUNDLE_BYTES`, `MAX_NATIVE_BYTES`) while it
-streams, so Traefik does not buffer bodies.
+The stack:
+
+| Service        | Role                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `traefik`      | Ports 80 and 443, Let's Encrypt (TLS-ALPN challenge), HTTP to HTTPS redirect              |
+| `docker-proxy` | Read-only Docker API for Traefik, so the internet-facing container never holds the socket |
+| `server`       | `/api`, `/health`, `/ready`, including the live and assist websockets                     |
+| `dashboard`    | Everything else on the same hostname, so the session cookie stays first-party             |
+| `postgres`     | Published on `127.0.0.1` only                                                             |
+| `backup`       | Daily `pg_dump -Fc` to the `backups` volume                                               |
+
+Traefik's read timeout is raised to 30 minutes: its default of 60 seconds cuts a large bundle or APK
+upload on a slow link. Upload size is enforced by the server (`MAX_BUNDLE_BYTES`,
+`MAX_NATIVE_BYTES`) while it streams, so Traefik does not buffer bodies. Run one `server` replica:
+the live stream hub and the dashboard's event stream are held in that process.
+
+To update: `git pull`, then the same `up -d --build`. Migrations run when the server starts.
+
+## Reaching the database
+
+Postgres listens on `127.0.0.1:5432` of the VPS and nowhere else. A desktop client connects through
+SSH: most have an SSH tab (host and user of the VPS, then `localhost:5432`, database and user
+`capuchoo`, the `POSTGRES_PASSWORD`). Without one, open a tunnel and point the client at
+`localhost:15432`:
+
+```bash
+ssh -N -L 15432:127.0.0.1:5432 user@vps
+```
+
+Do not publish 5432 to the internet. If the port is already taken on the VPS, set `POSTGRES_PORT`.
 
 ## Connecting GitHub
 

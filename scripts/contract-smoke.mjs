@@ -24,11 +24,11 @@
  * Usage:
  *   node scripts/contract-smoke.mjs <bundle-id> [--url <api>] [--channel <name>]
  *
+ * `--url` falls back to CAPUCHOO_ENDPOINT.
+ *
  * Example:
- *   node scripts/contract-smoke.mjs com.efficy.app
+ *   node scripts/contract-smoke.mjs com.efficy.app --url https://updates.example.com
  */
-
-const DEFAULT_API = "https://capuchoo-back.onrender.com";
 
 // A bare `--` is dropped first: `vp run smoke -- com.efficy.app` forwards the
 // separator, and treating it as a flag left the bundle id looking like that
@@ -43,12 +43,12 @@ const flag = (name) => {
 const appId = args.find(
   (value, index) => !value.startsWith("--") && !args[index - 1]?.startsWith("--"),
 );
-const api = (flag("url") ?? DEFAULT_API).replace(/\/+$/, "");
+const api = (flag("url") ?? process.env.CAPUCHOO_ENDPOINT ?? "").replace(/\/+$/, "");
 const onlyChannel = flag("channel");
 
-if (!appId) {
+if (!appId || !api) {
   console.error(
-    "usage: node scripts/contract-smoke.mjs <bundle-id> [--url <api>] [--channel <name>]",
+    "usage: node scripts/contract-smoke.mjs <bundle-id> --url <api> [--channel <name>] (or set CAPUCHOO_ENDPOINT)",
   );
   process.exit(2);
 }

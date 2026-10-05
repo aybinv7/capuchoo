@@ -1,10 +1,10 @@
 # Capuchoo server
 
-`services/server` (`@capuchoo/server`) replaces `services/back`. Node 22+, Hono, Kysely over
-PostgreSQL. No Supabase. One process serves the device API, the CLI API and the dashboard API. The
-dashboard is a separate static site whose host proxies `/api` here, so it is still same-origin to
-the browser: the session is an httpOnly cookie and there is no CORS. When that proxy rewrites the
-host (Render), list the dashboard origin in `ALLOWED_ORIGINS`.
+`services/server` (`@capuchoo/server`): Node 22+, Hono, Kysely over PostgreSQL. One process serves
+the device API, the CLI API and the dashboard API. The dashboard is a separate static site whose
+host proxies `/api` here, so it is still same-origin to the browser: the session is an httpOnly
+cookie and there is no CORS. When that proxy rewrites the host (Render), list the dashboard origin
+in `ALLOWED_ORIGINS`.
 
 ## Delivery model
 

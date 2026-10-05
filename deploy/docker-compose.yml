@@ -1,6 +1,43 @@
 name: capuchoo
 
 services:
+  traefik:
+    image: traefik:v3.5
+    restart: unless-stopped
+    depends_on: [docker-proxy]
+    command:
+      - --providers.docker.endpoint=tcp://docker-proxy:2375
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=capuchoo_edge
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.transport.respondingTimeouts.readTimeout=30m
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?set ACME_EMAIL in .env}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --log.level=${TRAEFIK_LOG_LEVEL:-WARN}
+      - --global.sendanonymoususage=false
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt:/letsencrypt
+    networks: [edge, docker]
+
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      NETWORKS: 1
+      EVENTS: 1
+      POST: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [docker]
+
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -8,6 +45,8 @@ services:
       POSTGRES_DB: capuchoo
       POSTGRES_USER: capuchoo
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres:/var/lib/postgresql/data
     healthcheck:
@@ -29,14 +68,17 @@ services:
     environment:
       DATABASE_URL: postgres://capuchoo:${POSTGRES_PASSWORD}@postgres:5432/capuchoo
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env (openssl rand -base64 48)}
-      PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL in .env}
+      PUBLIC_URL: https://${CAPUCHOO_HOST:?set CAPUCHOO_HOST in .env}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
       STORAGE_DRIVER: ${STORAGE_DRIVER:-fs}
       S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-auto}
       S3_BUCKET: ${S3_BUCKET:-}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      GITLAB_ALLOWED_HOSTS: ${GITLAB_ALLOWED_HOSTS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       TRUST_PROXY: "true"
       COOKIE_SECURE: "true"
     volumes:
@@ -44,11 +86,10 @@ services:
     networks: [internal, edge]
     labels:
       traefik.enable: "true"
-      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
-      traefik.http.routers.capuchoo-api.rule: Host(`${CAPUCHOO_HOST:?set CAPUCHOO_HOST in .env}`) && (PathPrefix(`/api`) || Path(`/health`) || Path(`/ready`))
+      traefik.http.routers.capuchoo-api.rule: Host(`${CAPUCHOO_HOST}`) && (PathPrefix(`/api`) || Path(`/health`) || Path(`/ready`))
       traefik.http.routers.capuchoo-api.priority: "100"
       traefik.http.routers.capuchoo-api.entrypoints: websecure
-      traefik.http.routers.capuchoo-api.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      traefik.http.routers.capuchoo-api.tls.certresolver: letsencrypt
       traefik.http.routers.capuchoo-api.service: capuchoo-api
       traefik.http.services.capuchoo-api.loadbalancer.server.port: "3000"
 
@@ -64,11 +105,10 @@ services:
     networks: [edge]
     labels:
       traefik.enable: "true"
-      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
       traefik.http.routers.capuchoo-dashboard.rule: Host(`${CAPUCHOO_HOST}`)
       traefik.http.routers.capuchoo-dashboard.priority: "1"
       traefik.http.routers.capuchoo-dashboard.entrypoints: websecure
-      traefik.http.routers.capuchoo-dashboard.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      traefik.http.routers.capuchoo-dashboard.tls.certresolver: letsencrypt
       traefik.http.routers.capuchoo-dashboard.service: capuchoo-dashboard
       traefik.http.services.capuchoo-dashboard.loadbalancer.server.port: "8080"
 
@@ -95,9 +135,11 @@ volumes:
   postgres:
   artefacts:
   backups:
+  letsencrypt:
 
 networks:
   internal:
   edge:
-    external: true
-    name: ${TRAEFIK_NETWORK:-traefik}
+    name: capuchoo_edge
+  docker:
+    internal: true
