@@ -23,6 +23,7 @@
   --input: oklch(0.7621 0.0156 98.3528);
   --ring: oklch(0.6171 0.1375 39.0427);
   --success: oklch(0.58 0.13 150);
+  --info: oklch(0.58 0.11 240);
   --ink: oklch(0.2357 0.0024 67.7077);
   --ink-raised: oklch(0.2679 0.0036 106.6427);
   --ink-border: oklch(0.3618 0.0101 106.8928);
@@ -57,6 +58,7 @@
   --input: oklch(0.4336 0.0113 100.2195);
   --ring: oklch(0.6724 0.1308 38.7559);
   --success: oklch(0.72 0.14 150);
+  --info: oklch(0.72 0.11 240);
   --ink: oklch(0.2213 0.0038 106.707);
   --ink-raised: oklch(0.2475 0.003 106.6427);
   --grid-line: color-mix(in oklch, var(--primary) 22%, transparent);
@@ -83,6 +85,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-success: var(--success);
+  --color-info: var(--info);
   --color-ink: var(--ink);
   --color-ink-raised: var(--ink-raised);
   --color-ink-border: var(--ink-border);

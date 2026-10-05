@@ -5,7 +5,7 @@ import { vReveal } from "@/directives/reveal";
 </script>
 
 <template>
-  <section id="channels" class="bg-ink text-ink-foreground relative overflow-hidden px-6 py-24">
+  <section id="channels" class="bg-ink text-ink-foreground relative overflow-x-clip px-6 py-24">
     <div
       aria-hidden="true"
       class="bg-primary/15 pointer-events-none absolute -top-24 right-0 size-[32rem] rounded-full blur-[120px]"

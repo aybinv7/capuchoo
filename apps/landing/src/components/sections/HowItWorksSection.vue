@@ -19,7 +19,7 @@ import { vReveal } from "@/directives/reveal";
           v-for="(step, index) in STEPS"
           :key="step.title"
           v-reveal="index * 120"
-          class="bg-card relative flex flex-col gap-4 rounded-2xl border p-7"
+          class="bg-card relative flex min-w-0 flex-col gap-4 rounded-2xl border p-7"
         >
           <span
             class="border-primary/30 bg-primary/10 text-primary grid size-9 place-items-center rounded-full border font-mono text-sm font-semibold"

@@ -48,7 +48,7 @@ onKeyStroke("Escape", () => {
           v-for="link in NAV_LINKS"
           :key="link.href"
           :href="link.href"
-          class="text-muted-foreground hover:text-foreground rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+          class="text-muted-foreground hover:text-foreground rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors"
           >{{ link.label }}</a
         >
       </div>
@@ -147,7 +147,7 @@ onKeyStroke("Escape", () => {
         :key="link.href"
         :href="link.href"
         :tabindex="scrolled ? 0 : -1"
-        class="text-ink-muted rounded-full px-4 py-2 text-sm font-medium transition-colors hover:bg-white/10 hover:text-white"
+        class="text-ink-muted rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors hover:bg-white/10 hover:text-white"
         >{{ link.label }}</a
       >
       <span class="bg-ink-border mx-2 h-4 w-px" />
@@ -164,7 +164,7 @@ onKeyStroke("Escape", () => {
       <a
         :href="SITE.dashboardUrl"
         :tabindex="scrolled ? 0 : -1"
-        class="bg-primary text-primary-foreground rounded-full px-4 py-2 text-xs font-bold transition hover:brightness-110"
+        class="bg-primary text-primary-foreground rounded-full px-4 py-2 text-xs font-bold whitespace-nowrap transition hover:brightness-110"
         >Sign in</a
       >
     </div>

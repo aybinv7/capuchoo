@@ -110,7 +110,7 @@ export const HOSTING: readonly HostingOption[] = [
     description: "No Capuchoo cloud. Devices talk to the server you run, under your domain.",
     points: [
       "Pick a hostname you will keep: it is compiled into every APK",
-      "Device events purged after 90 days by default",
+      "Device events kept 90 days and recordings 14, by default",
       "Location is off unless the app turns it on",
     ],
     link: "repository",
@@ -137,6 +137,26 @@ export const FAQ: readonly Question[] = [
     question: "How do client channels work with one APK?",
     answer:
       "The server decides each device's channel: a dashboard assignment first, then the channel the device chose (when allowed), then the one its build reports. The binary is the same for every customer.",
+  },
+  {
+    question: "What does the recorder capture, and what stays on the phone?",
+    answer:
+      "The page as a stream of changes rather than video, the console, each request's method, URL, status and timing, and committed SQLite writes. Passwords and fields you mark are masked on the phone, authorization headers and cookies are redacted, and request bodies stay off unless a rule turns them on. In buffer mode nothing leaves the phone until an error, a shake or a report.",
+  },
+  {
+    question: "How much data does recording use?",
+    answer:
+      "Measured on a mid-range Android phone, 2 to 80 KB per recorded minute, compressed in a worker before it is sent, and nothing in buffer mode until something triggers an upload. A rule can also hold uploads until the device is on Wi-Fi.",
+  },
+  {
+    question: "Can support take over a user's app?",
+    answer:
+      "Only with the user's say-so, twice: once to share the screen and once to hand over control. Only testers and above can ask, the user's banner has a Stop that always works, and every request, acceptance and handover is written to the audit log.",
+  },
+  {
+    question: "Can a native-only Android app use it?",
+    answer:
+      "Not today. The CLI builds through a Capacitor project and the updater runs in its WebView. The server speaks plain HTTP, so a Kotlin client and publishing an APK built by any Gradle project are what native-only support would need.",
   },
   {
     question: "Does it support iOS?",

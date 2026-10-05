@@ -45,7 +45,7 @@ const props = withDefaults(
         )
       "
     >
-      <template v-if="props.title">{{ props.title }} </template>
+      <template v-if="props.title">{{ `${props.title} ` }}</template>
       <span class="accent relative inline-block">
         {{ props.accent }}
         <AnimatedUnderline />

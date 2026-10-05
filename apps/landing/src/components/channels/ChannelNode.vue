@@ -10,7 +10,7 @@ const props = defineProps<{ name: string; kind: "release" | "client"; state: Cha
   <div
     :class="
       cn(
-        'relative w-full rounded-xl border p-4 transition-[border-color,box-shadow] duration-500',
+        'relative min-h-[7.75rem] w-full rounded-xl border p-4 transition-[border-color,box-shadow] duration-500',
         'border-ink-border bg-ink-raised',
         props.state.changed && 'border-primary/60 shadow-[0_0_0_4px] shadow-primary/15',
         props.state.refused && 'border-[oklch(0.64_0.2_25)]/60',

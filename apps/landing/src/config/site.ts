@@ -11,11 +11,14 @@ export const SITE = {
   addingAnApp: `${REPOSITORY}/blob/main/docs/ADDING-AN-APP.md`,
   npmCli: "https://www.npmjs.com/package/@capuchoo/cli",
   npmUpdater: "https://www.npmjs.com/package/@capuchoo/updater",
+  npmRecorder: "https://www.npmjs.com/package/@capuchoo/recorder",
 } as const;
 
 export const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
   { label: "Channels", href: "#channels" },
+  { label: "Replay", href: "#replay" },
+  { label: "Tour", href: "#tour" },
   { label: "Features", href: "#features" },
   { label: "CLI", href: "#cli" },
   { label: "Self-host", href: "#self-host" },

@@ -2,7 +2,6 @@
 import ScrollToTop from "@/components/layout/ScrollToTop.vue";
 import SiteFooter from "@/components/layout/SiteFooter.vue";
 import SiteNav from "@/components/layout/SiteNav.vue";
-import CanvasPreviewSection from "@/components/sections/CanvasPreviewSection.vue";
 import ChannelsSection from "@/components/sections/ChannelsSection.vue";
 import CliSection from "@/components/sections/CliSection.vue";
 import CtaSection from "@/components/sections/CtaSection.vue";
@@ -11,8 +10,11 @@ import FeaturesSection from "@/components/sections/FeaturesSection.vue";
 import HeroSection from "@/components/sections/HeroSection.vue";
 import HowItWorksSection from "@/components/sections/HowItWorksSection.vue";
 import IntegrationsSection from "@/components/sections/IntegrationsSection.vue";
+import MotionSection from "@/components/sections/MotionSection.vue";
+import ReplaySection from "@/components/sections/ReplaySection.vue";
 import SelfHostSection from "@/components/sections/SelfHostSection.vue";
 import StoreWaitSection from "@/components/sections/StoreWaitSection.vue";
+import TourSection from "@/components/sections/TourSection.vue";
 </script>
 
 <template>
@@ -27,9 +29,11 @@ import StoreWaitSection from "@/components/sections/StoreWaitSection.vue";
     <StoreWaitSection />
     <HowItWorksSection />
     <ChannelsSection />
+    <ReplaySection />
+    <TourSection />
     <FeaturesSection />
+    <MotionSection />
     <CliSection />
-    <CanvasPreviewSection />
     <IntegrationsSection />
     <SelfHostSection />
     <FaqSection />
