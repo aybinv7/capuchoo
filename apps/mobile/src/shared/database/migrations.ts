@@ -151,4 +151,45 @@ export const migrations: MigrationSet = {
       await sql`PRAGMA foreign_keys = ON`.execute(db);
     },
   },
+  "002_insights": {
+    up: async (db) => {
+      await db.schema
+        .createTable("device")
+        .addColumn("id", "text", (col) => col.primaryKey())
+        .addColumn("app_id", "text", (col) => col.notNull())
+        .addColumn("device_id", "text", (col) => col.notNull())
+        .addColumn("custom_id", "text")
+        .addColumn("platform", "text", (col) => col.notNull())
+        .addColumn("is_prod", "integer")
+        .addColumn("is_emulator", "integer")
+        .addColumn("version_name", "text")
+        .addColumn("version_code", "integer")
+        .addColumn("version_os", "text")
+        .addColumn("plugin_version", "text")
+        .addColumn("channel_id", "text")
+        .addColumn("assigned_channel_id", "text")
+        .addColumn("channel_name", "text")
+        .addColumn("device_name", "text")
+        .addColumn("manufacturer", "text")
+        .addColumn("model", "text")
+        .addColumn("last_seen_at", "text", (col) => col.notNull())
+        .addColumn("created_at", "text", (col) => col.notNull())
+        .execute();
+
+      await db.schema
+        .createTable("app_stats")
+        .addColumn("app_id", "text", (col) => col.notNull())
+        .addColumn("days", "integer", (col) => col.notNull())
+        .addColumn("payload", "text", (col) => col.notNull())
+        .addColumn("synced_at", "text", (col) => col.notNull())
+        .addPrimaryKeyConstraint("pk_app_stats", ["app_id", "days"])
+        .execute();
+
+      await db.schema
+        .createIndex("idx_device_app_seen")
+        .on("device")
+        .columns(["app_id", "last_seen_at"])
+        .execute();
+    },
+  },
 };

@@ -85,3 +85,28 @@
 .actions-button.color-red {
   color: var(--destructive);
 }
+
+/*
+ * A form that stands alone on a page, as sign-in does: each field its own M3 filled text field on
+ * the page, flush with the text above it, rather than rows of a list surface.
+ */
+.list.auth-fields {
+  --f7-list-bg-color: transparent;
+  --f7-list-margin-vertical: 0px;
+}
+
+.list.auth-fields ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.md .list.auth-fields .item-input.item-content,
+.md .list.auth-fields .item-input .item-content {
+  margin-inline: 0;
+}
+
+/* The clear button floats over the input's end; the text stops before it. */
+.list.auth-fields .item-input-wrap:has(.input-clear-button) input {
+  padding-inline-end: 32px;
+}

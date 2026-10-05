@@ -128,6 +128,41 @@ export interface ActivityTable {
   read_at: string | null;
 }
 
+/**
+ * A phone running one of the app's builds, as the server last heard from it. Location and memory
+ * are left on the server: nothing on this phone needs them.
+ */
+export interface DeviceTable {
+  id: string;
+  app_id: string;
+  device_id: string;
+  custom_id: string | null;
+  platform: string;
+  is_prod: number | null;
+  is_emulator: number | null;
+  version_name: string | null;
+  version_code: number | null;
+  version_os: string | null;
+  plugin_version: string | null;
+  channel_id: string | null;
+  assigned_channel_id: string | null;
+  channel_name: string | null;
+  device_name: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  last_seen_at: string;
+  created_at: string;
+}
+
+/** The server's statistics for one app over one window, kept whole: it is read whole. */
+export interface AppStatsTable {
+  app_id: string;
+  days: number;
+  /** JSON of `GET /api/apps/:id/stats`. */
+  payload: string;
+  synced_at: string;
+}
+
 export interface Database {
   account: AccountTable;
   organization: OrganizationTable;
@@ -138,4 +173,6 @@ export interface Database {
   bundle: BundleTable;
   installed: InstalledTable;
   activity: ActivityTable;
+  device: DeviceTable;
+  app_stats: AppStatsTable;
 }

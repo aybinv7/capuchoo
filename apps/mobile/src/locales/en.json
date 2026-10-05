@@ -1,8 +1,9 @@
 {
   "tabs": {
-    "apps": "Apps",
-    "activity": "Activity",
-    "profile": "You"
+    "home": "Home",
+    "channels": "Channels",
+    "builds": "Builds",
+    "devices": "Devices"
   },
   "common": {
     "cancel": "Cancel",
@@ -17,9 +18,6 @@
     "notFound": "This page does not exist."
   },
   "signIn": {
-    "title": "Sign in",
-    "subtitle": "Use your Capuchoo account. Your apps, their channels and every build follow you here.",
-    "server": "Server",
     "serverPlaceholder": "updates.example.com",
     "email": "Email",
     "password": "Password",
@@ -29,13 +27,26 @@
     "errors": {
       "credentials": "That email and password do not match an account.",
       "rateLimited": "Too many attempts. Wait a few minutes, then try again.",
-      "offline": "{server} could not be reached. Check the address and the connection."
+      "offline": "{server} could not be reached. Check the address and the connection.",
+      "notCapuchoo": "{server} answered, but it is not a Capuchoo server. Check the address.",
+      "unreachable": "{server} did not answer. A server that was asleep can take a minute to wake: try again."
     },
     "change": "Change",
     "changeServer": "Change the server",
-    "noServer": "No server set",
     "showPassword": "Show the password",
-    "hidePassword": "Hide the password"
+    "hidePassword": "Hide the password",
+    "step": "Step {step} of {total}",
+    "next": "Continue",
+    "server": {
+      "title": "Connect to your server",
+      "body": "Capuchoo runs on your team’s own server. Enter the address your admin gave you.",
+      "label": "Server address",
+      "hint": "The same address the dashboard opens at, without a path.",
+      "checking": "Checking the server"
+    },
+    "account": {
+      "title": "Sign in"
+    }
   },
   "live": {
     "syncing": "Syncing",
@@ -52,36 +63,18 @@
       "admin": "Admin"
     },
     "purpose": {
-      "viewer": "You can see this app's channels and builds.",
+      "viewer": "You can see this app's builds and the devices running them.",
       "tester": "You can install any of this app's builds on this phone.",
       "developer": "You can install builds and deliver them to dev and staging.",
       "admin": "You can install builds and deliver them to every channel."
     }
   },
   "apps": {
-    "title": "Apps",
-    "search": "Search apps",
     "lanes": "What each channel serves",
-    "noChannels": "No channels yet.",
-    "clients": "{count} client channel | {count} client channels",
-    "attentionTitle": "{count} app on this phone is behind | {count} apps on this phone are behind",
-    "attentionText": "Their channel serves a newer build than the one installed.",
-    "emptyTitle": "No apps yet",
-    "emptyText": "Apps you are given a role on appear here. Ask an admin to add you to one.",
-    "noMatch": "No app matches “{term}”",
-    "updatesTitle": "Update ready | {count} updates ready",
-    "updateFrom": "From {channel}",
-    "update": "Update",
-    "all": "Your apps",
-    "results": "{count} result | {count} results"
+    "noChannels": "No channels yet."
   },
   "phone": {
     "title": "On this phone",
-    "behindShort": "Update to {version}",
-    "currentShort": "Current · {version}",
-    "aheadShort": "Ahead · {version}",
-    "untrackedShort": "Installed · {version}",
-    "absentShort": "Not installed",
     "update": "Update to {version}",
     "install": "Install {version}",
     "open": "Open the app",
@@ -106,14 +99,6 @@
       "detail": "{channel} serves {target}."
     }
   },
-  "app": {
-    "channels": "Channels",
-    "builds": "Builds",
-    "buildCount": "{count} build | {count} builds",
-    "noBuilds": "No Android build has been published yet.",
-    "showAll": "Show all {count}",
-    "recent": "Recent"
-  },
   "channel": {
     "follows": "follows {base}",
     "paused": "Paused",
@@ -121,7 +106,26 @@
     "deliver": "Deliver",
     "pause": "Pause",
     "resume": "Resume",
-    "deliverAction": "Deliver a build…"
+    "deliverAction": "Deliver a build…",
+    "fleet": "{count} device, {share} current | {count} devices, {share} current",
+    "noEnvironment": "no environment",
+    "kind": {
+      "release": "Release",
+      "client": "Client"
+    },
+    "serving": "Serving",
+    "nativeSince": "Published {when}",
+    "noNative": "No native build",
+    "noBundle": "No OTA bundle",
+    "bundleSince": "Published {when}",
+    "bundleHint": "Devices run the web layer of the native build.",
+    "fleetTitle": "Its fleet",
+    "devices": "Devices",
+    "onCurrent": "On what it serves",
+    "active": "Active in 24 h",
+    "installs7d": "Installs in 7 days",
+    "failures7d": "Failures in 7 days",
+    "history": "History"
   },
   "build": {
     "code": "Build {code}",
@@ -233,7 +237,9 @@
     "preferences": "Preferences",
     "notifyAbout": "Notify me about",
     "notifyCount": "{on} of {total}",
-    "phone": "This phone"
+    "phone": "This phone",
+    "currentApp": "Working on",
+    "switchApp": "Switch"
   },
   "refresh": {
     "label": "Refreshing"
@@ -331,5 +337,185 @@
       "title": "Made for the whole team",
       "body": "Testers install, developers deliver to dev and staging, admins run every channel."
     }
+  },
+  "topbar": {
+    "switchApp": "{app} is open. Switch app",
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {count} unread",
+    "account": "Your account and settings"
+  },
+  "switcher": {
+    "title": "Switch app"
+  },
+  "choose": {
+    "title": "Pick an app",
+    "subtitle": "Everything after this is about the app you pick. Switch any time from the top bar.",
+    "search": "Search apps",
+    "loading": "Fetching your apps",
+    "emptyTitle": "No apps yet",
+    "emptyText": "Apps you are given a role on appear here. Ask an admin to add you to one.",
+    "noMatch": "No app matches “{term}”",
+    "noOrganization": "Other apps",
+    "signOut": "Sign out"
+  },
+  "home": {
+    "lanes": "Where each release stands",
+    "noBuild": "No build yet",
+    "fleet": "Fleet",
+    "days": "{count} days",
+    "loadingStats": "Fetching statistics",
+    "statsFailed": "Statistics could not be fetched",
+    "noTelemetryTitle": "No telemetry yet",
+    "noTelemetryText": "Devices report checks and installs once a build with the Capuchoo updater runs on them.",
+    "successLabel": "install success",
+    "installs": "Installs",
+    "failures": "Failures",
+    "devices": "Devices",
+    "active": "Active in 24 h",
+    "checks": "Update checks",
+    "outcomesTitle": "Installs and failures",
+    "otherVersions": "{count} other | {count} others",
+    "healthTitle": "Channel health",
+    "health": {
+      "onCurrent": "{on} of {total} current",
+      "active": "{count} active | {count} active",
+      "installs": "{count} install 7 d | {count} installs 7 d",
+      "failures": "{count} failure 7 d | {count} failures 7 d"
+    },
+    "recent": "Latest",
+    "allActivity": "All activity",
+    "updated": "Statistics from {when}"
+  },
+  "channels": {
+    "title": "Channels",
+    "release": "Release channels",
+    "client": "Client channels",
+    "emptyTitle": "No channels yet",
+    "emptyText": "Channels are created from the dashboard or the Capuchoo CLI.",
+    "goneTitle": "This channel is gone",
+    "goneText": "It was removed, or this account no longer reaches it."
+  },
+  "builds": {
+    "title": "Builds",
+    "native": "Native · {count}",
+    "ota": "OTA · {count}",
+    "allFlavours": "All",
+    "more": "Show {count} more",
+    "minNative": "needs native {code}",
+    "noNativeTitle": "No native build yet",
+    "noNativeText": "Builds published with the Capuchoo CLI appear here.",
+    "noOtaTitle": "No OTA bundle yet",
+    "noOtaText": "Web bundles published over the air appear here."
+  },
+  "devices": {
+    "title": "Devices",
+    "search": "Search by model, name or id",
+    "filter": {
+      "all": "All",
+      "active": "Active 24 h",
+      "idle": "Idle"
+    },
+    "count": "No devices | {count} device | {count} devices",
+    "matching": "No match | {count} match | {count} matches",
+    "more": "Show {count} more",
+    "truncated": "Showing the {shown} most recently seen of {total}.",
+    "noMatch": "No device matches",
+    "clearFilters": "Clear the filters",
+    "emptyTitle": "No devices yet",
+    "emptyText": "A device appears once a build with the Capuchoo updater checks for an update.",
+    "activeNow": "Seen in the last 24 hours",
+    "overridden": "Override"
+  },
+  "device": {
+    "seen": "Last seen {when}",
+    "seenActive": "Active · last seen {when}",
+    "release": "Release",
+    "version": "App version",
+    "servedBy": "Served by",
+    "override": "Channel override",
+    "none": "None",
+    "build": "Build",
+    "buildProd": "Release",
+    "buildDebug": "Debug",
+    "plugin": "Updater",
+    "hardware": "Hardware",
+    "model": "Model",
+    "os": "System",
+    "emulator": "Emulator",
+    "firstSeen": "First seen",
+    "identity": "Identity",
+    "deviceId": "Device id",
+    "customId": "Custom id",
+    "assign": "Move channel",
+    "assignTitle": "Serve this device from",
+    "clearOverride": "Clear the override",
+    "assigned": "Now served from {channel}",
+    "unassigned": "Override cleared",
+    "remove": "Remove",
+    "removeTitle": "Remove {device}?",
+    "removeText": "Its history is deleted. It registers again the next time it checks for an update.",
+    "removed": "Device removed",
+    "goneTitle": "This device is gone",
+    "goneText": "It was removed, or it has not reported in a long time.",
+    "assignText": "{device} gets its updates from the channel picked here, whatever it was built for.",
+    "servingNow": "Serving now",
+    "assignHint": "Without an override, the device follows the channel its build asks for."
+  },
+  "preview": {
+    "section": "Experimental",
+    "row": "View as",
+    "rowText": "See the app as a tester or a viewer sees it, without changing your role.",
+    "own": "Your role",
+    "title": "View as",
+    "text": "Every screen narrows to what this role gets. Your real role is untouched, and the server keeps deciding on it.",
+    "footnote": "A preview only lowers what this phone offers; it cannot grant anything.",
+    "banner": "Viewing as {role}",
+    "exit": "Exit"
+  },
+  "people": {
+    "title": "People",
+    "manage": "Roles and invites",
+    "loading": "Fetching the team",
+    "failed": "The team could not be fetched",
+    "adminOnlyTitle": "Admins only",
+    "adminOnlyText": "Roles on an app are given by its admins.",
+    "onApp": "On {app}",
+    "you": "You",
+    "giveAccess": "Give access",
+    "selfHint": "Your own role is changed from the dashboard, so nobody locks themselves out from a phone.",
+    "inOrg": "In {org}, no role here",
+    "pending": "Invited, not joined yet",
+    "pendingHint": "Once they join, they appear above without a role: give them one there.",
+    "expires": "Link expires {when}",
+    "invite": "Invite someone",
+    "inviteTitle": "Invite someone",
+    "inviteText": "Give someone a role on {app}.",
+    "email": "Email",
+    "roleOn": "Their role on {app}",
+    "inviteAction": "Give the role",
+    "noAccountTitle": "No account yet",
+    "noAccountText": "{email} has no Capuchoo account. Create an invite link to {org}: once they join with it, give them their role from People.",
+    "createLink": "Create an invite link",
+    "back": "Back",
+    "linkTitle": "Invite link ready",
+    "linkText": "Send it to {email}. When they have joined, give them the {role} role from People.",
+    "share": "Share the link",
+    "copy": "Copy the link",
+    "copied": "Link copied",
+    "shareTitle": "Join on Capuchoo",
+    "shareText": "You are invited to work on {app} with Capuchoo.",
+    "changeRole": "Their role",
+    "chooseRole": "Their role on {app}",
+    "save": "Save",
+    "give": "Make them {role}",
+    "remove": "Remove access",
+    "removeTitle": "Remove {name}?",
+    "removeText": "They lose access to {app}. Their account and other apps are untouched.",
+    "removed": "{name} no longer has access",
+    "roleSet": "{name} is now {role}",
+    "cancelTitle": "Cancel the invite to {email}?",
+    "cancelText": "The link stops working.",
+    "cancelInvite": "Cancel the invite",
+    "cancelled": "Invite cancelled"
   }
 }

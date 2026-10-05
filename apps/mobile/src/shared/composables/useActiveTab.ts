@@ -1,4 +1,4 @@
-const START_TAB = "view-apps";
+const START_TAB = "view-home";
 
 const activeTab = ref(START_TAB);
 

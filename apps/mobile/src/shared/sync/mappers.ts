@@ -3,6 +3,7 @@ import type {
   ServerApp,
   ServerBundle,
   ServerChannel,
+  ServerDevice,
   ServerIdentifier,
   ServerNative,
 } from "@/shared/api/types";
@@ -12,6 +13,7 @@ import type {
   AppTable,
   BundleTable,
   ChannelTable,
+  DeviceTable,
   NativeBuildTable,
   OrganizationTable,
 } from "@/shared/database/schema";
@@ -121,4 +123,31 @@ export function toBundles(appId: string, rows: ServerBundle[]): BundleTable[] {
       channels: JSON.stringify(row.channels ?? []),
       created_at: row.created_at,
     }));
+}
+
+const optionalBit = (value: boolean | null | undefined): number | null =>
+  value === null || value === undefined ? null : bit(value);
+
+export function toDevices(devices: ServerDevice[]): DeviceTable[] {
+  return devices.map((device) => ({
+    id: device.id,
+    app_id: device.app_id,
+    device_id: device.device_id,
+    custom_id: device.custom_id ?? null,
+    platform: device.platform,
+    is_prod: optionalBit(device.is_prod),
+    is_emulator: optionalBit(device.is_emulator),
+    version_name: device.version_name ?? null,
+    version_code: device.version_code ?? null,
+    version_os: device.version_os ?? null,
+    plugin_version: device.plugin_version ?? null,
+    channel_id: device.channel_id ?? null,
+    assigned_channel_id: device.assigned_channel_id ?? null,
+    channel_name: device.channel_name ?? null,
+    device_name: device.device_name ?? null,
+    manufacturer: device.manufacturer ?? null,
+    model: device.model ?? null,
+    last_seen_at: device.last_seen_at,
+    created_at: device.created_at,
+  }));
 }

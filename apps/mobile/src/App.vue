@@ -8,11 +8,17 @@
       :url="hasOnboarded ? '/sign-in/' : '/welcome/'"
     />
 
-    <F7Views v-else key="signed-in" tabs class="safe-areas cap-shell">
-      <CapTabbar :badges="badges" />
+    <F7View v-else-if="!currentAppId" key="choose-app" main class="safe-areas" url="/choose-app/" />
+
+    <F7View v-else-if="!app" key="loading-app" main class="safe-areas" url="/loading/" />
+
+    <F7Views v-else :key="shellKey" tabs class="safe-areas cap-shell">
+      <CapTabbar :tabs="visibleTabs" />
+      <AppSwitcherSheet />
+      <RolePreviewBanner />
 
       <F7View
-        v-for="(tab, index) in tabs"
+        v-for="(tab, index) in visibleTabs"
         :id="`view-${tab.id}`"
         :key="tab.id"
         :main="index === 0"
@@ -26,15 +32,17 @@
 </template>
 
 <script setup lang="ts">
-import { tabs } from "@/app/tabs";
-import { countUnread } from "@/domains/activity/activity.repository";
+import { tabsFor } from "@/app/tabs";
 import { initCapacitor } from "@/plugins/capacitor";
 import { hideSplashScreen } from "@/plugins/capacitor/useSplashScreen";
 import { framework7Parameters } from "@/plugins/framework7.plugin";
+import AppSwitcherSheet from "@/shared/components/navigation/AppSwitcherSheet.vue";
 import CapTabbar from "@/shared/components/navigation/CapTabbar.vue";
-import { getDatabase, useReactiveQuery } from "@/shared/database";
+import RolePreviewBanner from "@/shared/components/navigation/RolePreviewBanner.vue";
+import { useCurrentApp } from "@/shared/composables/apps/useCurrentApp";
 import { useAppThemeProvider } from "@/shared/composables/theme/useAppTheme";
 import { startColorTheme } from "@/shared/composables/theme/useColorTheme";
+import { currentAppId } from "@/shared/session/currentApp";
 import { hasOnboarded } from "@/shared/session/onboarding";
 import { session } from "@/shared/session/session";
 import { startSession } from "@/shared/sync/useSync";
@@ -44,22 +52,29 @@ const parameters = framework7Parameters(appTheme.value.dark);
 
 const signedIn = computed(() => session.value !== null);
 
-const unreadQuery = useReactiveQuery(() => countUnread(getDatabase().db), {
-  tables: ["activity"],
-  queryKey: ["activity:unread"],
-});
-const badges = computed(() => {
-  const unread = unreadQuery.data.value ?? 0;
-  return { activity: unread > 99 ? "99+" : unread };
-});
-
 watch(
   signedIn,
   (now) => {
-    if (now) {
-      markTabShown("view-apps");
-      void startSession();
-    }
+    if (now) void startSession();
+  },
+  { immediate: true },
+);
+
+const { app } = useCurrentApp();
+const visibleTabs = computed(() => (app.value ? tabsFor(app.value) : []));
+
+/**
+ * The shell is rebuilt for another app or another set of tabs - a role preview changes which
+ * there are - and opens on the first of them, whichever tab the last shell was left on.
+ */
+const shellKey = computed(
+  () => `${currentAppId.value}:${visibleTabs.value.map((tab) => tab.id).join(",")}`,
+);
+watch(
+  shellKey,
+  () => {
+    const first = visibleTabs.value[0];
+    if (first) markTabShown(`view-${first.id}`);
   },
   { immediate: true },
 );

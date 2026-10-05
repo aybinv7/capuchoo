@@ -1,11 +1,11 @@
 <template>
-  <F7Page class="cap-page" @page:afterin="onShown" @page:beforeout="onHidden">
-    <F7Navbar large :title="t('activity.heading')" class="navbar-gradient">
-      <F7NavRight>
-        <F7Link v-if="unread" icon-only :aria-label="t('activity.readAll')" @click="readAll">
+  <F7Page class="cap-page cap-pushed" @page:afterin="onShown" @page:beforeout="onHidden">
+    <F7Navbar :title="t('activity.heading')" back-link class="navbar-gradient" :sliding="true">
+      <template v-if="unread" #right>
+        <F7Link icon-only :aria-label="t('activity.readAll')" @click="readAll">
           <F7Icon md="material:done_all" />
         </F7Link>
-      </F7NavRight>
+      </template>
     </F7Navbar>
 
     <template #fixed>
@@ -38,8 +38,6 @@
           :key="row.id"
           :row="row"
           :app-name="row.app_name"
-          show-app
-          :href="`/apps/${row.app_id}/`"
         />
       </F7List>
     </template>
@@ -55,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import type { Router } from "framework7/types";
 import ActivityListItem from "@/shared/components/app/ActivityListItem.vue";
 import EmptyState from "@/shared/components/app/EmptyState.vue";
 import PullToRefresh from "@/shared/components/refresh/PullToRefresh.vue";
@@ -62,6 +61,8 @@ import MaterialShape from "@/shared/components/shape/MaterialShape.vue";
 import { useSync } from "@/shared/sync/useSync";
 import { useActivityFeed } from "../composables/useActivityFeed";
 
+defineProps<{ f7router: Router.Router }>();
+useHiddenTabbar();
 const { t } = useI18n();
 const { days, unread, loading, notificationsOn, checkNotifications, enableNotifications, readAll } =
   useActivityFeed();

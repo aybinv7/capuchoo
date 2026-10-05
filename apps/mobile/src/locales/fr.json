@@ -1,8 +1,9 @@
 {
   "tabs": {
-    "apps": "Apps",
-    "activity": "Activité",
-    "profile": "Vous"
+    "home": "Accueil",
+    "channels": "Canaux",
+    "builds": "Builds",
+    "devices": "Appareils"
   },
   "common": {
     "cancel": "Annuler",
@@ -17,9 +18,6 @@
     "notFound": "Cette page n'existe pas."
   },
   "signIn": {
-    "title": "Connexion",
-    "subtitle": "Utilisez votre compte Capuchoo. Vos applications, leurs canaux et chaque build vous suivent ici.",
-    "server": "Serveur",
     "serverPlaceholder": "updates.exemple.com",
     "email": "E-mail",
     "password": "Mot de passe",
@@ -29,13 +27,26 @@
     "errors": {
       "credentials": "Cet e-mail et ce mot de passe ne correspondent à aucun compte.",
       "rateLimited": "Trop de tentatives. Attendez quelques minutes, puis réessayez.",
-      "offline": "{server} est injoignable. Vérifiez l'adresse et la connexion."
+      "offline": "{server} est injoignable. Vérifiez l'adresse et la connexion.",
+      "notCapuchoo": "{server} a répondu, mais ce n’est pas un serveur Capuchoo. Vérifiez l’adresse.",
+      "unreachable": "{server} n’a pas répondu. Un serveur en veille peut mettre une minute à se réveiller : réessayez."
     },
     "change": "Modifier",
     "changeServer": "Modifier le serveur",
-    "noServer": "Aucun serveur",
     "showPassword": "Afficher le mot de passe",
-    "hidePassword": "Masquer le mot de passe"
+    "hidePassword": "Masquer le mot de passe",
+    "step": "Étape {step} sur {total}",
+    "next": "Continuer",
+    "server": {
+      "title": "Connectez-vous à votre serveur",
+      "body": "Capuchoo tourne sur le serveur de votre équipe. Saisissez l’adresse fournie par votre admin.",
+      "label": "Adresse du serveur",
+      "hint": "La même adresse que le tableau de bord, sans chemin.",
+      "checking": "Vérification du serveur"
+    },
+    "account": {
+      "title": "Connexion"
+    }
   },
   "live": {
     "syncing": "Synchronisation",
@@ -52,36 +63,18 @@
       "admin": "Admin"
     },
     "purpose": {
-      "viewer": "Vous voyez les canaux et les builds de cette app.",
+      "viewer": "Vous voyez les builds de cette app et les appareils qui les exécutent.",
       "tester": "Vous pouvez installer n'importe quel build de cette app sur ce téléphone.",
       "developer": "Vous pouvez installer des builds et les livrer en dev et en staging.",
       "admin": "Vous pouvez installer des builds et les livrer sur tous les canaux."
     }
   },
   "apps": {
-    "title": "Apps",
-    "search": "Rechercher une app",
     "lanes": "Ce que sert chaque canal",
-    "noChannels": "Aucun canal pour l'instant.",
-    "clients": "{count} canal client | {count} canaux clients",
-    "attentionTitle": "{count} app de ce téléphone est en retard | {count} apps de ce téléphone sont en retard",
-    "attentionText": "Leur canal sert un build plus récent que celui installé.",
-    "emptyTitle": "Aucune app",
-    "emptyText": "Les apps sur lesquelles vous avez un rôle apparaissent ici. Demandez à un admin de vous ajouter.",
-    "noMatch": "Aucune application ne correspond à « {term} »",
-    "updatesTitle": "Mise à jour prête | {count} mises à jour prêtes",
-    "updateFrom": "Depuis {channel}",
-    "update": "Mettre à jour",
-    "all": "Vos applications",
-    "results": "{count} résultat | {count} résultats"
+    "noChannels": "Aucun canal pour l'instant."
   },
   "phone": {
     "title": "Sur ce téléphone",
-    "behindShort": "Mettre à jour vers {version}",
-    "currentShort": "À jour · {version}",
-    "aheadShort": "En avance · {version}",
-    "untrackedShort": "Installée · {version}",
-    "absentShort": "Non installée",
     "update": "Mettre à jour vers {version}",
     "install": "Installer {version}",
     "open": "Ouvrir l'app",
@@ -106,14 +99,6 @@
       "detail": "{channel} sert {target}."
     }
   },
-  "app": {
-    "channels": "Canaux",
-    "builds": "Builds",
-    "buildCount": "{count} build | {count} builds",
-    "noBuilds": "Aucun build Android publié pour l'instant.",
-    "showAll": "Voir les {count}",
-    "recent": "Récent"
-  },
   "channel": {
     "follows": "suit {base}",
     "paused": "En pause",
@@ -121,7 +106,26 @@
     "deliver": "Livrer",
     "pause": "Pause",
     "resume": "Reprendre",
-    "deliverAction": "Livrer un build…"
+    "deliverAction": "Livrer un build…",
+    "fleet": "{count} appareil, {share} à jour | {count} appareils, {share} à jour",
+    "noEnvironment": "sans environnement",
+    "kind": {
+      "release": "Version",
+      "client": "Client"
+    },
+    "serving": "Distribue",
+    "nativeSince": "Publié {when}",
+    "noNative": "Aucun build natif",
+    "noBundle": "Aucun bundle OTA",
+    "bundleSince": "Publié {when}",
+    "bundleHint": "Les appareils exécutent la couche web du build natif.",
+    "fleetTitle": "Son parc",
+    "devices": "Appareils",
+    "onCurrent": "Sur ce qu’il distribue",
+    "active": "Actifs sur 24 h",
+    "installs7d": "Installations sur 7 jours",
+    "failures7d": "Échecs sur 7 jours",
+    "history": "Historique"
   },
   "build": {
     "code": "Build {code}",
@@ -233,7 +237,9 @@
     "preferences": "Préférences",
     "notifyAbout": "Me notifier pour",
     "notifyCount": "{on} sur {total}",
-    "phone": "Ce téléphone"
+    "phone": "Ce téléphone",
+    "currentApp": "App en cours",
+    "switchApp": "Changer"
   },
   "refresh": {
     "label": "Actualisation"
@@ -331,5 +337,185 @@
       "title": "Pensé pour toute l'équipe",
       "body": "Les testeurs installent, les développeurs livrent en dev et staging, les admins pilotent chaque canal."
     }
+  },
+  "topbar": {
+    "switchApp": "{app} est ouverte. Changer d’app",
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {count} non lues",
+    "account": "Votre compte et les réglages"
+  },
+  "switcher": {
+    "title": "Changer d’app"
+  },
+  "choose": {
+    "title": "Choisissez une app",
+    "subtitle": "Tout ce qui suit porte sur l’app choisie. Changez-en à tout moment depuis la barre du haut.",
+    "search": "Rechercher une app",
+    "loading": "Récupération de vos apps",
+    "emptyTitle": "Aucune app pour l’instant",
+    "emptyText": "Les apps sur lesquelles vous avez un rôle apparaissent ici. Demandez à un admin de vous en ajouter une.",
+    "noMatch": "Aucune app ne correspond à « {term} »",
+    "noOrganization": "Autres apps",
+    "signOut": "Se déconnecter"
+  },
+  "home": {
+    "lanes": "Où en est chaque version",
+    "noBuild": "Pas encore de build",
+    "fleet": "Parc",
+    "days": "{count} jours",
+    "loadingStats": "Récupération des statistiques",
+    "statsFailed": "Impossible de récupérer les statistiques",
+    "noTelemetryTitle": "Pas encore de télémétrie",
+    "noTelemetryText": "Les appareils signalent vérifications et installations dès qu’un build avec le module de mise à jour Capuchoo y tourne.",
+    "successLabel": "installations réussies",
+    "installs": "Installations",
+    "failures": "Échecs",
+    "devices": "Appareils",
+    "active": "Actifs sur 24 h",
+    "checks": "Vérifications de mise à jour",
+    "outcomesTitle": "Installations et échecs",
+    "otherVersions": "{count} autre | {count} autres",
+    "healthTitle": "Santé des canaux",
+    "health": {
+      "onCurrent": "{on} sur {total} à jour",
+      "active": "{count} actif | {count} actifs",
+      "installs": "{count} installation 7 j | {count} installations 7 j",
+      "failures": "{count} échec 7 j | {count} échecs 7 j"
+    },
+    "recent": "Dernières nouvelles",
+    "allActivity": "Toute l’activité",
+    "updated": "Statistiques de {when}"
+  },
+  "channels": {
+    "title": "Canaux",
+    "release": "Canaux de version",
+    "client": "Canaux clients",
+    "emptyTitle": "Aucun canal pour l’instant",
+    "emptyText": "Les canaux se créent depuis le tableau de bord ou la CLI Capuchoo.",
+    "goneTitle": "Ce canal n’existe plus",
+    "goneText": "Il a été supprimé, ou ce compte n’y a plus accès."
+  },
+  "builds": {
+    "title": "Builds",
+    "native": "Natif · {count}",
+    "ota": "OTA · {count}",
+    "allFlavours": "Tous",
+    "more": "Afficher {count} de plus",
+    "minNative": "requiert le natif {code}",
+    "noNativeTitle": "Aucun build natif pour l’instant",
+    "noNativeText": "Les builds publiés avec la CLI Capuchoo apparaissent ici.",
+    "noOtaTitle": "Aucun bundle OTA pour l’instant",
+    "noOtaText": "Les bundles web publiés à distance apparaissent ici."
+  },
+  "devices": {
+    "title": "Appareils",
+    "search": "Rechercher par modèle, nom ou identifiant",
+    "filter": {
+      "all": "Tous",
+      "active": "Actifs 24 h",
+      "idle": "Inactifs"
+    },
+    "count": "Aucun appareil | {count} appareil | {count} appareils",
+    "matching": "Aucun résultat | {count} résultat | {count} résultats",
+    "more": "Afficher {count} de plus",
+    "truncated": "Les {shown} vus le plus récemment, sur {total}.",
+    "noMatch": "Aucun appareil ne correspond",
+    "clearFilters": "Effacer les filtres",
+    "emptyTitle": "Aucun appareil pour l’instant",
+    "emptyText": "Un appareil apparaît dès qu’un build avec le module de mise à jour Capuchoo cherche une mise à jour.",
+    "activeNow": "Vu ces dernières 24 heures",
+    "overridden": "Forcé"
+  },
+  "device": {
+    "seen": "Vu {when}",
+    "seenActive": "Actif · vu {when}",
+    "release": "Version",
+    "version": "Version de l’app",
+    "servedBy": "Servi par",
+    "override": "Canal forcé",
+    "none": "Aucun",
+    "build": "Build",
+    "buildProd": "Release",
+    "buildDebug": "Debug",
+    "plugin": "Module de mise à jour",
+    "hardware": "Matériel",
+    "model": "Modèle",
+    "os": "Système",
+    "emulator": "Émulateur",
+    "firstSeen": "Vu pour la première fois",
+    "identity": "Identité",
+    "deviceId": "Identifiant de l’appareil",
+    "customId": "Identifiant personnalisé",
+    "assign": "Changer de canal",
+    "assignTitle": "Servir cet appareil depuis",
+    "clearOverride": "Retirer le forçage",
+    "assigned": "Désormais servi par {channel}",
+    "unassigned": "Forçage retiré",
+    "remove": "Retirer",
+    "removeTitle": "Retirer {device} ?",
+    "removeText": "Son historique est supprimé. Il se réinscrit à sa prochaine recherche de mise à jour.",
+    "removed": "Appareil retiré",
+    "goneTitle": "Cet appareil n’existe plus",
+    "goneText": "Il a été retiré, ou ne s’est pas signalé depuis longtemps.",
+    "assignText": "{device} reçoit ses mises à jour du canal choisi ici, quel que soit son build.",
+    "servingNow": "Actuel",
+    "assignHint": "Sans forçage, l’appareil suit le canal que son build demande."
+  },
+  "preview": {
+    "section": "Expérimental",
+    "row": "Voir en tant que",
+    "rowText": "Voir l’app comme un testeur ou un lecteur la voit, sans changer votre rôle.",
+    "own": "Votre rôle",
+    "title": "Voir en tant que",
+    "text": "Chaque écran se réduit à ce que ce rôle obtient. Votre vrai rôle ne change pas, et le serveur continue de décider avec lui.",
+    "footnote": "Un aperçu ne fait que réduire ce que ce téléphone propose ; il n’accorde rien.",
+    "banner": "Vue {role}",
+    "exit": "Quitter"
+  },
+  "people": {
+    "title": "Équipe",
+    "manage": "Rôles et invitations",
+    "loading": "Récupération de l’équipe",
+    "failed": "Impossible de récupérer l’équipe",
+    "adminOnlyTitle": "Réservé aux admins",
+    "adminOnlyText": "Les rôles d’une app sont attribués par ses admins.",
+    "onApp": "Sur {app}",
+    "you": "Vous",
+    "giveAccess": "Donner l’accès",
+    "selfHint": "Votre propre rôle se change depuis le tableau de bord, pour que personne ne s’enferme dehors depuis un téléphone.",
+    "inOrg": "Dans {org}, sans rôle ici",
+    "pending": "Invités, pas encore inscrits",
+    "pendingHint": "Une fois inscrits, ils apparaissent plus haut sans rôle : attribuez-leur-en un.",
+    "expires": "Le lien expire {when}",
+    "invite": "Inviter quelqu’un",
+    "inviteTitle": "Inviter quelqu’un",
+    "inviteText": "Donnez un rôle sur {app}.",
+    "email": "E-mail",
+    "roleOn": "Son rôle sur {app}",
+    "inviteAction": "Donner le rôle",
+    "noAccountTitle": "Pas encore de compte",
+    "noAccountText": "{email} n’a pas de compte Capuchoo. Créez un lien d’invitation vers {org} : une fois inscrit, attribuez-lui son rôle depuis Équipe.",
+    "createLink": "Créer un lien d’invitation",
+    "back": "Retour",
+    "linkTitle": "Lien d’invitation prêt",
+    "linkText": "Envoyez-le à {email}. Une fois inscrit, donnez-lui le rôle {role} depuis Équipe.",
+    "share": "Partager le lien",
+    "copy": "Copier le lien",
+    "copied": "Lien copié",
+    "shareTitle": "Rejoindre Capuchoo",
+    "shareText": "Vous êtes invité à travailler sur {app} avec Capuchoo.",
+    "changeRole": "Son rôle",
+    "chooseRole": "Son rôle sur {app}",
+    "save": "Enregistrer",
+    "give": "Lui donner le rôle {role}",
+    "remove": "Retirer l’accès",
+    "removeTitle": "Retirer {name} ?",
+    "removeText": "Il perd l’accès à {app}. Son compte et ses autres apps ne changent pas.",
+    "removed": "{name} n’a plus accès",
+    "roleSet": "{name} est maintenant {role}",
+    "cancelTitle": "Annuler l’invitation de {email} ?",
+    "cancelText": "Le lien cesse de fonctionner.",
+    "cancelInvite": "Annuler l’invitation",
+    "cancelled": "Invitation annulée"
   }
 }

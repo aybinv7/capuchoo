@@ -88,3 +88,109 @@ export interface PointRequest {
   rollback?: boolean;
   reason?: string;
 }
+
+/** One row of `GET /api/apps/:id/devices`; only what the phone keeps is typed. */
+export interface ServerDevice {
+  id: string;
+  app_id: string;
+  device_id: string;
+  custom_id: string | null;
+  platform: string;
+  is_prod: boolean | null;
+  is_emulator: boolean | null;
+  version_name: string | null;
+  version_code: number | null;
+  version_os: string | null;
+  plugin_version: string | null;
+  channel_id: string | null;
+  assigned_channel_id: string | null;
+  channel_name: string | null;
+  device_name: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  last_seen_at: string;
+  created_at: string;
+}
+
+export interface DevicePage {
+  devices: ServerDevice[];
+  total: number;
+}
+
+export interface DailyActivity {
+  day: string;
+  checks: number;
+  installs: number;
+  failures: number;
+  devices: number;
+}
+
+export interface VersionShare {
+  version: string;
+  platform: string;
+  devices: number;
+}
+
+export interface ChannelStats {
+  channel_id: string;
+  name: string | null;
+  devices: number;
+  active_24h: number;
+  on_current: number;
+  installs_24h: number;
+  failures_24h: number;
+  installs_7d: number;
+  failures_7d: number;
+}
+
+/** `GET /api/apps/:id/stats?days=`. */
+export interface AppStats {
+  days: number;
+  totals: {
+    checks: number;
+    installs: number;
+    failures: number;
+    devices: number;
+    active_24h: number;
+    success_rate: number | null;
+  };
+  daily: DailyActivity[];
+  versions: VersionShare[];
+  channels: ChannelStats[];
+}
+
+export interface ServerPerson {
+  id: string;
+  email: string;
+  full_name: string | null;
+}
+
+/** One row of `GET /api/apps/:id/permissions`. */
+export interface ServerPermission {
+  user_id: string;
+  role: AppRole;
+  created_at?: string;
+  users: ServerPerson;
+}
+
+/** One row of `GET /api/organizations/:id/members`. */
+export interface ServerMember {
+  user_id: string;
+  role: OrganizationRole;
+  created_at?: string;
+  users: ServerPerson;
+}
+
+/** A pending invitation; its token is only ever returned once, when it is created. */
+export interface ServerInvitation {
+  id: string;
+  email: string;
+  role: OrganizationRole;
+  created_at: string;
+  expires_at: string;
+}
+
+/** `POST /api/organizations/:id/members` for an address with no account yet. */
+export interface InvitationCreated {
+  invitation: ServerInvitation & { url: string; token: string };
+}

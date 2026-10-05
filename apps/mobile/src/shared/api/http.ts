@@ -46,6 +46,7 @@ export async function request<T>(
   method: Method,
   path: string,
   body?: unknown,
+  timeoutMs = TIMEOUT_MS,
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -63,8 +64,8 @@ export async function request<T>(
         method,
         headers,
         ...(body !== undefined ? { data: body } : {}),
-        connectTimeout: TIMEOUT_MS,
-        readTimeout: TIMEOUT_MS,
+        connectTimeout: timeoutMs,
+        readTimeout: timeoutMs,
       });
       status = response.status;
       data = response.data;
@@ -73,7 +74,7 @@ export async function request<T>(
         method,
         headers,
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       status = response.status;
       const text = await response.text();

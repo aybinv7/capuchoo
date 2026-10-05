@@ -24,15 +24,14 @@ export interface ActivityRow extends Activity {
   app_bundle_id: string;
 }
 
-export function listActivity(db: Db, limit = 200): Promise<ActivityRow[]> {
-  return db
+export function listActivity(db: Db, appId?: string, limit = 200): Promise<ActivityRow[]> {
+  let query = db
     .selectFrom("activity")
     .innerJoin("app", "app.id", "activity.app_id")
     .selectAll("activity")
-    .select(["app.name as app_name", "app.bundle_id as app_bundle_id"])
-    .orderBy("activity.created_at", "desc")
-    .limit(limit)
-    .execute();
+    .select(["app.name as app_name", "app.bundle_id as app_bundle_id"]);
+  if (appId) query = query.where("activity.app_id", "=", appId);
+  return query.orderBy("activity.created_at", "desc").limit(limit).execute();
 }
 
 export function listAppActivity(db: Db, appId: string, limit = 20): Promise<Activity[]> {
@@ -45,15 +44,18 @@ export function listAppActivity(db: Db, appId: string, limit = 20): Promise<Acti
     .execute();
 }
 
-export async function countUnread(db: Db): Promise<number> {
-  const row = await db
+export async function countUnread(db: Db, appId?: string): Promise<number> {
+  let query = db
     .selectFrom("activity")
     .select((eb) => eb.fn.countAll<number>().as("count"))
-    .where("read_at", "is", null)
-    .executeTakeFirst();
+    .where("read_at", "is", null);
+  if (appId) query = query.where("app_id", "=", appId);
+  const row = await query.executeTakeFirst();
   return Number(row?.count ?? 0);
 }
 
-export async function markAllRead(db: Db, at: string): Promise<void> {
-  await db.updateTable("activity").set({ read_at: at }).where("read_at", "is", null).execute();
+export async function markAllRead(db: Db, at: string, appId?: string): Promise<void> {
+  let query = db.updateTable("activity").set({ read_at: at }).where("read_at", "is", null);
+  if (appId) query = query.where("app_id", "=", appId);
+  await query.execute();
 }

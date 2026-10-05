@@ -11,12 +11,7 @@
       @click="tick"
     >
       <span class="cap-tab-item">
-        <span class="relative">
-          <F7Icon :md="`material:${tab.iconMd}`" :class="iconFontClass(tab)" />
-          <span v-if="badges[tab.id]" class="cap-tab-badge" aria-hidden="true">{{
-            badges[tab.id]
-          }}</span>
-        </span>
+        <F7Icon :md="`material:${tab.iconMd}`" :class="iconFontClass(tab)" />
         <span class="tabbar-label">{{ t(tab.labelKey) }}</span>
       </span>
     </F7Link>
@@ -24,11 +19,11 @@
 </template>
 
 <script setup lang="ts">
-import { tabs, type TabDefinition } from "@/app/tabs";
+import type { TabDefinition } from "@/app/tabs";
 import { tick } from "@/shared/utils/native/haptics";
 
-/** Counts shown on a destination, by tab id; anything falsy shows nothing. */
-defineProps<{ badges: Partial<Record<TabDefinition["id"], string | number>> }>();
+/** The tabs the viewed role has; the shell decides which. */
+defineProps<{ tabs: TabDefinition[] }>();
 
 const { t } = useI18n();
 const { isVisible } = useTabbarVisibility();
@@ -88,28 +83,8 @@ function iconFontClass(tab: TabDefinition): string {
   width: 56px;
 }
 
-.md .cap-tabbar i.icon + .tabbar-label,
-.md .cap-tabbar .relative + .tabbar-label {
+.md .cap-tabbar i.icon + .tabbar-label {
   margin-top: 4px;
-}
-
-/* M3's large badge: 16dp tall, error-coloured, on the icon's top-end corner. */
-.cap-tab-badge {
-  position: absolute;
-  top: -2px;
-  inset-inline-start: calc(50% + 4px);
-  z-index: 1;
-  min-width: 16px;
-  height: 16px;
-  padding-inline: 4px;
-  border-radius: 999px;
-  background: var(--destructive);
-  color: var(--destructive-foreground);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 
 .toolbar.tabbar.tabbar-hidden {

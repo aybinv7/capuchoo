@@ -65,3 +65,16 @@ export function parseChannels(json: string | null | undefined): string[] {
     return [];
   }
 }
+
+/** A count in the reader's grouping: 12 345. */
+export function formatCount(value: number | null | undefined, locale?: string): string {
+  return value === null || value === undefined ? "—" : value.toLocaleString(locale);
+}
+
+/** A 0..1 ratio as a whole percent; one decimal near the ends, so 99.6% never reads as 100%. */
+export function formatPercent(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  const percent = value * 100;
+  const nearEnd = (percent > 0 && percent < 10) || (percent > 99 && percent < 100);
+  return `${nearEnd ? (Math.floor(percent * 10) / 10).toFixed(1) : Math.round(percent)}%`;
+}

@@ -64,6 +64,8 @@ export async function replaceApps(
     "app_identifier",
     "installed",
     "activity",
+    "device",
+    "app_stats",
   ] as const)
     await db.deleteFrom(table).where("app_id", "in", gone).execute();
   await db
@@ -146,6 +148,8 @@ export async function replaceInstalled(db: Db, rows: InstalledTable[]): Promise<
 
 export async function clearCatalog(db: Db): Promise<void> {
   for (const table of [
+    "app_stats",
+    "device",
     "activity",
     "installed",
     "bundle",

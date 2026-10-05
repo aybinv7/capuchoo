@@ -81,6 +81,9 @@ export function Framework7VueResolver(): ComponentResolver {
 
     "f7-preloader",
     "f7-progressbar",
+    "f7-gauge",
+    "f7-area-chart",
+    "f7-pie-chart",
     "f7-skeleton-block",
     "f7-skeleton-text",
 

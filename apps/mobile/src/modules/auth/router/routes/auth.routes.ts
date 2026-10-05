@@ -5,7 +5,12 @@ const authRoutes: Router.RouteParameters[] = [
   {
     name: "sign-in",
     path: "/sign-in/",
-    async: lazyRoute(() => import("../../views/SignInView.vue")),
+    async: lazyRoute(() => import("../../views/ServerStepView.vue")),
+  },
+  {
+    name: "sign-in-account",
+    path: "/sign-in/account/",
+    async: lazyRoute(() => import("../../views/AccountStepView.vue")),
   },
 ];
 

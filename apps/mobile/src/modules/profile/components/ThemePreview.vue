@@ -3,7 +3,7 @@
     <div class="preview-screen">
       <div class="flex items-center justify-between px-3 pt-3">
         <span class="text-[15px] font-bold tracking-tight text-foreground">{{
-          t("tabs.apps")
+          t("tabs.home")
         }}</span>
         <span class="preview-live" />
       </div>

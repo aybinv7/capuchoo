@@ -22,6 +22,8 @@ const TABLES = [
   "bundle",
   "installed",
   "activity",
+  "device",
+  "app_stats",
 ];
 
 test("a fresh database gets every table the schema declares", async () => {

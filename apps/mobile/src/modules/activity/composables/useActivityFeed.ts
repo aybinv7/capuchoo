@@ -5,6 +5,7 @@ import {
 } from "@/domains/activity/activity.repository";
 import { getDatabase, rdb, useReactiveQuery } from "@/shared/database";
 import { notificationsAllowed, requestNotifications } from "@/shared/notify/notify";
+import { currentAppId } from "@/shared/session/currentApp";
 import { formatDay } from "@/shared/utils/format";
 
 export interface ActivityDay {
@@ -25,9 +26,10 @@ export function groupByDay(rows: ActivityRow[], locale: string, now = new Date()
 
 export function useActivityFeed() {
   const { locale } = useI18n();
-  const query = useReactiveQuery(() => listActivity(getDatabase().db), {
+  const appId = computed(() => currentAppId.value ?? "");
+  const query = useReactiveQuery(() => listActivity(getDatabase().db, appId.value), {
     tables: ["activity", "app"],
-    queryKey: ["activity:feed"],
+    queryKey: () => ["activity:feed", appId.value],
     debounce: 100,
   });
 
@@ -43,7 +45,7 @@ export function useActivityFeed() {
   }
 
   async function readAll(): Promise<void> {
-    await markAllRead(rdb, new Date().toISOString());
+    await markAllRead(rdb, new Date().toISOString(), appId.value || undefined);
   }
 
   return {

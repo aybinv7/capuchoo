@@ -6,7 +6,7 @@ import {
   type StatusChannel,
 } from "../src/shared/release/phone-status.js";
 import { diffActivity, type Snapshot } from "../src/shared/sync/activity-diff.js";
-import { normaliseEndpoint } from "../src/modules/auth/composables/useSignIn.js";
+import { normaliseEndpoint } from "../src/modules/auth/lib/endpoint.js";
 
 const channel = (over: Partial<StatusChannel> & { id: string }): StatusChannel => ({
   name: over.id,

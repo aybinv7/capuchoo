@@ -5,7 +5,10 @@ import { ApiError } from "@/shared/api/http";
 import { getDatabase, rdb } from "@/shared/database";
 import type { ActivityTable } from "@/shared/database/schema";
 import { notifyActivity, trackForeground } from "@/shared/notify/notify";
-import { clearSession } from "@/shared/session/session";
+import { alignCurrentApp, clearCurrentApp, currentAppId } from "@/shared/session/currentApp";
+import { api } from "@/shared/api/endpoints";
+import { clearSession, session } from "@/shared/session/session";
+import { syncInsights } from "./insights";
 import { startLive, stopLive } from "./live";
 import { refreshInstalled, syncAll } from "./sync";
 
@@ -43,8 +46,13 @@ async function run(): Promise<void> {
     const outcome = await syncAll();
     lastSyncedAt.value = new Date().toISOString();
     lastError.value = outcome.failed[0]?.message ?? null;
-    await announce(outcome.activity);
-    await alignLive();
+    alignCurrentApp((await listAppRows(getDatabase().db)).map((app) => app.id));
+    const appId = currentAppId.value;
+    await Promise.all([
+      announce(outcome.activity),
+      alignLive(),
+      appId ? syncInsights(appId) : Promise.resolve(),
+    ]);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       signedOut.value = true;
@@ -91,7 +99,14 @@ export async function endSession(): Promise<void> {
   await resumeListener?.remove();
   resumeListener = null;
   await rdb.transaction().execute((trx) => clearCatalog(trx));
+  clearCurrentApp();
   await clearSession();
+}
+
+/** Revokes the session on the server, then forgets it here, whatever the server answered. */
+export async function signOut(): Promise<void> {
+  if (session.value) await api.logout(session.value).catch(() => undefined);
+  await endSession();
 }
 
 export function useSync() {
