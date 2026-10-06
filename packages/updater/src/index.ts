@@ -122,6 +122,20 @@ export { isDismissible, updateGate, type Gate, type GateFacts, type GateState } 
 
 export { applyOtaUpdate, discardBundle, getCurrentBundle, notifyAppReady } from "./ota.service.js";
 
+export {
+  DOWNLOAD_STALE_MS,
+  bundlesToDelete,
+  isDownloading,
+  reusableBundle,
+  type BundleOffer,
+  type StoredBundle,
+  type StoredBundleStatus,
+} from "./bundle-retention.js";
+
+export { DELTA_CACHE_DIRECTORY, deltaCacheEntriesToDelete } from "./delta-cache.js";
+
+export { reclaimUpdateStorage, type ReclaimResult } from "./storage.service.js";
+
 // Re-exported so an app does not need a direct @capuchoo/core dependency just
 // to type an update.
 export type {

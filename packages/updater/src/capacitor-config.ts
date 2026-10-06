@@ -70,6 +70,13 @@ export interface CapacitorUpdaterPluginConfig {
    */
   version?: string;
   directUpdate: boolean;
+  /**
+   * The plugin's defaults, pinned. They delete the previous confirmed bundle
+   * and a bundle that failed to boot - and nothing else: a bundle downloaded
+   * but never applied stays until `reclaimUpdateStorage` removes it.
+   */
+  autoDeletePrevious: true;
+  autoDeleteFailed: true;
   appReadyTimeout: number;
   responseTimeout: number;
   allowModifyUrl: boolean;
@@ -168,6 +175,8 @@ export function capuchooUpdaterConfig(options: UpdaterPluginOptions): CapacitorU
     // The app shows a prompt and calls set() itself; letting the plugin apply
     // the bundle immediately would reload the WebView under the user.
     directUpdate: false,
+    autoDeletePrevious: true,
+    autoDeleteFailed: true,
     appReadyTimeout: options.appReadyTimeout ?? 10_000,
     responseTimeout: options.responseTimeout ?? 30_000,
     allowModifyUrl: options.allowModifyUrl ?? false,

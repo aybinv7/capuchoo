@@ -74,6 +74,21 @@ when it changed or every two minutes, and **Recordings → Connect an app** show
   buffer that held errors is uploaded as an `error` session; a clean buffer is discarded.
 - **Eviction drops whole replay groups,** from one full snapshot to the next, so whatever survives
   starts where playback can begin. The newest group always survives.
+- **A full snapshot never runs in one task.** rrweb serializes the whole page synchronously, and
+  takes its periodic checkout inside whichever event noticed the period had passed - on a Redmi
+  24117RN76G that froze an 8,000-node screen for about a second under the user's tap. The replay
+  track turns rrweb's checkout off, cuts rrweb's own first snapshot down to `<html>`, and takes
+  every full snapshot itself (`tracks/snapshot/`): rrweb-snapshot's serializer, ported, walked in 8
+  ms background tasks (`scheduler.postTask`), with a `MutationObserver` noting what the page changed
+  meanwhile so the result is the DOM as it stands when it lands - equal to rrweb's own, which a
+  parity check confirms in Chromium and on the phone. Ids come from rrweb's mirror; nodes rrweb has
+  not seen get ids from 2^30 up, so the two never collide. A periodic checkout starts from the first
+  event after the period, never while the app is hidden, and in `buffer` mode the period is half
+  `buffer.maxMs` (at least 60 s). An explicit checkout (a new session, a live watcher) holds screen
+  events back until its snapshot lands, so a session still starts from one. A page with an iframe, a
+  shadow root or adopted stylesheets gets rrweb's synchronous snapshot, because rrweb attaches
+  observers to those while it snapshots. To make every snapshot smaller, `blockSelector` a long list
+  nobody needs to see in a replay; it is recorded as an empty box.
 - **Stylesheets and images are recorded by reference** (`inlineStylesheet: false`) and uploaded once
   per app version and path. A full snapshot no longer carries the app's CSS, which is most of its
   size and most of rrweb's main-thread cost. The dashboard rewrites references to the server's copy,

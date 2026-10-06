@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   setChannel: vi.fn<(name: string) => Promise<void>>(),
   clearChannel: vi.fn<Async>(),
   channelOverride: null as string | null,
+  reclaimUpdateStorage: vi.fn<(offer: ResolvedUpdate | null) => Promise<unknown>>(async () => ({})),
 }));
 
 vi.mock("@capgo/capacitor-updater", () => ({
@@ -65,6 +66,8 @@ vi.mock("../ota.service.js", () => ({
   getCurrentBundle: async () => null,
   notifyAppReady: async () => {},
 }));
+
+vi.mock("../storage.service.js", () => ({ reclaimUpdateStorage: mocks.reclaimUpdateStorage }));
 
 vi.mock("../notification.service.js", () => ({
   canNotify: async () => false,
@@ -297,6 +300,54 @@ describe("the plugin's updateAvailable event", () => {
     mocks.pluginListeners.get("updateAvailable")!({ bundle: { id: "b", version: "9.0.0" } });
 
     expect(updater.currentUpdate.value?.kind).toBe("native");
+  });
+});
+
+describe("reclaiming update storage", () => {
+  it("prunes once the server answers, keeping the OTA update on offer", async () => {
+    await offer(ota);
+
+    expect(mocks.reclaimUpdateStorage).toHaveBeenCalledOnce();
+    expect(mocks.reclaimUpdateStorage.mock.calls[0]![0]).toMatchObject({
+      kind: "ota",
+      version: "1.4.1",
+      checksum: SHA,
+    });
+  });
+
+  it("prunes with nothing to keep when the device is up to date", async () => {
+    mocks.checkForUpdate.mockResolvedValue(null);
+    await useUpdater().init();
+
+    expect(mocks.reclaimUpdateStorage).toHaveBeenCalledWith(null);
+  });
+
+  it("keeps no OTA bundle for a native update", async () => {
+    await offer(native);
+
+    expect(mocks.reclaimUpdateStorage).toHaveBeenCalledWith(null);
+  });
+
+  it("does not prune when the server did not answer", async () => {
+    mocks.checkForUpdate.mockRejectedValue(new NetworkError("https://api.test", true, null));
+    await useUpdater().init();
+
+    expect(mocks.reclaimUpdateStorage).not.toHaveBeenCalled();
+  });
+
+  it("does not prune while an update is mid-flight", async () => {
+    const updater = await offer(native);
+    mocks.reclaimUpdateStorage.mockClear();
+    let finish: (path: string) => void = () => {};
+    mocks.downloadNativeUpdate.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+
+    const download = updater.startDownload();
+    await flush();
+    await updater.check();
+    finish("file:///cache/app-1.5.0-70.apk");
+    await download;
+
+    expect(mocks.reclaimUpdateStorage).not.toHaveBeenCalled();
   });
 });
 

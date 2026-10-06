@@ -7,7 +7,7 @@ import type {
 import { measureSafeArea } from "./safeArea.js";
 import type { RecorderIdentity } from "./types.js";
 
-export const RECORDER_VERSION = "0.1.0";
+export const RECORDER_VERSION = "0.1.2";
 
 function randomHex(length: number): string {
   const bytes = new Uint8Array(length / 2);

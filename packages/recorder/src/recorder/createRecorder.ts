@@ -17,7 +17,7 @@ import { createDatabaseTrack } from "../tracks/database.js";
 import { watchNavigation } from "../tracks/navigation.js";
 import { createNetworkTrack } from "../tracks/network.js";
 import { createPerfTrack } from "../tracks/perf.js";
-import { createReplayTrack } from "../tracks/replay.js";
+import { checkoutIntervalFor, createReplayTrack } from "../tracks/replay.js";
 import { createTelemetry } from "../tracks/telemetry.js";
 import { watchShake } from "../triggers/shake.js";
 import { discoverAssetUrls } from "./assets.js";
@@ -328,6 +328,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
         }
         break;
     }
+    replay.setCheckoutInterval(checkoutIntervalFor(mode, current?.buffer.maxMs ?? 0));
     armSessionLimit();
     syncHeartbeat();
     if (mode !== "live") liveWatch?.leave();
