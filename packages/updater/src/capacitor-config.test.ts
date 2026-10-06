@@ -96,6 +96,12 @@ describe("capuchooUpdaterConfig", () => {
     expect(capuchooUpdaterConfig(base).directUpdate).toBe(false);
   });
 
+  it("pins the plugin's own cleanup of previous and failed bundles", () => {
+    const config = capuchooUpdaterConfig(base);
+    expect(config.autoDeletePrevious).toBe(true);
+    expect(config.autoDeleteFailed).toBe(true);
+  });
+
   it("keeps allowModifyUrl off unless asked", () => {
     // It lets anything running in the WebView redirect update downloads.
     expect(capuchooUpdaterConfig(base).allowModifyUrl).toBe(false);

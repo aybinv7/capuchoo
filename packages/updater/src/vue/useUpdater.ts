@@ -37,6 +37,7 @@ import { watchLifecycle } from "../lifecycle.js";
 import { canNotify, clearProgress, showProgress } from "../notification.service.js";
 import { applyOtaUpdate, getCurrentBundle, notifyAppReady } from "../ota.service.js";
 import { verifyUpdateSignature } from "../release-verification.js";
+import { reclaimUpdateStorage } from "../storage.service.js";
 import { isSameArtefact } from "../update-merge.js";
 import {
   forgetOvertakenInstall,
@@ -106,6 +107,18 @@ function recordCheckFailure(error: unknown, silent: boolean): void {
   else if (!silent) console.warn("[capuchoo] update check did not get an answer", error);
 }
 
+/**
+ * Prunes stored bundles once the server has said what is on offer, keeping
+ * whatever the prompt may still apply. Never while an update is mid-flight.
+ */
+function reclaimStorage(): void {
+  if (isBusy()) return;
+  const offered = state.value.currentUpdate;
+  reclaimUpdateStorage(offered?.kind === "ota" ? offered : null).catch((error: unknown) => {
+    console.warn("[capuchoo] could not reclaim update storage", error);
+  });
+}
+
 async function runCheck(silent: boolean): Promise<boolean> {
   state.value.checking = true;
   if (!isBusy()) state.value.statusMessage = CHECKING;
@@ -124,6 +137,7 @@ async function runCheck(silent: boolean): Promise<boolean> {
       if (!state.value.updateAvailable) {
         state.value.lastCheckMessage = `${getUpdaterConfig().appName} is up to date`;
       }
+      reclaimStorage();
       return false;
     }
 
@@ -142,6 +156,7 @@ async function runCheck(silent: boolean): Promise<boolean> {
     }
 
     reportUpdateEvent("check", update);
+    reclaimStorage();
     return true;
   } catch (error) {
     recordCheckFailure(error, silent);

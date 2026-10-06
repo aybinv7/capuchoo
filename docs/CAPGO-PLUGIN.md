@@ -191,6 +191,66 @@ It is not a gate on auto-update, and it is not optional. Call it as the first st
 entry point, unconditionally — not inside a route guard, a store action, or an `onMounted`, all of
 which can fail to run for reasons that have nothing to do with the bundle being sound.
 
+## Storage: what the plugin deletes, and what it leaves
+
+Read from **8.52.1** (`CapgoUpdater.java` and `CapacitorUpdaterPlugin.java`). Measured on a
+distributor phone after ~15 OTA deploys in one day: `files/versions/` held eight ~3.9 MB bundles
+with one in use, and `cache/capgo_downloads/` held 23.6 MB. Nothing pruned either.
+
+### Bundles
+
+`autoDeletePrevious` and `autoDeleteFailed` exist and **default to `true`**
+(`CapacitorUpdaterPlugin` 165, 874-875). `capuchooUpdaterConfig` now pins both, but they were
+already on - enabling them was never the fix. What they cover is narrow:
+
+- `autoDeletePrevious` - `setSuccess` (`CapgoUpdater` 2122), on `notifyAppReady`, deletes the one
+  **previous fallback** bundle and makes the running one the fallback. So successful bundles never
+  piled up.
+- `autoDeleteFailed` - deletes a bundle that failed to boot.
+- At launch, `cleanupObsoleteVersions` (`CapacitorUpdaterPlugin` 2439) sweeps folders **with no
+  stored info**, and deletes every bundle only when the native version changed.
+
+Nothing deletes a bundle that is `pending` - downloaded, never applied. In `"onlyDownload"` mode the
+plugin never sets one as next (`CapacitorUpdaterPlugin` 5156), so every background download of a
+version that was then superseded, or applied from a second copy, stays forever.
+
+**The duplicate same-version entry.** The plugin's background check reuses a stored bundle of the
+same version (`getBundleInfoByName`, `CapacitorUpdaterPlugin` 5076). The JavaScript `download()`
+does not: it only deletes a same-version bundle that is in error, then always stores a fresh copy
+under a new id (`CapgoUpdater` 1602-1620). So whenever the app applied an update whose
+`updateAvailable` event it had not seen - the user tapped the required-update sheet while the
+background download was still running, or the event fired in an earlier session - the same version
+was downloaded and stored twice: the plugin's copy `pending`, the app's copy `success`.
+
+Capuchoo's answer, in `@capuchoo/updater`:
+
+- `applyOtaUpdate` applies a stored bundle with the same version **and checksum** before calling
+  `download()` (`reusableBundle`). No checksum, no reuse.
+- After every check the server answered, `useUpdater` calls `reclaimUpdateStorage` with the update
+  on offer. Once `current()` reports the running bundle as `success` - i.e. `notifyAppReady` has
+  confirmed it - it deletes through the plugin's `delete({ id })` everything `bundlesToDelete`
+  returns. Kept: the running bundle, the builtin, `getNextBundle()`, anything `downloading` /
+  `deleting` / `deleted`, and one copy of the offered version (the bound one, else the newest). No
+  older bundle is kept for rollback: after `setSuccess` the fallback **is** the running bundle. The
+  plugin's own `delete` also refuses the running, builtin and next bundles.
+
+### The delta cache, `cache/capgo_downloads`
+
+After every **zip** download the plugin copies each file that differs from the builtin into
+`capgo_downloads/<sha256>_<name>` (`cacheBundleFiles`, `CapgoUpdater` 483, called at 1024), so that
+a later **manifest** (per-file) download can reuse it. Capuchoo never sends `manifest`, so nothing
+reads those copies. The only cleanup is `cleanupDeltaCache` (`CapgoUpdater` 1095), called solely
+when the native version changes (`CapacitorUpdaterPlugin` 2450-2468). There is no option and no
+JavaScript API to disable or clear it in 8.52.1.
+
+`reclaimUpdateStorage` therefore deletes `<sha256>_<name>` entries through `@capacitor/filesystem`
+(`Directory.Cache`, which is the same cache root on Android and iOS), after the bundle prune, and
+only when no bundle is `downloading`. Partials (`partial_*.tmp`) and temp files (`capgo-*.tmp`) are
+never touched. Without `@capacitor/filesystem` the cache is left alone and bundles are still pruned.
+
+If Capuchoo ever serves a manifest, pass the manifest's file hashes as `deltaCacheEntriesToDelete`'s
+`keepHashes`; until then there is nothing to keep.
+
 ## Events
 
 Fifteen, from `dist/docs.json`:

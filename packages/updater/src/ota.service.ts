@@ -1,5 +1,6 @@
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import type { ResolvedUpdate } from "@capuchoo/core";
+import { reusableBundle } from "./bundle-retention.js";
 import { isNative } from "./device.js";
 
 /**
@@ -41,6 +42,19 @@ export async function getCurrentBundle() {
 }
 
 /**
+ * A bundle already on disk for exactly this release, usually the plugin's own
+ * background download whose event this session never saw.
+ */
+async function findStoredBundle(update: ResolvedUpdate): Promise<string | null> {
+  try {
+    const { bundles } = await CapacitorUpdater.list();
+    return reusableBundle(bundles, update)?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Downloads an OTA bundle and applies it.
  *
  * `set` swaps the active bundle and reloads the WebView, so nothing after it
@@ -55,6 +69,13 @@ export async function applyOtaUpdate(update: ResolvedUpdate): Promise<void> {
   // the plugin's own background download when autoUpdate is "onlyDownload".
   if (update.bundleId) {
     await CapacitorUpdater.set({ id: update.bundleId });
+    return;
+  }
+
+  const stored = await findStoredBundle(update);
+  if (stored) {
+    update.bundleId = stored;
+    await CapacitorUpdater.set({ id: stored });
     return;
   }
 
