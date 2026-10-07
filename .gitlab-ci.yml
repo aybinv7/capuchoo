@@ -1,0 +1,21 @@
+# Stages run in this order; a failed stage stops the pipeline.
+stages:
+  - check
+
+# When the pipeline runs: on merge requests, and on pushes to main.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+check:
+  stage: check
+  image: node:24-bookworm-slim     # same Node version as the GitHub workflow
+  interruptible: true              # a newer pipeline on the same ref cancels this one
+  before_script:
+    - corepack enable              # gives us the pnpm version pinned in package.json
+    - pnpm install --frozen-lockfile
+  script:
+    - pnpm exec vp check           # format + lint + type check
+    - pnpm exec vp run -r build    # builds core first, then whatever depends on it
+    - pnpm exec vp run -r test
