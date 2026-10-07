@@ -2,6 +2,12 @@
 stages:
   - check
 
+# Installs the vp CLI (and runs `vp install`) before the job's script.
+include:
+  - remote: "https://raw.githubusercontent.com/voidzero-dev/setup-vp/v1.20.0/gitlab/setup-vp.yml"
+    inputs:
+      setup-ref: "v1.20.0" # must match the tag in the URL above
+
 # When the pipeline runs: on merge requests, and on pushes to main.
 workflow:
   rules:
@@ -9,13 +15,11 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 check:
+  extends: .setup-vp
   stage: check
-  image: node:24-bookworm-slim     # same Node version as the GitHub workflow
-  interruptible: true              # a newer pipeline on the same ref cancels this one
-  before_script:
-    - corepack enable              # gives us the pnpm version pinned in package.json
-    - pnpm install --frozen-lockfile
+  image: node:24 # the template needs bash + curl or wget; the -slim image usually has no curl
+  interruptible: true # a newer pipeline on the same ref cancels this one
   script:
-    - pnpm exec vp check           # format + lint + type check
-    - pnpm exec vp run -r build    # builds core first, then whatever depends on it
-    - pnpm exec vp run -r test
+    - vp check # format + lint + type check
+    - vp run -r build # builds core first, then whatever depends on it
+    - vp run -r test
