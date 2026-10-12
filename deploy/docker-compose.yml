@@ -1,7 +1,6 @@
 name: capuchoo
 
 services:
-  
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -109,4 +108,3 @@ networks:
   internal:
   web:
     external: true
-
