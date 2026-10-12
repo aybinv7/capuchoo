@@ -19,6 +19,9 @@ import { runnable } from "../../cli/invocation.js";
 export default class AppIdentifiers extends BaseCommand {
   static override description = "List, add or remove the bundle identifiers this app ships under";
 
+  /** 0.16.4 and earlier printed the singular in deploy refusals. */
+  static override aliases = ["app:identifier"];
+
   static override examples = [
     "<%= config.bin %> app identifiers",
     "<%= config.bin %> app identifiers add com.acme.app.dev --flavour dev",

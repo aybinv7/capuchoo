@@ -19,6 +19,9 @@ import type { ChannelRecord } from "../services/wire.js";
 import { detectGradleAndroidProject } from "../pipeline/gradle-project.js";
 import { stepAndroidCode, stepAndroidLibrary } from "../init/android-steps.js";
 import { readProjectConfig, resolveCredentials } from "../utils/config.js";
+import { installCommand } from "../pipeline/install.js";
+import { appliesUpdates, assessNativeInstall } from "../pipeline/runtime-wiring.js";
+import { detectToolchain } from "../pipeline/toolchain.js";
 
 type Level = "ok" | "warn" | "fail";
 
@@ -212,8 +215,7 @@ export default class Doctor extends BaseCommand {
       }
 
       if (project.runtime === "android") {
-        const record = channel as ChannelRecord;
-        if (!record.current_native_id && record.kind !== "client")
+        if (!channel.current_native_id && channel.kind !== "client")
           findings.push({
             level: "warn",
             what: `Channel "${channel.name}" is serving no build`,
@@ -318,7 +320,7 @@ export default class Doctor extends BaseCommand {
     }
 
     findings.push(...this.checkRuntimeWiring(appDir));
-    findings.push(...this.checkNativeInstall(appDir, project.androidDir));
+    findings.push(...this.checkNativeInstall(appDir, project.androidDir, channels));
     findings.push(...this.checkReleaseSigning(appDir));
 
     this.report(findings);
@@ -341,37 +343,57 @@ export default class Doctor extends BaseCommand {
    * Only reported when the plugins are present. An OTA-only app has no use for
    * the permission and should not be told to add one.
    */
-  private checkNativeInstall(appDir: string, androidDir: string): Finding[] {
-    const manifestPath = path.join(appDir, androidDir, "app/src/main/AndroidManifest.xml");
-    if (!fs.existsSync(manifestPath)) return [];
-
+  private checkNativeInstall(
+    appDir: string,
+    androidDir: string,
+    channels: readonly ChannelRecord[],
+  ): Finding[] {
     const pkgPath = path.join(appDir, "package.json");
     if (!fs.existsSync(pkgPath)) return [];
 
-    const manifest = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
-    const deps = { ...manifest.dependencies, ...manifest.devDependencies };
+    const manifestPath = path.join(appDir, androidDir, "app/src/main/AndroidManifest.xml");
+    const nativeChannels = channels
+      .filter((channel) => channel.current_native_id && channel.kind !== "client")
+      .map((channel) => channel.name);
 
-    if (!deps["@capacitor/file-transfer"] && !deps["@capawesome-team/capacitor-file-opener"]) {
-      return [];
+    const state = assessNativeInstall({
+      dependencies: { ...pkg.dependencies, ...pkg.devDependencies },
+      manifest: fs.existsSync(manifestPath) ? fs.readFileSync(manifestPath, "utf8") : null,
+      nativeChannels,
+    });
+
+    if (!state.intended) return [];
+
+    const findings: Finding[] = [];
+    const servedBy =
+      nativeChannels.length > 0 ? ` - ${nativeChannels.join(", ")} serve an APK` : "";
+
+    if (state.missingPackages.length > 0) {
+      const packageManager = detectToolchain(appDir).packageManager;
+      findings.push({
+        level: "warn",
+        what: "An in-app APK install cannot happen",
+        detail: `Missing ${state.missingPackages.join(", ")}${servedBy}`,
+        fix: `${runnable("init --native")}   (or ${installCommand(packageManager, state.missingPackages)})`,
+      });
     }
 
-    if (fs.readFileSync(manifestPath, "utf8").includes(INSTALL_PERMISSION)) {
-      return [{ level: "ok", what: "In-app APK install is permitted" }];
-    }
-
-    return [
-      {
+    if (state.missingPermission) {
+      findings.push({
         level: "fail",
         what: "AndroidManifest does not allow installing an APK",
-        detail:
-          "The plugins for an in-app native update are installed, but without " +
-          `${INSTALL_PERMISSION} the download succeeds and the installer silently does nothing`,
-        fix: runnable("init --native"),
-      },
-    ];
+        detail: `Without ${INSTALL_PERMISSION} the download succeeds and the installer silently does nothing`,
+        fix: runnable("init --native --only code"),
+      });
+    } else if (state.missingPackages.length === 0) {
+      findings.push({ level: "ok", what: "In-app APK install is permitted" });
+    }
+
+    return findings;
   }
 
   /**
@@ -398,7 +420,7 @@ export default class Doctor extends BaseCommand {
         level: "warn",
         what: "@capuchoo/updater is not a dependency",
         detail: "Deploys will work; the app will not check for what they publish",
-        fix: "pnpm add @capuchoo/updater",
+        fix: installCommand(detectToolchain(appDir).packageManager, ["@capuchoo/updater"]),
       });
       return findings;
     }
@@ -417,6 +439,19 @@ export default class Doctor extends BaseCommand {
       });
     } else {
       findings.push({ level: "ok", what: "notifyAppReady() present" });
+    }
+
+    if (!appliesUpdates(joined)) {
+      findings.push({
+        level: "fail",
+        what: "Nothing applies a downloaded update",
+        detail:
+          "The plugin only downloads under autoUpdate onlyDownload, and notifyAppReady() only " +
+          "confirms the running bundle - deploys reach the device and never show",
+        fix: 'Mount a prompt built on useUpdatePrompt() from "@capuchoo/updater/vue", or call useUpdater().init()',
+      });
+    } else {
+      findings.push({ level: "ok", what: "The app checks for and applies updates" });
     }
 
     const { file: capacitorConfig, usesHelper } = readCapacitorConfig(appDir);

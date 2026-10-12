@@ -1,6 +1,6 @@
 import { describeFlavourMismatch, isFlavour, isFlavourAllowed } from "@capuchoo/core";
 import type { ApkManifest } from "../pipeline/android-manifest.js";
-import type { RegisteredIdentifier } from "../pipeline/deploy.js";
+import { registerIdentifierHint, type RegisteredIdentifier } from "../pipeline/deploy.js";
 import type { AppArtefacts } from "../services/wire.js";
 import {
   describeChannel,
@@ -52,7 +52,7 @@ export function describePrebuiltProblems(facts: PrebuiltFacts): string[] {
     if (!registered)
       problems.push(
         `${manifest.applicationId} is not registered for this app. Register it with: ` +
-          `capuchoo app identifier add ${manifest.applicationId} --flavour ${channel.environment}`,
+          registerIdentifierHint(manifest.applicationId, channel.environment),
       );
     else if (
       !isFlavourAllowed(

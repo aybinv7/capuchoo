@@ -118,6 +118,11 @@ export function nothingToInstall(plan: InstallPlan): boolean {
   return plan.missing.length === 0 && plan.missingCli === null;
 }
 
+/** The install line to print for a package manager, e.g. `pnpm add @capuchoo/updater`. */
+export function installCommand(packageManager: PackageManager, names: readonly string[]): string {
+  return [packageManager, ...INSTALL_ARGS[packageManager](false), ...names].join(" ");
+}
+
 /**
  * Installs the plan, then syncs.
  *

@@ -13,7 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
 import type { Environment, ResolvedProjectConfig } from "@capuchoo/core";
-import { confirm, log } from "../cli/prompts.js";
+import { confirm, log, selectOne } from "../cli/prompts.js";
 import type { InitStepId } from "../cli/init-plan.js";
 import {
   applyInstall,
@@ -30,7 +30,14 @@ import {
   patchEnvFile,
   type Patch,
 } from "../pipeline/wiring.js";
+import { parseEnvFile } from "../pipeline/flavour.js";
 import type { CloudClient } from "../services/cloud.js";
+import {
+  diffIdentifiers,
+  flavourAppId,
+  planFlavourIdentifiers,
+  type FlavourIds,
+} from "./identifier-plan.js";
 
 export type StepState = "applied" | "satisfied" | "skipped" | "failed";
 
@@ -59,6 +66,8 @@ export interface StepContext {
   telemetry: boolean;
   /** Run cap sync after installing. Native code reaches the platforms only there. */
   sync: boolean;
+  /** How a created env file names its flavour's id; asked when unset and a file is created. */
+  flavourIds: FlavourIds | undefined;
 }
 
 /** Entry files worth looking in, most conventional first. */
@@ -85,43 +94,98 @@ export function findCapacitorConfig(appDir: string): string | null {
   return firstExisting(appDir, CONFIG_CANDIDATES);
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function declaredAppIds(ctx: StepContext): Partial<Record<Environment, string>> {
+  const declared: Partial<Record<Environment, string>> = {};
+
+  for (const [environment, flavour] of Object.entries(ctx.project.flavours)) {
+    const file = path.join(ctx.appDir, flavour.envFile);
+    if (!fs.existsSync(file)) continue;
+    const appId = parseEnvFile(fs.readFileSync(file, "utf8")).VITE_APP_ID;
+    if (appId) declared[environment as Environment] = appId;
+  }
+
+  return declared;
+}
+
 /**
- * Registers the app's own bundle identifier.
- *
- * Shared - claiming no flavour - because that is what a single-identifier app is,
- * and it is the majority. An app that suffixes per flavour registers those
- * explicitly with `capuchoo app identifiers add`, and guessing from the spelling
- * is what this whole model replaced.
+ * Registers every id the flavour env files build, so a deploy never meets an unregistered one.
+ * Runs after `env`: the files decide, and one id across every flavour stays a single shared row.
  */
 export async function stepIdentifiers(ctx: StepContext): Promise<StepOutcome> {
   const id: InitStepId = "identifiers";
+  const plans = planFlavourIdentifiers(declaredAppIds(ctx), ctx.bundleId);
 
+  let existing;
   try {
-    const existing = await ctx.cloud.identifiers(ctx.cloudAppId);
-
-    if (existing.some((row) => row.bundle_id === ctx.bundleId)) {
-      return { id, state: "satisfied", detail: `${ctx.bundleId} is registered` };
-    }
-
-    if (ctx.dryRun) {
-      return { id, state: "skipped", detail: `would register ${ctx.bundleId}` };
-    }
-
-    await ctx.cloud.registerIdentifier(ctx.cloudAppId, {
-      bundle_id: ctx.bundleId,
-      platform: "all",
-    });
-
-    return { id, state: "applied", detail: `${ctx.bundleId}, every flavour` };
+    existing = await ctx.cloud.identifiers(ctx.cloudAppId);
   } catch (error) {
-    // An older backend has no such endpoint, and resolution falls back to the
-    // app's own id, so this is not fatal.
+    return { id, state: "skipped", detail: `could not read identifiers: ${errorMessage(error)}` };
+  }
+
+  const { missing, conflicting } = diffIdentifiers(plans, existing);
+
+  for (const { plan, registered } of conflicting) {
+    log.warn(
+      `${plan.bundleId} is registered for ${registered} but now built by ` +
+        `${plan.flavour ?? "every flavour"} - remove it and add it again to change that`,
+    );
+  }
+
+  if (missing.length === 0) {
     return {
       id,
-      state: "skipped",
-      detail: `could not register: ${error instanceof Error ? error.message : String(error)}`,
+      state: conflicting.length > 0 ? "skipped" : "satisfied",
+      detail: `${plans.map((plan) => plan.bundleId).join(", ")} registered`,
     };
   }
+
+  const described = missing
+    .map((plan) => `${plan.bundleId} (${plan.flavour ?? "every flavour"})`)
+    .join(", ");
+
+  if (ctx.dryRun) return { id, state: "skipped", detail: `would register ${described}` };
+
+  const failures: string[] = [];
+  for (const plan of missing) {
+    try {
+      await ctx.cloud.registerIdentifier(ctx.cloudAppId, {
+        bundle_id: plan.bundleId,
+        platform: "all",
+        flavour: plan.flavour,
+      });
+    } catch (error) {
+      failures.push(`${plan.bundleId}: ${errorMessage(error)}`);
+    }
+  }
+
+  if (failures.length > 0) return { id, state: "failed", detail: failures.join("; ") };
+  return { id, state: "applied", detail: described };
+}
+
+async function resolveFlavourIds(ctx: StepContext): Promise<FlavourIds> {
+  if (ctx.flavourIds) return ctx.flavourIds;
+  if (!ctx.interactive) return "shared";
+
+  return selectOne<FlavourIds>(
+    "Bundle ids per flavour",
+    [
+      {
+        value: "shared",
+        label: `${ctx.bundleId} for every flavour`,
+        hint: "one install per phone; a dev build replaces prod",
+      },
+      {
+        value: "suffixed",
+        label: `${ctx.bundleId}.dev / .staging, prod keeps ${ctx.bundleId}`,
+        hint: "installs side by side; push and signing need each id",
+      },
+    ],
+    "--flavour-ids",
+  );
 }
 
 export async function stepPackages(ctx: StepContext): Promise<StepOutcome> {
@@ -165,19 +229,26 @@ export async function stepEnv(ctx: StepContext): Promise<StepOutcome> {
   const applied: string[] = [];
   const conflicts: string[] = [];
   let satisfied = 0;
+  let mode: FlavourIds | undefined;
 
   for (const [environment, flavour] of Object.entries(ctx.project.flavours)) {
     const file = path.join(ctx.appDir, flavour.envFile);
+    const exists = fs.existsSync(file);
+    if (!exists) mode ??= await resolveFlavourIds(ctx);
 
     // Absent is the case with most to do, and it used to be the one case this
     // skipped: init writes project.json pointing at all three flavour files
     // whether they exist or not, so a fresh app or a template got the pointer
     // and no files, and every deploy then failed on "does not set VITE_APP_ID".
-    const before = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+    const before = exists ? fs.readFileSync(file, "utf8") : null;
     const patch: Patch =
       before === null
         ? {
-            content: newEnvFile(environment, ctx.bundleId, ctx.endpoint),
+            content: newEnvFile(
+              environment,
+              flavourAppId(ctx.bundleId, environment as Environment, mode ?? "shared"),
+              ctx.endpoint,
+            ),
             summary: "created",
           }
         : patchEnvFile(before, ctx.endpoint, environment as Environment);
