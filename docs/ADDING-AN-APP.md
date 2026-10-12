@@ -100,6 +100,16 @@ Three rules:
 - **Nothing writes to these files.** The CLI passes build values as environment variables;
   `version-code.json` is the only tracked file a deploy touches.
 
+**One id, or one per flavour.** `VITE_APP_ID` is the bundle id each flavour builds, and `init`
+registers whatever the files declare: one id everywhere becomes one shared identifier, distinct ids
+become one identifier per flavour. When `init` creates the files it asks which
+(`--flavour-ids shared|suffixed`); suffixed keeps the base id for prod and adds `.dev` / `.staging`,
+so the three install side by side on one phone. Suffixed ids need everything keyed by package name
+to know them too - a Firebase app per id (the Gradle plugin refuses a `google-services.json` without
+the package), and a signing key per id if devices update across flavours. Change an id later by
+editing the file and re-running `init`; a deploy refuses an id nobody registered and prints
+`capuchoo app identifiers add <id> --flavour <env>`.
+
 ## 4b. Android build prerequisites
 
 Two things Gradle needs that no tool here can write for you:
@@ -121,7 +131,9 @@ a different `applicationId` to real devices.
 
 ## 5. Wire the app
 
-Three edits. The first one matters more than it looks.
+Three edits. `init` makes the first two; the third is the app's, because it is the app's own UI.
+Without it every deploy reaches the device and none is ever shown - `capuchoo doctor` fails with
+"Nothing applies a downloaded update" until it exists.
 
 ```ts
 // src/main.ts - first statement, before anything that can block
@@ -154,14 +166,19 @@ This returns `autoUpdate: "onlyDownload"`, because the app decides when to apply
 twice.
 
 ```vue
-<!-- wherever you want the update UI -->
+<!-- mounted once, in the app shell -->
 <script setup lang="ts">
-import { useUpdater } from "@capuchoo/updater/vue";
+import { useUpdatePrompt } from "@capuchoo/updater/vue";
 
-const updater = useUpdater();
-await updater.init();
+const update = useUpdatePrompt();
 </script>
 ```
+
+`useUpdatePrompt()` starts the updater itself (checks at launch, on resume and on reconnect) and
+derives what a prompt renders: `visible`, `gate.blocked` for a required update, `phase`, `progress`,
+`primaryAction()`. It ships no markup on purpose; render it in the app's own design system.
+`useUpdater()` is the lower-level API under it, for an app that wants to decide when to start
+(`await updater.init()`).
 
 `useUpdater()` exposes `checking`, `downloading`, `installing`, `updateAvailable`, `currentUpdate`,
 `progress`, `error`, `statusMessage` and `lastCheckMessage`, plus `check()`, `startDownload()` and

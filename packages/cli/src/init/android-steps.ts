@@ -3,17 +3,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { flavorApplicationId, type GradleAndroidProject } from "../pipeline/gradle-project.js";
 import { loadReleaseKey } from "../signing/release-key.js";
+import type { IdentifierPlan } from "./identifier-plan.js";
 import type { StepContext, StepOutcome } from "./steps.js";
 
 /** The coordinates apps depend on, built by JitPack from the `android-v*` tags. */
 export const ANDROID_LIBRARY = "com.github.aybinv7.capuchoo:capuchoo-android";
 export const ANDROID_LIBRARY_VERSION = "android-v0.1.0";
 
-export interface IdentifierPlan {
-  bundleId: string;
-  /** Null: every flavour ships under it. */
-  flavour: Environment | null;
-}
+export type { IdentifierPlan };
 
 /**
  * What a Gradle app's devices will report as their package. A flavour named after an environment

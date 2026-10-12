@@ -22,10 +22,10 @@
 export const INIT_STEPS = [
   "credentials",
   "link",
-  "identifiers",
   "channels",
   "packages",
   "env",
+  "identifiers",
   "code",
   "verify",
   "publish",
@@ -93,15 +93,6 @@ export function planInit(facts: InitFacts, options: PlanOptions = {}): PlannedSt
       why: facts.linked ? "linked" : "this directory has no app",
     },
     {
-      id: "identifiers",
-      // Unknown rather than todo when unlinked: the answer needs the app, and
-      // reporting "todo" for something unknowable reads as a problem.
-      status: !facts.linked ? "unknown" : facts.identifierRegistered ? "satisfied" : "todo",
-      why: facts.identifierRegistered
-        ? "the bundle identifier is registered"
-        : "a device reports only the identifier compiled into it",
-    },
-    {
       id: "channels",
       status: !facts.linked ? "unknown" : facts.channelCount > 0 ? "satisfied" : "todo",
       why:
@@ -125,6 +116,15 @@ export function planInit(facts: InitFacts, options: PlanOptions = {}): PlannedSt
           : `${facts.flavoursMissingEnv} flavour${
               facts.flavoursMissingEnv === 1 ? "" : "s"
             } would ship with updates disabled`,
+    },
+    {
+      id: "identifiers",
+      // Unknown rather than todo when unlinked: the answer needs the app, and
+      // reporting "todo" for something unknowable reads as a problem.
+      status: !facts.linked ? "unknown" : facts.identifierRegistered ? "satisfied" : "todo",
+      why: facts.identifierRegistered
+        ? "the bundle identifier is registered"
+        : "a device reports only the identifier compiled into it",
     },
     {
       id: "code",

@@ -50,6 +50,7 @@ import {
 import AuthLogin from "./auth/login.js";
 import { BaseCommand } from "../base-command.js";
 import { INIT_STEPS, selectSteps, type InitStepId } from "../cli/init-plan.js";
+import { FLAVOUR_ID_MODES, type FlavourIds } from "../init/identifier-plan.js";
 import { waitForAdoption } from "../init/prove.js";
 import { runnable } from "../cli/invocation.js";
 import {
@@ -147,6 +148,11 @@ export default class Init extends BaseCommand {
     native: Flags.boolean({
       default: false,
       description: "Also install what downloading and installing an APK needs",
+    }),
+    "flavour-ids": Flags.string({
+      description:
+        "How created flavour env files name the app: shared (one id) or suffixed (.dev, .staging)",
+      options: [...FLAVOUR_ID_MODES],
     }),
     "skip-telemetry": Flags.boolean({
       default: false,
@@ -400,6 +406,7 @@ export default class Init extends BaseCommand {
       yes: boolean;
       "dry-run": boolean;
       native: boolean;
+      "flavour-ids"?: string | undefined;
       "skip-telemetry": boolean;
       "skip-sync": boolean;
       prove: boolean;
@@ -423,6 +430,7 @@ export default class Init extends BaseCommand {
       native: flags.native,
       telemetry: !flags["skip-telemetry"],
       sync: !flags["skip-sync"],
+      flavourIds: flags["flavour-ids"] as FlavourIds | undefined,
     };
 
     const gradle = project.runtime === "android" ? detectGradleAndroidProject(appDir) : null;
@@ -442,9 +450,9 @@ export default class Init extends BaseCommand {
           ["code", async () => stepAndroidCode(path.join(appDir, project.androidDir), gradle)],
         ]
       : [
-          ["identifiers", () => stepIdentifiers(context)],
           ["packages", () => stepPackages(context)],
           ["env", () => stepEnv(context)],
+          ["identifiers", () => stepIdentifiers(context)],
           ["code", () => stepCode(context)],
         ];
 

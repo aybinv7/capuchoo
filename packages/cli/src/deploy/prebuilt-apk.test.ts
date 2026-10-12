@@ -70,7 +70,7 @@ describe("describePrebuiltProblems", () => {
 
   it("names the command when the applicationId is not registered", () => {
     const [problem] = describePrebuiltProblems(facts({ identifiers: [] }));
-    expect(problem).toContain("capuchoo app identifier add com.example.field --flavour prod");
+    expect(problem).toContain("capuchoo app identifiers add com.example.field --flavour prod");
     expect(describePrebuiltProblems(facts({ identifiers: undefined }))).toEqual([]);
   });
 

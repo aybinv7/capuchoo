@@ -147,6 +147,11 @@ export function planSteps(request: DeployRequest): Step[] {
   return steps;
 }
 
+/** The command that registers an identifier, as the CLI spells it. */
+export function registerIdentifierHint(bundleId: string, flavour: string | null): string {
+  return `capuchoo app identifiers add ${bundleId}${flavour ? ` --flavour ${flavour}` : ""}`;
+}
+
 /**
  * Checks the request against the project before any work happens.
  *
@@ -176,8 +181,11 @@ export function validateRequest(request: DeployRequest, flavour: ResolvedFlavour
     if (!registered) {
       problems.push(
         `${flavour.config.envFile} builds ${declaredAppId}, which is not registered ` +
-          `for this app. Register it with: capuchoo app identifier add ${declaredAppId}` +
-          `${isFlavour(request.environment) ? ` --flavour ${request.environment}` : ""}`,
+          `for this app. Register it with: ` +
+          registerIdentifierHint(
+            declaredAppId,
+            isFlavour(request.environment) ? request.environment : null,
+          ),
       );
     } else if (
       !isFlavourAllowed(
