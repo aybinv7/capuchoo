@@ -2,6 +2,7 @@
 stages:
   - check
   - build
+  - deploy
 
 # Installs the vp CLI (and runs `vp install`) before the job's script.
 include:
@@ -48,3 +49,22 @@ build-dashboard:
   variables:
     DOCKERFILE: deploy/dashboard/Dockerfile
     IMAGE: capuchoo/dashboard
+
+deploy:
+  stage: deploy
+  image: docker:28-cli
+  tags: [docker-build]
+  needs: [build-server, build-dashboard]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  resource_group: dev5 # never two deploys at the same time
+  environment:
+    name: dev
+  variables:
+    GIT_STRATEGY: none # nothing to check out: we use the files already on the server
+    DEPLOY_DIR: /opt/projects/capuchoo/deploy
+  script:
+    - cd "$DEPLOY_DIR"
+    - export IMAGE_TAG="$CI_COMMIT_SHORT_SHA"
+    - docker compose up -d --no-build --pull never --wait --wait-timeout 180 server dashboard
+    - docker compose ps server dashboard
