@@ -1,6 +1,7 @@
 # Stages run in this order; a failed stage stops the pipeline.
 stages:
   - check
+  - build
 
 # Installs the vp CLI (and runs `vp install`) before the job's script.
 include:
@@ -23,3 +24,27 @@ check:
     - vp check # format + lint + type check
     - vp run -r build # builds core first, then whatever depends on it
     - vp run -r test
+
+# Builds on dev5's own Docker through the socket, so the image lands
+# directly on the server that runs it - no registry involved.
+.docker-build:
+  stage: build
+  image: docker:28-cli
+  tags: [docker-build] # only the protected runner that has the Docker socket
+  needs: [check]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH # images only from main
+  script:
+    - docker build -f "$DOCKERFILE" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" -t "$IMAGE:latest" .
+
+build-server:
+  extends: .docker-build
+  variables:
+    DOCKERFILE: deploy/Dockerfile
+    IMAGE: capuchoo/server # same name docker-compose.yml uses
+
+build-dashboard:
+  extends: .docker-build
+  variables:
+    DOCKERFILE: deploy/dashboard/Dockerfile
+    IMAGE: capuchoo/dashboard
