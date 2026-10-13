@@ -23,7 +23,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    image: capuchoo/server:latest
+    image: capuchoo/server:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -35,11 +35,11 @@ services:
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
       STORAGE_DRIVER: ${STORAGE_DRIVER:-fs}
-      S3_ENDPOINT: ${S3_ENDPOINT:-}
-      S3_REGION: ${S3_REGION:-auto}
-      S3_BUCKET: ${S3_BUCKET:-}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      # S3_ENDPOINT: ${S3_ENDPOINT:-}
+      # S3_REGION: ${S3_REGION:-auto}
+      # S3_BUCKET: ${S3_BUCKET:-}
+      # S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      # S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       GITLAB_ALLOWED_HOSTS: ${GITLAB_ALLOWED_HOSTS:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       TRUST_PROXY: "true"
@@ -62,7 +62,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/dashboard/Dockerfile
-    image: capuchoo/dashboard:latest
+    image: capuchoo/dashboard:${IMAGE_TAG:-latest}
     restart: unless-stopped
     read_only: true
     tmpfs:
