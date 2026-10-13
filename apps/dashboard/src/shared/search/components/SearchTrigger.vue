@@ -19,7 +19,7 @@ const modifier = computed(() =>
     @click="store.show()"
   >
     <Search class="size-4" />
-    <span class="truncate text-sm">Search or run a command…</span>
+    <span class="truncate text-sm">Search or run…</span>
     <KbdGroup class="ml-auto">
       <Kbd>{{ modifier }}</Kbd>
       <Kbd>K</Kbd>
