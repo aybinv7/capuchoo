@@ -24,7 +24,7 @@ check:
   interruptible: true # a newer pipeline on the same ref cancels this one
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-     # Direct push to main: no MR ran check for this commit, so run it here.
+    # Direct push to main: no MR ran check for this commit, so run it here.
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE !~ /See merge request/
   script:
     - vp check # format + lint + type check
