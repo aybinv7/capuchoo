@@ -62,6 +62,8 @@ deploy:
   image: docker:28-cli
   tags: [docker-build]
   needs: [build-server, build-dashboard]
+  when: manual
+  allow_failure: false
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   resource_group: dev5 # never two deploys at the same time
