@@ -37,7 +37,7 @@ check:
   stage: build
   image: docker:28-cli
   tags: [docker-build] # only the protected runner that has the Docker socket
-  needs: 
+  needs:
     - job: check
       optional: true
   rules:
