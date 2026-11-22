@@ -49,7 +49,6 @@ jobs:
             echo "::warning::COOLIFY_URL, COOLIFY_TOKEN, COOLIFY_SERVER_UUID or COOLIFY_DASHBOARD_UUID is not set; skipping the deploy"
             exit 0
           fi
-          curl --fail --silent --show-error --get "${COOLIFY_URL%/}/api/v1/deploy" \
-            --data-urlencode "uuid=${COOLIFY_SERVER_UUID},${COOLIFY_DASHBOARD_UUID}" \
-            --data-urlencode "force=false" \
+          curl --fail --silent --show-error --request POST \
+            "${COOLIFY_URL%/}/api/v1/deploy?uuid=${COOLIFY_SERVER_UUID},${COOLIFY_DASHBOARD_UUID}&force=false" \
             --header "Authorization: Bearer ${COOLIFY_TOKEN}"
