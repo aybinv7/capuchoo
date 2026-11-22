@@ -1,6 +1,9 @@
 # Stages run in this order; a failed stage stops the pipeline.
 stages:
   - check
+  - build
+  - deploy
+  - cleanup
 
 # Installs the vp CLI (and runs `vp install`) before the job's script.
 include:
@@ -19,7 +22,80 @@ check:
   stage: check
   image: node:24 # the template needs bash + curl or wget; the -slim image usually has no curl
   interruptible: true # a newer pipeline on the same ref cancels this one
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # Direct push to main: no MR ran check for this commit, so run it here.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE !~ /See merge request/
   script:
     - vp check # format + lint + type check
     - vp run -r build # builds core first, then whatever depends on it
     - vp run -r test
+
+# Builds on dev5's own Docker through the socket, so the image lands
+# directly on the server that runs it - no registry involved.
+.docker-build:
+  stage: build
+  image: docker:28-cli
+  tags: [docker-build] # only the protected runner that has the Docker socket
+  needs:
+    - job: check
+      optional: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH # images only from main
+  script:
+    - docker build -f "$DOCKERFILE" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" -t "$IMAGE:latest" .
+
+build-server:
+  extends: .docker-build
+  variables:
+    DOCKERFILE: deploy/Dockerfile
+    IMAGE: capuchoo/server # same name docker-compose.yml uses
+
+build-dashboard:
+  extends: .docker-build
+  variables:
+    DOCKERFILE: deploy/dashboard/Dockerfile
+    IMAGE: capuchoo/dashboard
+
+deploy:
+  stage: deploy
+  image: docker:28-cli
+  tags: [docker-build]
+  needs: [build-server, build-dashboard]
+  when: manual
+  allow_failure: false
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  resource_group: dev5 # never two deploys at the same time
+  environment:
+    name: dev
+  variables:
+    GIT_STRATEGY: none # nothing to check out: we use the files already on the server
+    DEPLOY_DIR: /opt/projects/capuchoo/deploy
+  script:
+    - cd "$DEPLOY_DIR"
+    - export IMAGE_TAG="$CI_COMMIT_SHORT_SHA"
+    - docker compose up -d --no-build --pull never --wait --wait-timeout 180 server dashboard
+    - docker compose ps server dashboard
+# Keeps the deployed image and the one before it (rollback target), deletes older ones.
+cleanup-images:
+  stage: cleanup
+  image: docker:28-cli
+  tags: [docker-build]
+  needs: [deploy] # only after a successful deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  allow_failure: true # a failed cleanup must not turn a good deploy red
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - |
+      for repo in capuchoo/server capuchoo/dashboard; do
+        docker images "$repo" --format '{{.Tag}}' \
+          | grep -vx -e latest -e "$CI_COMMIT_SHORT_SHA" \
+          | tail -n +2 \
+          | while read -r tag; do
+              docker rmi "$repo:$tag" || echo "kept $repo:$tag (still used by a container)"
+            done
+      done
+    - docker images 'capuchoo/*'
