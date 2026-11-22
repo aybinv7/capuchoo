@@ -9,7 +9,7 @@ import {
   describePatch,
 } from "./wiring.js";
 
-const API = "https://capuchoo-back.onrender.com";
+const API = "https://capuchoo-back.example.com";
 
 /** Lowmaro's real prod flavour, which is what every run so far tripped over. */
 const ENV_FILE = `# Production build
@@ -74,11 +74,11 @@ describe("patchEnvFile", () => {
    * saying so is a surprise, not a fix.
    */
   it("reports a different existing value instead of overwriting it", () => {
-    const stale = `${ENV_FILE}VITE_UPDATE_API_URL=https://capucho-back.onrender.com\n`;
+    const stale = `${ENV_FILE}VITE_UPDATE_API_URL=https://capucho-back.example.com\n`;
     const patch = patchEnvFile(stale, API, "prod");
 
     expect(patch.content).not.toContain(`VITE_UPDATE_API_URL=${API}`);
-    expect(patch.content).toContain("https://capucho-back.onrender.com");
+    expect(patch.content).toContain("https://capucho-back.example.com");
     expect(patch.conflict).toContain("VITE_UPDATE_API_URL is already");
   });
 

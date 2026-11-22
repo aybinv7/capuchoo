@@ -38,15 +38,18 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Trigger the server deploy only after checks pass
+      - name: Deploy the server and the dashboard on Coolify only after checks pass
         env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_SERVER_UUID: ${{ vars.COOLIFY_SERVER_UUID }}
+          COOLIFY_DASHBOARD_UUID: ${{ vars.COOLIFY_DASHBOARD_UUID }}
         run: |
-          if [ -z "$RENDER_DEPLOY_HOOK" ]; then echo "RENDER_DEPLOY_HOOK is not set; skipping"; exit 0; fi
-          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK"
-      - name: Trigger the dashboard deploy only after checks pass
-        env:
-          RENDER_DASHBOARD_DEPLOY_HOOK: ${{ secrets.RENDER_DASHBOARD_DEPLOY_HOOK }}
-        run: |
-          if [ -z "$RENDER_DASHBOARD_DEPLOY_HOOK" ]; then echo "RENDER_DASHBOARD_DEPLOY_HOOK is not set; skipping"; exit 0; fi
-          curl --fail --silent --show-error -X POST "$RENDER_DASHBOARD_DEPLOY_HOOK"
+          if [ -z "$COOLIFY_URL" ] || [ -z "$COOLIFY_TOKEN" ] || [ -z "$COOLIFY_SERVER_UUID" ] || [ -z "$COOLIFY_DASHBOARD_UUID" ]; then
+            echo "::warning::COOLIFY_URL, COOLIFY_TOKEN, COOLIFY_SERVER_UUID or COOLIFY_DASHBOARD_UUID is not set; skipping the deploy"
+            exit 0
+          fi
+          curl --fail --silent --show-error --get "${COOLIFY_URL%/}/api/v1/deploy" \
+            --data-urlencode "uuid=${COOLIFY_SERVER_UUID},${COOLIFY_DASHBOARD_UUID}" \
+            --data-urlencode "force=false" \
+            --header "Authorization: Bearer ${COOLIFY_TOKEN}"

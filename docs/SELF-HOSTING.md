@@ -9,8 +9,8 @@ is for the operator; developers only need `PUBLIC_URL`.
 ## First, the domain
 
 The update URL is compiled into every APK. Pick a hostname you will keep for years
-(`updates.<company>.dz`), point it at the host, and never ship a build with a provider hostname like
-`*.onrender.com`. Moving hosts later is then a DNS change, not a stranded fleet.
+(`updates.<company>.dz`), point it at the host, and never ship a build with a provider or IP-derived
+hostname like `*.sslip.io`. Moving hosts later is then a DNS change, not a stranded fleet.
 
 ## Run it
 
@@ -82,26 +82,44 @@ creating the App is a form POST to GitHub. Starting GitLab pipelines needs no se
 GitLab is on a private network: then list its host in `GITLAB_ALLOWED_HOSTS`, which also lifts the
 https and public-address checks for those hosts. More in [CI-PROVIDERS.md](./CI-PROVIDERS.md).
 
-## On Render
+## On Coolify
 
-`render.yaml` creates `capuchoo-server`, the `capuchoo-dashboard` static site and the database. The
-static site rewrites `/api/*` to the server, so the dashboard stays same-origin with its API. Two
-values have to match reality after the first apply:
+A Coolify instance can run the same stack without the compose file. Create one project with three
+resources:
 
-- the rewrite destination in `render.yaml` must be the server's real URL (Render appends a suffix
-  when `capuchoo-server` is taken, and a custom domain replaces it);
-- `ALLOWED_ORIGINS` on the server must be the dashboard's origin, because behind the rewrite the
-  server sees its own host while the browser sends the dashboard's `Origin`.
+- **PostgreSQL**: a database on `postgres:17-alpine`, not public. The server reaches it by the
+  database's internal hostname.
+- **`server`**: an application built from `deploy/Dockerfile` (base directory `/`, port 3000) with a
+  persistent volume mounted at `/data`.
+- **`dashboard`**: an application built from `deploy/dashboard/Dockerfile` (base directory `/`, port
+  8080).
 
-Deploys are triggered by CI after checks pass (`RENDER_DEPLOY_HOOK`,
-`RENDER_DASHBOARD_DEPLOY_HOOK`).
+Both applications share one hostname, as Traefik does in the compose stack. Give the dashboard the
+bare domain and the server the same domain once per path, comma separated:
+`https://HOST/api,https://HOST/health,https://HOST/ready`. Coolify's proxy picks the longer rule, so
+those paths reach the server and everything else reaches the dashboard. Turn **Strip Prefixes** off
+on the server: it expects `/api` intact.
 
-The public landing page (`apps/landing`) is a separate Render static site, outside the Blueprint: it
-holds no secret and needs no rewrite. Build command
+Leave Coolify's own health check off. The images carry a `HEALTHCHECK` (Node for the server, `wget`
+for nginx) and Coolify uses it; its default check needs `curl` or `wget` inside the container and
+fails the rollout on the server image.
+
+Server environment: `DATABASE_URL`, `SECRET_KEY`, `PUBLIC_URL` (`https://HOST`),
+`STORAGE_DRIVER=fs`, `TRUST_PROXY=true` and `COOKIE_SECURE=true`. The dashboard and the server share
+a host, so there is no rewrite and `ALLOWED_ORIGINS` is not needed. Run one server instance. There
+is no `backup` service here: schedule database and volume backups in Coolify.
+
+Deploys are triggered by CI after checks pass, so Coolify's own auto-deploy stays off. The `deploy`
+job calls Coolify's deploy API for both applications. It needs the repository secrets `COOLIFY_URL`
+and `COOLIFY_TOKEN` (an API token with the `deploy` ability) and the repository variables
+`COOLIFY_SERVER_UUID` and `COOLIFY_DASHBOARD_UUID`.
+
+The public landing page (`apps/landing`) is a separate static site: it holds no secret and needs no
+rewrite. Build command
 `pnpm install --frozen-lockfile && pnpm --filter "{apps/landing}..." run build`, publish directory
 `apps/landing/dist`, and `VITE_DASHBOARD_URL` set to the dashboard's address so "Sign in" lands
-there. Artefacts are on the `artefacts` volume (`STORAGE_DRIVER=fs`); for several instances use
-`STORAGE_DRIVER=s3` against MinIO or R2.
+there. For several server instances use `STORAGE_DRIVER=s3` against MinIO or R2 instead of the
+`artefacts` volume.
 
 ## The first admin, and getting back in
 
@@ -153,10 +171,3 @@ account. The in-progress run is closed by housekeeping after a day, so reset it 
 | Telemetry queue  | Past `BACKGROUND_TASK_LIMIT` (1000) pending writes, device telemetry is skipped and counted rather than queued                                                                 |
 
 Test a restore before you need one. A backup that has never been restored is a hope.
-
-## Render (development instance)
-
-`render.yaml` describes a free web service and a free PostgreSQL with `STORAGE_DRIVER=postgres`,
-because the free plan has no persistent disk. It is for trials: the free database expires and the
-service sleeps, so do not point production builds at it. `autoDeploy` is off; CI triggers the deploy
-hook after checks pass.

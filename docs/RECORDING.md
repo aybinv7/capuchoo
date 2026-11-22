@@ -256,7 +256,6 @@ not export.
 - Capacity per process is in [CAPACITY.md](./CAPACITY.md).
 - The player serves the app's stylesheets from `blob:` URLs so their fonts resolve against the
   server's copies. A dashboard's Content-Security-Policy must allow `style-src blob:`, or replays
-  render unstyled; `render.yaml` and `deploy/dashboard/security-headers.conf` do, and a test keeps
-  them that way.
-- On the Render deploy storage is PostgreSQL, so recordings take database space; prefer S3 or the
-  filesystem driver before turning recording on for a fleet.
+  render unstyled; `deploy/dashboard/security-headers.conf` does, and a test keeps it that way.
+- With `STORAGE_DRIVER=postgres` recordings take database space; prefer S3 or the filesystem driver
+  before turning recording on for a fleet.

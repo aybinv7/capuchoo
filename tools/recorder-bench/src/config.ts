@@ -75,7 +75,7 @@ export async function loadConfig(argv: string[], root: string): Promise<BenchCon
     outDir: values.out ?? join(root, "results", stamp),
     dryRun: values["dry-run"] ?? false,
     capuchooApp: env.CAPUCHOO_BENCH_APP ?? null,
-    mcpEndpoint: env.CAPUCHOO_BENCH_MCP ?? "https://capuchoo-dashboard.onrender.com/api/mcp",
+    mcpEndpoint: env.CAPUCHOO_BENCH_MCP ?? "http://localhost:3000/api/mcp",
     apiKey: env.CAPUCHOO_BENCH_KEY ?? null,
   };
 }

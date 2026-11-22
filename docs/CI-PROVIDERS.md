@@ -57,7 +57,7 @@ and the server checks, with that user's token, that the user can see the install
 discarded afterwards.
 
 The dashboard's CSP must allow `form-action https://github.com` - the manifest is a form POST to
-GitHub. `render.yaml` and `deploy/dashboard/security-headers.conf` carry it.
+GitHub. `deploy/dashboard/security-headers.conf` carries it.
 
 ### Correlating a run
 

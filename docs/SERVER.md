@@ -3,8 +3,8 @@
 `services/server` (`@capuchoo/server`): Node 22+, Hono, Kysely over PostgreSQL. One process serves
 the device API, the CLI API and the dashboard API. The dashboard is a separate static site whose
 host proxies `/api` here, so it is still same-origin to the browser: the session is an httpOnly
-cookie and there is no CORS. When that proxy rewrites the host (Render), list the dashboard origin
-in `ALLOWED_ORIGINS`.
+cookie and there is no CORS. When that proxy rewrites the host (a static-site `/api` rewrite), list
+the dashboard origin in `ALLOWED_ORIGINS`.
 
 ## Delivery model
 
@@ -114,9 +114,9 @@ Logs are JSON lines with a request id; passwords, tokens, keys and coordinates a
 
 `GET /api/apps/:id/stream` is Server-Sent Events. Some paths hold a streamed response until it ends
 
-- Render's static-site `/api/*` rewrite held the first byte for 500 seconds, and corporate proxies
-  do the same - so the dashboard waits 5 s for the stream's `ready` and otherwise switches the tab
-  to `GET /api/apps/:id/poll`. The first call (no `after`) returns a cursor at once; each next call
+- A static host's `/api/*` rewrite held the first byte for 500 seconds, and corporate proxies do the
+  same - so the dashboard waits 5 s for the stream's `ready` and otherwise switches the tab to
+  `GET /api/apps/:id/poll`. The first call (no `after`) returns a cursor at once; each next call
   returns the app's events after it as soon as there are any, or an empty page after `wait` seconds
   (at most 25). The hub keeps the last 500 events or 5 minutes per app; a cursor older than that
   comes back with `reset: true`, and the dashboard refetches instead of trusting a page with a hole

@@ -16,7 +16,7 @@ import { ingestAsset, ingestSegment } from "../services/recording-ingest";
 import { HealthGate, noteRecorderHealth } from "../services/recorder-health";
 import { listenForPolicy } from "../services/recording-policy";
 
-/** Under the 60 s idle timeout most proxies, Render's included, apply to a quiet connection. */
+/** Under the 60 s idle timeout most proxies apply to a quiet connection. */
 const MAX_LISTEN_SECONDS = 55;
 
 const guarded: MiddlewareHandler<AppEnv> = (c, next) => c.get("deps").load.run(next);

@@ -12,7 +12,7 @@ afterEach(() => {
 
 describe("getUpdaterConfig", () => {
   it("has no hard-coded backend or app id", () => {
-    // The previous implementation defaulted apiUrl to a specific Render URL and
+    // The previous implementation defaulted apiUrl to a specific provider URL and
     // appId to a specific bundle id, so a build with a missing variable pointed
     // at someone else's backend and asked about the wrong app - while
     // reporting "you are up to date".

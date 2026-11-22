@@ -74,7 +74,7 @@ export function relaySocket(
   let lagging = false;
 
   /**
-   * Says why in a message before closing: a proxy - Render's among them - may drop the close frame,
+   * Says why in a message before closing: a proxy may drop the close frame,
    * and the other side would otherwise only learn of it when the connection times out.
    */
   const refuse = (code: number, error: string, message: string) => {

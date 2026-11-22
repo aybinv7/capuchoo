@@ -127,7 +127,7 @@ export function getUpdaterConfig(): UpdaterConfig {
 /**
  * Reasons the updater cannot run, as user-facing strings.
  *
- * The previous implementation defaulted `apiUrl` to a hard-coded Render URL and
+ * The previous implementation defaulted `apiUrl` to a hard-coded provider URL and
  * `appId` to a hard-coded bundle id. A build with a missing variable therefore
  * silently pointed at somebody else's backend, or asked for the wrong app, and
  * reported "you are up to date". Failing loudly is the whole point of this

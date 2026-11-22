@@ -9,7 +9,7 @@ import { relayWatchSocket } from "../live/watch-relay";
 import { relaySocket } from "./relay";
 import type { AssistSocket } from "./socket";
 
-/** Under the 60 s a proxy, Render's included, lets a quiet connection live. */
+/** Under the 60 s a proxy lets a quiet connection live. */
 const PING_MS = 25_000;
 
 function adapt(ws: WebSocket): AssistSocket {

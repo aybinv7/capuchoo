@@ -3,7 +3,7 @@ const REPOSITORY = "https://github.com/aybinv7/capuchoo";
 /** Every outbound link of the page, so a move of the repository or the dashboard is one edit. */
 export const SITE = {
   name: "Capuchoo",
-  dashboardUrl: import.meta.env.VITE_DASHBOARD_URL || "https://capuchoo-dashboard.onrender.com",
+  dashboardUrl: import.meta.env.VITE_DASHBOARD_URL || "/",
   repository: REPOSITORY,
   readme: `${REPOSITORY}#readme`,
   selfHosting: `${REPOSITORY}/blob/main/docs/SELF-HOSTING.md`,
